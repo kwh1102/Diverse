@@ -61,6 +61,7 @@ namespace Diverse
                 case "herb": Herb(g, it); break;
                 case "wanderer": Wanderer(g, it); break;
                 case "tower_gate": Tower(g, it); break;
+                case "ferry": Ferry(g, it); break;
                 default: Show(new DialoguePage { speaker = it.label, text = "...", options = { Bye() } }); break;
             }
         }
@@ -179,8 +180,25 @@ namespace Diverse
                 if (p.Gold >= 80) { p.Gold -= 80; p.DashChargesMax++; p.DashCharges++; Sfx.Play("coin"); }
                 Merchant(g);
             }, p.Gold >= 80 && p.DashChargesMax < 4));
+            page.options.Add(new DialogueOption(p.HasRaft ? "접이식 뗏목 — 이미 가지고 있다" : $"접이식 뗏목 ({RaftCost} 골드) — 강과 호수를 건널 수 있다", () =>
+            {
+                if (BuyRaft(p)) Game.I.Ui.Toast("뗏목을 샀다! 이제 물 위로도 이동할 수 있다.");
+                Merchant(g);
+            }, !p.HasRaft && p.Gold >= RaftCost));
             page.options.Add(Bye());
             Show(page);
+        }
+
+        public const int RaftCost = 150;
+
+        static bool BuyRaft(Player p, int cost = RaftCost)
+        {
+            if (p.HasRaft || p.Gold < cost) return false;
+            p.Gold -= cost;
+            p.HasRaft = true;
+            Sfx.Play("coin");
+            Game.I.World.Log($"{Ko.I(p.HeroName)} 뗏목을 손에 넣었다.", "event");
+            return true;
         }
 
         static void Smith(Game g)
@@ -404,6 +422,103 @@ namespace Diverse
                     }),
                 },
             });
+        }
+
+        /// <summary>
+        /// Ferryman by the river: a one-off ride across to the far bank (cheap), or sells a raft (cheaper than in town).
+        /// Helping them once (first visit) gives the raft for free — another way to earn it.
+        /// </summary>
+        static void Ferry(Game g, Interactable it)
+        {
+            var p = g.Player;
+            var s = it.data as StructureSpec;
+            string key = "ferry:" + s.id;
+            int raftCost = RaftCost * 2 / 3;
+            int rideCost = 15;
+            var page = new DialoguePage { speaker = "뱃사공 수달", portrait = Art.Npc("otter", 0) };
+            if (!g.World.Flag(key) && !p.HasRaft && Actor.Nearest(it.Pos, 14, Team.Enemy) == null && g.World.clearedCamps.Count >= 2)
+            {
+                // A wanderer who clears camps is known along the rivers
+                page.text = "오, 야영지를 몰아낸 그 토끼구나! 덕분에 강에 다시 배를 띄울 수 있게 됐어.\n이 뗏목, 받아 줘. 고마움의 표시야.";
+                page.options.Add(new DialogueOption("고맙게 받기 (뗏목 획득)", () =>
+                {
+                    g.World.SetFlag(key);
+                    p.HasRaft = true;
+                    g.World.Log($"{Ko.I(p.HeroName)} 뱃사공에게서 뗏목을 선물받았다.", "deed");
+                    Sfx.Play("levelup", 0.6f);
+                    Game.I.Ui.Toast("뗏목을 얻었다! 이제 물 위로도 이동할 수 있다.");
+                    Close();
+                }));
+                page.options.Add(Bye());
+                Show(page);
+                return;
+            }
+            var far = FarBank(it.Pos);
+            page.text = p.HasRaft
+                ? "뗏목은 잘 쓰고 있어? 물살이 센 곳은 조심하고."
+                : $"강 건너편에 가고 싶어? 태워 줄 수 있어. 아예 뗏목을 사 가도 되고.\n(야영지를 2곳 이상 소탕하면 뱃사공들이 고마워할지도…)";
+            if (far.HasValue && !p.HasRaft)
+                page.options.Add(new DialogueOption($"건너편까지 태워 주세요 ({rideCost} 골드)", () =>
+                {
+                    if (p.Gold < rideCost) return;
+                    p.Gold -= rideCost;
+                    Close();
+                    Game.I.StartCoroutine(FerryRide(p, far.Value));
+                }, p.Gold >= rideCost));
+            if (!p.HasRaft)
+                page.options.Add(new DialogueOption($"뗏목 사기 ({raftCost} 골드)", () =>
+                {
+                    if (BuyRaft(p, raftCost)) { g.World.SetFlag(key); Game.I.Ui.Toast("뗏목을 샀다! 이제 물 위로도 이동할 수 있다."); }
+                    Close();
+                }, p.Gold >= raftCost));
+            page.options.Add(Bye());
+            Show(page);
+        }
+
+        /// <summary>Find land on the other side of the nearest water, roughly away from the ferry.</summary>
+        static Vector2? FarBank(Vector2 from)
+        {
+            var w = WorldStreamer.I;
+            Vector2? best = null; float bestD = float.MaxValue;
+            for (int a = 0; a < 360; a += 15)
+            {
+                var dir = MathX.Dir(a);
+                bool crossed = false;
+                for (float d = 1; d < 24; d += 0.5f)
+                {
+                    var q = from + dir * d;
+                    bool water = !w.Walkable(q) && WorldGen.IsWater(w.GroundAtTile(Mathf.FloorToInt(q.x), Mathf.FloorToInt(q.y)));
+                    if (water) crossed = true;
+                    else if (crossed)
+                    {
+                        if (!w.Free(q + dir * 0.8f, 0.4f)) break;
+                        if (d < bestD) { bestD = d; best = q + dir * 0.8f; }
+                        break;
+                    }
+                    else if (!w.Walkable(q)) break;   // blocked by a rock/tree before reaching the water
+                }
+            }
+            return best;
+        }
+
+        static System.Collections.IEnumerator FerryRide(Player p, Vector2 to)
+        {
+            var from = p.Pos;
+            float t = 0, dur = Mathf.Clamp(Vector2.Distance(from, to) / 5f, 0.6f, 3f);
+
+            p.Ferrying = true;    // ride on the ferryman's raft (shows the raft)
+            p.StopMoving();
+            Sfx.Play("dash", 0.4f, 0.6f);
+            while (t < dur && p != null)
+            {
+                t += Time.deltaTime;
+                p.Pos = Vector2.Lerp(from, to, MathX.EaseOutCubic(t / dur));
+                yield return null;
+            }
+            if (p == null) yield break;
+            p.Ferrying = false;
+            p.Pos = WorldStreamer.I.NearestWalkable(to, p.radius);
+            Game.I.Ui.Toast("뱃사공: 조심해서 가!");
         }
 
         static string Dir(Vector2 d)

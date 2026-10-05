@@ -73,6 +73,7 @@ namespace Diverse
         public Color32 projectileColor = Pal.Blood;
         public Element element;
         public bool boss;
+        public bool elite;               // outer-ring variant (tinted, bigger)
         public string[] lines;           // lines the boss speaks
     }
 
@@ -277,11 +278,24 @@ namespace Diverse
             float hpMul = 1f + tier * 0.35f, dmgMul = 1f + tier * 0.18f;
             return new EnemyDef
             {
-                id = b.id, name = b.name, brain = b.brain, hp = b.hp * hpMul, damage = b.damage * dmgMul, speed = b.speed, radius = b.radius,
+                id = b.id, name = b.name, brain = b.brain, hp = b.hp * hpMul, damage = b.damage * dmgMul, speed = b.speed * (1 + Mathf.Min(tier, 10) * 0.02f), radius = b.radius,
                 attackRange = b.attackRange, attackWindup = b.attackWindup, attackCooldown = b.attackCooldown, aggroRange = b.aggroRange,
                 xp = b.xp * (1 + tier * 0.25f), gold = b.gold * (1 + tier * 0.25f), mass = b.mass, sprite = b.sprite, projectileColor = b.projectileColor,
                 element = b.element, boss = b.boss, lines = b.lines,
             };
+        }
+
+        /// <summary>A stronger variant that shows up in the outer rings: tougher, faster to attack, better loot, shown with a tint.</summary>
+        public static EnemyDef Elite(EnemyDef d)
+        {
+            if (d.boss) return d;
+            d.elite = true;
+            d.name = "정예 " + d.name;
+            d.hp *= 2.2f; d.damage *= 1.35f;
+            d.attackCooldown *= 0.8f; d.speed *= 1.1f;
+            d.radius *= 1.15f; d.mass *= 1.6f;
+            d.xp *= 2.5f; d.gold *= 2.5f;
+            return d;
         }
     }
 }

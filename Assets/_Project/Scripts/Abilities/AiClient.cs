@@ -18,8 +18,22 @@ namespace Diverse
         public static string LastStatus = "";
         public static string LastPrompt = "";
         public static string LastResponse = "";
+        /// <summary>The last call failed in a way retrying can't fix (bad key, unknown model, no credit).</summary>
+        public static bool LastFatal;
         public static bool HasKey => !string.IsNullOrEmpty(SaveSystem.LoadApiKey());
         public static bool Enabled => Game.Settings.aiEnabled && HasKey;
+
+        /// <summary>Selectable models. All of them accept the request format below (temperature + max_tokens + json_object).</summary>
+        public static readonly (string id, string label, string desc)[] Models =
+        {
+            ("gpt-4o-mini", "GPT-4o mini", "빠르고 저렴함 (기본값)"),
+            ("gpt-4.1-mini", "GPT-4.1 mini", "조금 더 똑똑함, 비용 약 2배"),
+            ("gpt-4.1-nano", "GPT-4.1 nano", "가장 빠르고 저렴함, 품질은 낮음"),
+            ("gpt-4.1", "GPT-4.1", "가장 높은 품질, 느리고 비쌈"),
+        };
+
+        public static bool IsPresetModel(string id) => Array.Exists(Models, m => m.id == id);
+        public static string ModelLabel(string id) { foreach (var m in Models) if (m.id == id) return m.label; return id; }
 
         [Serializable] class Msg { public string role; public string content; }
         [Serializable] class RespFmt { public string type = "json_object"; }
@@ -29,6 +43,7 @@ namespace Diverse
         [Serializable] class GraphList { public List<AbilityGraph> abilities; }
         [Serializable] class NameItem { public string id; public string name; public string desc; }
         [Serializable] class NameList { public List<NameItem> names; }
+        [Serializable] class ChatResp { public string reply; public List<AbilityGraph> abilities; }
 
         const string SystemPrompt =
 @"You generate atomic abilities for a pixel-art action roguelite where abilities EVOLVE from how the player actually plays.
@@ -45,6 +60,8 @@ RULES:
 - Abilities must be causally coherent: the effect should feel like a natural consequence of the trigger.
 - Do NOT output numbers for balance (power/duration/radius are decided by the engine). Only structure.
 - World rules must be respected unless you explicitly justify breaking one in semanticReason.
+- ""action"" must be one of the listed Action atoms. Relation atoms (Copy, Chain, SwapPosition, Orbit...) go ONLY in ""relation"", never in ""action"".
+- ""trigger"" must be an Event atom. Spawn needs an ""entity"" (Clone, Turret, Orb, Zone, PhantomWeapon).
 
 OUTPUT JSON SCHEMA:
 {""abilities"":[
@@ -52,7 +69,7 @@ OUTPUT JSON SCHEMA:
   ""kind"":""trigger"",               // trigger | modifier | stat
   ""trigger"":""<Event atom>"",
   ""conditions"":[{""type"":""<Condition atom or EveryNth>"",""value"":0.3,""text"":""burn""}],
-  ""effects"":[{""action"":""<Action atom>"",""entity"":""<Entity or empty>"",""form"":""<Form or empty>"",""element"":""<Element or empty>"",""relation"":""<Relation or empty>"",""temporal"":""<Temporal or empty>"",""stat"":""<for Buff: Attack|AttackSpeed|MoveSpeed|CritChance|Armor>""}],
+  ""effects"":[{""action"":""<Damage|Projectile|Nova|Lightning|Spawn|Heal|Shield|Buff|ApplyStatus|Pull|Push|Blink|ResetCooldown|Store|Release>"",""entity"":""<Entity or empty>"",""form"":""<Form or empty>"",""element"":""<Element or empty>"",""relation"":""<Relation or empty>"",""temporal"":""<Temporal or empty>"",""stat"":""<for Buff: Attack|AttackSpeed|MoveSpeed|CritChance|Armor>""}],
   ""modTag"":""<for modifier: tag to amplify>"",
   ""stat"":""<for stat kind: StatId>"",
   ""semanticReason"":""short Korean sentence: why this fits the player""}
@@ -81,16 +98,107 @@ OUTPUT JSON SCHEMA:
             try
             {
                 var list = JsonUtility.FromJson<GraphList>(json);
-                if (list?.abilities == null || list.abilities.Count == 0) { LastStatus = "AI 응답 형식 오류 → 로컬 생성"; done(null); yield break; }
-                foreach (var g in list.abilities) { g.source = "ai"; g.conditions ??= new List<CondNode>(); g.effects ??= new List<EffectNode>(); g.tags ??= new List<string>(); }
+                if (list?.abilities == null || list.abilities.Count == 0) { LastStatus = "AI 응답 형식 오류"; done(null); yield break; }
+                foreach (var g in list.abilities) Sanitize(g);
                 LastStatus = $"AI 후보 {list.abilities.Count}개 수신";
                 done(list.abilities);
             }
             catch (Exception e)
             {
-                LastStatus = "AI JSON 파싱 실패 → 로컬 생성 (" + e.Message + ")";
+                LastStatus = "AI JSON 파싱 실패 (" + e.Message + ")";
                 done(null);
             }
+        }
+
+        static void Sanitize(AbilityGraph g)
+        {
+            g.source = "ai";
+            g.conditions ??= new List<CondNode>();
+            g.effects ??= new List<EffectNode>();
+            g.tags ??= new List<string>();
+        }
+
+        const string ChatAddendum =
+@"
+
+YOU ARE NOW TALKING WITH THE PLAYER on the evolution screen. They see the 3 CURRENT CANDIDATES below and wrote you a message (Korean).
+- Reply in Korean as the world's Storyteller: warm, 1~3 short sentences. Explain what you changed and why, or answer their question.
+- Then output the REVISED list of exactly 3 candidates. Keep candidates the player didn't complain about unchanged (copy them as-is).
+- Only change what the player asked for. If they only asked a question, return the same 3 candidates.
+- Every rule above still applies (primitives only, no balance numbers — the engine decides numbers).
+OUTPUT JSON: {""reply"":""..."",""abilities"":[ ...same ability schema as above... ]}";
+
+        /// <summary>
+        /// Evolution chat: the player talks to the AI about the current candidates; the AI answers and may revise them.
+        /// Calls back (reply, revised) — both null on failure.
+        /// </summary>
+        public static IEnumerator Chat(GenerationContext ctx, List<AbilityGraph> offer, List<(bool player, string text)> history, Action<string, List<AbilityGraph>> done)
+        {
+            var key = SaveSystem.LoadApiKey();
+            if (string.IsNullOrEmpty(key)) { LastStatus = "API 키 없음"; done(null, null); yield break; }
+
+            var first = new StringBuilder();
+            first.AppendLine("PLAYER:");
+            first.AppendLine(ctx.PlayerProfile());
+            first.AppendLine("AVAILABLE LANGUAGE:");
+            first.AppendLine(AbilityLanguage.Describe(ctx.retrieved));
+            first.AppendLine(AbilityLanguage.Describe(ctx.exploration));
+            first.AppendLine("CURRENT CANDIDATES (shown to the player as cards 1, 2, 3):");
+            for (int i = 0; i < offer.Count; i++)
+            {
+                var g = offer[i];
+                first.AppendLine($"card {i + 1}: \"{g.name}\" = {g.Explain()}");
+                first.AppendLine("  structure: " + StructureJson(g));
+            }
+
+            var msgs = new List<Msg> { new Msg { role = "system", content = SystemPrompt + ChatAddendum } };
+            // The last few turns, oldest first. The candidate snapshot goes in front of the first player turn.
+            int start = Mathf.Max(0, history.Count - 7);
+            bool first_ = true;
+            for (int i = start; i < history.Count; i++)
+            {
+                var (pl, text) = history[i];
+                if (!pl && first_) continue;    // never start with an assistant turn
+                string content = pl && first_ ? first + "\nPLAYER MESSAGE: " + text : text;
+                msgs.Add(new Msg { role = pl ? "user" : "assistant", content = content });
+                first_ = false;
+            }
+            if (first_) { done(null, null); yield break; }
+            // Older turns referred to older cards: restate the current cards right before the latest message
+            if (msgs.Count > 2)
+            {
+                var last = msgs[msgs.Count - 1];
+                var cur = new StringBuilder("CURRENT CANDIDATES NOW:\n");
+                for (int i = 0; i < offer.Count; i++) cur.AppendLine($"card {i + 1}: \"{offer[i].name}\" = {offer[i].Explain()} | structure: {StructureJson(offer[i])}");
+                last.content = cur + "\nPLAYER MESSAGE: " + last.content;
+            }
+
+            string json = null;
+            yield return PostMessages(key, msgs, 0.8f, 1400, r => json = r);
+            if (json == null) { done(null, null); yield break; }
+            LastResponse = json;
+            try
+            {
+                var resp = JsonUtility.FromJson<ChatResp>(json);
+                if (resp == null || string.IsNullOrWhiteSpace(resp.reply)) { LastStatus = "AI 대화 응답 형식 오류"; done(null, null); yield break; }
+                if (resp.abilities != null) foreach (var g in resp.abilities) Sanitize(g);
+                LastStatus = "AI 대화 응답 수신";
+                done(resp.reply.Trim(), resp.abilities ?? new List<AbilityGraph>());
+            }
+            catch (Exception e)
+            {
+                LastStatus = "AI 대화 응답 해석 실패 (" + e.Message + ")";
+                done(null, null);
+            }
+        }
+
+        /// <summary>Ability structure without engine-decided numbers or display text (what the AI is allowed to author).</summary>
+        static string StructureJson(AbilityGraph g)
+        {
+            var c = g.Clone();
+            c.id = null; c.name = null; c.desc = null; c.tags = new List<string>(); c.cost = 0; c.statValue = 0; c.modMul = 0; c.source = null;
+            foreach (var e in c.effects) { e.power = 0; e.radius = 0; e.duration = 0; e.delay = 0; e.count = 0; }
+            return JsonUtility.ToJson(c);
         }
 
         /// <summary>LLM #2: name/description for finalized mechanics.</summary>
@@ -137,15 +245,19 @@ OUTPUT JSON SCHEMA:
 
         [Serializable] class TextOnly { public string text; }
 
-        static IEnumerator Post(string key, string system, string user, float temp, int maxTokens, Action<string> done)
+        static IEnumerator Post(string key, string system, string user, float temp, int maxTokens, Action<string> done) =>
+            PostMessages(key, new List<Msg> { new Msg { role = "system", content = system }, new Msg { role = "user", content = user } }, temp, maxTokens, done);
+
+        static IEnumerator PostMessages(string key, List<Msg> messages, float temp, int maxTokens, Action<string> done)
         {
+            LastFatal = false;
             var req = new Req
             {
                 model = Game.Settings.aiModel,
                 temperature = temp,
                 max_tokens = maxTokens,
                 response_format = new RespFmt(),
-                messages = new List<Msg> { new Msg { role = "system", content = system }, new Msg { role = "user", content = user } },
+                messages = messages,
             };
             var body = Encoding.UTF8.GetBytes(JsonUtility.ToJson(req));
             using var www = new UnityWebRequest(Game.Settings.aiEndpoint, "POST");
@@ -160,12 +272,15 @@ OUTPUT JSON SCHEMA:
             if (www.result != UnityWebRequest.Result.Success)
             {
                 string msg = www.downloadHandler?.text ?? "";
+                bool quota = msg.Contains("insufficient_quota");
+                LastFatal = www.responseCode == 401 || www.responseCode == 404 || quota;
                 LastStatus = www.responseCode switch
                 {
-                    401 => "API 키가 올바르지 않음(401) → 로컬 생성",
-                    429 => msg.Contains("insufficient_quota") ? "크레딧/결제 한도 없음(429 quota) → 로컬 생성" : "요청 한도 초과(429) → 로컬 생성",
-                    404 => "모델 이름 확인 필요(404) → 로컬 생성",
-                    _ => $"AI 호출 실패({www.responseCode}) → 로컬 생성",
+                    401 => "API 키가 올바르지 않음(401)",
+                    429 => quota ? "크레딧/결제 한도 없음(429 quota)" : "요청 한도 초과(429)",
+                    404 => "모델을 사용할 수 없음(404)",
+                    0 => "네트워크 연결 실패",
+                    _ => $"AI 호출 실패({www.responseCode})",
                 };
                 Debug.LogWarning("[AI] " + LastStatus + "\n" + msg);
                 done(null);

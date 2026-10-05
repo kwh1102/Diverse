@@ -26,6 +26,11 @@ namespace Diverse
         public int UnspentAttr;
         public int PendingEvolutions;
         public string HeroName;
+        public bool HasRaft;                       // can paddle across water (bought from a ferryman)
+        public bool Ferrying;                      // riding the ferryman's raft right now
+        public bool OnWater { get; private set; }
+        /// <summary>How far from the origin this hero may go right now (0 = unlimited).</summary>
+        public float Bound => Game.I != null && Game.I.World != null ? WorldGen.Bound(Level, Game.I.World.bossKills) : 0;
         public float Shield;
         float shieldUntil;
 
@@ -61,7 +66,7 @@ namespace Diverse
         // Buffs
         readonly List<(StatId stat, float value, float until)> buffs = new List<(StatId, float, float)>();
 
-        SpriteRenderer weaponSr, shieldSr;
+        SpriteRenderer weaponSr, shieldSr, raftSr;
         Transform weaponPivot;
         float animT;
         float stepDustT;
@@ -189,6 +194,7 @@ namespace Diverse
                 Fx.I?.Number(Pos + Vector2.up * 1.2f, "레벨 업!", new Color(1f, 0.9f, 0.4f), 1.3f, 1.2f);
                 Sfx.Play("levelup");
                 GameEvents.Notify($"레벨 {Level}! 진화가 준비되었다 ({Controls.KeyName(Act.Abilities)} 또는 자동)");
+                Game.I?.RequestPrefetch();
             }
         }
 
@@ -203,7 +209,7 @@ namespace Diverse
         protected override void Update()
         {
             float dt = Time.deltaTime;
-            if (Alive && dt > 0 && !GameTime.Paused && Game.I != null && Game.I.State == GameState.Playing)
+            if (Alive && dt > 0 && !GameTime.Paused && Game.I != null && Game.I.State == GameState.Playing && !Ferrying)
             {
                 HandleInput();
                 UpdateMovement(dt);
@@ -310,7 +316,7 @@ namespace Diverse
         public void SetDestination(Vector2 target, bool showMarker)
         {
             path.Clear();
-            path.AddRange(PathFinder.Find(WorldStreamer.I, Pos, target));
+            path.AddRange(PathFinder.Find(WorldStreamer.I, Pos, target, 4000, HasRaft, Bound));
             if (showMarker) Fx.I?.Play(Art.ClickMarker(), path.Count > 0 ? path[path.Count - 1] : target, 0, 14);
         }
 
@@ -322,7 +328,7 @@ namespace Diverse
             if (dashT > 0)
             {
                 dashT -= dt;
-                Pos = WorldStreamer.I.Move(Pos, dashVel * dt, radius);
+                Pos = WorldStreamer.I.Move(Pos, dashVel * dt, radius, HasRaft, Bound);
                 ghostT -= dt;
                 if (ghostT <= 0) { ghostT = 0.03f; Fx.I?.Afterimage(body, new Color(0.7f, 0.85f, 1f, 0.7f), 0.22f); }
                 if (dashT <= 0) { GameEvents.Raise(new CombatEvent { type = Trig.DashEnd, source = this, position = Pos }); Telemetry.Record("DashEnd"); }
@@ -331,7 +337,7 @@ namespace Diverse
             if (lungeT > 0)
             {
                 lungeT -= dt;
-                Pos = WorldStreamer.I.Move(Pos, lungeVel * dt, radius);
+                Pos = WorldStreamer.I.Move(Pos, lungeVel * dt, radius, HasRaft, Bound);
                 lungeVel *= Mathf.Exp(-14 * dt);
             }
             if (actionLock > 0) return;
@@ -349,7 +355,7 @@ namespace Diverse
                     return;
                 }
                 repathT -= dt;
-                if (repathT <= 0 || path.Count == 0) { repathT = 0.25f; path.Clear(); path.AddRange(PathFinder.Find(WorldStreamer.I, Pos, attackTarget.Pos, 1500)); }
+                if (repathT <= 0 || path.Count == 0) { repathT = 0.25f; path.Clear(); path.AddRange(PathFinder.Find(WorldStreamer.I, Pos, attackTarget.Pos, 1500, HasRaft, Bound)); }
             }
 
             if (path.Count > 0)
@@ -359,13 +365,13 @@ namespace Diverse
                 float step = MoveSpeed * dt;
                 if (to.magnitude <= step + 0.02f)
                 {
-                    Pos = WorldStreamer.I.Move(Pos, to, radius);
+                    Pos = WorldStreamer.I.Move(Pos, to, radius, HasRaft, Bound);
                     path.RemoveAt(0);
                 }
                 else
                 {
                     var before = Pos;
-                    Pos = WorldStreamer.I.Move(Pos, to.normalized * step, radius);
+                    Pos = WorldStreamer.I.Move(Pos, to.normalized * step, radius, HasRaft, Bound);
                     if ((Pos - before).sqrMagnitude < step * step * 0.04f) { path.Clear(); }   // stuck → stop
                 }
                 Facing = to.SafeNormal(Facing);
@@ -505,7 +511,8 @@ namespace Diverse
 
         public void BlinkTo(Vector2 dst)
         {
-            dst = WorldStreamer.I.NearestWalkable(dst, radius);
+            dst = WorldStreamer.I.NearestWalkable(dst, radius, 6, HasRaft);
+            if (Bound > 0 && dst.magnitude > Bound && dst.magnitude > Pos.magnitude) return;
             Fx.I?.Afterimage(body, new Color(0.7f, 0.6f, 1f, 0.8f), 0.3f);
             Fx.I?.Burst(Pos + Vector2.up * 0.5f, Pal.ShadowEl, 10, 4, 0.3f);
             Pos = dst;
@@ -625,6 +632,7 @@ namespace Diverse
             else if (Moving) pose = (Pose)((int)Pose.Run0 + (int)(animT * 10) % 4);
             else pose = (int)(animT * 2.2f) % 2 == 0 ? Pose.Idle0 : Pose.Idle1;
             body.sprite = Art.Rabbit(Costume, pose);
+            UpdateRaft();
             bool left = Facing.x < -0.05f;
             if (Mathf.Abs(Facing.x) > 0.05f) body.flipX = left;
 
@@ -659,6 +667,28 @@ namespace Diverse
             if (Time.time < invulnUntil && dashT <= 0 && Alive) body.enabled = (int)(Time.time * 20) % 2 == 0;
             else body.enabled = true;
         }
+
+        /// <summary>Show the raft under the hero while on water.</summary>
+        void UpdateRaft()
+        {
+            var w = WorldStreamer.I;
+            OnWater = (HasRaft || Ferrying) && w != null && w.IsLoaded(Pos) && WorldGen.IsWater(w.GroundAtTile(Mathf.FloorToInt(Pos.x), Mathf.FloorToInt(Pos.y)));
+            if (OnWater && raftSr == null)
+            {
+                var go = new GameObject("raft");
+                go.transform.SetParent(transform, false);
+                go.transform.localPosition = new Vector3(0, 0.1f, 0);
+                raftSr = Art.MakeRenderer(go, Art.Prop("raft"), 0);
+            }
+            if (raftSr == null) return;
+            raftSr.enabled = OnWater;
+            raftSr.sortingOrder = body.sortingOrder - 1;
+            raftSr.transform.localPosition = new Vector3(0, 0.1f + Mathf.Sin(animT * 2.5f) * 0.03f, 0);
+            if (OnWater) visual.localPosition += new Vector3(0, 0.12f + Mathf.Sin(animT * 2.5f) * 0.03f, 0);
+        }
+
+        protected override bool CanSwim => HasRaft || Ferrying;
+        protected override float MoveBound => Bound;
 
         public bool IsDashing => dashT > 0;
         public bool InAction => actionLock > 0;

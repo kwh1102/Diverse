@@ -213,7 +213,7 @@ namespace Diverse
             float t = Time.unscaledTime;
             var tr = new Rect(0, Screen.height * 0.18f + Mathf.Sin(t * 1.5f) * U(2), Screen.width, U(40));
             var st = new GUIStyle(title) { fontSize = Mathf.RoundToInt(title.fontSize * 1.6f) };
-            Shadowed(tr, "World Chronicle", st, Pal.Hex("fff2d6"));
+            Shadowed(tr, "Diverse", st, Pal.Hex("fff2d6"));
             Shadowed(new Rect(0, tr.yMax + U(4), Screen.width, U(16)), "— 세계는 당신의 삶을 기억한다 —", labelC, Pal.Hex("c9b8ff"));
 
             // Rabbits
@@ -227,9 +227,25 @@ namespace Diverse
 
             float bw = 140, bh = 22;
             var r = new Rect((Screen.width - U(bw)) / 2, Screen.height * 0.62f, U(bw), U(bh));
-            string start = g.World.lifeCount == 0 ? "새로운 삶 시작" : $"이어하기 ({g.World.lifeCount + 1}번째 삶)";
-            if (Btn(r, start)) g.State = GameState.CharacterSelect;
-            r.y += U(bh + 6);
+            if (g.HasRunToContinue)
+            {
+                var run = g.PendingRun;
+                if (Btn(r, $"이어하기 — {run.heroName} Lv.{run.level}")) { g.ContinueRun(); confirmAbandon = false; }
+                r.y += U(bh + 6);
+                // Abandoning a life counts as a death: the hero gets a grave where they stood
+                if (Btn(r, confirmAbandon ? "정말 이 삶을 끝낼까요? (무덤이 남음)" : "이 삶을 끝내고 새로 시작"))
+                {
+                    if (confirmAbandon) { g.AbandonRun(); confirmAbandon = false; }
+                    else confirmAbandon = true;
+                }
+                r.y += U(bh + 6);
+            }
+            else
+            {
+                string start = g.World.lifeCount == 0 ? "새로운 삶 시작" : $"다음 삶 시작 ({g.World.lifeCount + 1}번째 삶)";
+                if (Btn(r, start)) g.State = GameState.CharacterSelect;
+                r.y += U(bh + 6);
+            }
             if (Btn(r, "설정")) { tab = "settings"; g.State = GameState.Settings; }
             r.y += U(bh + 6);
             if (g.World.lifeCount > 0 && Btn(r, confirmReset ? "정말 세계를 초기화할까요?" : "새로운 세계 시작")) { if (confirmReset) { g.ResetWorld(); confirmReset = false; } else confirmReset = true; }
@@ -239,10 +255,10 @@ namespace Diverse
                 UnityEditor.EditorApplication.isPlaying = false;
 #endif
             }
-            string ai = AiClient.HasKey ? (Game.Settings.aiEnabled ? $"AI 진화: 켜짐 ({Game.Settings.aiModel})" : "AI 진화: 꺼짐 (키 있음)") : "AI 진화: 로컬 모드 (API 키 없음)";
+            string ai = AiClient.HasKey ? (Game.Settings.aiEnabled ? $"AI 진화: 켜짐 ({AiClient.ModelLabel(Game.Settings.aiModel)})" : "AI 진화: 꺼짐 (키 있음)") : "AI 진화: 로컬 모드 (API 키 없음)";
             Shadowed(new Rect(U(8), Screen.height - U(18), Screen.width, U(14)), $"{ai}   ·   세계 시드 {g.World.seed}   ·   기억의 조각 {g.World.memoryShards}   ·   탑 {g.World.towerFloor}층", small);
         }
-        bool confirmReset;
+        bool confirmReset, confirmAbandon;
 
         // ───────────────────────── Character select ─────────────────────────
 
