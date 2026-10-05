@@ -44,6 +44,7 @@ namespace Diverse
                 if (Btn(new Rect(area.xMax - U(122), br.y, U(110), U(20)), "타이틀로 (저장)"))
                 {
                     SaveSystem.SaveWorld(g.World);
+                    g.SaveRun();
                     g.CloseOverlay();
                     g.ToCharacterSelect();
                     g.State = GameState.Title;
@@ -146,10 +147,24 @@ namespace Diverse
             GUI.Label(new Rect(x, y, w, U(26)), $"<color=#8c7aa8>키 위치: 환경 변수 OPENAI_API_KEY 또는 키만 적힌 파일:\n{SaveSystem.KeyFileHint}</color>", small);
             y += U(28);
             if (Btn(new Rect(x, y, U(120), U(18)), "AI: " + (s.aiEnabled ? "켜짐" : "꺼짐"))) s.aiEnabled = !s.aiEnabled;
-            Shadowed(new Rect(x + U(130), y + U(2), U(40), U(14)), "모델", small);
-            s.aiModel = GUI.TextField(new Rect(x + U(165), y, U(120), U(18)), s.aiModel, new GUIStyle(box) { font = font, fontSize = small.fontSize, normal = { textColor = Color.white, background = slotTex } });
-            if (Btn(new Rect(x + U(290), y, U(90), U(18)), "폴더 열기")) Application.OpenURL("file:///" + Application.persistentDataPath);
+            if (Btn(new Rect(x + U(130), y, U(90), U(18)), "폴더 열기")) Application.OpenURL("file:///" + Application.persistentDataPath);
             y += U(22);
+            // Model: pick one of the presets (free text is no longer allowed)
+            Shadowed(new Rect(x, y + U(2), U(40), U(14)), "모델", small);
+            float mw = (w - U(40)) / AiClient.Models.Length;
+            string hoverDesc = null;
+            for (int i = 0; i < AiClient.Models.Length; i++)
+            {
+                var model = AiClient.Models[i];
+                var mr = new Rect(x + U(36) + i * mw, y, mw - U(4), U(18));
+                bool sel = s.aiModel == model.id;
+                var st = sel ? new GUIStyle(button) { fontSize = small.fontSize, normal = { background = buttonHoverTex, textColor = Pal.Hex("fff2b3") } } : new GUIStyle(button) { fontSize = small.fontSize };
+                if (GUI.Button(mr, model.label, st) && !sel) { s.aiModel = model.id; Sfx.Play("ui"); GUI.changed = true; }
+                if (mr.Contains(Event.current.mousePosition) || (sel && hoverDesc == null)) hoverDesc = $"{model.label}: {model.desc}";
+            }
+            y += U(20);
+            if (hoverDesc != null) Shadowed(new Rect(x + U(36), y, w, U(12)), $"<color=#8c7aa8>{hoverDesc}</color>", small);
+            y += U(14);
             if (!string.IsNullOrEmpty(AiClient.LastStatus)) Shadowed(new Rect(x, y, w, U(12)), $"<color=#8c7aa8>마지막 호출: {AiClient.LastStatus}</color>", small);
             if (GUI.changed) SaveSystem.SaveSettings(s);
         }

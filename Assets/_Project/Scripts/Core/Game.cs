@@ -58,6 +58,8 @@ namespace Diverse
             Fx.Create();
             Sfx.Create();
             World = SaveSystem.LoadWorld();
+            PendingRun = SaveSystem.LoadRun();
+            if (PendingRun != null && PendingRun.life != World.lifeCount) { PendingRun = null; SaveSystem.DeleteRun(); }
             Diverse.World.Create(World.seed);
             Ui = UI.Create(this);
             GameEvents.Toast += Ui.Toast;
@@ -99,7 +101,8 @@ namespace Diverse
                 if (discoverT <= 0) { discoverT = 0.5f; Diverse.World.I.UpdateDiscovery(Player.Pos); UpdateQuests(); }
                 if (Controls.Down(Act.Interact)) { var it = Interactable.Nearest(Player.Pos); if (it != null) Interact(it); }
                 saveT -= Time.unscaledDeltaTime;
-                if (saveT <= 0) { saveT = 20; SaveSystem.SaveWorld(World); }
+                if (saveT <= 0) { saveT = 20; SaveSystem.SaveWorld(World); SaveRun(); }
+                UpdateFrontier(dt);
                 if (Player.PendingEvolutions > 0 && !Generating && Offer == null && Actor.Nearest(Player.Pos, 7, Team.Enemy) == null)
                     BeginEvolution();
             }
@@ -165,7 +168,8 @@ namespace Diverse
             World.gold -= Player.Gold;
             CameraRig.I.target = Player.transform;
             CameraRig.I.Snap(Player.Pos);
-            Offer = null; Generating = false; Boss = null;
+            Offer = null; Generating = false; Boss = null; ChatBusy = false;
+            ResetPrefetch();
             State = GameState.Playing;
             GameTime.ClearPauses();
             World.Log($"{World.lifeCount}번째 삶: {HeroName}({costume.name}, {w.name}) — 기억의 광장에서 눈을 떴다.", "life");
@@ -175,6 +179,100 @@ namespace Diverse
                 Ui.Toast($"{World.lifeCount}번째 삶. 세계는 당신의 지난 삶을 기억한다.");
             EnsureQuests();
             SaveSystem.SaveWorld(World);
+            SaveRun();
+            RequestPrefetch();
+        }
+
+        // ───────────────────────── Continuing a life ─────────────────────────
+
+        /// <summary>A life in progress that was left by returning to the title (or quitting).</summary>
+        public RunSave PendingRun;
+
+        public bool HasRunToContinue => PendingRun != null && PendingRun.life == World.lifeCount;
+
+        /// <summary>Snapshot the current life so it can be continued later.</summary>
+        public void SaveRun()
+        {
+            var p = Player;
+            if (p == null || !p.Alive || State == GameState.Dead) return;
+            var r = new RunSave
+            {
+                life = World.lifeCount, heroName = HeroName, costume = p.Costume.id, weapon = (int)p.Weapon.kind, weaponDamage = p.Weapon.baseDamage,
+                level = p.Level, xp = p.Xp, xpToNext = p.XpToNext, gold = p.Gold, kills = p.Kills, potions = p.Potions,
+                attrs = (int[])p.Attrs.Clone(), unspentAttr = p.UnspentAttr, pendingEvolutions = p.PendingEvolutions,
+                hp = p.hp, dashMax = p.DashChargesMax, x = p.Pos.x, y = p.Pos.y, raft = p.HasRaft,
+            };
+            foreach (var a in p.Abilities.Owned) r.abilities.Add(AbilityRecord.From(a));
+            foreach (var kv in p.Telemetry.intent) r.intent.Add(kv.Key + "=" + kv.Value);
+            PendingRun = r;
+            SaveSystem.SaveRun(r);
+        }
+
+        /// <summary>Resume the saved life exactly where it was left.</summary>
+        public void ContinueRun()
+        {
+            var r = PendingRun;
+            if (r == null) return;
+            var costume = DB.Costumes.FirstOrDefault(c => c.id == r.costume) ?? DB.Costumes[0];
+            var weapon = (WeaponKind)r.weapon;
+            HeroName = r.heroName;
+            Diverse.World.I.ResetForRun();
+            Fx.I.ClearAll();
+            var w = DB.W(weapon);
+            var weaponCopy = new WeaponDef
+            {
+                kind = w.kind, name = w.name, desc = w.desc, tags = w.tags, slashColor = w.slashColor, slashCore = w.slashCore, baseDamage = r.weaponDamage > 0 ? r.weaponDamage : w.baseDamage,
+                comboReset = w.comboReset, moveSpeedMul = w.moveSpeedMul, attackRange = w.attackRange, combo = w.combo, skills = w.skills, element = w.element,
+                sfxSwing = w.sfxSwing, sfxHit = w.sfxHit,
+            };
+            if (Player != null) Destroy(Player.gameObject);
+            var pos = new Vector2(r.x, r.y);
+            WorldStreamer.I.Warm(pos);
+            Player = Player.Spawn(costume, weaponCopy, pos);
+            var p = Player;
+            p.HeroName = HeroName;
+            p.Level = r.level; p.Xp = r.xp; p.XpToNext = r.xpToNext;
+            p.Gold = r.gold; p.Kills = r.kills; p.Potions = r.potions;
+            if (r.attrs != null && r.attrs.Length == 4) p.Attrs = (int[])r.attrs.Clone();
+            p.UnspentAttr = r.unspentAttr; p.PendingEvolutions = r.pendingEvolutions;
+            p.DashChargesMax = p.DashCharges = Mathf.Max(2, r.dashMax);
+            p.HasRaft = r.raft;
+            foreach (var rec in r.abilities) { var g = rec.ToGraph(); if (g != null) p.Abilities.Owned.Add(g); }
+            foreach (var s in r.intent) { var kv = s.Split('='); if (kv.Length == 2 && int.TryParse(kv[1], out var n)) p.Telemetry.intent[kv[0]] = n; }
+            p.RecalcStats();
+            p.hp = Mathf.Clamp(r.hp, 1, p.maxHp);
+            p.Pos = WorldStreamer.I.NearestWalkable(pos, p.radius, 8, p.HasRaft);
+            CameraRig.I.target = p.transform;
+            CameraRig.I.Snap(p.Pos);
+            Offer = null; Generating = false; Boss = null; ChatBusy = false;
+            ResetPrefetch();
+            State = GameState.Playing;
+            GameTime.ClearPauses();
+            Ui.Toast($"{Ko.I(HeroName)} 다시 길을 나선다. (Lv.{p.Level})");
+            EnsureQuests();
+            RequestPrefetch();
+        }
+
+        /// <summary>Give up the saved life from the title: it ends like a death (grave + chronicle) and the next life can begin.</summary>
+        public void AbandonRun()
+        {
+            var r = PendingRun;
+            if (r == null) return;
+            var grave = new GraveRecord
+            {
+                life = r.life, heroName = r.heroName, costume = r.costume, weapon = r.weapon, level = r.level, kills = r.kills,
+                x = r.x, y = r.y, cause = "긴 방랑",
+            };
+            foreach (var rec in r.abilities.Select(a => (rec: a, g: a.ToGraph())).Where(t => t.g != null && t.g.kind == "trigger").OrderByDescending(t => t.g.cost).Take(2))
+                grave.abilities.Add(rec.rec);
+            grave.epitaph = $"{r.heroName} — 길 위에서 사라지다. 레벨 {r.level}, 처치한 몬스터 {r.kills}마리.";
+            World.graves.Add(grave);
+            World.gold += r.gold / 2;
+            World.Log($"{Ko.I(r.heroName)} 방랑 끝에 자취를 감췄다. 그 자리에 무덤이 세워졌다.", "death");
+            PendingRun = null;
+            SaveSystem.DeleteRun();
+            SaveSystem.SaveWorld(World);
+            State = GameState.CharacterSelect;
         }
 
         static readonly string[] namePre = { "하", "설", "봄", "달", "별", "바", "단", "루", "윤", "가", "나", "라", "모", "호", "소", "리", "토", "키" };
@@ -215,6 +313,11 @@ namespace Diverse
             Diverse.World.I.OnCampEnemyKilled(e.campId);
             foreach (var q in World.quests)
                 if (q.status == 1 && q.kind == "hunt" && q.enemy == d.id) { q.have++; if (q.have >= q.need) { q.status = 2; Ui.Toast($"의뢰 완료: {q.title} — 게시판에 보고하세요"); } }
+            if (d.boss && e.campId != null)
+            {
+                World.bossKills++;
+                Ui.Toast($"보스 처치 {World.bossKills}회 — {FrontierHint()}");
+            }
             if (d.boss)
             {
                 if (Boss == e) Boss = null;
@@ -254,6 +357,8 @@ namespace Diverse
             grave.statue = p.Level >= 12 || World.towerFloor >= 2 && p.Kills > 80;
             grave.epitaph = $"{HeroName} — {Ko.Ro(cause)} 인해 잠들다. 레벨 {p.Level}, 처치한 몬스터 {p.Kills}마리.";
             World.graves.Add(grave);
+            PendingRun = null;
+            SaveSystem.DeleteRun();
             World.gold += p.Gold / 2;    // half the gold goes to the vault
             World.Log($"{Ko.I(HeroName)} {Ko.Ro(cause)} 인해 쓰러졌다 ({Diverse.World.I.Gen.RegionName(p.Pos)}). 무덤이 세워졌다.", "death");
             SaveSystem.SaveWorld(World);
@@ -267,6 +372,7 @@ namespace Diverse
         public void ToCharacterSelect()
         {
             if (Player != null) { Destroy(Player.gameObject); Player = null; }
+            ResetPrefetch();
             Diverse.World.I.ResetForRun();
             WorldStreamer.I.Warm(Vector2.zero);
             State = GameState.CharacterSelect;
@@ -276,6 +382,8 @@ namespace Diverse
         public void ResetWorld()
         {
             SaveSystem.DeleteWorld();
+            SaveSystem.DeleteRun();
+            PendingRun = null;
             World = SaveSystem.NewWorld();
             Destroy(WorldStreamer.I.gameObject);
             Destroy(Diverse.World.I.gameObject);
@@ -287,6 +395,7 @@ namespace Diverse
         void OnApplicationQuit()
         {
             if (World != null) SaveSystem.SaveWorld(World);
+            if (State != GameState.Title && State != GameState.CharacterSelect) SaveRun();
         }
     }
 }

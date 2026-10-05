@@ -72,6 +72,17 @@ namespace Diverse
                                 else if (((gx / 3 + gy * 2) % 13 == 0) && n > 0.5f) col = c;
                             }
 
+                            // Bridge: planks across the travel direction, dark rails where it borders water
+                            if (g == Ground.Wood)
+                            {
+                                bool wl = l == Ground.Water || l == Ground.DeepWater, wr = r == Ground.Water || r == Ground.DeepWater;
+                                bool wd = d == Ground.Water || d == Ground.DeepWater, wu = u == Ground.Water || u == Ground.DeepWater;
+                                bool horizontal = (wu || wd) && !(wl || wr);
+                                int along = horizontal ? gx : gy;
+                                col = along % 4 == 0 ? b : (Hash.F(gx / 4, gy / 4, seed) > 0.5f ? a : c);
+                                if ((wl && x <= 1) || (wr && x >= T - 2) || (wd && y <= 1) || (wu && y >= T - 2)) col = Pal.WoodDark;
+                            }
+
                             // 풀 지면에 작은 풀잎 무늬
                             if ((g == Ground.Grass || g == Ground.DarkGrass) && Hash.F(gx / 2, gy / 2, seed + 77) > 0.985f && y > 1)
                             {
@@ -372,6 +383,48 @@ namespace Diverse
                     cv.Outline(Pal.Outline);
                     return cv.ToSprite(new Vector2(20, 1));
                 }
+                case "raft":
+                {
+                    var cv = new PixelCanvas(26, 14);
+                    for (int i = 0; i < 6; i++) cv.Rect(1 + i * 4, 1, 3, 12, i % 2 == 0 ? Pal.Wood : Pal.Hex("c4936a"));
+                    cv.Rect(1, 3, 24, 1, Pal.WoodDark); cv.Rect(1, 10, 24, 1, Pal.WoodDark);
+                    cv.Outline(Pal.Outline);
+                    return cv.ToSprite(new Vector2(13, 7));
+                }
+                case "obelisk":
+                {
+                    var cv = new PixelCanvas(20, 58);
+                    var st = Pal.Hex("4a4058"); var sh = Pal.Hex("332b40");
+                    cv.Rect(1, 0, 18, 5, sh);
+                    for (int y = 5; y < 50; y++) { int half = 6 - (y - 5) * 2 / 45; cv.Rect(10 - half, y, half * 2, 1, st); }
+                    for (int y = 50; y < 57; y++) { int half = Mathf.Max(1, (57 - y) * 4 / 7); cv.Rect(10 - half, y, half * 2, 1, st); }
+                    for (int y = 12; y < 46; y += 6) cv.Rect(8, y, 4, 2, Pal.Hex("ff8aa8"));   // runes
+                    cv.InnerShade(st, sh, 1, -1);
+                    cv.Outline(Pal.Outline);
+                    return cv.ToSprite(new Vector2(10, 1));
+                }
+                case "wall":
+                {
+                    var cv = new PixelCanvas(28, 30);
+                    var st = Pal.Hex("8d8799"); var sh = Pal.Hex("6a6577");
+                    cv.Rect(0, 0, 28, 24, st);
+                    for (int y = 0; y < 24; y += 6)
+                        for (int x = (y / 6) % 2 * 4; x < 28; x += 8) { cv.Rect(x, y, 1, 6, sh); cv.Rect(0, y, 28, 1, sh); }
+                    for (int x = 0; x < 28; x += 8) cv.Rect(x, 24, 5, 5, st);   // battlements
+                    cv.InnerShade(st, sh, 1, -1);
+                    cv.Outline(Pal.Outline);
+                    return cv.ToSprite(new Vector2(14, 1));
+                }
+                case "banner":
+                {
+                    var cv = new PixelCanvas(12, 40);
+                    cv.Rect(1, 0, 2, 40, Pal.WoodDark);
+                    cv.Rect(3, 18, 8, 20, Pal.Hex("3a2a52"));
+                    cv.Set(4, 17, Pal.Hex("3a2a52")); cv.Set(9, 17, Pal.Hex("3a2a52"));
+                    cv.Circle(7, 28, 2, Pal.Hex("c9b8ff"));
+                    cv.Outline(Pal.Outline);
+                    return cv.ToSprite(new Vector2(2, 1));
+                }
                 case "campfire":
                 {
                     var cv = new PixelCanvas(16, 10);
@@ -558,6 +611,21 @@ namespace Diverse
                     cv.InnerShade(f, s, 1, -1);
                     break;
                 }
+                case "otter":
+                {
+                    var f = Pal.Hex("8a6448"); var s = Pal.Hex("5e4230");
+                    cv.Ellipse(13, 9 - bob, 6, 8, f);
+                    cv.Ellipse(13, 9 - bob, 3.5f, 6, Pal.Hex("d9b48a"));       // belly
+                    cv.Circle(13, 19 - bob, 5.5f, f);
+                    cv.Ellipse(13, 17 - bob, 3.5f, 2.2f, Pal.Hex("e8d2b0"));   // muzzle
+                    cv.Set(13, 18 - bob, Pal.EyeDark);
+                    cv.Rect(10, 20 - bob, 2, 2, Pal.EyeDark); cv.Rect(15, 20 - bob, 2, 2, Pal.EyeDark);
+                    cv.Set(8, 23 - bob, s); cv.Set(18, 23 - bob, s);
+                    cv.Rect(7, 23 - bob, 12, 2, Pal.Hex("e0c27a")); cv.Rect(9, 25 - bob, 8, 2, Pal.Hex("e0c27a"));  // straw hat
+                    cv.Line(20, 0, 22, 18, Pal.WoodDark); cv.Rect(19, 0, 5, 3, Pal.Wood);                        // oar
+                    cv.InnerShade(f, s, 1, -1);
+                    break;
+                }
                 default:
                 {
                     int vi = 0; foreach (char ch in kind) if (char.IsDigit(ch)) vi = vi * 10 + (ch - '0');
@@ -589,6 +657,9 @@ namespace Diverse
                     cv.Rect(4, 2, 3, 6, Pal.Hex("e6dcff")); cv.Rect(3, 4, 5, 2, Pal.Hex("c9b8ff")); break;
                 case "potion":
                     cv.Rect(4, 7, 2, 2, Pal.Wood); cv.Circle(5, 4, 3.4f, Pal.Blood); cv.Set(4, 5, Pal.White); break;
+                case "raft":
+                    for (int i = 0; i < 4; i++) cv.Rect(1 + i * 2, 2, 2, 6, i % 2 == 0 ? Pal.Wood : Pal.WoodDark);
+                    cv.Rect(1, 4, 8, 1, Pal.WoodDark); break;
                 default:
                     cv.Circle(5, 5, 3, Pal.Gold); break;
             }

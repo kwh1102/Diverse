@@ -10,7 +10,7 @@ namespace Diverse
     public class ChunkView : MonoBehaviour
     {
         public Vector2Int key;
-        readonly List<Vector2Int> blockedTiles = new List<Vector2Int>();
+        readonly List<Solid> solids = new List<Solid>();
         readonly List<Enemy> spawned = new List<Enemy>();
         readonly List<Interactable> interactables = new List<Interactable>();
         Texture2D groundTex;
@@ -62,11 +62,12 @@ namespace Diverse
 
                     if (r < treeChance && tx % 2 == 0 && ty % 2 == 1)
                     {
-                        AddDecor(Art.Tree(biome, (int)(Hash.U(wx, wy, 5) % 4)), p, true, 1.4f, 1f);
+                        // Only the trunk blocks — the canopy is drawn over the player
+                        AddDecor(Art.Tree(biome, (int)(Hash.U(wx, wy, 5) % 4)), p, true, 1.0f, 0.6f);
                     }
-                    else if (r < treeChance + 0.004f)
+                    else if (r < treeChance + 0.0025f)
                     {
-                        AddDecor(Art.Rock(biome, (int)(Hash.U(wx, wy, 6) % 3)), p, true, 1f, 0.8f);
+                        AddDecor(Art.Rock(biome, (int)(Hash.U(wx, wy, 6) % 3)), p, true, 0.85f, 0.55f);
                     }
                     else if (r < treeChance + 0.03f && biome != Biome.Dunes && biome != Biome.Ashland)
                     {
@@ -88,13 +89,17 @@ namespace Diverse
             return false;
         }
 
-        public SpriteRenderer AddDecor(Sprite s, Vector2 p, bool block, float bw, float bh, bool flat = false, string name = "decor")
+        /// <summary>
+        /// Place a decoration. When block is set, a footprint of bw×bh (world units) centered just above p blocks movement.
+        /// Footprints default to ellipses (natural shapes); pass shape for tents (triangle) or crates (rect).
+        /// </summary>
+        public SpriteRenderer AddDecor(Sprite s, Vector2 p, bool block, float bw, float bh, bool flat = false, string name = "decor", Footprint shape = Footprint.Ellipse)
         {
             var go = new GameObject(name);
             go.transform.SetParent(transform, false);
             go.transform.position = new Vector3(Mathf.Round(p.x * Art.PPU) / Art.PPU, Mathf.Round(p.y * Art.PPU) / Art.PPU, 0);
             var sr = Art.MakeRenderer(go, s, flat ? -31000 : Art.SortY(p.y));
-            if (block && bw > 0) w.BlockRect(p + new Vector2(0, 0.2f), bw, bh, blockedTiles);
+            if (block && bw > 0) solids.Add(w.AddSolid(shape, p + new Vector2(0, bh * 0.5f), bw, bh));
             if (block)
             {
                 var sh = new GameObject("shadow");
@@ -105,15 +110,15 @@ namespace Diverse
             return sr;
         }
 
-        public void BlockArea(Vector2 center, float wdt, float hgt) => w.BlockRect(center, wdt, hgt, blockedTiles);
+        public void BlockArea(Vector2 center, float wdt, float hgt, Footprint shape = Footprint.Rect) => solids.Add(w.AddSolid(shape, center, wdt, hgt));
 
         public void Register(Enemy e) => spawned.Add(e);
         public void Register(Interactable i) => interactables.Add(i);
 
         public void Unload()
         {
-            foreach (var t in blockedTiles) w.Unblock(t);
-            blockedTiles.Clear();
+            foreach (var s in solids) w.RemoveSolid(s);
+            solids.Clear();
             foreach (var e in spawned) if (e != null && e.Alive) e.Despawn();
             spawned.Clear();
             foreach (var i in interactables) if (i != null) Interactable.All.Remove(i);

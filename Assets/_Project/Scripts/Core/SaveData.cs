@@ -18,6 +18,7 @@ namespace Diverse
         public int gold;                      // shared coffer (inherited through the town bank)
         public int memoryShards;              // tower-opening currency
         public int towerFloor;                // highest tower floor reached
+        public int bossKills;                 // bosses defeated across all lives (opens farther exploration rings)
         public List<string> flags = new List<string>();          // per-structure state ("chest:12:-3:0")
         public List<string> clearedCamps = new List<string>();
         public List<string> discovered = new List<string>();     // discovered structure ids (shown on the map)
@@ -37,6 +38,30 @@ namespace Diverse
             chronicle.Add(new ChronicleEntry { life = lifeCount, text = text, kind = kind, time = DateTime.Now.ToString("yyyy-MM-dd HH:mm") });
             if (chronicle.Count > 200) chronicle.RemoveAt(0);
         }
+    }
+
+    /// <summary>
+    /// The life currently in progress. Saved when returning to the title / quitting so the same life can be continued.
+    /// Deleted when the hero dies.
+    /// </summary>
+    [Serializable]
+    public class RunSave
+    {
+        public int life;
+        public string heroName, costume;
+        public int weapon;
+        public float weaponDamage;
+        public int level = 1;
+        public float xp, xpToNext = 30;
+        public int gold, kills, potions;
+        public int[] attrs = new int[4];
+        public int unspentAttr, pendingEvolutions;
+        public float hp;
+        public int dashMax = 2;
+        public float x, y;
+        public bool raft;
+        public List<AbilityRecord> abilities = new List<AbilityRecord>();
+        public List<string> intent = new List<string>();      // "TAG=count"
     }
 
     [Serializable]
@@ -96,6 +121,7 @@ namespace Diverse
         static string Dir => Application.persistentDataPath;
         static string WorldPath => Path.Combine(Dir, "world.json");
         static string SettingsPath => Path.Combine(Dir, "settings.json");
+        static string RunPath => Path.Combine(Dir, "run.json");
 
         public static WorldSave LoadWorld()
         {
@@ -129,14 +155,38 @@ namespace Diverse
             try { if (File.Exists(WorldPath)) File.Delete(WorldPath); } catch { }
         }
 
-        public static Settings LoadSettings()
+        public static RunSave LoadRun()
         {
             try
             {
-                if (File.Exists(SettingsPath)) return JsonUtility.FromJson<Settings>(File.ReadAllText(SettingsPath)) ?? new Settings();
+                if (File.Exists(RunPath)) return JsonUtility.FromJson<RunSave>(File.ReadAllText(RunPath));
+            }
+            catch (Exception e) { Debug.LogWarning("Run save load failed: " + e.Message); }
+            return null;
+        }
+
+        public static void SaveRun(RunSave r)
+        {
+            try { File.WriteAllText(RunPath, JsonUtility.ToJson(r, true)); }
+            catch (Exception e) { Debug.LogWarning("Run save failed: " + e.Message); }
+        }
+
+        public static void DeleteRun()
+        {
+            try { if (File.Exists(RunPath)) File.Delete(RunPath); } catch { }
+        }
+
+        public static Settings LoadSettings()
+        {
+            Settings s = null;
+            try
+            {
+                if (File.Exists(SettingsPath)) s = JsonUtility.FromJson<Settings>(File.ReadAllText(SettingsPath));
             }
             catch { }
-            return new Settings();
+            s ??= new Settings();
+            if (!AiClient.IsPresetModel(s.aiModel)) s.aiModel = AiClient.Models[0].id;   // only preset models can be selected
+            return s;
         }
 
         public static void SaveSettings(Settings s)

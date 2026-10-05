@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Diverse
 {
-    public enum StructKind { Town, Tower, Camp, Ruins, Shrine, Grove, Graveyard, Lair, Chest, Pond, Wanderer }
+    public enum StructKind { Town, Tower, Camp, Ruins, Shrine, Grove, Graveyard, Lair, Chest, Pond, Wanderer, Ferry, Obelisk, Fortress }
 
     /// <summary>
     /// A structure spec produced by the generator. Being pure data (no Unity objects),
@@ -36,6 +36,40 @@ namespace Diverse
         public const int RegionChunks = 3;      // one structure candidate per region
         public const float TownRadius = 15f;
         public static readonly Vector2 TowerPos = new Vector2(0, 92);
+        const int TrailSpacing = 96;            // bridges sit where a (hidden) trail line crosses a river
+
+        // ───────────── Frontier rings ─────────────
+        // The world is infinite, but the Mist of Oblivion keeps the unproven close to home.
+        // Each ring opens with the hero's level AND the bosses the world has seen fall (across lives).
+        public struct Ring { public float radius; public int level, bosses; public string name; }
+        public static readonly Ring[] Rings =
+        {
+            new Ring { radius = 170, level = 0, bosses = 0, name = "고향의 들판" },
+            new Ring { radius = 320, level = 8, bosses = 1, name = "바깥 땅" },
+            new Ring { radius = 500, level = 14, bosses = 3, name = "잊힌 변경" },
+            new Ring { radius = 720, level = 20, bosses = 6, name = "안개 너머" },
+            new Ring { radius = 0, level = 27, bosses = 10, name = "세계의 끝" },     // 0 = no limit
+        };
+
+        /// <summary>Index of the outermost ring that's open.</summary>
+        public static int OpenRing(int level, int bosses)
+        {
+            int r = 0;
+            for (int i = 1; i < Rings.Length; i++) if (level >= Rings[i].level && bosses >= Rings[i].bosses) r = i; else break;
+            return r;
+        }
+
+        /// <summary>Max distance from the origin the hero may travel (0 = unlimited).</summary>
+        public static float Bound(int level, int bosses) => Rings[OpenRing(level, bosses)].radius;
+
+        /// <summary>Danger grows without limit with distance; each ring is a clear step up.</summary>
+        public static float TierAt(float dist) => Mathf.Max(0, (dist - 30) / 55f);
+
+        public static int RingAt(float dist)
+        {
+            for (int i = 0; i < Rings.Length - 1; i++) if (dist < Rings[i].radius) return i;
+            return Rings.Length - 1;
+        }
 
         public readonly int seed;
         readonly Dictionary<Vector2Int, List<StructureSpec>> regionCache = new Dictionary<Vector2Int, List<StructureSpec>>();
@@ -89,6 +123,9 @@ namespace Diverse
                     case StructKind.Graveyard: if (d < s.radius * 0.9f) return Ground.DarkGrass; break;
                     case StructKind.Pond: if (d < s.radius * 0.7f) return d < s.radius * 0.4f ? Ground.DeepWater : Ground.Water; break;
                     case StructKind.Lair: if (d < s.radius * 0.9f) return Ground.Ash; break;
+                    case StructKind.Obelisk: if (d < s.radius * 0.75f) return Ground.Plaza; break;
+                    case StructKind.Fortress: if (d < s.radius * 0.9f) return Hash.F(tx, ty, seed + 4) > 0.2f ? Ground.Plaza : Ground.Ash; break;
+                    case StructKind.Ferry: if (d < 2.2f) return Ground.Path; break;
                 }
             }
 
@@ -96,7 +133,12 @@ namespace Diverse
             float water = Noise.Fractal(x, y, seed + 51, 0.018f, 3);
             float river = Mathf.Abs(Noise.Fractal(x, y, seed + 77, 0.006f, 2) - 0.5f);
             bool nearTown = dTown < TownRadius + 6;
-            if (!nearTown && (water > 0.72f || river < 0.012f)) return water > 0.78f ? Ground.DeepWater : Ground.Water;
+            if (!nearTown && (water > 0.72f || river < 0.012f))
+            {
+                // A plank bridge where a trail crosses a river (not over lakes)
+                if (water <= 0.72f && OnTrail(tx, ty)) return Ground.Wood;
+                return water > 0.78f ? Ground.DeepWater : Ground.Water;
+            }
 
             var b = BiomeAt(x, y);
             float detail = Noise.Perlin(x, y, seed + 91, 0.12f);
@@ -114,6 +156,32 @@ namespace Diverse
         }
 
         public static bool IsWater(Ground g) => g == Ground.Water || g == Ground.DeepWater;
+
+        /// <summary>
+        /// Invisible north-south / east-west trails, one every TrailSpacing tiles (offset per line).
+        /// They only show up where they cross a river — as a 3-wide bridge — so crossings are sparse but reliable.
+        /// </summary>
+        bool OnTrail(int tx, int ty)
+        {
+            int cx = MathX.FloorDiv(tx, TrailSpacing), cy = MathX.FloorDiv(ty, TrailSpacing);
+            int lineX = cx * TrailSpacing + 20 + (int)(Hash.U(cx, 0, seed + 601) % (TrailSpacing - 40));
+            int lineY = cy * TrailSpacing + 20 + (int)(Hash.U(0, cy, seed + 607) % (TrailSpacing - 40));
+            return Mathf.Abs(tx - lineX) <= 1 || Mathf.Abs(ty - lineY) <= 1;
+        }
+
+        /// <summary>Any water within r tiles (used to place ferrymen by rivers).</summary>
+        bool WaterNear(Vector2 c, int r)
+        {
+            for (int y = -r; y <= r; y += 2)
+                for (int x = -r; x <= r; x += 2)
+                {
+                    float px = c.x + x, py = c.y + y;
+                    float water = Noise.Fractal(px, py, seed + 51, 0.018f, 3);
+                    float river = Mathf.Abs(Noise.Fractal(px, py, seed + 77, 0.006f, 2) - 0.5f);
+                    if (water > 0.72f || river < 0.012f) return true;
+                }
+            return false;
+        }
 
         // ───────────── Structures ─────────────
 
@@ -148,12 +216,13 @@ namespace Diverse
 
                 var biome = BiomeAt(c.x, c.y);
                 float dist = c.magnitude;
-                int tier = Mathf.Clamp((int)(dist / 70f), 0, 6);
+                int tier = Mathf.RoundToInt(TierAt(dist));
                 var spec = new StructureSpec
                 {
                     id = $"s{rx}_{ry}_{i}", center = c, biome = biome, tier = tier,
                 };
                 spec.kind = PickKind(rng, biome, dist);
+                if (spec.kind == StructKind.Wanderer && WaterNear(c, 9)) spec.kind = StructKind.Ferry;
                 FillSpec(spec, rng);
                 list.Add(spec);
             }
@@ -171,6 +240,9 @@ namespace Diverse
                 (StructKind.Grove, 1.2f), (StructKind.Pond, 0.8f), (StructKind.Wanderer, 0.8f),
                 (StructKind.Graveyard, b == Biome.Marsh || b == Biome.Ashland ? 1.4f : 0.5f),
                 (StructKind.Lair, dist > 90 ? 0.9f : 0.15f),
+                // Farther rings bring bigger landmarks
+                (StructKind.Obelisk, dist > 140 ? 0.7f : 0f),
+                (StructKind.Fortress, dist > 230 ? 0.6f + Mathf.Min(0.6f, (dist - 230) / 600f) : 0f),
             };
             return rng.Weighted(options, o => o.w).k;
         }
@@ -201,6 +273,18 @@ namespace Diverse
                 case StructKind.Grove: s.radius = 7; s.name = "고요한 숲"; s.enemyCount = 0; break;
                 case StructKind.Pond: s.radius = 6; s.name = "작은 호수"; break;
                 case StructKind.Wanderer: s.radius = 3; s.name = "방랑자"; s.landmark = true; break;
+                case StructKind.Ferry: s.radius = 3; s.name = "뱃사공의 오두막"; s.landmark = true; break;
+                case StructKind.Obelisk:
+                    // A guardian stands watch over the frontier: one strong boss, few minions
+                    s.radius = 8; s.enemyCount = 2 + s.tier / 2; s.landmark = true;
+                    s.boss = rng.Pick(new[] { "boss_fox", "boss_shroom" });
+                    s.name = "경계의 오벨리스크";
+                    break;
+                case StructKind.Fortress:
+                    s.radius = 12; s.enemyCount = 7 + s.tier; s.landmark = true;
+                    s.boss = "boss_knight";
+                    s.name = rng.Pick(new[] { "망각의 요새", "검은 성채", "무너진 왕의 보루" });
+                    break;
                 case StructKind.Graveyard: s.radius = 7; s.enemy = "wisp"; s.enemyCount = 3 + s.tier; s.name = "옛 묘지"; s.landmark = true; break;
                 case StructKind.Lair:
                     s.radius = 10; s.enemyCount = 3 + s.tier; s.landmark = true;

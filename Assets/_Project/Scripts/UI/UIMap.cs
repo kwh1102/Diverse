@@ -88,6 +88,14 @@ namespace Diverse
                     GUI.DrawTexture(r, MapTile(cx, cy));
                 }
 
+            // Frontier rings: open ones faint, the mist boundary red
+            if (g.Player != null)
+            {
+                int open = WorldGen.OpenRing(g.Player.Level, g.World.bossKills);
+                for (int i = 0; i < WorldGen.Rings.Length - 1; i++)
+                    DrawRingCircle(WorldGen.Rings[i].radius, view, px, i == open ? new Color(1f, 0.45f, 0.55f, 0.8f) : i < open ? new Color(0.8f, 0.75f, 1f, 0.25f) : new Color(0.6f, 0.55f, 0.7f, 0.35f));
+            }
+
             // Tower (always visible — the long-term goal on the horizon)
             DrawMarker(WorldGen.TowerPos, view, px, "▲", Pal.Hex("c9b8ff"), "기억의 탑", true);
 
@@ -98,9 +106,10 @@ namespace Diverse
                 string icon = s.kind switch
                 {
                     StructKind.Town => "⌂", StructKind.Camp => cleared ? "○" : "✕", StructKind.Ruins => "♜", StructKind.Shrine => "✧", StructKind.Lair => cleared ? "○" : "☠",
-                    StructKind.Graveyard => "†", StructKind.Chest => "▣", StructKind.Wanderer => "?", _ => "•",
+                    StructKind.Graveyard => "†", StructKind.Chest => "▣", StructKind.Wanderer => "?",
+                    StructKind.Ferry => "≈", StructKind.Obelisk => cleared ? "○" : "◆", StructKind.Fortress => cleared ? "○" : "♛", _ => "•",
                 };
-                Color32 col = cleared ? Pal.Hex("8bff9a") : s.kind is StructKind.Camp or StructKind.Lair or StructKind.Graveyard ? Pal.Hex("ff8a8a") : Pal.Hex("fff2b3");
+                Color32 col = cleared ? Pal.Hex("8bff9a") : s.kind is StructKind.Camp or StructKind.Lair or StructKind.Graveyard or StructKind.Obelisk or StructKind.Fortress ? Pal.Hex("ff8a8a") : Pal.Hex("fff2b3");
                 DrawMarker(s.center, view, px, icon, col, mapZoom > 2.5f ? s.name : null, false);
             }
             // Graves / statues
@@ -121,6 +130,22 @@ namespace Diverse
             // Scale / coordinates
             var mouseWorld = ScreenToMap(e.mousePosition, view, px);
             Shadowed(new Rect(area.x + U(10), area.yMax - U(18), area.width, U(14)), $"<color=#8c7aa8>확대 ×{mapZoom:0.0} · 커서 ({mouseWorld.x:0}, {mouseWorld.y:0}) · 탐험한 구역 {g.World.exploredChunks.Count}</color>", small);
+            if (g.Player != null)
+                Shadowed(new Rect(area.x, area.yMax - U(18), area.width - U(10), U(14)), $"<color=#ff8a9a>— 안개 경계</color>  <color=#c9bcd8>{g.FrontierHint()}</color>", new GUIStyle(small) { alignment = TextAnchor.UpperRight });
+        }
+
+        /// <summary>A dotted circle around the origin (frontier ring).</summary>
+        void DrawRingCircle(float radius, Rect view, float px, Color col)
+        {
+            if (radius <= 0) return;
+            int n = Mathf.Clamp(Mathf.RoundToInt(radius * px / U(6)), 24, 720);
+            float dot = Mathf.Max(scale, U(1.5f));
+            for (int i = 0; i < n; i++)
+            {
+                var p = WorldToMap(MathX.Dir(i * 360f / n) * radius, view, px);
+                if (p.x < 0 || p.y < 0 || p.x > view.width || p.y > view.height) continue;
+                GUI.DrawTexture(new Rect(p.x - dot / 2, p.y - dot / 2, dot, dot), whiteTex, ScaleMode.StretchToFill, true, 0, col, 0, 0);
+            }
         }
 
         IEnumerable<StructureSpec> DiscoveredStructures(int cx0, int cx1, int cy0, int cy1)

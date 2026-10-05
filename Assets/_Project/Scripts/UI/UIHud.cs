@@ -40,6 +40,22 @@ namespace Diverse
             Shadowed(new Rect(tr.x + U(116), tr.y + U(3), U(50), U(12)), $"{p.Potions} [{Controls.KeyName(Act.Potion)}]", small);
             Shadowed(new Rect(tr.x + U(4), tr.y + U(17), tr.width, U(12)), $"<color=#fff2b3>{World.I.Gen.RegionName(p.Pos)}</color>", small);
             Shadowed(new Rect(tr.x + U(4), tr.y + U(30), tr.width, U(12)), $"<color=#8c7aa8>({p.Pos.x:0}, {p.Pos.y:0})  {Controls.KeyName(Act.Map)} 지도</color>", small);
+            if (p.HasRaft) Sprite(new Rect(tr.xMax - U(14), tr.y + U(30), U(10), U(10)), Art.Item("raft"));
+
+            // Currency tooltips
+            var mouse = Event.current.mousePosition;
+            (string head, string body)? pendingTip = null;
+            if (new Rect(tr.x, tr.y, U(56), U(15)).Contains(mouse))
+                pendingTip = ("<b><color=#fff2b3>골드</color></b>",
+                    $"몬스터·상자·의뢰에서 얻는다. 상점, 대장간, 여관, 진화 다시 뽑기({g.RerollCost}G)와 이야기꾼과의 대화({g.ChatCost}G)에 쓴다.\n죽으면 절반이 기억의 금고로 가고, 금고의 골드는 다음 삶에 일부 전해진다. (금고: {g.World.gold}G)");
+            else if (new Rect(tr.x + U(58), tr.y, U(44), U(15)).Contains(mouse))
+                pendingTip = ("<b><color=#c9b8ff>기억의 조각</color></b>",
+                    $"세계가 기억하는 재화 — 죽어도 사라지지 않는다. 보스, 제단, 유적, 의뢰에서 얻는다.\n기억의 탑 다음 층을 여는 데 {Dialogue.TowerCost(g.World.towerFloor)}개가 필요하다. 층이 열릴 때마다 모든 삶의 최대 체력이 오른다.");
+            else if (new Rect(tr.x + U(102), tr.y, U(60), U(15)).Contains(mouse))
+                pendingTip = ("<b><color=#ff8a8a>회복약</color></b>",
+                    $"[{Controls.KeyName(Act.Potion)}] 최대 체력의 40%를 회복한다. 최대 5개.\n마을 상인에게 30골드에 살 수 있고, 상자에서도 나온다.");
+            else if (p.HasRaft && new Rect(tr.xMax - U(16), tr.y + U(28), U(14), U(14)).Contains(mouse))
+                pendingTip = ("<b><color=#c4936a>뗏목</color></b>", "강과 호수 위를 건널 수 있다. 물 위에서도 평소처럼 이동하면 된다.");
 
             // Minimap
             DrawMinimap(new Rect(Screen.width - U(78), U(58), U(70), U(70)));
@@ -95,6 +111,20 @@ namespace Diverse
             // Generating indicator
             if (g.Generating && g.State != GameState.Evolving)
                 Shadowed(new Rect(0, Screen.height * 0.3f, Screen.width, U(14)), g.OfferStatus ?? "…", smallC);
+            if (pendingTip.HasValue && g.State == GameState.Playing) Tooltip(mouse, pendingTip.Value.head, pendingTip.Value.body);
+        }
+
+        /// <summary>A small panel next to the cursor that stays on screen.</summary>
+        void Tooltip(Vector2 at, string head, string body)
+        {
+            float w = U(190);
+            float h = small.CalcHeight(new GUIContent(body), w - U(12)) + U(22);
+            var r = new Rect(at.x - w - U(6), at.y + U(10), w, h);
+            if (r.x < U(4)) r.x = at.x + U(12);
+            if (r.yMax > Screen.height - U(4)) r.y = Screen.height - U(4) - h;
+            GUI.Box(r, GUIContent.none, panel);
+            Shadowed(new Rect(r.x + U(6), r.y + U(4), r.width - U(12), U(14)), head, small);
+            GUI.Label(new Rect(r.x + U(6), r.y + U(18), r.width - U(12), h - U(20)), body, small);
         }
 
         void DrawSkillBar(Player p)
@@ -131,51 +161,6 @@ namespace Diverse
             // Basic attack / dash keys
             Shadowed(new Rect(x + total + U(6), y + U(4), U(120), U(12)), $"<color=#8c7aa8>{Controls.KeyName(Act.Move)}</color> 이동/공격", small);
             Shadowed(new Rect(x + total + U(6), y + U(16), U(120), U(12)), $"<color=#8c7aa8>{Controls.KeyName(Act.Dash)}</color> 대시", small);
-        }
-
-        // ───────────────────────── Evolution ─────────────────────────
-
-        void DrawEvolve()
-        {
-            Dim(0.6f);
-            var area = Center(460, 290);
-            GUI.Box(area, GUIContent.none, panel);
-            Shadowed(new Rect(area.x, area.y + U(8), area.width, U(20)), "진화", title, Pal.Hex("e6dcff"));
-
-            // Pipeline log (visualizes the AI process)
-            var logR = new Rect(area.x + U(12), area.y + U(32), area.width - U(24), U(54));
-            GUI.Box(logR, GUIContent.none, box);
-            var logText = string.Join("\n", g.PipelineLog.Skip(Mathf.Max(0, g.PipelineLog.Count - 5)));
-            GUI.Label(new Rect(logR.x + U(4), logR.y + U(2), logR.width - U(8), logR.height), $"<color=#8c7aa8>{logText}</color>", small);
-
-            if (g.Offer == null)
-            {
-                string dots = new string('.', 1 + (int)(Time.unscaledTime * 3) % 3);
-                Shadowed(new Rect(area.x, area.y + U(140), area.width, U(20)), (g.OfferStatus ?? "플레이 방식을 분석하는 중") + dots, labelC);
-                return;
-            }
-            float cw = (area.width - U(24) - U(16)) / 3;
-            for (int i = 0; i < g.Offer.Count; i++)
-            {
-                var a = g.Offer[i];
-                var r = new Rect(area.x + U(12) + i * (cw + U(8)), area.y + U(92), cw, U(150));
-                bool hover = r.Contains(Event.current.mousePosition);
-                GUI.Box(r, GUIContent.none, hover ? button : box);
-                string src = a.source == "ai" ? "<color=#c9b8ff>✦ AI 생성</color>" : "<color=#8c7aa8>◇ 로컬</color>";
-                string kind = a.kind == "modifier" ? "증폭" : a.kind == "stat" ? "기본" : "메커니즘";
-                Shadowed(new Rect(r.x + U(6), r.y + U(5), r.width - U(12), U(12)), $"{src}  <color=#8c7aa8>{kind}</color>", small);
-                Shadowed(new Rect(r.x + U(6), r.y + U(18), r.width - U(12), U(30)), $"<b><color=#fff2b3>{a.name}</color></b>", label);
-                GUI.Label(new Rect(r.x + U(6), r.y + U(48), r.width - U(12), U(56)), a.desc ?? a.Explain(), small);
-                if (!string.IsNullOrEmpty(a.semanticReason))
-                    GUI.Label(new Rect(r.x + U(6), r.y + U(104), r.width - U(12), U(28)), $"<color=#8c7aa8><i>\"{a.semanticReason}\"</i></color>", small);
-                Shadowed(new Rect(r.x + U(6), r.yMax - U(14), r.width - U(12), U(12)), $"<color=#6b5c8a>{string.Join(" ", a.tags.Take(4))}</color>", small);
-                if (GUI.Button(r, GUIContent.none, GUIStyle.none)) { g.ChooseEvolution(i); Sfx.Play("ui_select"); return; }
-                if (Controls.KeyDown(UnityEngine.InputSystem.Key.Digit1 + i)) { g.ChooseEvolution(i); return; }
-            }
-            var br = new Rect(area.x + U(12), area.yMax - U(30), U(140), U(20));
-            if (Btn(br, $"다시 뽑기 ({g.RerollCost} 골드)", g.Player.Gold >= g.RerollCost)) g.RerollEvolution();
-            if (Btn(new Rect(area.xMax - U(132), br.y, U(120), U(20)), "건너뛰기 (+20 골드)")) g.SkipEvolution();
-            Shadowed(new Rect(area.x, br.y + U(3), area.width, U(14)), "<color=#6b5c8a>1·2·3으로 선택</color>", smallC);
         }
 
         // ───────────────────────── Dialogue ─────────────────────────

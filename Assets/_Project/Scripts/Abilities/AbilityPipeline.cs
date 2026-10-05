@@ -138,7 +138,8 @@ namespace Diverse
 
         public class Result { public bool ok; public List<string> errors = new List<string>(); public List<string> repairs = new List<string>(); }
 
-        public static Result Validate(AbilityGraph g, Player p)
+        /// <param name="level">level to balance for (-1 = the player's current level). Prefetched offers are balanced for the level they will be shown at.</param>
+        public static Result Validate(AbilityGraph g, Player p, int level = -1)
         {
             var r = new Result { ok = true };
             void Fail(string e) { r.ok = false; r.errors.Add(e); }
@@ -151,12 +152,12 @@ namespace Diverse
             {
                 if (string.IsNullOrEmpty(g.modTag)) Fail("태그 없는 증폭");
                 g.modMul = Mathf.Clamp(g.modMul <= 0 ? 1.2f : g.modMul, 1.05f, 1.5f);
-                return Finalize(g, p, r);
+                return Finalize(g, p, r, level);
             }
             if (g.kind == "stat")
             {
                 if (!System.Enum.TryParse<StatId>(g.stat, out _)) Fail("알 수 없는 능력치 " + g.stat);
-                return Finalize(g, p, r);
+                return Finalize(g, p, r, level);
             }
             if (!TriggerEvents.Contains(g.trigger)) Fail("알 수 없는 트리거 " + g.trigger);
             if (g.effects == null || g.effects.Count == 0) Fail("효과 없음");
@@ -195,10 +196,10 @@ namespace Diverse
             if (g.effects != null && g.effects.Any(e => e.relation == "Consume") && !g.conditions.Any(c => c.type == "TargetHasStatus"))
                 g.conditions.Add(new CondNode { type = "TargetHasStatus", text = "burn" });
 
-            return Finalize(g, p, r);
+            return Finalize(g, p, r, level);
         }
 
-        static Result Finalize(AbilityGraph g, Player p, Result r)
+        static Result Finalize(AbilityGraph g, Player p, Result r, int level)
         {
             if (!r.ok) return r;
             // Duplicate check
@@ -209,7 +210,7 @@ namespace Diverse
                     if (o.Signature() == sig) { r.ok = false; r.errors.Add("보유 능력과 중복 " + o.mechanic); return r; }
             }
             AutoTag(g);
-            Balance(g, p);
+            Balance(g, p, level);
             return r;
         }
 
@@ -244,9 +245,9 @@ namespace Diverse
         /// ⑭ Power Budget: total budget scales with evolution tier; each atom's cost is subtracted and the remainder is spread across the numbers.
         /// Even if the AI writes "damage 730%", it's ignored here.
         /// </summary>
-        public static void Balance(AbilityGraph g, Player p)
+        public static void Balance(AbilityGraph g, Player p, int level = -1)
         {
-            int tier = p != null ? p.Level / 3 : 0;
+            int tier = (level >= 0 ? level : p != null ? p.Level : 0) / 3;
             float budget = 100 + tier * 12;
             if (g.kind == "modifier") { g.cost = 40; g.modMul = Mathf.Round(Mathf.Lerp(1.15f, 1.3f, Mathf.Clamp01(tier / 5f)) * 20) / 20f; return; }
             if (g.kind == "stat") { g.cost = 30; g.statValue = StatBudget(AbilityGraph.ParseStat(g.stat), tier); return; }

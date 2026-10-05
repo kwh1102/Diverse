@@ -71,6 +71,8 @@ namespace Diverse
 
         float Windup => def.attackWindup * (def.boss && bossPhase > 0 ? 0.8f : 1f);
 
+        protected override Color BaseTint => def != null && def.elite ? new Color(1f, 0.72f, 0.78f) : Color.white;
+
         protected override void Update()
         {
             float dt = Time.deltaTime;

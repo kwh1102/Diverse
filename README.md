@@ -61,7 +61,8 @@
 - 밸런스 수치는 AI 출력과 상관없이 항상 `AbilityValidator.Balance`가 정한다.
 - 기존 강화 능력(예: `[CLONE] ×1.25`)은 같은 태그를 가진 새 능력에 자동으로 적용된다.
 - API 키가 없거나 호출이 실패하면 **로컬 생성기(`LocalComposer`)**가 같은 형식으로 그래프를 만들기 때문에 게임은 항상 동작한다.
-- 진화 화면 상단 로그에서 파이프라인 진행 과정을 실시간으로 볼 수 있다.
+- 레벨 N이 되는 순간 N+1 레벨용 후보를 백그라운드에서 미리 생성한다. AI 응답이 쓸 수 없으면 레벨업 전까지 재시도하므로 진화 창은 대기 없이 열린다.
+- 진화 창에서 이야기꾼(AI)과 대화해 후보를 고칠 수 있다 (골드 소모, 다시 뽑기보다 비쌈). 파이프라인 상세는 **과정 보기**로 확인.
 
 ### OpenAI 연결 (선택)
 
@@ -70,7 +71,7 @@
    - 환경 변수 `OPENAI_API_KEY`
    - `%USERPROFILE%\AppData\LocalLow\DefaultCompany\Diverse\openai_key.txt` (메뉴 **Diverse → AI 키 파일 위치 열기**)
    - 프로젝트 루트의 `openai_key.txt` (git에서 제외됨)
-3. 게임 내 **설정 → AI 진화**에서 모델 확인 (기본값 `gpt-4o-mini`)
+3. 게임 내 **설정 → AI 진화**에서 모델 선택 (GPT-4o mini / GPT-4.1 mini / GPT-4.1 nano / GPT-4.1, 기본값 GPT-4o mini — 목록은 `AiClient.Models`)
 
 > **비용 안내**: OpenAI API는 무료 제공량이 없다. 계정에 크레딧이 있어야 호출된다 (`429 insufficient_quota`는 크레딧이 없다는 뜻). `gpt-4o-mini` 기준 진화 1회(호출 2번)는 보통 1원도 안 되지만 "완전 무료"는 아니다. 키가 없어도 로컬 모드로 게임 전체를 플레이할 수 있다.
 

@@ -101,7 +101,7 @@ namespace Diverse
             if (knockVel.sqrMagnitude > 0.0004f)
             {
                 var w = WorldStreamer.I;
-                Pos = w != null ? w.Move(Pos, knockVel * dt, radius) : Pos + knockVel * dt;
+                Pos = w != null ? w.Move(Pos, knockVel * dt, radius, CanSwim, MoveBound) : Pos + knockVel * dt;
                 knockVel *= Mathf.Exp(-10f * dt);
             }
 
@@ -177,8 +177,14 @@ namespace Diverse
                 else if (s.id == "poison") tint = Color.Lerp(tint, new Color(0.7f, 1f, 0.6f), 0.5f);
                 else if (s.id == "mark") tint = Color.Lerp(tint, new Color(1f, 0.7f, 0.9f), 0.3f);
             }
-            body.color = tint;
+            body.color = tint * BaseTint;
         }
+
+        protected virtual bool CanSwim => false;
+        protected virtual float MoveBound => 0;
+
+        /// <summary>Permanent color (e.g. elites).</summary>
+        protected virtual Color BaseTint => Color.white;
 
         public virtual void Knockback(Vector2 dir, float force)
         {
