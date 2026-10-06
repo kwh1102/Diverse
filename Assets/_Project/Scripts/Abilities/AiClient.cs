@@ -208,7 +208,7 @@ OUTPUT JSON: {""reply"":""..."",""abilities"":[ ...same ability schema as above.
             if (string.IsNullOrEmpty(key)) { done(); yield break; }
             var sb = new StringBuilder();
             sb.AppendLine("World: a gentle pixel fantasy where rabbit wanderers live, die, and are remembered by the world. Region: " + worldFlavor);
-            sb.AppendLine("For each FINALIZED mechanic below, write a short evocative Korean name (2~4 words) and a one-line Korean description that states the exact numbers given.");
+            sb.AppendLine("For each FINALIZED mechanic below, write a short evocative Korean name (2~4 words) and a one-line Korean flavor sentence (max 30 characters, no numbers — the exact rules are shown separately).");
             for (int i = 0; i < graphs.Count; i++) sb.AppendLine($"id={i}: {graphs[i].Explain()} | tags: {string.Join(" ", graphs[i].tags)}");
             sb.AppendLine("Return JSON: {\"names\":[{\"id\":\"0\",\"name\":\"...\",\"desc\":\"...\"}]}");
 

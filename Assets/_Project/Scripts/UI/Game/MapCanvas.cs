@@ -25,11 +25,18 @@ namespace Diverse
         public RectTransform Rect => (RectTransform)image.transform;
 
         /// <summary>Repaint the visible area. include(cx, cy) decides which chunks are drawn.</summary>
+        const int MaxTexels = 1024;
+
         public void Paint(System.Func<int, int, bool> include)
         {
             var size = Rect.rect.size;
-            // One texel per world tile when zoomed in, so the texture stays small (point-filtered = crisp)
-            int tw = Mathf.Clamp(Mathf.CeilToInt(size.x / PixelsPerUnit), 8, 1024), th = Mathf.Clamp(Mathf.CeilToInt(size.y / PixelsPerUnit), 8, 1024);
+            // One texel per world tile when zoomed in (point-filtered = crisp). Zoomed far out, one texel covers several
+            // tiles (step) so the texture stays ≤ MaxTexels. The texel size must be the same on both axes and the texture
+            // must cover the whole view; capping only the texel count (the old code) shrank the painted area while the
+            // markers kept the real scale, so map icons drifted away from the terrain at the widest zoom.
+            float visW = size.x / PixelsPerUnit, visH = size.y / PixelsPerUnit;              // world units on screen
+            int step = Mathf.Max(1, Mathf.CeilToInt(Mathf.Max(visW, visH) / (MaxTexels - 2)));
+            int tw = Mathf.Clamp(Mathf.CeilToInt(visW / step) + 2, 8, MaxTexels), th = Mathf.Clamp(Mathf.CeilToInt(visH / step) + 2, 8, MaxTexels);
             if (tex == null || tex.width != tw || tex.height != th)
             {
                 if (tex != null) Destroy(tex);
@@ -37,21 +44,23 @@ namespace Diverse
                 px = new Color32[tw * th];
                 image.texture = tex;
             }
-            int x0 = Mathf.FloorToInt(Center.x - tw / 2f), y0 = Mathf.FloorToInt(Center.y - th / 2f);
+            // Texture origin snapped to whole texels (world units, multiple of step)
+            int x0 = MathX.FloorDiv(Mathf.FloorToInt(Center.x - visW / 2f), step) * step;
+            int y0 = MathX.FloorDiv(Mathf.FloorToInt(Center.y - visH / 2f), step) * step;
             int N = WorldGen.Chunk;
             Color32 bg = background;
             for (int y = 0; y < th; y++)
                 for (int x = 0; x < tw; x++)
                 {
-                    int wx = x0 + x, wy = y0 + y;
+                    int wx = x0 + x * step, wy = y0 + y * step;
                     int cx = MathX.FloorDiv(wx, N), cy = MathX.FloorDiv(wy, N);
                     px[y * tw + x] = include(cx, cy) ? Tile(cx, cy)[(wy - cy * N) * N + (wx - cx * N)] : bg;
                 }
             tex.SetPixels32(px);
             tex.Apply(false);
-            // Sub-tile offset so panning is smooth even though the texture snaps to whole tiles
-            float fx = (Center.x - tw / 2f) - x0, fy = (Center.y - th / 2f) - y0;
-            image.uvRect = new UnityEngine.Rect(fx / tw, fy / th, size.x / PixelsPerUnit / tw, size.y / PixelsPerUnit / th);
+            // uvRect in texels: where the view's left/bottom edge falls inside the texture, and how much of it is visible
+            float fx = (Center.x - visW / 2f - x0) / step, fy = (Center.y - visH / 2f - y0) / step;
+            image.uvRect = new UnityEngine.Rect(fx / tw, fy / th, visW / step / tw, visH / step / th);
             used = 0;
         }
 
@@ -94,7 +103,7 @@ namespace Diverse
             m.rectTransform.localPosition = p;
             m.text = icon;
             m.color = col;
-            if (fontSize > 0) m.fontSize = fontSize;
+            m.fontSize = fontSize > 0 ? fontSize : markerTemplate.fontSize;   // pooled: reset sizes set by earlier markers
             var label = m.transform.Find("Name")?.GetComponent<Text>();
             if (label != null)
             {

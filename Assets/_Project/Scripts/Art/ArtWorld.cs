@@ -520,6 +520,28 @@ namespace Diverse
                     cv.Outline(Pal.Outline);
                     return cv.ToSprite(new Vector2(15, 1));
                 }
+                case "altar_empty":   // the shard on top has been taken
+                {
+                    var cv = new PixelCanvas(30, 20);
+                    var s = Pal.Hex("3d3450");
+                    cv.Rect(2, 0, 26, 8, s); cv.Rect(5, 8, 20, 4, Pal.Mul(s, 1.2f));
+                    cv.Rect(12, 12, 6, 1, Pal.Mul(s, 0.8f));
+                    cv.Outline(Pal.Outline);
+                    return cv.ToSprite(new Vector2(15, 1));
+                }
+                case "warpstone":
+                {
+                    var cv = new PixelCanvas(16, 30);
+                    var stone = Pal.Hex("6a6488"); var shade = Pal.Hex("4a4566");
+                    cv.Rect(3, 0, 10, 3, shade);
+                    cv.Rect(4, 3, 8, 22, stone);
+                    cv.Rect(5, 25, 6, 3, stone); cv.Rect(6, 28, 4, 1, stone);
+                    var glow = Pal.Hex("8fe3ff");
+                    cv.Rect(7, 8, 2, 12, glow); cv.Rect(6, 13, 4, 2, glow); cv.Set(7, 22, glow); cv.Set(8, 5, glow);
+                    cv.InnerShade(stone, shade, 1, -1);
+                    cv.Outline(Pal.Outline);
+                    return cv.ToSprite(new Vector2(8, 1));
+                }
                 case "anvil":
                 {
                     var cv = new PixelCanvas(18, 12);
@@ -660,6 +682,9 @@ namespace Diverse
                 case "raft":
                     for (int i = 0; i < 4; i++) cv.Rect(1 + i * 2, 2, 2, 6, i % 2 == 0 ? Pal.Wood : Pal.WoodDark);
                     cv.Rect(1, 4, 8, 1, Pal.WoodDark); break;
+                case "warpstone":
+                    cv.Rect(3, 1, 4, 8, Pal.Hex("6a6488")); cv.Rect(4, 9, 2, 1, Pal.Hex("6a6488"));
+                    cv.Rect(4, 3, 2, 4, Pal.Hex("8fe3ff")); break;
                 default:
                     cv.Circle(5, 5, 3, Pal.Gold); break;
             }

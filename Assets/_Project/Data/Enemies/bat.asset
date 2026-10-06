@@ -16,17 +16,22 @@ MonoBehaviour:
     id: bat
     name: "\uBC24\uBC15\uC950"
     brain: 5
+    attack: 8
     hp: 12
     damage: 5
     speed: 3.4
     radius: 0.35
-    attackRange: 0.9
-    attackWindup: 0.25
-    attackCooldown: 0.9
+    attackRange: 3.2
+    attackWindup: 0.45
+    attackCooldown: 1.8
     aggroRange: 7
     xp: 3
     gold: 1
     mass: 0.5
+    hopInterval: 0
+    strafe: 0.9
+    attackParam: 1.0
+    attackCount: 1
     sprite: bat
     projectileColor:
       serializedVersion: 2

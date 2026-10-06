@@ -398,7 +398,7 @@ namespace Diverse
                 }
                 case 1:
                 {
-                    string[] pool = { "shroom", "jelly", "fox", "raccoon", "wisp", "bat" };
+                    string[] pool = { "shroom", "jelly", "fox", "raccoon", "wisp", "bat", "frog" };
                     string e = r.Pick(pool);
                     int need = r.Range(6, 12);
                     return new QuestState { id = "q" + salt, kind = "hunt", enemy = e, need = need, title = $"{DB.Enemy(e).name} {need}마리 사냥", desc = "마을의 밭과 길이 위험해지고 있어요.", rewardGold = 25 + need * 3, status = 0 };
@@ -421,7 +421,13 @@ namespace Diverse
         void UpdateQuests()
         {
             foreach (var q in World.quests)
-                if (q.status == 1 && q.kind == "investigate" && World.Flag("ruin:" + q.targetId)) { q.status = 2; Ui.Toast($"의뢰 완료: {q.title}"); }
+            {
+                if (q.status != 1) continue;
+                // Also catches targets finished before the quest was accepted (the "!" used to stay on the map forever)
+                bool done = q.kind == "investigate" ? World.Flag("ruin:" + q.targetId)
+                          : q.kind == "clear" && World.clearedCamps.Contains(q.targetId);
+                if (done) { q.status = 2; Ui.Toast($"의뢰 완료: {q.title} — 게시판에 보고하세요"); }
+            }
         }
 
         public void ClaimQuest(QuestState q)

@@ -69,8 +69,26 @@ namespace Diverse
                     if (!g.recovered) it.sr.color = new Color(1f, 0.95f, 1f);
                 }
             }
+            // Warp stones (placed by heroes) and the town's own stone
+            foreach (var w in Game.I != null ? Game.I.WarpStones() : Save.warpStones)
+                if (WorldStreamer.ChunkOf(w.Pos) == c.key) BuildWarpStone(w, c);
             string ck = c.key.x + "," + c.key.y;
             if (!Save.exploredChunks.Contains(ck)) Save.exploredChunks.Add(ck);
+        }
+
+        /// <summary>Put a warp stone object in its chunk (if that chunk is loaded).</summary>
+        public void BuildWarpStone(WarpStone w, ChunkView c = null)
+        {
+            c ??= Streamer.ChunkAt(w.Pos);
+            if (c == null) return;
+            var it = Interactable.Create(c.transform, "warpstone", w.id, $"워프 스톤 ({w.name})", w.Pos, Art.Prop("warpstone"), c);
+            it.data = w;
+            it.range = 1.8f;
+            c.BlockArea(w.Pos + Vector2.up * 0.2f, 0.9f, 0.5f);
+            var glow = new GameObject("warpGlow");
+            glow.transform.SetParent(it.transform, false);
+            glow.transform.localPosition = new Vector3(0, 1.0f, 0);
+            Art.MakeRenderer(glow, Art.Glow(12), 31000, true).color = new Color(0.55f, 0.9f, 1f, 0.45f);
         }
 
         // ───────────────────── Structure building ─────────────────────
@@ -290,12 +308,11 @@ namespace Diverse
                 var p = s.center + MathX.Dir(i * 51 + rng.Range(0, 20)) * rng.Range(3f, 7f);
                 c.AddDecor(Art.Prop(rng.Chance(0.5f) ? "pillar_broken" : "pillar"), p, true, 0.75f, 0.45f);
             }
-            if (!Save.Flag("ruin:" + s.id))
-            {
-                var alt = Interactable.Create(c.transform, "ruin_altar", "ruin:" + s.id, "고대 제단", s.center, Art.Prop("altar"), c);
-                alt.data = s;
-                c.BlockArea(s.center + Vector2.up * 0.3f, 1.6f, 0.6f);
-            }
+            // The altar stays after it has been read, but without its shard (and it pays out only once)
+            bool read = Save.Flag("ruin:" + s.id);
+            var alt = Interactable.Create(c.transform, "ruin_altar", "ruin:" + s.id, read ? "빈 제단" : "고대 제단", s.center, Art.Prop(read ? "altar_empty" : "altar"), c);
+            alt.data = s;
+            c.BlockArea(s.center + Vector2.up * 0.3f, 1.6f, 0.6f);
             if (!Save.clearedCamps.Contains(s.id)) SpawnGroup(c, s, s.enemy, s.enemyCount, s.radius * 0.7f);
         }
 
@@ -400,16 +417,21 @@ namespace Diverse
             campAlive[s.id] = (campAlive.TryGetValue(s.id, out var n) ? n : 0) + alive;
         }
 
-        public void OnCampEnemyKilled(string campId)
+        /// <summary>
+        /// A camp member died. The camp counts as cleared when none of its members are left alive in the world.
+        /// Counting live enemies (instead of a spawn counter) keeps this right when the camp's chunk unloads and reloads
+        /// mid-fight (which used to double the counter so the camp could never reach 0), and when a member was killed
+        /// while its chunk was unloading.
+        /// </summary>
+        public void OnCampEnemyKilled(string campId, Enemy killed = null)
         {
-            if (string.IsNullOrEmpty(campId) || !campAlive.ContainsKey(campId)) return;
-            campAlive[campId]--;
-            if (campAlive[campId] > 0) return;
+            if (string.IsNullOrEmpty(campId) || Save.clearedCamps.Contains(campId)) return;
+            foreach (var a in Actor.All)
+                if (a is Enemy e && e != killed && e.Alive && e.campId == campId) return;
             campAlive.Remove(campId);
-            if (Save.clearedCamps.Contains(campId)) return;
             Save.clearedCamps.Add(campId);
             StructureSpec spec = null;
-            foreach (var s in Gen.StructuresNear(Player.I.Pos, 30)) if (s.id == campId) spec = s;
+            foreach (var s in Gen.StructuresNear(Player.I != null ? Player.I.Pos : Vector2.zero, 40)) if (s.id == campId) spec = s;
             string name = spec?.name ?? "몬스터 무리";
             GameEvents.Notify($"{name} 소탕! 세계가 이 일을 기억할 것이다.");
             Save.Log($"{Ko.I(Game.I.HeroName)} {name}에서 몬스터를 몰아냈다.", "deed");

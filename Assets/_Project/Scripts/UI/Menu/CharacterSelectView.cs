@@ -72,8 +72,9 @@ namespace Diverse
             UIKit.Set(costumeInfo, $"<b>{c.name}</b>  <color=#fff2b3>{c.perk}</color>");
             UIKit.Set(weaponDesc, w.desc);
             string[] keys = { "Q", "W", "E", "R" };
+            var levels = DB.Progression.skillLevels;
             for (int i = 0; i < skillLines.Length && i < w.skills.Length; i++)
-                UIKit.Set(skillLines[i], $"<color=#c9b8ff>{keys[i]}</color> {SkillDB.Get(w.skills[i]).name}");
+                UIKit.Set(skillLines[i], $"<color=#c9b8ff>{keys[i]}</color> {SkillDB.Get(w.skills[i]).name}" + (i < levels.Length ? $" <color=#8c7aa8>(Lv.{levels[i]})</color>" : ""));
 
             if (Controls.KeyDown(Key.Enter)) Begin();
         }

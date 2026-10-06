@@ -16,6 +16,7 @@ MonoBehaviour:
     id: boss_shroom
     name: "\uACE0\uBAA9 \uBC84\uC12F\uC655"
     brain: 6
+    attack: 0
     hp: 640
     damage: 14
     speed: 1.6
@@ -27,6 +28,10 @@ MonoBehaviour:
     xp: 140
     gold: 70
     mass: 10
+    hopInterval: 0
+    strafe: 0
+    attackParam: 1
+    attackCount: 1
     sprite: boss_shroom
     projectileColor:
       serializedVersion: 2

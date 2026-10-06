@@ -16,17 +16,22 @@ MonoBehaviour:
     id: boar
     name: "\uB3CC\uAC11\uC637 \uBA67\uB3FC\uC9C0"
     brain: 3
+    attack: 7
     hp: 70
     damage: 14
     speed: 1.8
     radius: 0.6
-    attackRange: 4.5
-    attackWindup: 0.7
-    attackCooldown: 2.4
+    attackRange: 6
+    attackWindup: 0.75
+    attackCooldown: 2.6
     aggroRange: 7
     xp: 16
     gold: 6
     mass: 2.5
+    hopInterval: 0
+    strafe: 0
+    attackParam: 11
+    attackCount: 1
     sprite: boar
     projectileColor:
       serializedVersion: 2

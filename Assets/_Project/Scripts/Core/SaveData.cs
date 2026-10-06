@@ -27,6 +27,7 @@ namespace Diverse
         public List<QuestState> quests = new List<QuestState>();
         public List<string> exploredChunks = new List<string>();
         public List<AbilityRecord> legacyAbilities = new List<AbilityRecord>(); // abilities recovered from graves
+        public List<WarpStone> warpStones = new List<WarpStone>();                // placed warp stones (shared by every life)
         public string lastCostume = "white";
         public int lastWeapon;
 
@@ -52,7 +53,7 @@ namespace Diverse
         public int weapon;
         public float weaponDamage;
         public int level = 1;
-        public float xp, xpToNext = 30;
+        public float xp, xpToNext = 60;
         public int gold, kills, potions;
         public int[] attrs = new int[4];
         public int unspentAttr, pendingEvolutions;
@@ -60,6 +61,8 @@ namespace Diverse
         public int dashMax = 2;
         public float x, y;
         public bool raft;
+        public int warpStones;                                // warp stones carried (not yet placed)
+        public int skillsLearned = -1;                        // QWER slots learned, in order (-1 = old save: all 4)
         public List<AbilityRecord> abilities = new List<AbilityRecord>();
         public List<string> intent = new List<string>();      // "TAG=count"
     }
@@ -80,6 +83,16 @@ namespace Diverse
         public int kills;
         public string epitaph;        // written by the storyteller
         public string forgottenBy;    // whether the storyteller recorded or forgot them
+    }
+
+    /// <summary>A warp stone set up in the world. Travel between any two from the map while standing near one.</summary>
+    [Serializable]
+    public class WarpStone
+    {
+        public string id;
+        public string name;
+        public float x, y;
+        public Vector2 Pos => new Vector2(x, y);
     }
 
     [Serializable]

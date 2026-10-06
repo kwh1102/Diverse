@@ -85,7 +85,14 @@ namespace Diverse
             UIKit.Set(questsText, string.Join("\n", qs));
 
             Act[] acts = { Act.SkillQ, Act.SkillW, Act.SkillE, Act.SkillR };
-            for (int i = 0; i < skills.Length; i++) skills[i]?.Tick(p, p.Skills[i], Controls.KeyName(acts[i]), tooltip);
+            var levels = DB.Progression.skillLevels;
+            int learned = p.LearnedSkills;
+            for (int i = 0; i < skills.Length; i++)
+            {
+                // Only the next skill in line says when it comes; later ones just say they're locked
+                string hint = i == learned && i < levels.Length ? $"레벨 {levels[i]}에 익힌다. 대장장이에게 무기를 강화해도 배울 수 있다." : i > learned ? "앞의 기술을 먼저 익혀야 한다." : null;
+                skills[i]?.Tick(p, p.Skills[i], Controls.KeyName(acts[i]), tooltip, hint);
+            }
             UIKit.Set(moveHint, $"<color=#8c7aa8>{Controls.KeyName(Act.Move)}</color> 이동/공격");
             UIKit.Set(dashHint, $"<color=#8c7aa8>{Controls.KeyName(Act.Dash)}</color> 대시");
 

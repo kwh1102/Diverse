@@ -60,6 +60,8 @@ namespace Diverse
         protected float flash;
         protected float squash;             // >0 = flatten vertically, <0 = stretch vertically
         protected float hitShakeT;
+        protected float lift;               // visual height offset (jumping/flying), world units
+        protected float sink;               // 0~1: sinking into the ground (burrowing)
         MaterialPropertyBlock mpb;
 
         protected virtual void Awake()
@@ -150,7 +152,7 @@ namespace Diverse
             body.SetPropertyBlock(mpb);
 
             // Squash/stretch
-            float sx = 1 + squash * 0.25f, sy = 1 - squash * 0.25f;
+            float sx = 1 + squash * 0.25f, sy = (1 - squash * 0.25f) * (1 - Mathf.Clamp01(sink) * 0.85f);
             visual.localScale = new Vector3(sx, sy, 1);
 
             // Shudder in place on hit (works even during hitstop)
@@ -160,6 +162,7 @@ namespace Diverse
                 visual.localPosition = new Vector3(Mathf.Sin(Time.unscaledTime * 90f) * 0.06f * k, 0, 0);
             }
             else visual.localPosition = Vector3.zero;
+            if (lift != 0) visual.localPosition += new Vector3(0, lift, 0);
 
             // Status color
             Color tint = Color.white;

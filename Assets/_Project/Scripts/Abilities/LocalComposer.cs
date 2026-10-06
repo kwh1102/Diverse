@@ -184,7 +184,7 @@ namespace Diverse
                     "PROJECTILE" => "날 선 깃털", "DODGE" => "바람의 발걸음", "SWORD" => "벼린 칼날", "KILL" => "사냥꾼의 직감", "AREA" => "넓어지는 파문",
                     "DEFENSE" => "단단한 껍질", "CRIT" => "급소 읽기", "SHADOW" => "깊어지는 밤", "STATUS" => "스며드는 독기", _ => $"{g.modTag} 증폭",
                 };
-                g.desc = $"[{g.modTag}] 태그가 붙은 모든 효과의 위력 ×{g.modMul:0.##}";
+                g.desc = g.Explain();
                 return;
             }
             if (g.kind == "stat")

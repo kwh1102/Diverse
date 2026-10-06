@@ -16,6 +16,7 @@ MonoBehaviour:
     id: boss_fox
     name: "\uBD89\uC740 \uAF2C\uB9AC \uB450\uBAA9"
     brain: 6
+    attack: 0
     hp: 520
     damage: 16
     speed: 2.6
@@ -27,6 +28,10 @@ MonoBehaviour:
     xp: 120
     gold: 60
     mass: 6
+    hopInterval: 0
+    strafe: 0
+    attackParam: 1
+    attackCount: 1
     sprite: boss_fox
     projectileColor:
       serializedVersion: 2

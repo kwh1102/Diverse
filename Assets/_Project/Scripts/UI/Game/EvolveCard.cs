@@ -25,7 +25,10 @@ namespace Diverse
             string kind = a.kind == "modifier" ? "증폭" : a.kind == "stat" ? "기본" : "메커니즘";
             UIKit.Set(header, $"<color=#6b5c8a>{index + 1}</color>  {src}  <color=#8c7aa8>{kind}</color>");
             UIKit.Set(title, $"<b><color=#fff2b3>{a.name}</color></b>");
-            UIKit.Set(desc, a.desc ?? a.Explain());
+            // Exact rule text always comes from the graph (AI flavor text, if any, is shown in italics after it)
+            string rule = a.Explain();
+            bool flavor = a.source == "ai" && !string.IsNullOrEmpty(a.desc) && a.desc != rule;
+            UIKit.Set(desc, flavor ? $"{rule}\n<color=#8c7aa8><i>{a.desc}</i></color>" : rule);
             UIKit.Show(reason, !string.IsNullOrEmpty(a.semanticReason));
             if (!string.IsNullOrEmpty(a.semanticReason)) UIKit.Set(reason, $"<color=#8c7aa8><i>\"{a.semanticReason}\"</i></color>");
             UIKit.Set(tags, $"<color=#6b5c8a>{string.Join(" ", a.tags.Take(4))}</color>");
