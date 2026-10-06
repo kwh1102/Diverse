@@ -1,0 +1,93 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b38983f8cd9ca7147af9441aa9423c25, type: 3}
+  m_Name: Greatsword
+  m_EditorClassIdentifier: 
+  def:
+    kind: 0
+    name: "\uB300\uAC80"
+    desc: "\uB290\uB9AC\uC9C0\uB9CC \uD55C \uBC29\uC774 \uBB35\uC9C1\uD558\uB2E4.
+      \uD718\uB450\uB97C \uB54C\uB9C8\uB2E4 \uBAB8\uC774 \uC55E\uC73C\uB85C \uC3E0\uB9B0\uB2E4."
+    tags: SWORD HEAVY MELEE
+    slashColor:
+      serializedVersion: 2
+      rgba: 4286239487
+    slashCore:
+      serializedVersion: 2
+      rgba: 4293916927
+    baseDamage: 22
+    comboReset: 0.9
+    moveSpeedMul: 0.92
+    attackRange: 2.1
+    combo:
+    - windup: 0.13
+      recovery: 0.32
+      range: 2.3
+      arc: 170
+      damage: 1
+      lunge: 0.45
+      knockback: 5
+      hitstop: 0.085
+      shake: 0.28
+      kick: 5
+      thrust: 0
+      spin: 0
+      projectile: 0
+      projectileCount: 1
+      projectileSpread: 0
+      recoil: 0
+      swingDir: 1
+      fxScale: 1.35
+    - windup: 0.12
+      recovery: 0.34
+      range: 2.3
+      arc: 170
+      damage: 1.1
+      lunge: 0.45
+      knockback: 5
+      hitstop: 0.085
+      shake: 0.28
+      kick: 5
+      thrust: 0
+      spin: 0
+      projectile: 0
+      projectileCount: 1
+      projectileSpread: 0
+      recoil: 0
+      swingDir: -1
+      fxScale: 1.35
+    - windup: 0.22
+      recovery: 0.55
+      range: 2.6
+      arc: 360
+      damage: 1.9
+      lunge: 0.2
+      knockback: 8
+      hitstop: 0.14
+      shake: 0.5
+      kick: 9
+      thrust: 0
+      spin: 1
+      projectile: 0
+      projectileCount: 1
+      projectileSpread: 0
+      recoil: 0
+      swingDir: 1
+      fxScale: 1.5
+    skills:
+    - gs_leap
+    - gs_whirl
+    - gs_rush
+    - gs_titan
+    element: 0
+    sfxSwing: swing_heavy
+    sfxHit: hit_heavy

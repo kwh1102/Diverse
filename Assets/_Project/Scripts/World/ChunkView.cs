@@ -13,6 +13,7 @@ namespace Diverse
         readonly List<Solid> solids = new List<Solid>();
         readonly List<Enemy> spawned = new List<Enemy>();
         readonly List<Interactable> interactables = new List<Interactable>();
+        [SerializeField] SpriteRenderer ground;     // baked per chunk at runtime
         Texture2D groundTex;
         WorldStreamer w;
 
@@ -27,11 +28,8 @@ namespace Diverse
             // 1) 지면
             var tiles = w.GroundOf(k);
             groundTex = Art.BakeGround(tiles, N, k.x * N, k.y * N, w.Gen.seed);
-            var gs = Sprite.Create(groundTex, new Rect(0, 0, N * Art.PPU, N * Art.PPU), Vector2.zero, Art.PPU, 0, SpriteMeshType.FullRect);
-            var ground = new GameObject("ground");
-            ground.transform.SetParent(transform, false);
+            ground.sprite = Sprite.Create(groundTex, new Rect(0, 0, N * Art.PPU, N * Art.PPU), Vector2.zero, Art.PPU, 0, SpriteMeshType.FullRect);
             ground.transform.position = origin;
-            var gsr = Art.MakeRenderer(ground, gs, -32000);
 
             // 2) 구조물 영역 계산 (장식이 구조물 위에 생기지 않도록)
             var structs = new List<StructureSpec>(w.Gen.StructuresNear(origin + Vector2.one * N / 2f, N));

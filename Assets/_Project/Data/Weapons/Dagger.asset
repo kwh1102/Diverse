@@ -1,0 +1,111 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b38983f8cd9ca7147af9441aa9423c25, type: 3}
+  m_Name: Dagger
+  m_EditorClassIdentifier: 
+  def:
+    kind: 4
+    name: "\uB2E8\uAC80"
+    desc: "\uB208\uBCF4\uB2E4 \uBE60\uB978 \uB09C\uB3C4\uC9C8. \uAC00\uBCCD\uC9C0\uB9CC
+      \uAE09\uC18C\uB97C \uB178\uB9B0\uB2E4."
+    tags: DAGGER MELEE SWIFT
+    slashColor:
+      serializedVersion: 2
+      rgba: 4291933183
+    slashCore:
+      serializedVersion: 2
+      rgba: 4293916927
+    baseDamage: 7
+    comboReset: 0.45
+    moveSpeedMul: 1.12
+    attackRange: 1.3
+    combo:
+    - windup: 0.025
+      recovery: 0.09
+      range: 1.35
+      arc: 110
+      damage: 0.85
+      lunge: 0.2
+      knockback: 1
+      hitstop: 0.025
+      shake: 0.06
+      kick: 1.5
+      thrust: 0
+      spin: 0
+      projectile: 0
+      projectileCount: 1
+      projectileSpread: 0
+      recoil: 0
+      swingDir: 1
+      fxScale: 0.8
+    - windup: 0.025
+      recovery: 0.09
+      range: 1.35
+      arc: 110
+      damage: 0.85
+      lunge: 0.2
+      knockback: 1
+      hitstop: 0.025
+      shake: 0.06
+      kick: 1.5
+      thrust: 0
+      spin: 0
+      projectile: 0
+      projectileCount: 1
+      projectileSpread: 0
+      recoil: 0
+      swingDir: -1
+      fxScale: 0.8
+    - windup: 0.03
+      recovery: 0.1
+      range: 1.5
+      arc: 30
+      damage: 1
+      lunge: 0.35
+      knockback: 1.5
+      hitstop: 0.03
+      shake: 0.08
+      kick: 2
+      thrust: 1
+      spin: 0
+      projectile: 0
+      projectileCount: 1
+      projectileSpread: 0
+      recoil: 0
+      swingDir: 1
+      fxScale: 0.8
+    - windup: 0.06
+      recovery: 0.22
+      range: 1.5
+      arc: 360
+      damage: 1.4
+      lunge: 0.1
+      knockback: 3.5
+      hitstop: 0.06
+      shake: 0.18
+      kick: 3
+      thrust: 0
+      spin: 1
+      projectile: 0
+      projectileCount: 1
+      projectileSpread: 0
+      recoil: 0
+      swingDir: 1
+      fxScale: 0.9
+    skills:
+    - dg_fan
+    - dg_shadowstep
+    - dg_venom
+    - dg_frenzy
+    element: 0
+    sfxSwing: swing_light
+    sfxHit: hit_light

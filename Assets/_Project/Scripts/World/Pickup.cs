@@ -9,21 +9,20 @@ namespace Diverse
         public float value;
         Vector2 pos, vel;
         float z, vz, t;
-        SpriteRenderer sr;
+        [SerializeField] SpriteRenderer sr;
         bool magnet;
 
         public static void Drop(string kind, float value, Vector2 at, int count = 1)
         {
             for (int i = 0; i < count; i++)
             {
-                var go = new GameObject("pickup_" + kind);
-                var p = go.AddComponent<Pickup>();
+                var p = Instantiate(DB.Asset.pickupPrefab, at, Quaternion.identity);
+                p.name = "pickup_" + kind;
                 p.kind = kind; p.value = value;
                 p.pos = at;
                 p.vel = Random.insideUnitCircle * Random.Range(1.5f, 3.5f);
                 p.vz = Random.Range(3f, 6f);
-                p.sr = Art.MakeRenderer(go, Art.Item(kind), 0, kind == "xp" || kind == "shard");
-                go.transform.position = at;
+                Art.Setup(p.sr, Art.Item(kind), 0, kind == "xp" || kind == "shard");
             }
         }
 

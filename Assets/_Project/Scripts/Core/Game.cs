@@ -5,37 +5,34 @@ using UnityEngine;
 
 namespace Diverse
 {
-    public enum GameState { Title, CharacterSelect, Playing, Evolving, Dialogue, Map, Paused, Dead, Settings }
+    public enum GameState { Playing, Evolving, Dialogue, Map, Paused, Dead }
 
     /// <summary>
-    /// The game's single entry point. Drop it in an empty scene and it builds everything in code.
-    /// Flow: Title → Character select (costume + weapon) → Run (start in town) → Death → Grave/record → Next life
+    /// Game scene entry point. Game.unity holds the camera, Fx, Sfx, UI and world objects; Game wires them up with save data
+    /// and starts the life the MainMenu scene asked for (Session.Start).
+    /// Flow: MainMenu (title → character select) → Game (run) → death → MainMenu character select → next life
     /// </summary>
+    [DefaultExecutionOrder(100)]
     public partial class Game : MonoBehaviour
     {
         public static Game I { get; private set; }
-        public static Settings Settings { get; private set; } = new Settings();
+        public static Settings Settings => Session.Settings;
 
-        public GameState State = GameState.Title;
-        public WorldSave World;
-        public Player Player;
-        public string HeroName;
-        public bool UiCapturingMouse;
-        public UI Ui;
+        [System.NonSerialized] public GameState State = GameState.Playing;
+        public WorldSave World => Session.World;
+        [System.NonSerialized] public Player Player;
+        [System.NonSerialized] public string HeroName;
+        [System.NonSerialized] public bool UiCapturingMouse;
+        public GameUI Ui;
+        [SerializeField] Diverse.World worldManager;
 
         Actor lastDamageSource;
         float discoverT, saveT;
         System.Random rnd = new System.Random();
-        public bool Generating;            // AI generating
-        public List<AbilityGraph> Offer;   // current evolution candidates
-        public string OfferStatus;
-        public Enemy Boss;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        static void AutoBoot()
-        {
-            if (FindFirstObjectByType<Game>() == null) new GameObject("Game").AddComponent<Game>();
-        }
+        [System.NonSerialized] public bool Generating;            // AI generating
+        [System.NonSerialized] public List<AbilityGraph> Offer;   // current evolution candidates
+        [System.NonSerialized] public string OfferStatus;
+        [System.NonSerialized] public Enemy Boss;
 
         void Awake()
         {
@@ -45,31 +42,31 @@ namespace Diverse
             QualitySettings.vSyncCount = 1;
             GameTime.Reset();
             GameEvents.ClearAll();
-            Settings = SaveSystem.LoadSettings();
-            Sfx.Volume = Settings.sfx;
-            Sfx.MusicVolume = Settings.music;
-            Controls.Init(Settings);
+            Session.EnsureLoaded();
 
-            // Clean up the template objects in the scene
-            foreach (var cam in FindObjectsByType<Camera>(FindObjectsSortMode.None)) if (cam.GetComponent<CameraRig>() == null) Destroy(cam.gameObject);
-            foreach (var l in FindObjectsByType<Light>(FindObjectsSortMode.None)) Destroy(l.gameObject);
-
-            CameraRig.Create();
-            Fx.Create();
-            Sfx.Create();
-            World = SaveSystem.LoadWorld();
-            PendingRun = SaveSystem.LoadRun();
-            if (PendingRun != null && PendingRun.life != World.lifeCount) { PendingRun = null; SaveSystem.DeleteRun(); }
-            Diverse.World.Create(World.seed);
-            Ui = UI.Create(this);
+            // CameraRig, Fx, Sfx, UI and WorldManager are placed in Game.unity and register themselves in their own Awake.
+            // Game runs after them (DefaultExecutionOrder) and hands out the data they need.
+            worldManager.Init(World.seed);
+            Ui.Init(this);
             GameEvents.Toast += Ui.Toast;
             GameEvents.WorldAction += OnWorldAction;
             GameEvents.Combat += OnCombat;
-
-            // Show the town as the title backdrop
-            WorldStreamer.I.Warm(Vector2.zero);
-            CameraRig.I.Snap(new Vector2(0, 2));
             Sfx.PlayMusic(true);
+        }
+
+        void Start()
+        {
+            // Opened straight from the editor (no menu request): continue the saved life, or start a default one
+            var kind = Session.Start;
+            Session.Start = Session.StartKind.None;
+            if (kind == Session.StartKind.None) kind = Session.HasRunToContinue ? Session.StartKind.Continue : Session.StartKind.NewLife;
+            if (kind == Session.StartKind.Continue && Session.HasRunToContinue) ContinueRun();
+            else
+            {
+                var costume = Session.StartCostume ?? DB.Costume(World.lastCostume);
+                var weapon = Session.StartCostume != null ? Session.StartWeapon : (WeaponKind)World.lastWeapon;
+                StartRun(costume, weapon);
+            }
         }
 
         void OnDestroy()
@@ -81,16 +78,6 @@ namespace Diverse
         {
             GameTime.Tick();
             float dt = Time.deltaTime;
-
-            if (State == GameState.Title || State == GameState.CharacterSelect)
-            {
-                // Title: camera slowly pans
-                var cam = CameraRig.I;
-                cam.target = null;
-                cam.Snap(new Vector2(Mathf.Sin(Time.unscaledTime * 0.08f) * 6f, 2 + Mathf.Cos(Time.unscaledTime * 0.06f) * 3f));
-                WorldStreamer.I.Tick(cam.transform.position);
-                return;
-            }
 
             if (Player != null) WorldStreamer.I.Tick(Player.Pos);
 
@@ -106,9 +93,9 @@ namespace Diverse
                 if (Player.PendingEvolutions > 0 && !Generating && Offer == null && Actor.Nearest(Player.Pos, 7, Team.Enemy) == null)
                     BeginEvolution();
             }
-            else if (State == GameState.Map || State == GameState.Paused || State == GameState.Dialogue || State == GameState.Evolving || State == GameState.Settings)
+            else if (State == GameState.Map || State == GameState.Paused || State == GameState.Dialogue || State == GameState.Evolving)
             {
-                if (Controls.Down(Act.Pause) && State != GameState.Evolving) CloseOverlay();
+                if (Controls.Down(Act.Pause) && State != GameState.Evolving && !Ui.ConsumesEscape) CloseOverlay();
                 if (State == GameState.Map && Controls.Down(Act.Map)) CloseOverlay();
             }
         }
@@ -154,12 +141,7 @@ namespace Diverse
 
             // Start position: plaza (a little in front of the well)
             var w = DB.W(weapon);
-            var weaponCopy = new WeaponDef
-            {
-                kind = w.kind, name = w.name, desc = w.desc, tags = w.tags, slashColor = w.slashColor, slashCore = w.slashCore, baseDamage = w.baseDamage,
-                comboReset = w.comboReset, moveSpeedMul = w.moveSpeedMul, attackRange = w.attackRange, combo = w.combo, skills = w.skills, element = w.element,
-                sfxSwing = w.sfxSwing, sfxHit = w.sfxHit,
-            };
+            var weaponCopy = w.Clone();
             if (Player != null) Destroy(Player.gameObject);
             WorldStreamer.I.Warm(new Vector2(0, -1.5f));
             Player = Player.Spawn(costume, weaponCopy, new Vector2(0, -1.5f));
@@ -185,10 +167,6 @@ namespace Diverse
 
         // ───────────────────────── Continuing a life ─────────────────────────
 
-        /// <summary>A life in progress that was left by returning to the title (or quitting).</summary>
-        public RunSave PendingRun;
-
-        public bool HasRunToContinue => PendingRun != null && PendingRun.life == World.lifeCount;
 
         /// <summary>Snapshot the current life so it can be continued later.</summary>
         public void SaveRun()
@@ -204,14 +182,14 @@ namespace Diverse
             };
             foreach (var a in p.Abilities.Owned) r.abilities.Add(AbilityRecord.From(a));
             foreach (var kv in p.Telemetry.intent) r.intent.Add(kv.Key + "=" + kv.Value);
-            PendingRun = r;
+            Session.PendingRun = r;
             SaveSystem.SaveRun(r);
         }
 
         /// <summary>Resume the saved life exactly where it was left.</summary>
         public void ContinueRun()
         {
-            var r = PendingRun;
+            var r = Session.PendingRun;
             if (r == null) return;
             var costume = DB.Costumes.FirstOrDefault(c => c.id == r.costume) ?? DB.Costumes[0];
             var weapon = (WeaponKind)r.weapon;
@@ -219,12 +197,8 @@ namespace Diverse
             Diverse.World.I.ResetForRun();
             Fx.I.ClearAll();
             var w = DB.W(weapon);
-            var weaponCopy = new WeaponDef
-            {
-                kind = w.kind, name = w.name, desc = w.desc, tags = w.tags, slashColor = w.slashColor, slashCore = w.slashCore, baseDamage = r.weaponDamage > 0 ? r.weaponDamage : w.baseDamage,
-                comboReset = w.comboReset, moveSpeedMul = w.moveSpeedMul, attackRange = w.attackRange, combo = w.combo, skills = w.skills, element = w.element,
-                sfxSwing = w.sfxSwing, sfxHit = w.sfxHit,
-            };
+            var weaponCopy = w.Clone();
+            if (r.weaponDamage > 0) weaponCopy.baseDamage = r.weaponDamage;
             if (Player != null) Destroy(Player.gameObject);
             var pos = new Vector2(r.x, r.y);
             WorldStreamer.I.Warm(pos);
@@ -251,28 +225,6 @@ namespace Diverse
             Ui.Toast($"{Ko.I(HeroName)} 다시 길을 나선다. (Lv.{p.Level})");
             EnsureQuests();
             RequestPrefetch();
-        }
-
-        /// <summary>Give up the saved life from the title: it ends like a death (grave + chronicle) and the next life can begin.</summary>
-        public void AbandonRun()
-        {
-            var r = PendingRun;
-            if (r == null) return;
-            var grave = new GraveRecord
-            {
-                life = r.life, heroName = r.heroName, costume = r.costume, weapon = r.weapon, level = r.level, kills = r.kills,
-                x = r.x, y = r.y, cause = "긴 방랑",
-            };
-            foreach (var rec in r.abilities.Select(a => (rec: a, g: a.ToGraph())).Where(t => t.g != null && t.g.kind == "trigger").OrderByDescending(t => t.g.cost).Take(2))
-                grave.abilities.Add(rec.rec);
-            grave.epitaph = $"{r.heroName} — 길 위에서 사라지다. 레벨 {r.level}, 처치한 몬스터 {r.kills}마리.";
-            World.graves.Add(grave);
-            World.gold += r.gold / 2;
-            World.Log($"{Ko.I(r.heroName)} 방랑 끝에 자취를 감췄다. 그 자리에 무덤이 세워졌다.", "death");
-            PendingRun = null;
-            SaveSystem.DeleteRun();
-            SaveSystem.SaveWorld(World);
-            State = GameState.CharacterSelect;
         }
 
         static readonly string[] namePre = { "하", "설", "봄", "달", "별", "바", "단", "루", "윤", "가", "나", "라", "모", "호", "소", "리", "토", "키" };
@@ -357,7 +309,7 @@ namespace Diverse
             grave.statue = p.Level >= 12 || World.towerFloor >= 2 && p.Kills > 80;
             grave.epitaph = $"{HeroName} — {Ko.Ro(cause)} 인해 잠들다. 레벨 {p.Level}, 처치한 몬스터 {p.Kills}마리.";
             World.graves.Add(grave);
-            PendingRun = null;
+            Session.PendingRun = null;
             SaveSystem.DeleteRun();
             World.gold += p.Gold / 2;    // half the gold goes to the vault
             World.Log($"{Ko.I(HeroName)} {Ko.Ro(cause)} 인해 쓰러졌다 ({Diverse.World.I.Gen.RegionName(p.Pos)}). 무덤이 세워졌다.", "death");
@@ -369,33 +321,26 @@ namespace Diverse
             if (AiClient.Enabled) StartCoroutine(AiClient.Epitaph(grave, text => { if (!string.IsNullOrEmpty(text)) { grave.epitaph = text; SaveSystem.SaveWorld(World); } }));
         }
 
-        public void ToCharacterSelect()
+        /// <summary>Pause menu "타이틀로": keep this life so the title can continue it.</summary>
+        public void SaveAndQuitToTitle()
         {
-            if (Player != null) { Destroy(Player.gameObject); Player = null; }
-            ResetPrefetch();
-            Diverse.World.I.ResetForRun();
-            WorldStreamer.I.Warm(Vector2.zero);
-            State = GameState.CharacterSelect;
+            SaveSystem.SaveWorld(World);
+            SaveRun();
             GameTime.ClearPauses();
+            Session.ToMenu(false);
         }
 
-        public void ResetWorld()
+        /// <summary>Death screen "다음 삶": back to the menu's character select.</summary>
+        public void NextLife()
         {
-            SaveSystem.DeleteWorld();
-            SaveSystem.DeleteRun();
-            PendingRun = null;
-            World = SaveSystem.NewWorld();
-            Destroy(WorldStreamer.I.gameObject);
-            Destroy(Diverse.World.I.gameObject);
-            Diverse.World.Create(World.seed);
-            WorldStreamer.I.Warm(Vector2.zero);
-            State = GameState.Title;
+            GameTime.ClearPauses();
+            Session.ToMenu(true);
         }
 
         void OnApplicationQuit()
         {
             if (World != null) SaveSystem.SaveWorld(World);
-            if (State != GameState.Title && State != GameState.CharacterSelect) SaveRun();
+            SaveRun();
         }
     }
 }

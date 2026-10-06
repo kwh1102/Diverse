@@ -64,15 +64,22 @@ namespace Diverse
         readonly Dictionary<Vector2Int, int> blocked = new Dictionary<Vector2Int, int>();
         const float PathPad = 0.3f;         // ~ a body radius, so paths keep clear of shapes
         readonly Queue<Vector2Int> buildQueue = new Queue<Vector2Int>();
-        Transform root;
+        [SerializeField] ChunkView chunkPrefab;     // empty template: chunks are filled procedurally by ChunkView.Build
 
-        public static WorldStreamer Create(int seed)
+        void Awake() => I = this;
+        void OnDestroy() { if (I == this) I = null; }
+#if UNITY_EDITOR
+        /// <summary>Editor tools build chunks in edit mode, where Awake does not run.</summary>
+        public void EditorRegister() => I = this;
+        public void EditorUnregister() { if (I == this) I = null; }
+#endif
+
+        /// <summary>Start a world for this seed (also used by ResetWorld: drops every loaded chunk first).</summary>
+        public void Init(int seed)
         {
-            var go = new GameObject("World");
-            I = go.AddComponent<WorldStreamer>();
-            I.Gen = new WorldGen(seed);
-            I.root = go.transform;
-            return I;
+            Clear();
+            groundCache.Clear();
+            Gen = new WorldGen(seed);
         }
 
         public void Clear()
@@ -131,9 +138,8 @@ namespace Diverse
         void Ensure(Vector2Int k)
         {
             if (chunks.ContainsKey(k)) return;
-            var go = new GameObject($"Chunk {k.x},{k.y}");
-            go.transform.SetParent(root, false);
-            var view = go.AddComponent<ChunkView>();
+            var view = Instantiate(chunkPrefab, transform, false);
+            view.name = $"Chunk {k.x},{k.y}";
             chunks[k] = view;
             view.Build(this, k);
         }

@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b66f6304fb60134aa720186470999bd, type: 3}
+  m_Name: shroom
+  m_EditorClassIdentifier: 
+  def:
+    id: shroom
+    name: "\uBC84\uC12F \uAF2C\uB9C8"
+    brain: 0
+    hp: 26
+    damage: 7
+    speed: 1.9
+    radius: 0.45
+    attackRange: 1.1
+    attackWindup: 0.45
+    attackCooldown: 1.4
+    aggroRange: 7
+    xp: 5
+    gold: 1
+    mass: 1
+    sprite: shroom
+    projectileColor:
+      serializedVersion: 2
+      rgba: 4285422335
+    element: 0
+    boss: 0
+    lines: []

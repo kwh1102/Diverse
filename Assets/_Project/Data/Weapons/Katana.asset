@@ -1,0 +1,93 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b38983f8cd9ca7147af9441aa9423c25, type: 3}
+  m_Name: Katana
+  m_EditorClassIdentifier: 
+  def:
+    kind: 5
+    name: "\uB3C4"
+    desc: "\uCE7C\uC9D1\uC5D0\uC11C \uBF51\uB294 \uC21C\uAC04\uC774 \uAC00\uC7A5
+      \uB0A0\uCE74\uB86D\uB2E4. \uC77C\uC12C\uC758 \uBBF8\uD559."
+    tags: BLADE MELEE IAI
+    slashColor:
+      serializedVersion: 2
+      rgba: 4294964180
+    slashCore:
+      serializedVersion: 2
+      rgba: 4293916927
+    baseDamage: 14
+    comboReset: 0.7
+    moveSpeedMul: 1
+    attackRange: 1.9
+    combo:
+    - windup: 0.04
+      recovery: 0.18
+      range: 2
+      arc: 150
+      damage: 1
+      lunge: 0.35
+      knockback: 2
+      hitstop: 0.05
+      shake: 0.12
+      kick: 3
+      thrust: 0
+      spin: 0
+      projectile: 0
+      projectileCount: 1
+      projectileSpread: 0
+      recoil: 0
+      swingDir: 1
+      fxScale: 1.1
+    - windup: 0.04
+      recovery: 0.18
+      range: 2
+      arc: 150
+      damage: 1
+      lunge: 0.35
+      knockback: 2
+      hitstop: 0.05
+      shake: 0.12
+      kick: 3
+      thrust: 0
+      spin: 0
+      projectile: 0
+      projectileCount: 1
+      projectileSpread: 0
+      recoil: 0
+      swingDir: -1
+      fxScale: 1.1
+    - windup: 0.16
+      recovery: 0.42
+      range: 2.4
+      arc: 60
+      damage: 2
+      lunge: 1.1
+      knockback: 4
+      hitstop: 0.11
+      shake: 0.35
+      kick: 7
+      thrust: 1
+      spin: 0
+      projectile: 0
+      projectileCount: 1
+      projectileSpread: 0
+      recoil: 0
+      swingDir: 1
+      fxScale: 1.3
+    skills:
+    - kt_iai
+    - kt_crescent
+    - kt_counter
+    - kt_flash
+    element: 0
+    sfxSwing: swing
+    sfxHit: hit_slice

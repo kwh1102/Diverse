@@ -15,23 +15,21 @@ namespace Diverse
         public string label;
         public float range = 1.4f;
         public SpriteRenderer sr;
-        public Sprite[] idleFrames;
+        [SerializeField] SpriteRenderer shadow;
+        [System.NonSerialized] public Sprite[] idleFrames;
         public object data;
         float animT;
         Vector2 basePos;
 
         public static Interactable Create(Transform parent, string kind, string id, string label, Vector2 pos, Sprite sprite, ChunkView chunk)
         {
-            var go = new GameObject(kind);
-            go.transform.SetParent(parent, false);
-            go.transform.position = pos;
-            var it = go.AddComponent<Interactable>();
+            var it = Instantiate(DB.Asset.interactablePrefab, parent, false);
+            it.name = kind;
+            it.transform.position = pos;
             it.kind = kind; it.id = id; it.label = label;
             it.basePos = pos;
-            it.sr = Art.MakeRenderer(go, sprite, Art.SortY(pos.y));
-            var sh = new GameObject("shadow");
-            sh.transform.SetParent(go.transform, false);
-            Art.MakeRenderer(sh, Art.Shadow(Mathf.Max(10, Mathf.RoundToInt(sprite.rect.width * 0.6f))), -30000);
+            Art.Setup(it.sr, sprite, Art.SortY(pos.y));
+            Art.Setup(it.shadow, Art.Shadow(Mathf.Max(10, Mathf.RoundToInt(sprite.rect.width * 0.6f))), -30000);
             All.Add(it);
             chunk?.Register(it);
             return it;

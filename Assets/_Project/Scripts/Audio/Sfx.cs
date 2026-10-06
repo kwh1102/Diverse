@@ -17,21 +17,23 @@ namespace Diverse
         public static float Volume = 0.6f;
         public static float MusicVolume = 0.35f;
 
-        public static Sfx Create()
+        [SerializeField] int voices = 16;
+
+        void Awake()
         {
-            var go = new GameObject("Sfx");
-            I = go.AddComponent<Sfx>();
-            for (int i = 0; i < 16; i++)
+            I = this;
+            for (int i = 0; i < voices; i++)
             {
-                var s = go.AddComponent<AudioSource>();
+                var s = gameObject.AddComponent<AudioSource>();
                 s.playOnAwake = false;
-                I.sources.Add(s);
+                sources.Add(s);
             }
-            I.music = go.AddComponent<AudioSource>();
-            I.music.loop = true;
-            I.music.playOnAwake = false;
-            return I;
+            music = gameObject.AddComponent<AudioSource>();
+            music.loop = true;
+            music.playOnAwake = false;
         }
+
+        void OnDestroy() { if (I == this) I = null; }
 
         public static void Play(string name, float vol = 1f, float pitch = 1f, float pitchJitter = 0.06f)
         {

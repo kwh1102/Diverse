@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4df1954c59e97a54b91991c6dd3e520b, type: 3}
+  m_Name: white
+  m_EditorClassIdentifier: 
+  def:
+    id: white
+    name: "\uD770 \uD1A0\uB07C"
+    perk: "\uACBD\uD5D8\uCE58 +30%"
+    fur:
+      serializedVersion: 2
+      rgba: 4293981947
+    furShade:
+      serializedVersion: 2
+      rgba: 4291350489
+    outfit:
+      serializedVersion: 2
+      rgba: 4293436266
+    outfitShade:
+      serializedVersion: 2
+      rgba: 4290278986
+    accent:
+      serializedVersion: 2
+      rgba: 4285361650
+    style: 0
+    mods:
+    - stat: 8
+      mul: 1
+      value: 0.3
+    tags: GROWTH

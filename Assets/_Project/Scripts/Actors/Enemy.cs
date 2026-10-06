@@ -9,14 +9,14 @@ namespace Diverse
     /// </summary>
     public class Enemy : Actor
     {
-        public EnemyDef def;
+        [System.NonSerialized] public EnemyDef def;
         public string campId;               // 소속 군집 (전부 처치하면 군집 해결)
         public Vector2 home;
         enum S { Idle, Chase, Windup, Strike, Recover, Stunned, Dying }
         S state;
         float stateT, attackCd, wanderT, animT, stunT;
         Vector2 wanderTo, strikeDir, strikeTarget;
-        SpriteRenderer warn;
+        [SerializeField] SpriteRenderer warn;   // attack telegraph (prefab child, hidden until windup)
         bool aggro;
         int bossPhase;
         int bossAttack;
@@ -24,8 +24,8 @@ namespace Diverse
 
         public static Enemy Spawn(EnemyDef def, Vector2 pos, string campId)
         {
-            var go = new GameObject(def.name);
-            var e = go.AddComponent<Enemy>();
+            var e = Instantiate(DB.Asset.enemyPrefab);
+            e.name = def.name;
             e.Init(def, pos, campId);
             return e;
         }
@@ -43,9 +43,6 @@ namespace Diverse
             SetShadowSize(Mathf.RoundToInt(d.radius * 32));
             attackCd = Random.Range(0.3f, 1.2f);
             wanderTo = pos;
-            var w = new GameObject("warn");
-            w.transform.SetParent(transform, false);
-            warn = Art.MakeRenderer(w, null, -29000);
             warn.enabled = false;
             visual.localScale = Vector3.zero;
         }

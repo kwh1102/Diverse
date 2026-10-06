@@ -1,0 +1,93 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b38983f8cd9ca7147af9441aa9423c25, type: 3}
+  m_Name: Crossbow
+  m_EditorClassIdentifier: 
+  def:
+    kind: 2
+    name: "\uC11D\uAD81"
+    desc: "\uBA40\uB9AC\uC11C \uC815\uD655\uD558\uAC8C. \uC3E0 \uB54C\uB9C8\uB2E4
+      \uBC18\uB3D9\uC73C\uB85C \uB4A4\uB85C \uBC00\uB9B0\uB2E4."
+    tags: BOW RANGED PROJECTILE
+    slashColor:
+      serializedVersion: 2
+      rgba: 4289786367
+    slashCore:
+      serializedVersion: 2
+      rgba: 4293916927
+    baseDamage: 12
+    comboReset: 0.8
+    moveSpeedMul: 1.05
+    attackRange: 7.5
+    combo:
+    - windup: 0.04
+      recovery: 0.3
+      range: 9
+      arc: 140
+      damage: 1
+      lunge: 0.25
+      knockback: 2
+      hitstop: 0.035
+      shake: 0.1
+      kick: 2.5
+      thrust: 0
+      spin: 0
+      projectile: 1
+      projectileCount: 1
+      projectileSpread: 0
+      recoil: 0.22
+      swingDir: 1
+      fxScale: 1
+    - windup: 0.04
+      recovery: 0.3
+      range: 9
+      arc: 140
+      damage: 1
+      lunge: 0.25
+      knockback: 2
+      hitstop: 0.035
+      shake: 0.1
+      kick: 2.5
+      thrust: 0
+      spin: 0
+      projectile: 1
+      projectileCount: 1
+      projectileSpread: 0
+      recoil: 0.22
+      swingDir: 1
+      fxScale: 1
+    - windup: 0.1
+      recovery: 0.45
+      range: 9
+      arc: 140
+      damage: 0.8
+      lunge: 0.25
+      knockback: 3
+      hitstop: 0.05
+      shake: 0.2
+      kick: 4
+      thrust: 0
+      spin: 0
+      projectile: 1
+      projectileCount: 3
+      projectileSpread: 14
+      recoil: 0.45
+      swingDir: 1
+      fxScale: 1
+    skills:
+    - cb_pierce
+    - cb_scatter
+    - cb_backstep
+    - cb_rain
+    element: 0
+    sfxSwing: shoot
+    sfxHit: hit

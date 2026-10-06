@@ -52,9 +52,10 @@ namespace Diverse
         public float invulnUntil;
         public readonly List<StatusEffect> statuses = new List<StatusEffect>();
 
-        protected SpriteRenderer body;
-        protected SpriteRenderer shadow;
-        protected Transform visual;         // parent of body/weapon (for scale/rotation effects)
+        // Prefab hierarchy (Prefabs/Actors): root → visual → body, root → shadow
+        [SerializeField] protected SpriteRenderer body;
+        [SerializeField] protected SpriteRenderer shadow;
+        [SerializeField] protected Transform visual;         // parent of body/weapon (for scale/rotation effects)
         protected Vector2 knockVel;
         protected float flash;
         protected float squash;             // >0 = flatten vertically, <0 = stretch vertically
@@ -64,14 +65,6 @@ namespace Diverse
         protected virtual void Awake()
         {
             All.Add(this);
-            visual = new GameObject("visual").transform;
-            visual.SetParent(transform, false);
-            var sh = new GameObject("shadow");
-            sh.transform.SetParent(transform, false);
-            shadow = Art.MakeRenderer(sh, Art.Shadow(14), 0);
-            var b = new GameObject("body");
-            b.transform.SetParent(visual, false);
-            body = Art.MakeRenderer(b, null, 0);
             mpb = new MaterialPropertyBlock();
         }
 

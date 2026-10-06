@@ -14,8 +14,8 @@ namespace Diverse.EditorTools
     /// </summary>
     public static class DiverseTools
     {
-        [MenuItem("Diverse/메인 씬 열기", priority = 0)]
-        public static void OpenMain() => EditorSceneManager.OpenScene("Assets/_Project/Scenes/Main.unity");
+        [MenuItem("Diverse/메인 메뉴 씬 열기", priority = 0)]
+        public static void OpenMain() => EditorSceneManager.OpenScene(UIBuilder.MenuScenePath);
 
         [MenuItem("Diverse/능력 파이프라인 검증", priority = 20)]
         public static string ValidatePipeline()

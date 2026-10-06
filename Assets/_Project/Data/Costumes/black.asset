@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4df1954c59e97a54b91991c6dd3e520b, type: 3}
+  m_Name: black
+  m_EditorClassIdentifier: 
+  def:
+    id: black
+    name: "\uAC80\uC740 \uD1A0\uB07C"
+    perk: "\uC7AC\uC0AC\uC6A9 \uB300\uAE30\uC2DC\uAC04 -15%, \uB300\uC2DC \uC7AC\uC0AC\uC6A9
+      -20%"
+    fur:
+      serializedVersion: 2
+      rgba: 4283974730
+    furShade:
+      serializedVersion: 2
+      rgba: 4282001967
+    outfit:
+      serializedVersion: 2
+      rgba: 4292238220
+    outfitShade:
+      serializedVersion: 2
+      rgba: 4288299105
+    accent:
+      serializedVersion: 2
+      rgba: 4294949065
+    style: 2
+    mods:
+    - stat: 6
+      mul: 0
+      value: 0.15
+    - stat: 11
+      mul: 1
+      value: -0.2
+    tags: SHADOW

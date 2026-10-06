@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b66f6304fb60134aa720186470999bd, type: 3}
+  m_Name: boss_fox
+  m_EditorClassIdentifier: 
+  def:
+    id: boss_fox
+    name: "\uBD89\uC740 \uAF2C\uB9AC \uB450\uBAA9"
+    brain: 6
+    hp: 520
+    damage: 16
+    speed: 2.6
+    radius: 0.9
+    attackRange: 2.4
+    attackWindup: 0.55
+    attackCooldown: 1.3
+    aggroRange: 9
+    xp: 120
+    gold: 60
+    mass: 6
+    sprite: boss_fox
+    projectileColor:
+      serializedVersion: 2
+      rgba: 4285422335
+    element: 0
+    boss: 1
+    lines:
+    - "\uC774 \uC232\uAE38\uC740 \uB0B4 \uAC70\uB2E4, \uD1A0\uB07C."
+    - "\uAF2C\uB9AC\uAC00 \uBD88\uD0C0\uB294 \uB9DB\uC744 \uBCF4\uC5EC\uC8FC\uB9C8!"
+    - "...\uB2E4\uC74C \uC0B6\uC5D0\uC11C \uBCF4\uC790."

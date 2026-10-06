@@ -57,16 +57,10 @@ namespace Diverse
         readonly List<Particle> parts = new List<Particle>();
         readonly List<Ghost> ghosts = new List<Ghost>();
         readonly List<Popup> pops = new List<Popup>();
-        Font font;
-        Material fontMat;
+        [SerializeField] Font font;       // damage numbers (Galmuri11-Bold)
 
-        public static Fx Create()
-        {
-            var go = new GameObject("Fx");
-            I = go.AddComponent<Fx>();
-            I.font = Resources.Load<Font>("Fonts/Galmuri11-Bold");
-            return I;
-        }
+        void Awake() => I = this;
+        void OnDestroy() { if (I == this) I = null; }
 
         // ───────── 스프라이트 애니메이션 ─────────
 

@@ -118,7 +118,8 @@ namespace Diverse
 
     public static class SaveSystem
     {
-        static string Dir => Application.persistentDataPath;
+        /// <summary>Tests set DIVERSE_SAVE_DIR to a scratch folder so they never touch the player's saves.</summary>
+        static string Dir => System.Environment.GetEnvironmentVariable("DIVERSE_SAVE_DIR") is { Length: > 0 } d ? d : Application.persistentDataPath;
         static string WorldPath => Path.Combine(Dir, "world.json");
         static string SettingsPath => Path.Combine(Dir, "settings.json");
         static string RunPath => Path.Combine(Dir, "run.json");

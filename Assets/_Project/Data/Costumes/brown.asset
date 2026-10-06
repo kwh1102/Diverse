@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4df1954c59e97a54b91991c6dd3e520b, type: 3}
+  m_Name: brown
+  m_EditorClassIdentifier: 
+  def:
+    id: brown
+    name: "\uAC08\uC0C9 \uD1A0\uB07C"
+    perk: "\uCE58\uBA85\uD0C0 \uD655\uB960 +12%, \uCE58\uBA85\uD0C0 \uD53C\uD574
+      +25%"
+    fur:
+      serializedVersion: 2
+      rgba: 4283990713
+    furShade:
+      serializedVersion: 2
+      rgba: 4282211466
+    outfit:
+      serializedVersion: 2
+      rgba: 4284189263
+    outfitShade:
+      serializedVersion: 2
+      rgba: 4282474805
+    accent:
+      serializedVersion: 2
+      rgba: 4285187305
+    style: 1
+    mods:
+    - stat: 4
+      mul: 0
+      value: 0.12
+    - stat: 5
+      mul: 0
+      value: 0.25
+    tags: CRIT

@@ -13,17 +13,26 @@ namespace Diverse
     {
         public static World I { get; private set; }
         public WorldStreamer Streamer;
+        [SerializeField] FireFx firePrefab;
         public WorldGen Gen => Streamer.Gen;
-        public WorldSave Save => Game.I.World;
+        public WorldSave Save => Session.World;
         readonly Dictionary<string, int> campAlive = new Dictionary<string, int>();
         readonly HashSet<string> builtGraves = new HashSet<string>();
 
-        public static World Create(int seed)
+        void Awake() => I = this;
+        void OnDestroy() { if (I == this) I = null; }
+#if UNITY_EDITOR
+        /// <summary>Editor tools build chunks in edit mode, where Awake does not run.</summary>
+        public void EditorRegister() => I = this;
+        public void EditorUnregister() { if (I == this) I = null; }
+#endif
+
+        /// <summary>Start (or restart) the world for this seed. Streamer is wired in Game.unity.</summary>
+        public void Init(int seed)
         {
-            var go = new GameObject("WorldManager");
-            I = go.AddComponent<World>();
-            I.Streamer = WorldStreamer.Create(seed);
-            return I;
+            campAlive.Clear();
+            builtGraves.Clear();
+            Streamer.Init(seed);
         }
 
         public void ResetForRun()
@@ -269,10 +278,8 @@ namespace Diverse
 
         void AddFire(ChunkView c, Vector2 p)
         {
-            var go = new GameObject("fire");
-            go.transform.SetParent(c.transform, false);
-            go.transform.position = p + new Vector2(0, 0.15f);
-            go.AddComponent<FireFx>();
+            var fire = Instantiate(firePrefab, c.transform, false);
+            fire.transform.position = p + new Vector2(0, 0.15f);
         }
 
         void BuildRuins(ChunkView c, StructureSpec s)
@@ -384,7 +391,7 @@ namespace Diverse
                 p = Streamer.NearestWalkable(p, 0.4f);
                 // Mixed groups: occasionally a different species
                 string id = rng.Chance(0.2f) ? (s.biome == Biome.Forest ? "bat" : "jelly") : enemyId;
-                var def = DB.ScaledEnemy(id, s.tier + Game.I.World.towerFloor * 0.5f);
+                var def = DB.ScaledEnemy(id, s.tier + Save.towerFloor * 0.5f);
                 if (ring > 0 && rng.Chance(eliteChance)) def = DB.Elite(def);
                 var e = Enemy.Spawn(def, p, s.id);
                 c.Register(e);
@@ -427,28 +434,6 @@ namespace Diverse
                 GameEvents.Notify($"발견: {s.name}");
                 GameEvents.World("explore", s.kind.ToString());
             }
-        }
-    }
-
-    /// <summary>Campfire flicker (pixel sparks + light).</summary>
-    public class FireFx : MonoBehaviour
-    {
-        SpriteRenderer glow, flame;
-        float t;
-        void Start()
-        {
-            var g = new GameObject("glow"); g.transform.SetParent(transform, false);
-            glow = Art.MakeRenderer(g, Art.Glow(20), 31000, true);
-            var f = new GameObject("flame"); f.transform.SetParent(transform, false);
-            flame = Art.MakeRenderer(f, Art.Orb(Pal.Hex("fff36b"), Pal.Hex("ff8a3d"), 8), Art.SortY(transform.position.y) + 1, true);
-        }
-        void Update()
-        {
-            t += Time.deltaTime;
-            float k = 0.85f + Mathf.PerlinNoise(t * 6, 0.3f) * 0.3f;
-            glow.color = new Color(1f, 0.6f, 0.3f, 0.35f * k);
-            flame.transform.localScale = new Vector3(1, k * 1.2f, 1);
-            if (Random.value < 0.15f) Fx.I?.Burst((Vector2)transform.position + Vector2.up * 0.3f, Random.value < 0.5f ? Pal.Fire : Pal.Lightning, 1, 1.5f, 0.6f, -2f, 1, 40, 90, false, true);
         }
     }
 }

@@ -50,9 +50,12 @@ namespace Diverse
             return s;
         }
 
-        public static SpriteRenderer MakeRenderer(GameObject go, Sprite s, int order = 0, bool additive = false)
+        public static SpriteRenderer MakeRenderer(GameObject go, Sprite s, int order = 0, bool additive = false) =>
+            Setup(go.AddComponent<SpriteRenderer>(), s, order, additive);
+
+        /// <summary>Configure a renderer that already exists (prefab child).</summary>
+        public static SpriteRenderer Setup(SpriteRenderer sr, Sprite s, int order = 0, bool additive = false)
         {
-            var sr = go.AddComponent<SpriteRenderer>();
             sr.sprite = s;
             sr.sharedMaterial = additive ? AddMat : SpriteMat;
             sr.sortingOrder = order;

@@ -1,0 +1,129 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b38983f8cd9ca7147af9441aa9423c25, type: 3}
+  m_Name: Staff
+  m_EditorClassIdentifier: 
+  def:
+    kind: 3
+    name: "\uBD09"
+    desc: "\uAE34 \uC0AC\uAC70\uB9AC\uB85C \uD718\uAC10\uC544 \uCE58\uB294 \uC5F0\uACA9.
+      \uB05D\uC5D0 \uB9FA\uD78C \uC218\uC815\uC774 \uBC88\uAC1C\uB97C \uBD80\uB978\uB2E4."
+    tags: STAFF MELEE MAGIC
+    slashColor:
+      serializedVersion: 2
+      rgba: 4294949065
+    slashCore:
+      serializedVersion: 2
+      rgba: 4294963188
+    baseDamage: 11
+    comboReset: 0.65
+    moveSpeedMul: 1
+    attackRange: 2.2
+    combo:
+    - windup: 0.05
+      recovery: 0.16
+      range: 2.3
+      arc: 150
+      damage: 0.8
+      lunge: 0.15
+      knockback: 2
+      hitstop: 0.04
+      shake: 0.1
+      kick: 2
+      thrust: 0
+      spin: 0
+      projectile: 0
+      projectileCount: 1
+      projectileSpread: 0
+      recoil: 0
+      swingDir: 1
+      fxScale: 1
+    - windup: 0.05
+      recovery: 0.16
+      range: 2.4
+      arc: 30
+      damage: 0.9
+      lunge: 0.3
+      knockback: 2.5
+      hitstop: 0.04
+      shake: 0.1
+      kick: 2
+      thrust: 1
+      spin: 0
+      projectile: 0
+      projectileCount: 1
+      projectileSpread: 0
+      recoil: 0
+      swingDir: 1
+      fxScale: 1
+    - windup: 0.05
+      recovery: 0.16
+      range: 2.3
+      arc: 150
+      damage: 0.8
+      lunge: 0.15
+      knockback: 2
+      hitstop: 0.04
+      shake: 0.1
+      kick: 2
+      thrust: 0
+      spin: 0
+      projectile: 0
+      projectileCount: 1
+      projectileSpread: 0
+      recoil: 0
+      swingDir: -1
+      fxScale: 1
+    - windup: 0.08
+      recovery: 0.18
+      range: 2.4
+      arc: 360
+      damage: 0.7
+      lunge: 0
+      knockback: 2.5
+      hitstop: 0.045
+      shake: 0.14
+      kick: 2
+      thrust: 0
+      spin: 1
+      projectile: 0
+      projectileCount: 1
+      projectileSpread: 0
+      recoil: 0
+      swingDir: 1
+      fxScale: 1
+    - windup: 0.12
+      recovery: 0.38
+      range: 2.6
+      arc: 50
+      damage: 1.6
+      lunge: 0.45
+      knockback: 6
+      hitstop: 0.09
+      shake: 0.3
+      kick: 6
+      thrust: 1
+      spin: 0
+      projectile: 0
+      projectileCount: 1
+      projectileSpread: 0
+      recoil: 0
+      swingDir: 1
+      fxScale: 1.3
+    skills:
+    - st_thrust
+    - st_cyclone
+    - st_vault
+    - st_thunder
+    element: 3
+    sfxSwing: swing
+    sfxHit: hit

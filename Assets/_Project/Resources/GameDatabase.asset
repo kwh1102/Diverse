@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3af1481d2ed7ec54dbe189c9906e40d8, type: 3}
+  m_Name: GameDatabase
+  m_EditorClassIdentifier: 
+  weapons:
+  - {fileID: 11400000, guid: c78800fc6144e63468f6d3fe0e8d36f3, type: 2}
+  - {fileID: 11400000, guid: 13681b03c3d1bf547a7e2904719b1f45, type: 2}
+  - {fileID: 11400000, guid: 4d3d20ecc95f93347bc8f4e6b237e0c2, type: 2}
+  - {fileID: 11400000, guid: dd78c6b5f952b2740b74c7cb9daa5606, type: 2}
+  - {fileID: 11400000, guid: aca8223ee7b26a14289641c934811709, type: 2}
+  - {fileID: 11400000, guid: 7475a5899ff2e754db32706726afced2, type: 2}
+  costumes:
+  - {fileID: 11400000, guid: 01eff062610fdbd4c88b6eb71912efe4, type: 2}
+  - {fileID: 11400000, guid: 10944ba7c1d9e8543932ae2e1c6e8e1c, type: 2}
+  - {fileID: 11400000, guid: db8d4c91b00cea847970714e28aa0ae0, type: 2}
+  - {fileID: 11400000, guid: c77501fe2d8514842ac2eff1e7563c74, type: 2}
+  - {fileID: 11400000, guid: 609d59f5bd8b92748b0037aadfaf49be, type: 2}
+  - {fileID: 11400000, guid: 3f6799eb17fdf094897b483fc9c21cfb, type: 2}
+  enemies:
+  - {fileID: 11400000, guid: 0d04819fbd2870546b22416a1588a593, type: 2}
+  - {fileID: 11400000, guid: 16619609264ddd3488570e7c32b32143, type: 2}
+  - {fileID: 11400000, guid: 5febb2972d7b4b5438fd1e30f4656826, type: 2}
+  - {fileID: 11400000, guid: 75c534cffca782d43a2ecd7189fcaa36, type: 2}
+  - {fileID: 11400000, guid: 2f2575773662f474da9701b3d3bdbddc, type: 2}
+  - {fileID: 11400000, guid: dfed5548b3b0e1543b1657d6607655bc, type: 2}
+  - {fileID: 11400000, guid: f323493657434904b8e20ea7b2a9cf44, type: 2}
+  - {fileID: 11400000, guid: 07bf42efa935da74fb322c1296d7d83e, type: 2}
+  - {fileID: 11400000, guid: c396242efb352874b81d799ac4e192ec, type: 2}
+  - {fileID: 11400000, guid: 913292148c2fc8246b24b00614607658, type: 2}
+  - {fileID: 11400000, guid: 236f666e96255fe40af9194156a22967, type: 2}
+  playerPrefab: {fileID: 216423936105204445, guid: 6b1dc4411a619b74685505198ee66c58, type: 3}
+  enemyPrefab: {fileID: 1860128500088664103, guid: ab4df4689c622db43befed524f0b0964, type: 3}
+  clonePrefab: {fileID: 327556377014560540, guid: d3de4f8d0c87c6643b0ab0ff9238523d, type: 3}
+  summonPrefab: {fileID: 3772199649996619314, guid: ffd3ebac58fecc44baafd74e74669b16, type: 3}
+  projectilePrefab: {fileID: 4761425230516893180, guid: 9390f122216e46c46a72cbd4fa82ec7e, type: 3}
+  pickupPrefab: {fileID: 8539102407990997866, guid: 5a91ebff912f4c54cb5e0a3079f46152, type: 3}
+  interactablePrefab: {fileID: 6921281593326623387, guid: 85d62e0dd48e8094ead42d3d39176c31, type: 3}
