@@ -68,6 +68,7 @@ namespace Diverse
                     break;
             }
             Fx.I?.Burst(pos, kind == "gold" ? Pal.Gold : kind == "xp" ? Pal.Frost : Pal.ShadowEl, 3, 2, 0.25f);
+            p.Abilities?.Raise("Pickup", pos, kind);
             Destroy(gameObject);
         }
     }

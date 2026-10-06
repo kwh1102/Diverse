@@ -112,6 +112,9 @@ namespace Diverse
             Element.Holy => Pal.Holy,
             Element.Poison => Pal.Hex("b6f06b"),
             Element.Wind => Pal.Wind,
+            Element.Blood => Pal.Blood,
+            Element.Void => Pal.Hex("6b4fa8"),
+            Element.Arcane => Pal.Hex("ff9cf2"),
             _ => Pal.White,
         };
 
@@ -125,6 +128,9 @@ namespace Diverse
                 case Element.Frost: target.AddStatus("chill", 2f, 0, 0.45f, src, Pal.Frost); break;
                 case Element.Poison: target.AddStatus("poison", 4f, power * 0.3f, 0.1f, src, Pal.Hex("b6f06b")); break;
                 case Element.Shadow: target.AddStatus("mark", 4f, 0, 0, src, Pal.ShadowEl); break;
+                case Element.Blood: target.AddStatus("bleed", 3f, power * 0.3f, 0, src, Pal.Blood); break;
+                case Element.Void: target.AddStatus("weaken", 3f, 0, 0, src, Pal.Hex("6b4fa8")); break;
+                case Element.Wind: target.Knockback(target.Pos - (src != null ? src.Pos : target.Pos), 3f); break;
                 case Element.Lightning:
                     if (depth < 2)
                     {

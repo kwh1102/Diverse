@@ -295,9 +295,12 @@ namespace Diverse
                     var r = rec;
                     page.options.Add(new DialogueOption($"[{r.name}] 계승하기", () =>
                     {
-                        var graph = r.ToGraph();
+                        var graph = r.ToAbility();
+                        if (graph == null) { Close(); return; }
                         graph.id = System.Guid.NewGuid().ToString("N").Substring(0, 8);
-                        AbilityValidator.Balance(graph, g.Player);
+                        // Rebalanced for this life's build; an ability the new build can't host keeps its carved numbers
+                        var probe = graph.Clone();
+                        if (RuleValidator.Validate(probe, BuildContext.Of(g.Player)).ok) { probe.id = graph.id; probe.name = graph.name; probe.desc = probe.Explain(); graph = probe; }
                         g.Player.Abilities.Add(graph);
                         gr.recovered = true;
                         g.World.Log($"{Ko.I(g.HeroName)} {gr.heroName}의 무덤에서 [{graph.name}] 능력을 계승했다.", "legacy");

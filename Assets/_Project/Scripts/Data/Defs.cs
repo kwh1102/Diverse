@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Diverse
 {
     public enum WeaponKind { Greatsword, SwordShield, Crossbow, Staff, Dagger, Katana }
-    public enum Element { None, Fire, Frost, Lightning, Shadow, Holy, Poison, Wind }
+    public enum Element { None, Fire, Frost, Lightning, Shadow, Holy, Poison, Wind, Blood, Void, Arcane }
 
     /// <summary>
     /// One step of a basic-attack combo. Hit feel is decided almost entirely by these numbers.

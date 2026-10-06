@@ -22,10 +22,14 @@ namespace Diverse
 
         public float this[StatId id] => Get(id);
 
+        /// <summary>Final say over a stat after all modifiers (ability floors/caps/overrides). Null for non-player stats.</summary>
+        [NonSerialized] public Func<StatId, float, float> Clamp;
+
         public float Get(StatId id)
         {
             int i = (int)id;
             float v = (baseV[i] + add[i]) * Mathf.Max(0.1f, 1f + mul[i]);
+            if (Clamp != null) v = Clamp(id, v);
             switch (id)
             {
                 case StatId.CritChance: return Mathf.Clamp(v, 0, 1);

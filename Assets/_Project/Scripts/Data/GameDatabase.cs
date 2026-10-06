@@ -14,6 +14,9 @@ namespace Diverse
         public List<CostumeData> costumes = new List<CostumeData>();
         public List<EnemyData> enemies = new List<EnemyData>();
 
+        [Header("Ability rules (Rule IR limits, power budget, tier unlocks)")]
+        public AbilityRulesData abilityRules;
+
         [Header("Prefabs")]
         public Player playerPrefab;
         public Enemy enemyPrefab;

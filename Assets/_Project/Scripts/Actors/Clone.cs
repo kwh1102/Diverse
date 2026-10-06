@@ -19,6 +19,21 @@ namespace Diverse
         [SerializeField] SpriteRenderer weapon;   // prefab child (visual/weapon); hidden for the phantom weapon
         Color tint;
         public static readonly List<Clone> Active = new List<Clone>();
+        public void Extend(float seconds) => life += seconds;
+
+        /// <summary>DetonateEntities: the clone bursts and vanishes (raises CloneExpire like a normal end).</summary>
+        public void Burst(float mult, float radius, string ability)
+        {
+            if (owner == null) return;
+            Color32 col = element != Element.None ? Combat.ElementColor(element) : (Color32)tint;
+            Fx.I?.Play(Art.Shockwave(col, Mathf.RoundToInt(radius * Art.PPU)), Pos, 0, 24, 1, null, true);
+            foreach (var a in new List<Actor>(Actor.InRadius(Pos, radius, Team.Enemy)))
+            {
+                var d = new DamageInfo { amount = owner.AttackPower * mult, source = owner, direction = a.Pos - Pos, knockback = 3, hitstop = 0.04f, element = element, tags = tags + " " + ability, canCrit = true, fromAbility = true, depth = depth + 1 };
+                Combat.Hit(a, d, col, "hit", 0.1f, 1.5f);
+            }
+            life = 0;
+        }
 
         public static Clone Spawn(Player p, Vector2 pos, float duration, float power, bool copy, bool phantom, Element el, string tags, int depth)
         {

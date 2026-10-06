@@ -49,6 +49,10 @@ namespace Diverse
 
         public void Despawn() { Destroy(gameObject); }
 
+        Vector2 tauntAt; float tauntUntil;
+        /// <summary>Decoy: for a moment the enemy chases this point instead of the player.</summary>
+        public void Taunt(Vector2 at, float time) { if (def.boss) return; tauntAt = at; tauntUntil = Time.time + time; }
+
         public void Stun(float t)
         {
             if (def.boss) t *= 0.35f;
@@ -113,6 +117,7 @@ namespace Diverse
 
                 case S.Chase:
                     if (p == null || !p.Alive || dist > def.aggroRange * 2.2f) { state = S.Idle; aggro = false; break; }
+                    if (Time.time < tauntUntil) { MoveToward(tauntAt, def.speed * slowMul, dt); Separate(dt); break; }
                     Facing = toP.SafeNormal(Facing);
                     float want = def.brain is EnemyBrain.Ranged or EnemyBrain.Caster ? def.attackRange * 0.8f : def.attackRange * 0.85f;
                     if (def.brain is EnemyBrain.Ranged or EnemyBrain.Caster && dist < want * 0.55f)

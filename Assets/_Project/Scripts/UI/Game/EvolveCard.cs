@@ -19,10 +19,10 @@ namespace Diverse
         }
 
         /// <param name="lockK">0~1 while the appear-lock runs, &lt;0 when not shown.</param>
-        public void Tick(AbilityGraph a, int index, bool locked, float lockK)
+        public void Tick(AbilityDef a, int index, bool locked, float lockK)
         {
             string src = a.source == "ai" ? "<color=#c9b8ff>✦ AI 생성</color>" : "<color=#8c7aa8>◇ 로컬</color>";
-            string kind = a.kind == "modifier" ? "증폭" : a.kind == "stat" ? "기본" : "메커니즘";
+            string kind = RuleText.TierLabel(a.tier);
             UIKit.Set(header, $"<color=#6b5c8a>{index + 1}</color>  {src}  <color=#8c7aa8>{kind}</color>");
             UIKit.Set(title, $"<b><color=#fff2b3>{a.name}</color></b>");
             UIKit.Set(desc, a.desc ?? a.Explain());

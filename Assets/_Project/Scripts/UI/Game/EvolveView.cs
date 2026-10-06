@@ -83,7 +83,9 @@ namespace Diverse
             if (panel != null) panel.sizeDelta = new Vector2(panel.sizeDelta.x, chat || showPipeline ? heightWithChat : heightWithoutChat);
             if (chat)
             {
-                int n = g.Chat.Count + (g.ChatBusy ? 1 : 0);
+                // Redraw when the messages OR the busy state change: a reply arriving and "thinking…" ending happen in the
+                // same frame and leave Count+busy unchanged, which used to freeze the "thinking…" line on screen
+                int n = g.Chat.Count * 2 + (g.ChatBusy ? 1 : 0);
                 if (n != lastChat || g.ChatBusy)
                 {
                     lastChat = n;

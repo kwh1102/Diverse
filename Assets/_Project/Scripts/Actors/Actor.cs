@@ -119,10 +119,21 @@ namespace Diverse
                         s.tick = 0.5f;
                         var d = new DamageInfo { amount = s.dps * 0.5f, source = s.source, direction = Vector2.zero, noEvents = true, fxColor = s.color, tags = "STATUS" };
                         TakeDamage(d);
-                        if (!Alive) return;
+                        if (!Alive)
+                        {
+                            // A damage-over-time kill still counts as the player's kill (statuses stay readable on the corpse)
+                            if (s.source != null && s.source.team == Team.Player)
+                                GameEvents.Raise(new CombatEvent { type = Trig.Kill, source = s.source, target = this, position = Pos, tags = "STATUS " + s.id.ToUpper(), depth = 1 });
+                            return;
+                        }
                     }
                 }
-                if (s.time <= 0) statuses.RemoveAt(i);
+                if (s.time <= 0)
+                {
+                    statuses.RemoveAt(i);
+                    if (Alive && s.source != null && s.source.team == Team.Player)
+                        GameEvents.Raise(new CombatEvent { type = Trig.StatusExpired, source = s.source, target = this, position = Pos, tags = s.id });
+                }
             }
         }
 
@@ -131,7 +142,7 @@ namespace Diverse
             foreach (var s in statuses)
                 if (s.id == id) { s.time = Mathf.Max(s.time, time); s.dps = Mathf.Max(s.dps, dps); s.slow = Mathf.Max(s.slow, slow); return; }
             statuses.Add(new StatusEffect { id = id, time = time, dps = dps, slow = slow, source = src, color = col, tick = 0.5f });
-            GameEvents.Raise(new CombatEvent { type = Trig.StatusApplied, source = src, target = this, position = Pos, tags = id.ToUpper() });
+            GameEvents.Raise(new CombatEvent { type = Trig.StatusApplied, source = src, target = this, position = Pos, tags = id });
         }
 
         public bool HasStatus(string id) { foreach (var s in statuses) if (s.id == id) return true; return false; }
@@ -169,6 +180,8 @@ namespace Diverse
                 else if (s.id == "chill" || s.id == "freeze") tint = Color.Lerp(tint, new Color(0.6f, 0.85f, 1f), 0.6f);
                 else if (s.id == "poison") tint = Color.Lerp(tint, new Color(0.7f, 1f, 0.6f), 0.5f);
                 else if (s.id == "mark") tint = Color.Lerp(tint, new Color(1f, 0.7f, 0.9f), 0.3f);
+                else if (s.id == "bleed") tint = Color.Lerp(tint, new Color(1f, 0.5f, 0.55f), 0.4f);
+                else if (s.id == "weaken") tint = Color.Lerp(tint, new Color(0.7f, 0.6f, 0.9f), 0.4f);
             }
             body.color = tint * BaseTint;
         }
@@ -209,10 +222,17 @@ namespace Diverse
         public void Heal(float amount)
         {
             if (!Alive || amount <= 0) return;
+            amount = FilterHeal(amount);
+            if (amount <= 0) return;
             float before = hp;
             hp = Mathf.Min(maxHp, hp + amount);
             if (hp - before >= 1 && Fx.I != null && Game.Settings.damageNumbers) Fx.I.Number(Pos + Vector2.up * 0.4f, "+" + Mathf.RoundToInt(hp - before), new Color(0.5f, 1f, 0.55f), 0.9f);
+            OnHealed(hp - before);
         }
+
+        /// <summary>Lets the player's ability rules redefine healing (e.g. convert it into shield). Returns the HP to restore.</summary>
+        protected virtual float FilterHeal(float amount) => amount;
+        protected virtual void OnHealed(float amount) { }
 
         public static IEnumerable<Actor> InRadius(Vector2 c, float r, Team? team = null)
         {

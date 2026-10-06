@@ -1,0 +1,462 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 811a9870c8d49604b8dc42d40995f54e, type: 3}
+  m_Name: AbilityRules
+  m_EditorClassIdentifier: 
+  def:
+    maxRulesPerAbility: 4
+    maxStatesPerAbility: 3
+    maxOpsPerRule: 3
+    maxConditionsPerRule: 3
+    maxProcDepth: 3
+    maxTargetsPerProc: 6
+    maxSpawnPerOwner: 8
+    maxProcsPerFrame: 40
+    maxStateValue: 999
+    minInternalCooldown: 0.12
+    cycleRepairCooldown: 1
+    maxCycleGain: 0.8
+    maxExpectedLiveSpawns: 6
+    maxSpawnDuration: 8
+    maxTemporalTicks: 6
+    maxArmedSeconds: 8
+    maxCascade: 3
+    maxMetaTargets: 5
+    budgetBase: 32
+    budgetPerTier: 7
+    acceptMin: 0.45
+    acceptMax: 1.4
+    complexityBonus: 0.08
+    tierUnlockLevel: 0100000001000000030000000600000009000000
+    riskCap: 0.85
+    riskWarn: 0.55
+    simSeconds: 60
+    simMaxProcsPerSecond: 25
+    simMaxDivergence: 3
+    prims:
+    - id: Attack
+      def: 0
+      min: 0
+      max: 0
+      freq: 1.6
+    - id: Hit
+      def: 0
+      min: 0
+      max: 0
+      freq: 2
+    - id: FirstHit
+      def: 0
+      min: 0
+      max: 0
+      freq: 0.35
+    - id: Crit
+      def: 0
+      min: 0
+      max: 0
+      freq: 0.25
+    - id: Kill
+      def: 0
+      min: 0
+      max: 0
+      freq: 0.3
+    - id: Overkill
+      def: 0
+      min: 0
+      max: 0
+      freq: 0.08
+    - id: EliteKill
+      def: 0
+      min: 0
+      max: 0
+      freq: 0.02
+    - id: Dash
+      def: 0
+      min: 0
+      max: 0
+      freq: 0.35
+    - id: DashEnd
+      def: 0
+      min: 0
+      max: 0
+      freq: 0.35
+    - id: PerfectDodge
+      def: 0
+      min: 0
+      max: 0
+      freq: 0.06
+    - id: Moved
+      def: 0
+      min: 0
+      max: 0
+      freq: 0.4
+    - id: Damaged
+      def: 0
+      min: 0
+      max: 0
+      freq: 0.15
+    - id: Guard
+      def: 0
+      min: 0
+      max: 0
+      freq: 0.08
+    - id: ShieldBroken
+      def: 0
+      min: 0
+      max: 0
+      freq: 0.03
+    - id: Healed
+      def: 0
+      min: 0
+      max: 0
+      freq: 0.05
+    - id: LowHealth
+      def: 0
+      min: 0
+      max: 0
+      freq: 0.01
+    - id: SkillCast
+      def: 0
+      min: 0
+      max: 0
+      freq: 0.2
+    - id: ComboFinish
+      def: 0
+      min: 0
+      max: 0
+      freq: 0.4
+    - id: CloneSpawn
+      def: 0
+      min: 0
+      max: 0
+      freq: 0.02
+    - id: CloneExpire
+      def: 0
+      min: 0
+      max: 0
+      freq: 0.02
+    - id: EntityExpired
+      def: 0
+      min: 0
+      max: 0
+      freq: 0.02
+    - id: StatusApplied
+      def: 0
+      min: 0
+      max: 0
+      freq: 0.4
+    - id: StatusExpired
+      def: 0
+      min: 0
+      max: 0
+      freq: 0.3
+    - id: ProjectileEnd
+      def: 0
+      min: 0
+      max: 0
+      freq: 0.5
+    - id: Pickup
+      def: 0
+      min: 0
+      max: 0
+      freq: 0.5
+    - id: Every
+      def: 0
+      min: 0
+      max: 0
+      freq: 0
+    - id: StateFull
+      def: 0
+      min: 0
+      max: 0
+      freq: 0
+    - id: StateEmpty
+      def: 0
+      min: 0
+      max: 0
+      freq: 0
+    - id: CombatStart
+      def: 0
+      min: 0
+      max: 0
+      freq: 0.03
+    - id: CombatEnd
+      def: 0
+      min: 0
+      max: 0
+      freq: 0.03
+    - id: CampCleared
+      def: 0
+      min: 0
+      max: 0
+      freq: 0.004
+    - id: BossKilled
+      def: 0
+      min: 0
+      max: 0
+      freq: 0.001
+    - id: LevelUp
+      def: 0
+      min: 0
+      max: 0
+      freq: 0.005
+    - id: AbilityAcquired
+      def: 0
+      min: 0
+      max: 0
+      freq: 0.004
+    - id: Damage
+      def: 0.8
+      min: 0.2
+      max: 4
+      freq: 0
+    - id: Nova
+      def: 0.6
+      min: 0.15
+      max: 3
+      freq: 0
+    - id: Slash
+      def: 0.7
+      min: 0.2
+      max: 3
+      freq: 0
+    - id: Beam
+      def: 0.6
+      min: 0.15
+      max: 3
+      freq: 0
+    - id: Projectile
+      def: 0.4
+      min: 0.1
+      max: 2
+      freq: 0
+    - id: Chain
+      def: 0.5
+      min: 0.1
+      max: 2
+      freq: 0
+    - id: ApplyStatus
+      def: 0.3
+      min: 0.05
+      max: 1.5
+      freq: 0
+    - id: Detonate
+      def: 1
+      min: 0.2
+      max: 4
+      freq: 0
+    - id: Spread
+      def: 3
+      min: 1
+      max: 6
+      freq: 0
+    - id: Transfer
+      def: 2
+      min: 1
+      max: 5
+      freq: 0
+    - id: Execute
+      def: 0.12
+      min: 0.05
+      max: 0.3
+      freq: 0
+    - id: Drain
+      def: 0.5
+      min: 0.1
+      max: 2
+      freq: 0
+    - id: Stun
+      def: 0.6
+      min: 0.2
+      max: 2
+      freq: 0
+    - id: Slow
+      def: 2
+      min: 0.5
+      max: 5
+      freq: 0
+    - id: Taunt
+      def: 1.5
+      min: 0.5
+      max: 4
+      freq: 0
+    - id: Push
+      def: 7
+      min: 3
+      max: 14
+      freq: 0
+    - id: Pull
+      def: 7
+      min: 3
+      max: 14
+      freq: 0
+    - id: Cleanse
+      def: 0.4
+      min: 0.2
+      max: 1
+      freq: 0
+    - id: Heal
+      def: 0.04
+      min: 0.01
+      max: 0.2
+      freq: 0
+    - id: Shield
+      def: 0.12
+      min: 0.03
+      max: 0.5
+      freq: 0
+    - id: Buff
+      def: 0.2
+      min: 0.05
+      max: 0.8
+      freq: 0
+    - id: ResetCooldowns
+      def: 0.2
+      min: 0.05
+      max: 0.6
+      freq: 0
+    - id: GainDash
+      def: 1
+      min: 1
+      max: 2
+      freq: 0
+    - id: EmpowerNext
+      def: 0.6
+      min: 0.15
+      max: 3
+      freq: 0
+    - id: Spawn
+      def: 0.6
+      min: 0.2
+      max: 2
+      freq: 0
+    - id: DetonateEntities
+      def: 0.8
+      min: 0.2
+      max: 3
+      freq: 0
+    - id: ExtendEntities
+      def: 1.5
+      min: 0.5
+      max: 4
+      freq: 0
+    - id: GainGold
+      def: 3
+      min: 1
+      max: 30
+      freq: 0
+    - id: GainXp
+      def: 2
+      min: 1
+      max: 20
+      freq: 0
+    - id: GainPotion
+      def: 1
+      min: 1
+      max: 2
+      freq: 0
+    - id: DropPickup
+      def: 8
+      min: 2
+      max: 40
+      freq: 0
+    - id: ModifyStat
+      def: 0.1
+      min: 0
+      max: 0
+      freq: 0
+    - id: AmplifyDamage
+      def: 0.2
+      min: 0.05
+      max: 1
+      freq: 0
+    - id: Resist
+      def: 0.15
+      min: 0.05
+      max: 0.5
+      freq: 0
+    - id: Convert
+      def: 1
+      min: 0
+      max: 0
+      freq: 0
+    - id: Aura
+      def: 0.25
+      min: 0.05
+      max: 1
+      freq: 0
+    - id: StatusPotency
+      def: 0.3
+      min: 0.1
+      max: 1
+      freq: 0
+    - id: ReplaceWith
+      def: 0.5
+      min: 0.1
+      max: 2
+      freq: 0
+    - id: AmplifyTagged
+      def: 0.2
+      min: 0.05
+      max: 0.5
+      freq: 0
+    - id: RepeatTagged
+      def: 0.4
+      min: 0.2
+      max: 0.8
+      freq: 0
+    - id: HasteTagged
+      def: 0.25
+      min: 0.1
+      max: 0.5
+      freq: 0
+    - id: ExtendTagged
+      def: 0.3
+      min: 0.1
+      max: 1
+      freq: 0
+    - id: EnlargeTagged
+      def: 0.3
+      min: 0.1
+      max: 0.8
+      freq: 0
+    - id: MultiplyTagged
+      def: 1
+      min: 1
+      max: 2
+      freq: 0
+    - id: BudgetBias
+      def: 0.25
+      min: 0.1
+      max: 0.6
+      freq: 0
+    - id: RerollDiscount
+      def: 0.5
+      min: 0.2
+      max: 1
+      freq: 0
+    - id: TagBias
+      def: 1
+      min: 0.5
+      max: 3
+      freq: 0
+    - id: UpgradeRandom
+      def: 0.3
+      min: 0.15
+      max: 0.5
+      freq: 0
+    - id: DelayedReward
+      def: 100
+      min: 50
+      max: 300
+      freq: 0
+    telemetryFullTrust: 25
+    telemetryMinSeconds: 30
