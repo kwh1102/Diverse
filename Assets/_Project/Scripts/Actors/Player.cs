@@ -14,11 +14,11 @@ namespace Diverse
     {
         public static Player I { get; private set; }
 
-        public WeaponDef Weapon;
-        public CostumeDef Costume;
+        [System.NonSerialized] public WeaponDef Weapon;
+        [System.NonSerialized] public CostumeDef Costume;
         public readonly Stats Stats = new Stats();
-        public AbilityRuntime Abilities;
-        public Telemetry Telemetry = new Telemetry();
+        [System.NonSerialized] public AbilityRuntime Abilities;
+        [System.NonSerialized] public Telemetry Telemetry = new Telemetry();
         public int Level = 1;
         public float Xp, XpToNext = 30;
         public int Gold, Kills, Potions = 2;
@@ -66,18 +66,17 @@ namespace Diverse
         // Buffs
         readonly List<(StatId stat, float value, float until)> buffs = new List<(StatId, float, float)>();
 
-        SpriteRenderer weaponSr, shieldSr, raftSr;
-        Transform weaponPivot;
+        // Prefab children (Prefabs/Actors/Player.prefab): visual/weaponPivot/weapon, visual/shield, raft
+        [SerializeField] SpriteRenderer weaponSr, shieldSr, raftSr;
+        [SerializeField] Transform weaponPivot;
         float animT;
         float stepDustT;
 
         public static Player Spawn(CostumeDef costume, WeaponDef weapon, Vector2 pos)
         {
-            var go = new GameObject("Player");
-            var p = go.AddComponent<Player>();
+            var p = Instantiate(DB.Asset.playerPrefab);
+            p.name = "Player";
             I = p;
-            p.team = Team.Player;
-            p.radius = 0.35f;
             p.Costume = costume;
             p.Weapon = weapon;
             p.Abilities = new AbilityRuntime(p);
@@ -102,19 +101,11 @@ namespace Diverse
         {
             body.sprite = Art.Rabbit(Costume, Pose.Idle0);
             SetShadowSize(14);
-            weaponPivot = new GameObject("weaponPivot").transform;
-            weaponPivot.SetParent(visual, false);
             weaponPivot.localPosition = Art.HandAnchor;
-            var w = new GameObject("weapon");
-            w.transform.SetParent(weaponPivot, false);
-            weaponSr = Art.MakeRenderer(w, Art.Weapon(Weapon.kind), 0);
-            if (Weapon.kind == WeaponKind.SwordShield)
-            {
-                var s = new GameObject("shield");
-                s.transform.SetParent(visual, false);
-                s.transform.localPosition = new Vector3(-0.15f, 0.42f, 0);
-                shieldSr = Art.MakeRenderer(s, Art.Shield(), 0);
-            }
+            weaponSr.sprite = Art.Weapon(Weapon.kind);
+            // The shield child is always in the prefab; only sword & shield shows it
+            if (Weapon.kind == WeaponKind.SwordShield) shieldSr.sprite = Art.Shield();
+            else { shieldSr.gameObject.SetActive(false); shieldSr = null; }
         }
 
         // ───────────────────────── Stats ─────────────────────────
@@ -133,7 +124,7 @@ namespace Diverse
             Stats.SetBase(StatId.GoldGain, 1);
             Stats.SetBase(StatId.DashCooldown, 1);
             Stats.SetBase(StatId.Regen, 0.3f);
-            Costume.apply?.Invoke(Stats);
+            Costume.Apply(Stats);
             for (int i = 0; i < 4; i++) AttrInfo.Apply(Stats, (Attr)i, Attrs[i]);
             Abilities?.ApplyStats(Stats);
             foreach (var b in buffs) if (Time.time < b.until) Stats.Mul(b.stat, b.value);
@@ -673,14 +664,7 @@ namespace Diverse
         {
             var w = WorldStreamer.I;
             OnWater = (HasRaft || Ferrying) && w != null && w.IsLoaded(Pos) && WorldGen.IsWater(w.GroundAtTile(Mathf.FloorToInt(Pos.x), Mathf.FloorToInt(Pos.y)));
-            if (OnWater && raftSr == null)
-            {
-                var go = new GameObject("raft");
-                go.transform.SetParent(transform, false);
-                go.transform.localPosition = new Vector3(0, 0.1f, 0);
-                raftSr = Art.MakeRenderer(go, Art.Prop("raft"), 0);
-            }
-            if (raftSr == null) return;
+            if (OnWater && raftSr.sprite == null) raftSr.sprite = Art.Prop("raft");
             raftSr.enabled = OnWater;
             raftSr.sortingOrder = body.sortingOrder - 1;
             raftSr.transform.localPosition = new Vector3(0, 0.1f + Mathf.Sin(animT * 2.5f) * 0.03f, 0);

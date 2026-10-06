@@ -117,3 +117,6 @@ InitTestScene*.unity*
 openai_key.txt
 /Assets/Temp/
 /Assets/Temp.meta
+
+# Claude Code local settings
+.claude/settings.local.json

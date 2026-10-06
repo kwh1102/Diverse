@@ -17,8 +17,8 @@ namespace Diverse
     {
         public readonly List<string> PipelineLog = new List<string>();
         /// <summary>One plain sentence for the player: where this offer came from.</summary>
-        public string OfferSummary;
-        public float OfferShownAt;                     // unscaled time the cards appeared (click lockout)
+        [System.NonSerialized] public string OfferSummary;
+        [System.NonSerialized] public float OfferShownAt;                     // unscaled time the cards appeared (click lockout)
         public const float OfferLockSeconds = 0.8f;
 
         // Background prefetch state
@@ -30,7 +30,7 @@ namespace Diverse
 
         // Evolution chat
         public readonly List<(bool player, string text)> Chat = new List<(bool, string)>();
-        public bool ChatBusy;
+        [System.NonSerialized] public bool ChatBusy;
         public int ChatCost => 30 + Player.Level * 5;  // always more than a reroll
         public int RerollCost => 15 + Player.Level * 3;
 

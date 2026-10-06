@@ -5,8 +5,42 @@
 
 ## 실행
 
-1. Unity에서 `Assets/_Project/Scenes/Main.unity`를 연다 (메뉴 **Diverse → 메인 씬 열기**)
-2. ▶ Play. 모든 오브젝트는 코드로 생성되므로 씬에는 `Game` 오브젝트 하나만 있다.
+1. Unity에서 `Assets/_Project/Scenes/MainMenu.unity`를 연다 (메뉴 **Diverse → 메인 메뉴 씬 열기**)
+2. ▶ Play. 타이틀 → 캐릭터 선택 → `Game` 씬으로 넘어간다.
+
+`Game.unity`를 바로 열고 ▶ 해도 된다(저장된 삶을 이어 하거나, 마지막으로 고른 캐릭터로 새 삶을 시작).
+
+## 씬 구성
+
+| 씬 | 에디터에서 보이는 것 | 플레이하면 추가되는 것 |
+|---|---|---|
+| `Scenes/MainMenu.unity` | 타이틀 배경(마을 그림), 로고, 버튼, 캐릭터 선택·설정 화면(비활성) | — |
+| `Scenes/Game.unity` | 카메라, HUD·일시정지·대화·진화·지도·사망 화면(`GameCanvas`), 시작 마을 미리보기 그림 | 절차 생성 월드(지형·구조물·적), 플레이어 |
+
+- 화면을 고치려면: `Prefabs/UI/MenuCanvas.prefab`, `Prefabs/UI/GameCanvas.prefab`을 열어 위치·크기·색·문구를 직접 바꾼다. 스크립트는 값만 채운다.
+- 꺼져 있는 화면(일시정지, 진화 등)은 Hierarchy에서 체크박스를 켜면 에디터에서 볼 수 있다. 플레이하면 상태에 맞게 다시 켜고 꺼진다.
+- `Game.unity`의 `World Preview (editor only)`는 시작 마을을 찍어 둔 그림이다. 플레이를 누르면 사라지고 빌드에도 포함되지 않는다.
+- UI 프레임 이미지: `UI/Frames/*.png`(9-slice), 타이틀 배경: `UI/TitleBackground.png`. 다시 그려도 된다.
+
+## 에디터에서 다루는 에셋 (`Assets/_Project`)
+
+| 경로 | 내용 |
+|---|---|
+| `Data/Weapons`, `Data/Costumes`, `Data/Enemies` | 무기(콤보 타격감 수치), 코스튬(색·특화 능력치), 적 수치. **Inspector에서 바로 수정** |
+| `Data/PostFx.asset` | 블룸·비네트·색 보정 (카메라의 `Global Volume`이 사용) |
+| `Resources/GameDatabase.asset` | 위 데이터 목록 + 코드가 생성하는 프리팹 연결 |
+| `Prefabs/Actors`, `Prefabs/Combat`, `Prefabs/World` | Player, Enemy, Clone, Summon, Projectile, Pickup, Interactable, Campfire, Chunk (열면 미리보기 그림이 보임) |
+| `Prefabs/UI` | `MenuCanvas`, `GameCanvas` — 모든 화면 |
+| `Resources/Sprites/<key>.png` | 코드로 그린 도트를 구워 둔 PNG(16 PPU). **덮어 그리면 게임에 그대로 반영**, 지우면 코드 그림으로 돌아감 |
+| `Materials/` | 프리팹 렌더러용 도트 셰이더 머티리얼 |
+
+메뉴 **Diverse**:
+- **빠진 에셋 채우기**: 없는 데이터·프리팹·씬·스프라이트만 새로 만든다. **이미 있는 파일은 절대 덮어쓰지 않는다** (처음부터 다시 만들려면 그 파일을 지우고 실행).
+- **스프라이트 PNG로 굽기**: 없는 PNG만 새로 굽는다.
+- **타이틀 배경·마을 미리보기 다시 찍기**: 플레이 모드에서 시작 마을을 찍어 두 그림을 새로 만든다.
+- **스모크 테스트 (플레이 모드)**: 메뉴 → 게임(무기 6종, 모든 프리팹, 모든 화면) → 사망 → 메뉴 → 이어하기를 실제 버튼으로 진행해 본다. 실제 세이브는 건드리지 않는다.
+  - 배치 모드: `Unity.exe -batchmode -projectPath . -executeMethod Diverse.EditorTools.SmokeTest.RunBatch` (종료 코드 0 = 통과)
+- **UI 스크린샷 찍기**: 모든 화면을 `Logs/UIShots`에 저장한다 (레이아웃 확인용).
 
 ### 조작 (모든 키는 **설정 → 키 설정**에서 변경 가능)
 
@@ -79,25 +113,26 @@
 
 | 폴더 | 내용 |
 |---|---|
-| `Core/` | `Game`(전체 흐름, partial), `GameEvolution`(진화·의뢰), `GameTime`(히트스톱·슬로모션), `CameraRig`(흔들림·킥·펀치), `Controls`(Input System + 키 재설정), `SaveData`(세계의 기억), `GameEvents`, `Util` |
-| `Data/` | `Defs.cs` — 무기 콤보(타격감 수치), 코스튬, 적 테이블 · `Stats.cs` — 능력치 공식 |
-| `Art/` | 모든 도트를 코드로 생성(`PixelCanvas`): 캐릭터, 적, 지형, 건물, 이펙트. **`Resources/Sprites/<key>.png`를 넣으면 그 이미지가 우선 사용됨** |
-| `World/` | `WorldGen`(시드 기반 무한 지형·구조물), `WorldStreamer`(청크 로딩, 충돌, A* 경로 탐색), `ChunkView`, `World`(구조물 생성 + 기억 반영), `Dialogue`, `Interactable`, `Pickup` |
-| `Actors/` | `Actor`(공통: 체력·넉백·피격 플래시·상태이상), `Player`, `Enemy`(공격 예고, AI 7종, 보스 패턴), `Summons`(분신·포탑·궤도 구슬·장판) |
+| `Core/` | `Session`(두 씬이 공유하는 설정·세이브·씬 이동), `Game`(게임 씬 흐름, partial), `GameEvolution`(진화·의뢰), `GameTime`(히트스톱·슬로모션), `CameraRig`(흔들림·킥·펀치), `Controls`(Input System + 키 재설정), `SaveData`(세계의 기억), `GameEvents`, `Util` |
+| `Data/` | `Defs.cs` — 데이터 형식(`WeaponDef`/`ComboStep`/`CostumeDef`/`EnemyDef`)과 `DB`(에셋에서 읽음) · `WeaponData`/`CostumeData`/`EnemyData`/`GameDatabase` — ScriptableObject · `Stats.cs` — 능력치 공식 |
+| `Art/` | 도트 생성기(`PixelCanvas`): 캐릭터, 적, 지형, 건물, 이펙트. `Resources/Sprites/<key>.png`가 있으면 그 이미지를 우선 사용 |
+| `World/` | `WorldGen`(시드 기반 무한 지형·구조물), `WorldStreamer`(청크 로딩, 충돌, A* 경로 탐색), `ChunkView`, `World`(구조물 생성 + 기억 반영), `FireFx`, `Dialogue`, `Interactable`, `Pickup` |
+| `Actors/` | `Actor`(공통: 체력·넉백·피격 플래시·상태이상), `Player`, `Enemy`(공격 예고, AI 7종, 보스 패턴), `Clone`(분신), `Summon`(포탑·궤도 구슬·장판) |
 | `Combat/` | `Combat`(판정·피해·타격 연출), `Projectile`, `Skills`(스킬 24종), `Fx`(이펙트 풀) |
 | `Abilities/` | `AbilityLanguage`(원자 DSL), `AbilityGraph`, `Telemetry`, `AbilityPipeline`(컨텍스트·검증·밸런스), `LocalComposer`, `AiClient`(OpenAI), `AbilityRuntime`(실행) |
-| `UI/` | 도트 스타일 IMGUI: HUD, 진화, 지도, 일시정지·설정·키 설정, 대화 |
-| `Editor/` | `Diverse` 메뉴: 파이프라인 검증, AI 키 폴더, 세이브 초기화 |
+| `UI/` | uGUI 화면 스크립트(값만 채움): `Menu/`(MenuUI, TitleView, CharacterSelectView), `Game/`(GameUI, HudView, PauseView, DialogueView, EvolveView, MapView, DeathView, ToastView…), `SettingsView`(두 씬 공용), `UIKit` |
+| `Editor/` | `Diverse` 메뉴: 파이프라인 검증, 스모크 테스트, UI 스크린샷, 빠진 에셋 채우기(`ProjectAssetBuilder`·`UIBuilder`, 기본 수치는 `DefaultData`), 마을 그림 찍기, AI 키 폴더, 세이브 초기화 |
 
 ### 수정을 시작하기 좋은 곳
 
-- **타격감 조정**: `Data/Defs.cs` → 무기별 `ComboStep` (`hitstop`, `shake`, `kick`, `lunge`, `knockback`)
-- **스킬 추가**: `Combat/Skills.cs` → `SkillDB`에 정의 + `Run()`에 `case` 추가 + `WeaponDef.skills` 변경
-- **새 적**: `DB.BuildEnemies()`에 추가 + `Art/ArtEnemies.cs`에 그리기 함수 + `WorldGen.FillSpec` 등장 목록에 추가
+- **타격감 조정**: `Data/Weapons/<무기>.asset` → `Combo` 항목 (`hitstop`, `shake`, `kick`, `lunge`, `knockback`)
+- **적·코스튬 수치**: `Data/Enemies/*.asset`, `Data/Costumes/*.asset` (코스튬 특화 능력치는 `Mods`: 스탯 / 곱연산 여부 / 값)
+- **스킬 추가**: `Combat/Skills.cs` → `SkillDB`에 정의 + `Run()`에 `case` 추가 + 무기 에셋의 `Skills` 변경
+- **새 적**: `Data/Enemies`에서 **Create → Diverse → Enemy**로 만들고 `GameDatabase`의 `Enemies`에 추가 + `Art/ArtEnemies.cs`에 그리기 함수(또는 `Resources/Sprites/enemy_<sprite>_0~2.png`) + `WorldGen.FillSpec` 등장 목록에 추가
 - **새 구조물**: `StructKind` + `WorldGen.PickKind/FillSpec` + `World.BuildStructure`
-- **진짜 도트 그림으로 교체**: `Assets/_Project/Resources/Sprites/rabbit_white_Idle0.png`(16 PPU) 같은 파일을 넣으면 코드로 그린 그림 대신 사용됨
+- **도트 그림 교체**: `Resources/Sprites/`의 PNG를 고치면 된다. 키 이름 규칙은 `Art.Get` 호출부 참고 (예: `rabbit_white_Idle0`, `enemy_fox_0`, `prop_well`)
 
 ## 라이선스
 
 - 폰트: [갈무리(Galmuri)](https://github.com/quiple/galmuri) (SIL Open Font License 1.1) — `Resources/Fonts/LICENSE.txt`
-- 그 외 그래픽과 사운드는 모두 코드로 생성.
+- 그 외 그래픽과 사운드는 모두 코드로 생성 (`Resources/Sprites`의 PNG도 코드 그림을 구운 것).

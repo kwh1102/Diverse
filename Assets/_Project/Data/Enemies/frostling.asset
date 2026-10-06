@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b66f6304fb60134aa720186470999bd, type: 3}
+  m_Name: frostling
+  m_EditorClassIdentifier: 
+  def:
+    id: frostling
+    name: "\uC11C\uB9AC \uC815\uB839"
+    brain: 4
+    hp: 34
+    damage: 10
+    speed: 1.8
+    radius: 0.45
+    attackRange: 5.5
+    attackWindup: 0.65
+    attackCooldown: 2
+    aggroRange: 7
+    xp: 11
+    gold: 4
+    mass: 1
+    sprite: frostling
+    projectileColor:
+      serializedVersion: 2
+      rgba: 4294960015
+    element: 2
+    boss: 0
+    lines: []

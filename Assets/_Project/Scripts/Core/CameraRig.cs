@@ -6,6 +6,7 @@ namespace Diverse
 {
     /// <summary>
     /// 픽셀 퍼펙트에 가까운 직교 카메라 + 화면 흔들림(트라우마 방식) + 방향성 킥.
+    /// 카메라·후처리 설정은 Game.unity의 Main Camera / Global Volume(Data/PostFx.asset)에서 조정한다.
     /// 무기마다 Shake/Kick 값을 다르게 넣어 타격감을 차별화한다.
     /// </summary>
     public class CameraRig : MonoBehaviour
@@ -23,48 +24,17 @@ namespace Diverse
         Vector2 kick;                   // 방향성 밀림 (빠르게 복귀)
         float zoomPunch;                // 강타 시 살짝 줌인
 
-        public static CameraRig Create()
+        /// <summary>Scene setup: the Main Camera object in Game.unity carries Camera + CameraRig, with the Global Volume as a child.</summary>
+        void Awake()
         {
-            var go = new GameObject("Main Camera");
-            go.tag = "MainCamera";
-            var cam = go.AddComponent<Camera>();
-            cam.orthographic = true;
-            cam.clearFlags = CameraClearFlags.SolidColor;
-            cam.backgroundColor = new Color(0.09f, 0.07f, 0.12f);
-            cam.nearClipPlane = -50; cam.farClipPlane = 50;
-            cam.allowMSAA = false;
-            cam.allowHDR = true;
-            go.AddComponent<AudioListener>();
-            var data = cam.GetUniversalAdditionalCameraData();
-            data.renderPostProcessing = true;
-            data.antialiasing = AntialiasingMode.None;
-            var rig = go.AddComponent<CameraRig>();
-            rig.Cam = cam;
-            I = rig;
-            rig.CreatePostFx();
-            return rig;
+            I = this;
+            Cam = GetComponent<Camera>();
+            // Volume.profile (unlike sharedProfile) returns a runtime copy, so the low-HP vignette never writes into the asset
+            var vol = GetComponentInChildren<Volume>();
+            if (vol != null && vol.sharedProfile != null && vol.profile.TryGet<Vignette>(out var vig)) Vignette = vig;
         }
 
-        void CreatePostFx()
-        {
-            var go = new GameObject("Global Volume");
-            go.transform.SetParent(transform, false);
-            var vol = go.AddComponent<Volume>();
-            vol.isGlobal = true;
-            var profile = ScriptableObject.CreateInstance<VolumeProfile>();
-            var bloom = profile.Add<Bloom>(true);
-            bloom.intensity.Override(0.75f);
-            bloom.threshold.Override(0.82f);
-            bloom.scatter.Override(0.55f);
-            var vig = profile.Add<Vignette>(true);
-            vig.intensity.Override(0.28f);
-            vig.smoothness.Override(0.45f);
-            var ca = profile.Add<ColorAdjustments>(true);
-            ca.saturation.Override(8f);
-            ca.contrast.Override(6f);
-            Vignette = vig;
-            vol.profile = profile;
-        }
+        void OnDestroy() { if (I == this) I = null; }
 
         public Vignette Vignette { get; private set; }
 
