@@ -32,7 +32,7 @@ namespace Diverse
         float discoverT, saveT;
         System.Random rnd = new System.Random();
         [System.NonSerialized] public bool Generating;            // AI generating
-        [System.NonSerialized] public List<AbilityGraph> Offer;   // current evolution candidates
+        [System.NonSerialized] public List<AbilityDef> Offer;     // current evolution candidates (2~3, System rules can change it)
         [System.NonSerialized] public string OfferStatus;
         [System.NonSerialized] public Enemy Boss;
 
@@ -230,7 +230,7 @@ namespace Diverse
             p.HasRaft = r.raft;
             p.WarpStones = r.warpStones;
             p.RestoreSkills(r.skillsLearned < 0 ? p.Skills.Length : r.skillsLearned);   // saves from before skill learning keep all 4
-            foreach (var rec in r.abilities) { var g = rec.ToGraph(); if (g != null) p.Abilities.Owned.Add(g); }
+            foreach (var rec in r.abilities) { var g = rec.ToAbility(); if (g != null) p.Abilities.Restore(g); }
             foreach (var s in r.intent) { var kv = s.Split('='); if (kv.Length == 2 && int.TryParse(kv[1], out var n)) p.Telemetry.intent[kv[0]] = n; }
             p.RecalcStats();
             p.hp = Mathf.Clamp(r.hp, 1, p.maxHp);
@@ -284,6 +284,7 @@ namespace Diverse
             Diverse.World.I.OnCampEnemyKilled(e.campId, e);
             foreach (var q in World.quests)
                 if (q.status == 1 && q.kind == "hunt" && q.enemy == d.id) { q.have++; if (q.have >= q.need) { q.status = 2; Ui.Toast($"의뢰 완료: {q.title} — 게시판에 보고하세요"); } }
+            if (d.boss) Player?.Abilities?.Raise("BossKilled", e.Pos);
             if (d.boss && e.campId != null)
             {
                 World.bossKills++;
@@ -301,6 +302,7 @@ namespace Diverse
             foreach (var q in World.quests)
                 if (q.status == 1 && q.targetId == id) { q.status = 2; Ui.Toast($"의뢰 완료: {q.title}"); }
             if (spec != null && spec.kind == StructKind.Lair) Pickup.Drop("shard", 2, Player.Pos);
+            Player?.Abilities?.Raise("CampCleared");
         }
 
         public void ShowBoss(Enemy e) { Boss = e; }
@@ -323,7 +325,7 @@ namespace Diverse
                 x = p.Pos.x, y = p.Pos.y, cause = cause,
             };
             // Abilities carved on the grave (the 2 strongest) → the next life can visit the grave and recover them
-            foreach (var g in p.Abilities.Owned.Where(a => a.kind == "trigger").OrderByDescending(a => a.cost).Take(2)) grave.abilities.Add(AbilityRecord.From(g));
+            foreach (var g in p.Abilities.Owned.Where(a => a.tier >= 1).OrderByDescending(a => a.power).Take(2)) grave.abilities.Add(AbilityRecord.From(g));
             // Heroes who achieved great deeds get a statue
             grave.statue = p.Level >= 12 || World.towerFloor >= 2 && p.Kills > 80;
             grave.epitaph = $"{HeroName} — {Ko.Ro(cause)} 인해 잠들다. 레벨 {p.Level}, 처치한 몬스터 {p.Kills}마리.";

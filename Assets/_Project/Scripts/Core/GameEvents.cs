@@ -23,7 +23,7 @@ namespace Diverse
         }
     }
 
-    /// <summary>능력 그래프의 Event 원자와 1:1로 대응한다 (AbilityLanguage.Events 참고).</summary>
+    /// <summary>전투 이벤트 종류. 능력 Rule IR의 Trigger 원자 중 전투에서 오는 것들 (RuleLanguage 참고).</summary>
     public enum Trig
     {
         None,
@@ -43,6 +43,9 @@ namespace Diverse
         CloneExpire,
         StatusApplied,
         Guard,          // 가드/패링 성공
+        StatusExpired,  // 내가 건 상태이상이 살아 있는 적에게서 끝남 (tags = status id)
+        ShieldBroken,   // 보호막이 피해로 깨짐
+        Healed,         // 회복을 받음 (amount = 회복량)
     }
 
     public struct CombatEvent

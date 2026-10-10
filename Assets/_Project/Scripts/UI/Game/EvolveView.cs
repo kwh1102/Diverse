@@ -90,10 +90,10 @@ namespace Diverse
                 // Rebuild the log only when it changes (the "thinking" dots tick 3×/s). Rebuilding + ForceUpdateCanvases every
                 // frame re-laid-out the whole canvas, including the input field, which made typing stutter.
                 int dots = g.ChatBusy ? 1 + (int)(Time.unscaledTime * 3) % 3 : 0;
-                int n = (g.Chat.Count + (g.ChatBusy ? 1 : 0)) * 4 + dots;
+                int n = g.Chat.Count * 8 + (g.ChatBusy ? 4 : 0) + dots;
                 if (n != lastChat)
                 {
-                    bool grew = lastChat < 0 || n / 4 != lastChat / 4;
+                    bool grew = lastChat < 0 || n / 8 != lastChat / 8;
                     lastChat = n;
                     var lines = g.Chat.Select(c => c.player ? $"<color=#fff2b3>나:</color> {c.text}" : $"<color=#c9b8ff>이야기꾼:</color> <color=#e6dcff>{c.text}</color>").ToList();
                     if (g.ChatBusy) lines.Add("<color=#8c7aa8>이야기꾼이 생각하는 중" + new string('.', dots) + "</color>");

@@ -26,6 +26,16 @@ namespace Diverse
         public System.Action<Projectile, float> onUpdate;    // steering (curving shots); gets the age in seconds
         public System.Action<Projectile> onEnd;
         readonly HashSet<Actor> hitSet = new HashSet<Actor>();
+        public static readonly List<Projectile> Live = new List<Projectile>();
+        void Awake() => Live.Add(this);
+        void OnDestroy() => Live.Remove(this);
+
+        /// <summary>Stopped by a barrier.</summary>
+        public void Block()
+        {
+            Fx.I?.Burst(transform.position, color, 6, 4, 0.25f);
+            End();
+        }
         [SerializeField] SpriteRenderer sr;
         float trailT;
         float t;

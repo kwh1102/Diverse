@@ -82,6 +82,7 @@ namespace Diverse
             p.Costume = costume;
             p.Weapon = weapon;
             p.Abilities = new AbilityRuntime(p);
+            p.Stats.Clamp = (id, v) => p.Abilities != null ? p.Abilities.ClampStat(id, v) : v;
             p.Pos = pos;
             p.AimPoint = pos + Vector2.right;
             p.SetupVisual();
@@ -144,7 +145,8 @@ namespace Diverse
         {
             float m = 1;
             if (target.HasStatus("mark")) m *= 1.25f;
-            if (!string.IsNullOrEmpty(tags)) m *= Abilities.SynergyMul(tags);
+            if (target.HasStatus("weaken")) m *= 1.15f;
+            m *= Abilities.DamageMultiplier(target, tags);
             return m;
         }
 
@@ -157,12 +159,25 @@ namespace Diverse
             Fx.I?.Burst(Pos + Vector2.up * 0.5f, Pal.Gold, 8, 3, 0.5f, -3);
         }
 
-        public void AddShield(float amount, float duration)
+        public void AddShield(float amount, float duration, bool fx = true)
         {
             Shield = Mathf.Max(Shield, amount);
-            shieldUntil = Time.time + duration;
+            shieldUntil = Mathf.Max(shieldUntil, Time.time + duration);
+            if (!fx) return;
             Fx.I?.Play(Art.Shockwave(Pal.Hex("8fe3ff"), 14), Pos + Vector2.up * 0.4f, 0, 20, 1, null, true);
             Sfx.Play("guard", 0.4f);
+        }
+
+        /// <summary>Heals go through the ability rules first (e.g. "healing becomes shield"), then raise Healed.</summary>
+        protected override float FilterHeal(float amount)
+        {
+            if (Abilities == null) return amount;
+            return Abilities.FilterHeal(amount, maxHp - hp);
+        }
+
+        protected override void OnHealed(float amount)
+        {
+            if (amount >= 1) GameEvents.Raise(new CombatEvent { type = Trig.Healed, source = this, position = Pos, amount = amount });
         }
 
         public void ReduceCooldowns(float fraction)
@@ -174,6 +189,7 @@ namespace Diverse
 
         public void GainXp(float amount)
         {
+            if (Abilities != null) amount = Abilities.FilterXp(amount);
             var prog = DB.Progression;
             Xp += amount * Stats[StatId.XpGain];
             while (Xp >= XpToNext)
@@ -190,6 +206,7 @@ namespace Diverse
                 Fx.I?.Burst(Pos + Vector2.up * 0.5f, Pal.Gold, 24, 6, 0.8f, -4);
                 Fx.I?.Number(Pos + Vector2.up * 1.2f, "레벨 업!", new Color(1f, 0.9f, 0.4f), 1.3f, 1.2f);
                 Sfx.Play("levelup");
+                Abilities?.Raise("LevelUp");
                 var learned = LearnSkillsForLevel();
                 if (learned != null) GameEvents.Notify($"레벨 {Level}! 새 기술 [{learned.def.name}]{(Ko.HasBatchim(learned.def.name) ? "을" : "를")} 익혔다 ({Controls.KeyName(SkillAct(learned))})");
                 else if (evolve) GameEvents.Notify($"레벨 {Level}! 진화가 준비되었다 ({Controls.KeyName(Act.Abilities)} 또는 자동)");
@@ -292,7 +309,7 @@ namespace Diverse
             }
             foreach (var s in Skills) if (s.cd > 0) s.cd -= dt;
             if (Shield > 0 && Time.time > shieldUntil) Shield = 0;
-            hp = Mathf.Min(maxHp, hp + Stats[StatId.Regen] * dt);
+            if (Abilities == null || !Abilities.Forbids("Regen")) hp = Mathf.Min(maxHp, hp + Stats[StatId.Regen] * dt);
             // Buff expiry
             bool changed = false;
             for (int i = buffs.Count - 1; i >= 0; i--) if (Time.time >= buffs[i].until) { buffs.RemoveAt(i); changed = true; }
@@ -470,6 +487,7 @@ namespace Diverse
                 Vector2 next = path[0];
                 Vector2 to = next - Pos;
                 float step = MoveSpeed * dt;
+                Abilities?.Moved(Mathf.Min(step, to.magnitude));
                 if (to.magnitude <= step + 0.02f)
                 {
                     Pos = WorldStreamer.I.Move(Pos, to, radius, HasRaft, Bound);
@@ -578,6 +596,7 @@ namespace Diverse
             if (finisher)
             {
                 Telemetry.Record("ComboFinish");
+                Abilities?.ComboFinisher(dir);
                 GameEvents.Raise(new CombatEvent { type = Trig.ComboFinish, source = this, position = Pos, direction = dir, tags = w.tags });
             }
         }
@@ -587,6 +606,9 @@ namespace Diverse
         public void TryDash(Vector2 dir)
         {
             if (DashCharges <= 0 || dashT > 0) return;
+            if (Abilities != null && Abilities.Forbids("Dash")) return;
+            // Replacement rules (e.g. "dash becomes blink") take the input instead of the normal dash
+            if (Abilities != null && Abilities.ReplaceDash(dir)) { StopMoving(); DashCharges--; dashRecharge = 0; return; }
             DashCharges--;
             dashRecharge = 0;
             path.Clear(); attackTarget = null; TravelTarget = null;
@@ -663,7 +685,11 @@ namespace Diverse
 
         void UsePotion()
         {
-            if (Potions <= 0 || hp >= maxHp) return;
+            if (Potions <= 0) return;
+            // Constraint rules can forbid potions; replacement rules can turn them into something else
+            if (Abilities != null && Abilities.Forbids("Potion")) { Fx.I?.Number(Pos + Vector2.up * 1.1f, "봉인됨", new Color(0.7f, 0.6f, 0.9f), 0.8f); return; }
+            if (Abilities != null && Abilities.ReplacePotion()) { Potions--; return; }
+            if (hp >= maxHp) return;
             Potions--;
             Heal(maxHp * 0.4f);
             Fx.I?.Burst(Pos + Vector2.up * 0.5f, Pal.Blood, 14, 3, 0.7f, -4);
@@ -676,6 +702,7 @@ namespace Diverse
         {
             if (!Alive || Time.time < invulnUntil || dashT > 0) return 0;
             float amount = d.amount * (1 - Stats[StatId.Armor]);
+            if (Abilities != null) amount *= Abilities.IncomingMultiplier(d.source, amount);
             if (guarding && Vector2.Dot(-d.direction.normalized, Facing) > 0.2f)
             {
                 amount *= 0.2f;
@@ -692,6 +719,7 @@ namespace Diverse
                 float absorbed = Mathf.Min(Shield, amount);
                 Shield -= absorbed; amount -= absorbed;
                 Fx.I?.Burst(Pos + Vector2.up * 0.5f, Pal.Hex("8fe3ff"), 6, 3, 0.3f);
+                if (Shield <= 0.01f) { Shield = 0; GameEvents.Raise(new CombatEvent { type = Trig.ShieldBroken, source = this, target = d.source, position = Pos }); }
             }
             d.amount = amount;
             float before = hp;
@@ -797,6 +825,7 @@ namespace Diverse
         protected override float MoveBound => Bound;
 
         public bool IsDashing => dashT > 0;
+        public bool InCombo => comboIndex > 0 && comboTimer > 0;
         public bool InAction => actionLock > 0;
     }
 }

@@ -47,6 +47,7 @@ MonoBehaviour:
     smithSkillLevels: 01000000020000000400000006000000
     warpStoneCost: 120
     warpRange: 6
+  abilityRules: {fileID: 11400000, guid: a63b7dc07767a1e408638a24ed2f955e, type: 2}
   playerPrefab: {fileID: 216423936105204445, guid: 6b1dc4411a619b74685505198ee66c58, type: 3}
   enemyPrefab: {fileID: 1860128500088664103, guid: ab4df4689c622db43befed524f0b0964, type: 3}
   clonePrefab: {fileID: 327556377014560540, guid: d3de4f8d0c87c6643b0ab0ff9238523d, type: 3}

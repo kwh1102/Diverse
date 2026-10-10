@@ -64,6 +64,13 @@ namespace Diverse.EditorTools
                 .Select(c => DataAsset<CostumeData>($"{DataDir}/Costumes/{c.id}.asset", a => a.def = c)).ToList();
             db.enemies = DefaultData.Enemies.Values
                 .Select(e => DataAsset<EnemyData>($"{DataDir}/Enemies/{e.id}.asset", a => a.def = e)).ToList();
+            if (db.abilityRules == null) db.abilityRules = DataAsset<AbilityRulesData>($"{DataDir}/AbilityRules.asset", a => a.def = new AbilityRulesDef());
+            // Seed the primitive tuning table once (later edits in the Inspector are kept)
+            if (db.abilityRules.def.prims == null || db.abilityRules.def.prims.Count == 0)
+            {
+                db.abilityRules.def.prims = RuleLanguage.DefaultTuning();
+                EditorUtility.SetDirty(db.abilityRules);
+            }
             EditorUtility.SetDirty(db);
             return db;
         }

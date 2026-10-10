@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -9,8 +10,10 @@ namespace Diverse
 {
     /// <summary>
     /// OpenAI-compatible Chat Completions client.
-    /// - LLM #1 (Mechanic Generator): Generation Context + atomic language → returns only AbilityGraph JSON
-    /// - LLM #2 (Name/Flavor): validated & balanced mechanic → Korean name/description
+    /// - LLM #1 (Rule Generator): Generation Context + retrieved primitives → AbilityIntent (concept + mechanic macros / rule draft)
+    ///   → AbilityCompiler → Rule IR (AbilityDef)
+    /// - Repair: the validator's machine-readable errors go back to LLM #1 for a corrected structure
+    /// - LLM #2 (Name/Flavor): validated & balanced ability → Korean name/description
     /// Even when the API fails, the game is unaffected (falls back to LocalComposer).
     /// </summary>
     public static class AiClient
@@ -38,117 +41,186 @@ namespace Diverse
         [Serializable] class Msg { public string role; public string content; }
         [Serializable] class RespFmt { public string type = "json_object"; }
         [Serializable] class Req { public string model; public List<Msg> messages; public float temperature; public RespFmt response_format; public int max_tokens; }
-        [Serializable] class Choice { public Msg message; }
+        [Serializable] class Choice { public Msg message; public string finish_reason; }
         [Serializable] class Resp { public List<Choice> choices; }
-        [Serializable] class GraphList { public List<AbilityGraph> abilities; }
+        [Serializable] class IntentList { public List<AbilityIntent> abilities; }
         [Serializable] class NameItem { public string id; public string name; public string desc; }
         [Serializable] class NameList { public List<NameItem> names; }
-        [Serializable] class ChatResp { public string reply; public List<AbilityGraph> abilities; }
+        [Serializable] class CardChange : AbilityIntent { public int card; }
+        [Serializable] class ChatResp { public string reply; public List<CardChange> changes; }
 
         const string SystemPrompt =
-@"You generate atomic abilities for a pixel-art action roguelite where abilities EVOLVE from how the player actually plays.
+@"You design abilities for a pixel-art action roguelite where abilities EVOLVE from how the player actually plays.
+An ability is a tiny PROGRAM in a closed rule language — never a finished named skill. Think TFT augments / Sephiria
+artifacts: trade-offs, things that accumulate and get released, conversions that redefine a game rule, replacing a
+player action, giving something up, scaling with the build, modifying the player's OTHER abilities, or the evolution system.
 
-GOAL: Invent NEW mechanics that reflect the player's behavior, current build, equipment and apparent intent.
+YOU WRITE AN INTENT; THE ENGINE COMPILES, TYPE-CHECKS, BALANCES AND SIMULATES IT.
+Each candidate: ""concept"" (one creative sentence) + ""semanticReason"" (short Korean, why it fits THIS player) +
+EITHER ""mechanics"" (macros, preferred — easier to get right) OR a direct ""states""/""rules"" draft (for structures
+the macros can't express) — or both.
 
-RULES:
-- Do NOT pick from predefined skills. Construct new Ability Graphs from the provided primitives ONLY.
-- Prefer simple single mechanics that COMBINE with existing abilities (small pieces -> complex build).
-- Do not duplicate effects the player already owns.
-- Existing modifiers automatically affect matching tags (the engine resolves synergy; you don't need to).
-- Each ability introduces at most ONE major new mechanic.
-- If a SEEDED SOURCE exists (player owns a modifier but nothing generates it), at least one candidate should give it a generator.
-- Abilities must be causally coherent: the effect should feel like a natural consequence of the trigger.
-- Do NOT output numbers for balance (power/duration/radius are decided by the engine). Only structure.
-- World rules must be respected unless you explicitly justify breaking one in semanticReason.
-- ""action"" must be one of the listed Action atoms. Relation atoms (Copy, Chain, SwapPosition, Orbit...) go ONLY in ""relation"", never in ""action"".
-- ""trigger"" must be an Event atom. Spawn needs an ""entity"" (Clone, Turret, Orb, Zone, PhantomWeapon).
+MECHANIC MACROS — type MUST be one of these 14 words (not a rule kind, trigger or op name): Effect Accumulate Threshold Hunt
+Charge Window Anchor Scaling Tradeoff Constrain Convert Replace Meta System. For a plain when X do Y use type Effect.
+- Effect:     on, effect (+target/at/element/status/entity/stat/rel/time), chance, cooldown — ""when X, do Y""
+- Accumulate: on, release, effect, label, count — store a quantity from X (damage taken, damage dealt…) and release it scaled on Y
+- Threshold:  on, effect, count, label — every N times X happens, a payoff (state fills → resets)
+- Hunt:       on, stat, count — stacks from X that decay over time and raise a stat
+- Charge:     on, effect, count — a regenerating resource spent each time X fires
+- Window:     on, effect|stat, window — after X, for a few seconds a passive bonus is active
+- Anchor:     on, release, effect, target(StoredTarget for an enemy) — remember a place/enemy at X, act on it at Y
+- Scaling:    effect|stat, scale — a stat that grows with a value (missing hp, enemies near, build.tag:FIRE…)
+- Tradeoff:   price (a stat to lower, or an action to give up: Dash|Potion|Regen|Skill), effect|stat (+scale) — a real cost for a gain
+- Constrain:  price — the player can no longer do something (only as part of a bigger ability)
+- Convert:    from, to (whitelisted pairs), scale+chance (optional hp condition) — redefine a game rule
+- Replace:    on (Dash|Potion|ComboFinisher), effect (Blink|Nova|Shield|Spawn|Projectile), entity/element — the action does something else
+- Meta:       select (ByTag|ByElement|ByTrigger|Strongest|Newest|All), tag/element/on, effect (AmplifyTagged|RepeatTagged|HasteTagged|
+              InfuseTagged|ExtendTagged|EnlargeTagged|MultiplyTagged|RetagAbilities|GateTagged|UnchainTagged|RetriggerTagged), element, from/to
+- System:     effect (OfferCount|TierBias|BudgetBias|RerollDiscount|TagBias|ExtraEvolution|UpgradeRandom|DelayedReward), tag, count
+Names may be ids or plain words (""explosion"", ""lifesteal"", ""missing hp"", ""on kill"") — the compiler resolves them.
 
-OUTPUT JSON SCHEMA:
-{""abilities"":[
- {""mechanic"":""snake_case_id"",
-  ""kind"":""trigger"",               // trigger | modifier | stat
-  ""trigger"":""<Event atom>"",
-  ""conditions"":[{""type"":""<Condition atom or EveryNth>"",""value"":0.3,""text"":""burn""}],
-  ""effects"":[{""action"":""<Damage|Projectile|Nova|Lightning|Spawn|Heal|Shield|Buff|ApplyStatus|Pull|Push|Blink|ResetCooldown|Store|Release>"",""entity"":""<Entity or empty>"",""form"":""<Form or empty>"",""element"":""<Element or empty>"",""relation"":""<Relation or empty>"",""temporal"":""<Temporal or empty>"",""stat"":""<for Buff: Attack|AttackSpeed|MoveSpeed|CritChance|Armor>""}],
-  ""modTag"":""<for modifier: tag to amplify>"",
-  ""stat"":""<for stat kind: StatId>"",
-  ""semanticReason"":""short Korean sentence: why this fits the player""}
-]}";
+DIRECT RULE DRAFT (when you need it)
+rules[].kind = Trigger|Continuous|Replace|Constrain|Meta|System; Trigger rules have ""trigger"" (+param), ""when"" conditions, ""ops"".
+ops[] fields: op, target, at, element, status, entity, stat, state, tag, from, to, mode, scale, rel (Relation layer), time (Temporal layer), times.
+Ops may only use what the trigger provides (EventTarget needs Target; event.amount needs Amount). Every state must be written and read.
 
-        /// <summary>LLM #1: generate candidates. Calls back with null on failure.</summary>
-        public static IEnumerator Generate(GenerationContext ctx, int count, Action<List<AbilityGraph>> done)
+RULES
+- Use ONLY primitives listed in AVAILABLE LANGUAGE / EXPLORATION POOL. Unknown words are rejected by the engine.
+- Numbers are decided by the engine (power budget). You only choose structure, conditions, thresholds, and the SIGN of a trade-off.
+- Prefer abilities that COMBINE with what the player already owns. Respect the complexity tiers allowed for this level.
+- Relations (Echo, Chain, Bounce, Cascade, Orbit…) and temporals (Periodic, UntilHit, ForNextN…) are what make abilities
+  feel new — use them. Element affinities are hints, not laws.
+- Avoid self-feeding loops unless throttled (chance/cooldown).
+
+OUTPUT JSON: {""abilities"":[ {""concept"":"""",""semanticReason"":"""",""mechanics"":[{""type"":"""", ...}],""states"":[],""rules"":[]} ]}
+
+EXAMPLES
+{""concept"":""Pain is remembered and returned on a perfect dodge"",""semanticReason"":""자주 맞고 아슬아슬하게 피하는 당신에게"",
+ ""mechanics"":[{""type"":""Accumulate"",""on"":""Damaged"",""release"":""PerfectDodge"",""effect"":""Nova"",""at"":""Self"",""label"":""고통""}]}
+{""concept"":""A blood pact: less health, more fury, and near death healing hardens into a shield"",""semanticReason"":""위험을 즐기는 당신에게"",
+ ""mechanics"":[{""type"":""Tradeoff"",""price"":""MaxHp"",""stat"":""Attack"",""scale"":""missing hp""},
+              {""type"":""Convert"",""from"":""Heal"",""to"":""Shield"",""scale"":""self.hpPct"",""chance"":0.3}]}
+{""concept"":""Your dash leaves a mine; mines you leave make your fire abilities echo"",""semanticReason"":""대시를 자주 쓰는 당신에게"",
+ ""rules"":[{""kind"":""Trigger"",""trigger"":""Dash"",""ops"":[{""op"":""Spawn"",""entity"":""Mine"",""at"":""DashOrigin""}]},
+          {""kind"":""Trigger"",""trigger"":""EntityExpired"",""param"":""Mine"",""ops"":[{""op"":""Projectile"",""at"":""EventPos"",""mode"":""Ring"",""rel"":""Bounce"",""times"":2}]}]}";
+
+        static string Request(GenerationContext ctx)
         {
-            var key = SaveSystem.LoadApiKey();
-            if (string.IsNullOrEmpty(key)) { LastStatus = "API 키 없음 → 로컬 생성"; done(null); yield break; }
-
             var user = new StringBuilder();
             user.AppendLine("PLAYER:");
             user.AppendLine(ctx.PlayerProfile());
             user.AppendLine("AVAILABLE LANGUAGE (retrieved primitives):");
-            user.AppendLine(AbilityLanguage.Describe(ctx.retrieved));
+            user.AppendLine(RuleLanguage.Describe(ctx.retrieved));
             user.AppendLine("EXPLORATION POOL (distant primitives — use in at most one candidate to surprise):");
-            user.AppendLine(AbilityLanguage.Describe(ctx.exploration));
-            user.AppendLine($"Generate {count} DIFFERENT candidates: 1 that develops the dominant behavior, 1 that builds synergy with the current graph/seeded sources, 1 exploratory.");
-            LastPrompt = user.ToString();
+            user.AppendLine(RuleLanguage.Describe(ctx.exploration, false));
+            return user.ToString();
+        }
+
+        /// <summary>LLM #1: generate candidates (concept → Rule IR). Calls back with null on failure.</summary>
+        public static IEnumerator Generate(GenerationContext ctx, int count, Action<List<AbilityDef>> done)
+        {
+            var key = SaveSystem.LoadApiKey();
+            if (string.IsNullOrEmpty(key)) { LastStatus = "API 키 없음 → 로컬 생성"; done(null); yield break; }
+
+            LastPrompt = Request(ctx) +
+                $"Generate {count} STRUCTURALLY DIFFERENT candidates (develop the dominant behavior / synergy with owned abilities / stateful, trade-off or exploratory). " +
+                $"Use complexity up to tier {ctx.maxTier}. The \"abilities\" array MUST contain exactly {count} candidates. " +
+                "Keep each one compact (1~2 mechanic macros, omit empty fields) but never skip candidates.";
 
             string json = null;
-            yield return Post(key, SystemPrompt, LastPrompt, 0.9f, 1200, r => json = r);
+            yield return Post(key, SystemPrompt, LastPrompt, 0.9f, 1600, r => json = r);
             if (json == null) { done(null); yield break; }
             LastResponse = json;
+            var list = Parse(json);
+            if (list == null || list.Count == 0) { LastStatus = "AI 응답 형식 오류"; done(null); yield break; }
+            LastStatus = $"AI 후보 {list.Count}개 수신";
+            done(list);
+        }
+
+        /// <summary>
+        /// Repair step: the validator's machine-readable errors go back to the LLM, which returns a corrected structure.
+        /// Calls back with null on failure (the candidate is then dropped).
+        /// </summary>
+        public static IEnumerator Repair(GenerationContext ctx, List<(AbilityDef a, RuleValidator.Result r)> broken, Action<List<AbilityDef>> done)
+        {
+            var key = SaveSystem.LoadApiKey();
+            if (string.IsNullOrEmpty(key) || broken.Count == 0) { done(null); yield break; }
+            var sb = new StringBuilder(Request(ctx));
+            sb.AppendLine("The engine's deterministic validator REJECTED these candidates. Fix each one so it passes, keeping its concept.");
+            sb.AppendLine("Change the structure (trigger, conditions, ops, states, relation, temporal) — numbers are rebalanced by the engine anyway.");
+            sb.AppendLine("Answer with direct rules drafts (states + rules) for the fixed candidates, keeping each concept.");
+            for (int i = 0; i < broken.Count; i++)
+            {
+                sb.AppendLine($"candidate {i}: {StructureJson(broken[i].a)}");
+                sb.AppendLine("errors:");
+                sb.AppendLine(broken[i].r.Machine());
+            }
+            sb.AppendLine("Return {\"abilities\":[...]} with the fixed candidates in the same order.");
+            string json = null;
+            yield return Post(key, SystemPrompt, sb.ToString(), 0.4f, 1400, r => json = r);
+            if (json == null) { done(null); yield break; }
+            done(Parse(json));
+        }
+
+        static List<AbilityDef> Parse(string json)
+        {
             try
             {
-                var list = JsonUtility.FromJson<GraphList>(json);
-                if (list?.abilities == null || list.abilities.Count == 0) { LastStatus = "AI 응답 형식 오류"; done(null); yield break; }
-                foreach (var g in list.abilities) Sanitize(g);
-                LastStatus = $"AI 후보 {list.abilities.Count}개 수신";
-                done(list.abilities);
+                var list = JsonUtility.FromJson<IntentList>(json)?.abilities;
+                if (list == null) return null;
+                return list.Where(i => i != null).Select(Compile).Where(a => a != null).ToList();
             }
             catch (Exception e)
             {
                 LastStatus = "AI JSON 파싱 실패 (" + e.Message + ")";
-                done(null);
+                Debug.LogWarning("[AI] unparsable answer: " + (json.Length > 600 ? json.Substring(0, 600) + "…" : json));
+                return null;
             }
         }
 
-        static void Sanitize(AbilityGraph g)
+        /// <summary>Intent → Rule IR through the AbilityCompiler (aliases + macros). Compiler notes go to the debug log.</summary>
+        static AbilityDef Compile(AbilityIntent intent)
+        {
+            var o = AbilityCompiler.Compile(intent);
+            if (o.notes.Count > 0) Debug.Log("[AI compile] " + intent.concept + "\n  " + string.Join("\n  ", o.notes));
+            var g = o.ability;
+            if (g.rules.Count == 0) return null;
+            Sanitize(g);
+            return g;
+        }
+
+        static void Sanitize(AbilityDef g)
         {
             g.source = "ai";
-            g.conditions ??= new List<CondNode>();
-            g.effects ??= new List<EffectNode>();
-            g.tags ??= new List<string>();
+            g.id = null; g.name = null; g.desc = null; g.tags = new List<string>(); g.power = 0; g.tier = 0;
+            g.EnsureLists();
         }
 
         const string ChatAddendum =
 @"
 
-YOU ARE NOW TALKING WITH THE PLAYER on the evolution screen. They see the 3 CURRENT CANDIDATES below and wrote you a message (Korean).
+YOU ARE NOW TALKING WITH THE PLAYER on the evolution screen. They see the CURRENT CANDIDATES below and wrote you a message (Korean).
 - Reply in Korean as the world's Storyteller: warm, 1~3 short sentences. Explain what you changed and why, or answer their question.
-- Then output the REVISED list of exactly 3 candidates. Keep candidates the player didn't complain about unchanged (copy them as-is).
-- Only change what the player asked for. If they only asked a question, return the same 3 candidates.
-- Every rule above still applies (primitives only, no balance numbers — the engine decides numbers).
-OUTPUT JSON: {""reply"":""..."",""abilities"":[ ...same ability schema as above... ]}";
+- Then output ONLY THE CARDS YOU CHANGE, each with ""card"" = its number (1-based). Do NOT repeat unchanged cards.
+- Only change what the player asked for. If they only asked a question, return an empty list.
+- Every rule above still applies (primitives only, the engine decides numbers). Keep each new card compact (1~2 macros).
+OUTPUT JSON: {""reply"":""..."",""changes"":[ {""card"":2, ...same intent schema as above...} ]}";
 
         /// <summary>
         /// Evolution chat: the player talks to the AI about the current candidates; the AI answers and may revise them.
         /// Calls back (reply, revised) — both null on failure.
         /// </summary>
-        public static IEnumerator Chat(GenerationContext ctx, List<AbilityGraph> offer, List<(bool player, string text)> history, Action<string, List<AbilityGraph>> done)
+        public static IEnumerator Chat(GenerationContext ctx, List<AbilityDef> offer, List<(bool player, string text)> history, Action<string, List<AbilityDef>> done)
         {
             var key = SaveSystem.LoadApiKey();
             if (string.IsNullOrEmpty(key)) { LastStatus = "API 키 없음"; done(null, null); yield break; }
 
-            var first = new StringBuilder();
-            first.AppendLine("PLAYER:");
-            first.AppendLine(ctx.PlayerProfile());
-            first.AppendLine("AVAILABLE LANGUAGE:");
-            first.AppendLine(AbilityLanguage.Describe(ctx.retrieved));
-            first.AppendLine(AbilityLanguage.Describe(ctx.exploration));
-            first.AppendLine("CURRENT CANDIDATES (shown to the player as cards 1, 2, 3):");
+            var first = new StringBuilder(Request(ctx));
+            first.AppendLine("CURRENT CANDIDATES (shown to the player as numbered cards):");
             for (int i = 0; i < offer.Count; i++)
             {
                 var g = offer[i];
-                first.AppendLine($"card {i + 1}: \"{g.name}\" = {g.Explain()}");
-                first.AppendLine("  structure: " + StructureJson(g));
+                first.AppendLine($"card {i + 1}: \"{g.name}\" [tier {g.tier}] = {g.Explain().Replace("\n", " / ")}");
             }
 
             var msgs = new List<Msg> { new Msg { role = "system", content = SystemPrompt + ChatAddendum } };
@@ -169,21 +241,25 @@ OUTPUT JSON: {""reply"":""..."",""abilities"":[ ...same ability schema as above.
             {
                 var last = msgs[msgs.Count - 1];
                 var cur = new StringBuilder("CURRENT CANDIDATES NOW:\n");
-                for (int i = 0; i < offer.Count; i++) cur.AppendLine($"card {i + 1}: \"{offer[i].name}\" = {offer[i].Explain()} | structure: {StructureJson(offer[i])}");
+                for (int i = 0; i < offer.Count; i++) cur.AppendLine($"card {i + 1}: \"{offer[i].name}\" [tier {offer[i].tier}] = {offer[i].Explain().Replace("\n", " / ")}");
                 last.content = cur + "\nPLAYER MESSAGE: " + last.content;
             }
 
             string json = null;
-            yield return PostMessages(key, msgs, 0.8f, 1400, r => json = r);
+            yield return PostMessages(key, msgs, 0.8f, 1200, r => json = r);
             if (json == null) { done(null, null); yield break; }
             LastResponse = json;
             try
             {
                 var resp = JsonUtility.FromJson<ChatResp>(json);
                 if (resp == null || string.IsNullOrWhiteSpace(resp.reply)) { LastStatus = "AI 대화 응답 형식 오류"; done(null, null); yield break; }
-                if (resp.abilities != null) foreach (var g in resp.abilities) Sanitize(g);
+                // Position-aligned list: null = keep that card (the model only sends what it changed)
+                var compiled = new List<AbilityDef>();
+                for (int i = 0; i < offer.Count; i++) compiled.Add(null);
+                foreach (var ch in resp.changes ?? new List<CardChange>())
+                    if (ch != null && ch.card >= 1 && ch.card <= offer.Count) compiled[ch.card - 1] = Compile(ch);
                 LastStatus = "AI 대화 응답 수신";
-                done(resp.reply.Trim(), resp.abilities ?? new List<AbilityGraph>());
+                done(resp.reply.Trim(), compiled);
             }
             catch (Exception e)
             {
@@ -193,37 +269,45 @@ OUTPUT JSON: {""reply"":""..."",""abilities"":[ ...same ability schema as above.
         }
 
         /// <summary>Ability structure without engine-decided numbers or display text (what the AI is allowed to author).</summary>
-        static string StructureJson(AbilityGraph g)
+        public static string StructureJson(AbilityDef g)
         {
             var c = g.Clone();
-            c.id = null; c.name = null; c.desc = null; c.tags = new List<string>(); c.cost = 0; c.statValue = 0; c.modMul = 0; c.source = null;
-            foreach (var e in c.effects) { e.power = 0; e.radius = 0; e.duration = 0; e.delay = 0; e.count = 0; }
+            c.id = null; c.name = null; c.desc = null; c.tags = new List<string>(); c.power = 0; c.tier = 0; c.source = null; c.mechanic = null;
+            foreach (var r in c.rules)
+                foreach (var o in r.ops)
+                {
+                    if (o.op is "AddState" or "SetState") continue;
+                    if (o.op == "ModifyStat") { o.amount = Mathf.Sign(o.amount); o.per = Mathf.Sign(o.per); }
+                    else { o.amount = 0; o.per = 0; }
+                    o.duration = 0; o.radius = 0; o.count = 0; o.delay = 0;
+                }
             return JsonUtility.ToJson(c);
         }
 
-        /// <summary>LLM #2: name/description for finalized mechanics.</summary>
-        public static IEnumerator NameAll(List<AbilityGraph> graphs, string worldFlavor, Action done)
+        /// <summary>LLM #2: name/description for finalized abilities.</summary>
+        public static IEnumerator NameAll(List<AbilityDef> abilities, string worldFlavor, Action done)
         {
             var key = SaveSystem.LoadApiKey();
             if (string.IsNullOrEmpty(key)) { done(); yield break; }
             var sb = new StringBuilder();
             sb.AppendLine("World: a gentle pixel fantasy where rabbit wanderers live, die, and are remembered by the world. Region: " + worldFlavor);
-            sb.AppendLine("For each FINALIZED mechanic below, write a short evocative Korean name (2~4 words) and a one-line Korean flavor sentence (max 30 characters, no numbers — the exact rules are shown separately).");
-            for (int i = 0; i < graphs.Count; i++) sb.AppendLine($"id={i}: {graphs[i].Explain()} | tags: {string.Join(" ", graphs[i].tags)}");
+            sb.AppendLine("For each FINALIZED ability below, write a short evocative Korean name (2~4 words) and a one-line Korean flavor sentence (max 30 characters, no numbers — the exact rules are shown separately).");
+            for (int i = 0; i < abilities.Count; i++)
+                sb.AppendLine($"id={i}: concept: {abilities[i].concept} | rules: {abilities[i].Explain().Replace("\n", " / ")} | tags: {string.Join(" ", abilities[i].tags)}");
             sb.AppendLine("Return JSON: {\"names\":[{\"id\":\"0\",\"name\":\"...\",\"desc\":\"...\"}]}");
 
             string json = null;
-            yield return Post(key, "You are the Storyteller of a roguelite world. You name abilities. Output JSON only.", sb.ToString(), 0.8f, 500, r => json = r);
+            yield return Post(key, "You are the Storyteller of a roguelite world. You name abilities. Output JSON only.", sb.ToString(), 0.8f, 700, r => json = r);
             if (json == null) { done(); yield break; }
             try
             {
                 var list = JsonUtility.FromJson<NameList>(json);
                 if (list?.names != null)
                     foreach (var n in list.names)
-                        if (int.TryParse(n.id, out int i) && i >= 0 && i < graphs.Count && !string.IsNullOrWhiteSpace(n.name))
+                        if (int.TryParse(n.id, out int i) && i >= 0 && i < abilities.Count && !string.IsNullOrWhiteSpace(n.name))
                         {
-                            graphs[i].name = n.name.Trim();
-                            if (!string.IsNullOrWhiteSpace(n.desc)) graphs[i].desc = n.desc.Trim();
+                            abilities[i].name = n.name.Trim();
+                            if (!string.IsNullOrWhiteSpace(n.desc)) abilities[i].desc = n.desc.Trim();
                         }
             }
             catch { }
@@ -245,11 +329,31 @@ OUTPUT JSON: {""reply"":""..."",""abilities"":[ ...same ability schema as above.
 
         [Serializable] class TextOnly { public string text; }
 
+        /// <summary>
+        /// Seconds an AI request may take. Rule IR answers are long (the model only starts sending once the whole JSON is
+        /// written), so this is far above the old 25 s; anything slower falls back to the local generator.
+        /// </summary>
+        public const int TimeoutSeconds = 75;
+
         static IEnumerator Post(string key, string system, string user, float temp, int maxTokens, Action<string> done) =>
             PostMessages(key, new List<Msg> { new Msg { role = "system", content = system }, new Msg { role = "user", content = user } }, temp, maxTokens, done);
 
         static IEnumerator PostMessages(string key, List<Msg> messages, float temp, int maxTokens, Action<string> done)
         {
+            string content = null; bool truncated = false;
+            yield return PostOnce(key, messages, temp, maxTokens, (c, t) => { content = c; truncated = t; });
+            if (truncated)
+            {
+                Debug.LogWarning($"[AI] answer cut at {maxTokens} tokens — retrying once with {maxTokens * 2}");
+                yield return PostOnce(key, messages, temp, maxTokens * 2, (c, t) => { content = c; truncated = t; });
+                if (truncated) { LastStatus = "AI 응답이 너무 길어 잘림"; content = null; }
+            }
+            done(content);
+        }
+
+        static IEnumerator PostOnce(string key, List<Msg> messages, float temp, int maxTokens, Action<string, bool> done)
+        {
+            float started = Time.realtimeSinceStartup;
             LastFatal = false;
             var req = new Req
             {
@@ -265,7 +369,7 @@ OUTPUT JSON: {""reply"":""..."",""abilities"":[ ...same ability schema as above.
             www.downloadHandler = new DownloadHandlerBuffer();
             www.SetRequestHeader("Content-Type", "application/json");
             www.SetRequestHeader("Authorization", "Bearer " + key);
-            www.timeout = 25;
+            www.timeout = TimeoutSeconds;
             LastStatus = "AI 호출 중…";
             yield return www.SendWebRequest();
 
@@ -273,25 +377,30 @@ OUTPUT JSON: {""reply"":""..."",""abilities"":[ ...same ability schema as above.
             {
                 string msg = www.downloadHandler?.text ?? "";
                 bool quota = msg.Contains("insufficient_quota");
+                // UnityWebRequest reports a timeout as a connection error with code 0 — tell them apart by the elapsed time
+                bool timedOut = www.responseCode == 0 && (www.error?.IndexOf("timed out", StringComparison.OrdinalIgnoreCase) >= 0
+                                                          || Time.realtimeSinceStartup - started >= TimeoutSeconds - 1);
                 LastFatal = www.responseCode == 401 || www.responseCode == 404 || quota;
                 LastStatus = www.responseCode switch
                 {
                     401 => "API 키가 올바르지 않음(401)",
                     429 => quota ? "크레딧/결제 한도 없음(429 quota)" : "요청 한도 초과(429)",
                     404 => "모델을 사용할 수 없음(404)",
-                    0 => "네트워크 연결 실패",
+                    0 => timedOut ? $"AI 응답 시간 초과({TimeoutSeconds}초)" : "네트워크 연결 실패",
                     _ => $"AI 호출 실패({www.responseCode})",
                 };
-                Debug.LogWarning("[AI] " + LastStatus + "\n" + msg);
-                done(null);
+                Debug.LogWarning("[AI] " + LastStatus + " — " + www.error + "\n" + msg);
+                done(null, false);
                 yield break;
             }
+            Debug.Log($"[AI] {(Time.realtimeSinceStartup - started):0.0}s · {body.Length / 1024}KB prompt · {www.downloadHandler.text.Length / 1024}KB response");
             try
             {
                 var resp = JsonUtility.FromJson<Resp>(www.downloadHandler.text);
-                done(resp?.choices != null && resp.choices.Count > 0 ? resp.choices[0].message.content : null);
+                var ch = resp?.choices != null && resp.choices.Count > 0 ? resp.choices[0] : null;
+                done(ch?.message?.content, ch?.finish_reason == "length");
             }
-            catch (Exception e) { LastStatus = "AI 응답 해석 실패"; Debug.LogWarning(e); done(null); }
+            catch (Exception e) { LastStatus = "AI 응답 해석 실패"; Debug.LogWarning(e); done(null, false); }
         }
     }
 }

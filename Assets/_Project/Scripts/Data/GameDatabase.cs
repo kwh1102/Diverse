@@ -16,6 +16,9 @@ namespace Diverse
         [Tooltip("XP curve, evolution frequency, skill unlock levels, warp stones.")]
         public ProgressionDef progression = new ProgressionDef();
 
+        [Header("Ability rules (Rule IR limits, power budget, tier unlocks)")]
+        public AbilityRulesData abilityRules;
+
         [Header("Prefabs")]
         public Player playerPrefab;
         public Enemy enemyPrefab;

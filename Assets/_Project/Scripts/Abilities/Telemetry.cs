@@ -20,7 +20,7 @@ namespace Diverse
         public readonly Dictionary<string, int> intent = new Dictionary<string, int>();   // 플레이어가 고른 능력 태그
         public readonly Dictionary<Attr, int> investRecent = new Dictionary<Attr, int>();
         float distSum; int distSamples;
-        float t;
+        float t, combatT;
 
         public void Record(string action)
         {
@@ -33,7 +33,7 @@ namespace Diverse
             world[kind] = world.TryGetValue(kind, out var n) ? n + 1 : 1;
         }
 
-        public void RecordChoice(AbilityGraph g)
+        public void RecordChoice(AbilityDef g)
         {
             foreach (var tag in g.tags) intent[tag] = (intent.TryGetValue(tag, out var n) ? n : 0) + 1;
         }
@@ -43,7 +43,7 @@ namespace Diverse
         public void Tick(float dt, float nearestEnemyDist)
         {
             t += dt;
-            if (nearestEnemyDist < 12) { distSum += nearestEnemyDist; distSamples++; }
+            if (nearestEnemyDist < 12) { distSum += nearestEnemyDist; distSamples++; combatT += dt; }
             while (log.Count > 0 && t - log[0].t > Window) log.RemoveAt(0);
         }
 
@@ -143,6 +143,18 @@ namespace Diverse
             var sb = new StringBuilder();
             sb.Append($"공격 {f.attacks} · 처치 {f.kills} · 대시 {f.dashes} · 스킬 {f.skills}");
             return sb.ToString();
+        }
+
+        /// <summary>
+        /// Build-aware trigger frequency: this player's observed events per second of combat (enemies within 12m).
+        /// trust 0..1 grows with the number of observed events, so early guesses fall back to the generic rate.
+        /// </summary>
+        public float ObservedRate(string action, AbilityRulesDef cfg, out float trust)
+        {
+            int n = totals.TryGetValue(action, out var x) ? x : 0;
+            if (combatT < cfg.telemetryMinSeconds) { trust = 0; return 0; }
+            trust = Mathf.Clamp01(n / Mathf.Max(1, cfg.telemetryFullTrust)) * 0.85f;
+            return n / combatT;
         }
 
         public IEnumerable<KeyValuePair<string, int>> TopIntent(int n) => intent.OrderByDescending(kv => kv.Value).Take(n);
