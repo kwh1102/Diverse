@@ -38,6 +38,15 @@ MonoBehaviour:
   - {fileID: 11400000, guid: c396242efb352874b81d799ac4e192ec, type: 2}
   - {fileID: 11400000, guid: 913292148c2fc8246b24b00614607658, type: 2}
   - {fileID: 11400000, guid: 236f666e96255fe40af9194156a22967, type: 2}
+  - {fileID: 11400000, guid: a50e7fd111d3478dbb30abd3990a2301, type: 2}
+  progression:
+    xpBase: 60
+    xpGrowth: 1.32
+    evolveEvery: 2
+    skillLevels: 03000000060000000a0000000f000000
+    smithSkillLevels: 01000000020000000400000006000000
+    warpStoneCost: 120
+    warpRange: 6
   abilityRules: {fileID: 11400000, guid: a63b7dc07767a1e408638a24ed2f955e, type: 2}
   playerPrefab: {fileID: 216423936105204445, guid: 6b1dc4411a619b74685505198ee66c58, type: 3}
   enemyPrefab: {fileID: 1860128500088664103, guid: ab4df4689c622db43befed524f0b0964, type: 3}

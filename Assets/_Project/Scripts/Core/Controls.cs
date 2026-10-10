@@ -48,13 +48,28 @@ namespace Diverse
         }
 
         public static InputAction Get(Act a) => acts[a];
-        public static bool Down(Act a) => map != null && acts[a].WasPressedThisFrame();
-        public static bool Held(Act a) => map != null && acts[a].IsPressed();
+        public static bool Down(Act a) => map != null && !Blocked(a) && acts[a].WasPressedThisFrame();
+        public static bool Held(Act a) => map != null && !Blocked(a) && acts[a].IsPressed();
         public static bool Up(Act a) => map != null && acts[a].WasReleasedThisFrame();
+
+        /// <summary>
+        /// A text field has keyboard focus: keyboard-bound actions must not fire (typing "w" or Space in the chat
+        /// would otherwise cast a skill or dash). Mouse-bound actions still work.
+        /// </summary>
+        public static bool Typing => TypingField != null && TypingField.isFocused;
+        public static UnityEngine.UI.InputField TypingField;
+
+        static bool Blocked(Act a) => Typing && acts[a].bindings[0].effectivePath.StartsWith("<Keyboard>");
 
         public static string KeyName(Act a)
         {
             if (map == null) return "?";
+            // Letter keys: name them by the physical key. The display string follows the OS keyboard layout, so with the
+            // Korean input source on it reads "ㅂ" for Q (the bindings themselves are physical and still work).
+            string path = acts[a].bindings[0].effectivePath;
+            const string kb = "<Keyboard>/";
+            if (path != null && path.StartsWith(kb) && path.Length == kb.Length + 1 && char.IsLetterOrDigit(path[kb.Length]))
+                return path.Substring(kb.Length).ToUpperInvariant();
             var s = acts[a].GetBindingDisplayString(0, InputBinding.DisplayStringOptions.DontIncludeInteractions);
             return Pretty(s);
         }
@@ -126,6 +141,6 @@ namespace Diverse
         public static float Scroll => Mouse.current != null ? Mouse.current.scroll.ReadValue().y : 0;
         public static bool LeftDown => Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame;
         public static bool LeftHeld => Mouse.current != null && Mouse.current.leftButton.isPressed;
-        public static bool KeyDown(Key k) => Keyboard.current != null && Keyboard.current[k].wasPressedThisFrame;
+        public static bool KeyDown(Key k) => Keyboard.current != null && !Typing && Keyboard.current[k].wasPressedThisFrame;
     }
 }

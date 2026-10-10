@@ -291,7 +291,7 @@ OUTPUT JSON: {""reply"":""..."",""changes"":[ {""card"":2, ...same intent schema
             if (string.IsNullOrEmpty(key)) { done(); yield break; }
             var sb = new StringBuilder();
             sb.AppendLine("World: a gentle pixel fantasy where rabbit wanderers live, die, and are remembered by the world. Region: " + worldFlavor);
-            sb.AppendLine("For each FINALIZED ability below, write a short evocative Korean name (2~4 words) and a Korean description (1~3 short lines separated by \\n) that states the exact numbers given and keeps every rule.");
+            sb.AppendLine("For each FINALIZED ability below, write a short evocative Korean name (2~4 words) and a one-line Korean flavor sentence (max 30 characters, no numbers — the exact rules are shown separately).");
             for (int i = 0; i < abilities.Count; i++)
                 sb.AppendLine($"id={i}: concept: {abilities[i].concept} | rules: {abilities[i].Explain().Replace("\n", " / ")} | tags: {string.Join(" ", abilities[i].tags)}");
             sb.AppendLine("Return JSON: {\"names\":[{\"id\":\"0\",\"name\":\"...\",\"desc\":\"...\"}]}");

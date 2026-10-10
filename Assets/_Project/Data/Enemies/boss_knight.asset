@@ -16,6 +16,7 @@ MonoBehaviour:
     id: boss_knight
     name: "\uB9DD\uAC01\uC758 \uAE30\uC0AC"
     brain: 6
+    attack: 0
     hp: 820
     damage: 20
     speed: 2.2
@@ -27,6 +28,10 @@ MonoBehaviour:
     xp: 200
     gold: 90
     mass: 8
+    hopInterval: 0
+    strafe: 0
+    attackParam: 1
+    attackCount: 1
     sprite: boss_knight
     projectileColor:
       serializedVersion: 2

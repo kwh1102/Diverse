@@ -20,13 +20,14 @@ namespace Diverse
         [System.NonSerialized] public AbilityRuntime Abilities;
         [System.NonSerialized] public Telemetry Telemetry = new Telemetry();
         public int Level = 1;
-        public float Xp, XpToNext = 30;
+        public float Xp, XpToNext = 60;
         public int Gold, Kills, Potions = 2;
         public int[] Attrs = new int[4];
         public int UnspentAttr;
         public int PendingEvolutions;
         public string HeroName;
         public bool HasRaft;                       // can paddle across water (bought from a ferryman)
+        public int WarpStones;                     // carried warp stones, placed with the interact key away from town
         public bool Ferrying;                      // riding the ferryman's raft right now
         public bool OnWater { get; private set; }
         /// <summary>How far from the origin this hero may go right now (0 = unlimited).</summary>
@@ -36,6 +37,7 @@ namespace Diverse
 
         // Movement
         readonly List<Vector2> path = new List<Vector2>();
+        public IReadOnlyList<Vector2> MovementPath => path;
         Actor attackTarget;
         float repathT;
         public Vector2 AimPoint;
@@ -84,7 +86,9 @@ namespace Diverse
             p.Pos = pos;
             p.AimPoint = pos + Vector2.right;
             p.SetupVisual();
-            for (int i = 0; i < 4; i++) p.Skills[i] = new SkillState { id = weapon.skills[i], def = SkillDB.Get(weapon.skills[i]) };
+            // A new hero starts with only the weapon's basic attack; QWER skills are learned by leveling or at the smith
+            for (int i = 0; i < 4; i++) p.Skills[i] = new SkillState { id = weapon.skills[i] };
+            p.XpToNext = DB.Progression.XpFor(1);
             p.RecalcStats();
             p.hp = p.maxHp;
             GameEvents.Combat += p.OnCombatEvent;
@@ -186,14 +190,16 @@ namespace Diverse
         public void GainXp(float amount)
         {
             if (Abilities != null) amount = Abilities.FilterXp(amount);
+            var prog = DB.Progression;
             Xp += amount * Stats[StatId.XpGain];
             while (Xp >= XpToNext)
             {
                 Xp -= XpToNext;
                 Level++;
-                XpToNext = Mathf.Round(30 * Mathf.Pow(1.22f, Level - 1));
+                XpToNext = prog.XpFor(Level);
                 UnspentAttr += 1;
-                PendingEvolutions++;
+                bool evolve = prog.EvolvesAt(Level);
+                if (evolve) PendingEvolutions++;
                 RecalcStats();
                 hp = Mathf.Min(maxHp, hp + maxHp * 0.25f);
                 Fx.I?.Play(Art.Shockwave(Pal.Gold, 24), Pos, 0, 18, 1, null, true);
@@ -201,8 +207,66 @@ namespace Diverse
                 Fx.I?.Number(Pos + Vector2.up * 1.2f, "레벨 업!", new Color(1f, 0.9f, 0.4f), 1.3f, 1.2f);
                 Sfx.Play("levelup");
                 Abilities?.Raise("LevelUp");
-                GameEvents.Notify($"레벨 {Level}! 진화가 준비되었다 ({Controls.KeyName(Act.Abilities)} 또는 자동)");
-                Game.I?.RequestPrefetch();
+                var learned = LearnSkillsForLevel();
+                if (learned != null) GameEvents.Notify($"레벨 {Level}! 새 기술 [{learned.def.name}]{(Ko.HasBatchim(learned.def.name) ? "을" : "를")} 익혔다 ({Controls.KeyName(SkillAct(learned))})");
+                else if (evolve) GameEvents.Notify($"레벨 {Level}! 진화가 준비되었다 ({Controls.KeyName(Act.Abilities)} 또는 자동)");
+                else GameEvents.Notify($"레벨 {Level}! 능력치 포인트 +1 (다음 진화: 레벨 {NextEvolveLevel})");
+                if (evolve) Game.I?.RequestPrefetch();
+            }
+        }
+
+        /// <summary>Next level that offers an ability evolution.</summary>
+        public int NextEvolveLevel
+        {
+            get { int l = Level + 1; while (!DB.Progression.EvolvesAt(l) && l < Level + 50) l++; return l; }
+        }
+
+        // ───────────────────────── Learning skills ─────────────────────────
+
+        public int LearnedSkills { get { int n = 0; foreach (var s in Skills) if (s?.def != null) n++; return n; } }
+
+        static readonly Act[] skillActs = { Act.SkillQ, Act.SkillW, Act.SkillE, Act.SkillR };
+        public Act SkillAct(SkillState s) => skillActs[System.Array.IndexOf(Skills, s)];
+
+        /// <summary>Learn the next QWER skill of this weapon (in slot order). Returns it, or null when all are known.</summary>
+        public SkillState LearnNextSkill()
+        {
+            foreach (var s in Skills)
+            {
+                if (s == null || s.def != null || string.IsNullOrEmpty(s.id)) continue;
+                s.def = SkillDB.Get(s.id);
+                s.cd = 0;
+                if (s.def == null) continue;
+                Fx.I?.Play(Art.Shockwave(s.def.color, 26), Pos, 0, 18, 1, null, true);
+                Telemetry.RecordWorld("learn");
+                Game.I?.World.Log($"{Ko.I(HeroName)} [{s.def.name}] 기술을 익혔다.", "deed");
+                return s;
+            }
+            return null;
+        }
+
+        /// <summary>Learn every skill whose level requirement has been reached (level-ups, and when continuing an old save).</summary>
+        SkillState LearnSkillsForLevel()
+        {
+            var levels = DB.Progression.skillLevels;
+            SkillState last = null;
+            while (LearnedSkills < Skills.Length && LearnedSkills < levels.Length && Level >= levels[LearnedSkills])
+            {
+                var s = LearnNextSkill();
+                if (s == null) break;
+                last = s;
+            }
+            return last;
+        }
+
+        /// <summary>Restore learned skills from a save (count of slots learned, in order).</summary>
+        public void RestoreSkills(int learned)
+        {
+            for (int i = 0; i < Skills.Length; i++)
+            {
+                var s = Skills[i];
+                if (s == null) continue;
+                s.def = i < learned ? SkillDB.Get(s.id) : null;
             }
         }
 
@@ -217,9 +281,11 @@ namespace Diverse
         protected override void Update()
         {
             float dt = Time.deltaTime;
-            if (Alive && dt > 0 && !GameTime.Paused && Game.I != null && Game.I.State == GameState.Playing && !Ferrying)
+            if (Alive && dt > 0 && !GameTime.Paused && Game.I != null &&
+                (Game.I.State == GameState.Playing || Game.I.State == GameState.Map) && !Ferrying)
             {
-                HandleInput();
+                if (Game.I.State == GameState.Playing) HandleInput();
+                UpdateTravel(dt);
                 UpdateMovement(dt);
                 UpdateTimers(dt);
                 Abilities.Tick(dt);
@@ -259,19 +325,20 @@ namespace Diverse
 
         void HandleInput()
         {
-            if (Game.I.UiCapturingMouse) return;
+            if (Game.I.UiCapturingMouse || Game.I.InputConsumedFrame >= Time.frameCount - 1) return;
             AimPoint = CameraRig.I.MouseWorld();
             if (CameraRig.I != null)
                 CameraRig.I.lookAhead = Vector2.ClampMagnitude((AimPoint - Pos) * 0.12f, 1.2f);
 
             // Right-click: move / target
-            if (Controls.Held(Act.Move) && !Controls.Down(Act.Move))
+            if (Controls.Held(Act.Move) && !Controls.Down(Act.Move) && !TravelTarget.HasValue)
             {
                 repathT -= Time.deltaTime;
-                if (repathT <= 0 && attackTarget == null) { repathT = 0.12f; SetDestination(AimPoint, false); }
+                if (repathT <= 0 && attackTarget == null) { repathT = 0.12f; TravelTarget = null; SetDestination(AimPoint, false); }
             }
             if (Controls.Down(Act.Move))
             {
+                TravelTarget = null;
                 var enemy = EnemyUnderCursor(AimPoint);
                 if (enemy != null)
                 {
@@ -284,14 +351,14 @@ namespace Diverse
                     if (!Game.I.TryInteractAt(AimPoint)) SetDestination(AimPoint, true);
                 }
             }
-            if (Controls.Down(Act.Stop)) { path.Clear(); attackTarget = null; }
+            if (Controls.Down(Act.Stop)) StopMoving();
 
             // Left-click: attack toward the cursor (queued while locked)
             if (Controls.Held(Act.Attack))
             {
                 var dir = (AimPoint - (Pos + Vector2.up * 0.4f)).SafeNormal(Facing);
                 if (actionLock > 0.08f) { queuedAttack = true; queuedDir = dir; }
-                else if (actionLock <= 0) { path.Clear(); attackTarget = null; BasicAttack(dir); }
+                else if (actionLock <= 0) { path.Clear(); attackTarget = null; TravelTarget = null; BasicAttack(dir); }
                 else { queuedAttack = true; queuedDir = dir; }
             }
 
@@ -328,7 +395,56 @@ namespace Diverse
             if (showMarker) Fx.I?.Play(Art.ClickMarker(), path.Count > 0 ? path[path.Count - 1] : target, 0, 14);
         }
 
-        public void StopMoving() { path.Clear(); attackTarget = null; }
+        public void StopMoving() { path.Clear(); attackTarget = null; TravelTarget = null; }
+
+        // ───────── Long-distance travel (right-click on the world map) ─────────
+
+        /// <summary>A far destination picked on the map. Followed leg by leg, re-planning as chunks stream in.</summary>
+        public Vector2? TravelTarget { get; private set; }
+        float travelRepathT;
+        int travelStuck;
+        Vector2 travelProgress;
+
+        public void SetTravelTarget(Vector2 target)
+        {
+            attackTarget = null;
+            if (Bound > 0 && target.magnitude > Bound - 0.5f)
+                target = target.normalized * Mathf.Max(Pos.magnitude, Bound - 0.5f);
+            TravelTarget = WorldStreamer.I.NearestWalkable(target, radius, 4, HasRaft);
+            travelStuck = 0;
+            travelProgress = Pos;
+            travelRepathT = 0;
+            TravelLeg();
+        }
+
+        /// <summary>Plan the next leg. Terrain far away isn't loaded yet, so long trips are re-planned every so often.</summary>
+        void TravelLeg()
+        {
+            if (!TravelTarget.HasValue) return;
+            var t = TravelTarget.Value;
+            path.Clear();
+            path.AddRange(PathFinder.Find(WorldStreamer.I, Pos, t, 6000, HasRaft, Bound));
+            travelRepathT = 1.5f;
+        }
+
+        void UpdateTravel(float dt)
+        {
+            if (!TravelTarget.HasValue) return;
+            if (Vector2.Distance(Pos, TravelTarget.Value) < 0.1f) { TravelTarget = null; path.Clear(); return; }
+            travelRepathT -= dt;
+            if (travelRepathT <= 0)
+            {
+                bool progressed = Vector2.Distance(Pos, travelProgress) >= 0.2f;
+                travelProgress = Pos;
+                TravelLeg();
+                // No way forward (blocked by water without a raft, or the frontier): give up after a few tries
+                if (!progressed)
+                {
+                    if (++travelStuck >= 3) { TravelTarget = null; path.Clear(); GameEvents.Notify("목표 지점으로 가는 길을 찾지 못했다"); }
+                }
+                else travelStuck = 0;
+            }
+        }
 
         void UpdateMovement(float dt)
         {
@@ -375,7 +491,8 @@ namespace Diverse
                 if (to.magnitude <= step + 0.02f)
                 {
                     Pos = WorldStreamer.I.Move(Pos, to, radius, HasRaft, Bound);
-                    path.RemoveAt(0);
+                    if (Vector2.Distance(Pos, next) < 0.02f) path.RemoveAt(0);
+                    else path.Clear();
                 }
                 else
                 {
@@ -491,10 +608,10 @@ namespace Diverse
             if (DashCharges <= 0 || dashT > 0) return;
             if (Abilities != null && Abilities.Forbids("Dash")) return;
             // Replacement rules (e.g. "dash becomes blink") take the input instead of the normal dash
-            if (Abilities != null && Abilities.ReplaceDash(dir)) { DashCharges--; dashRecharge = 0; return; }
+            if (Abilities != null && Abilities.ReplaceDash(dir)) { StopMoving(); DashCharges--; dashRecharge = 0; return; }
             DashCharges--;
             dashRecharge = 0;
-            path.Clear(); attackTarget = null;
+            path.Clear(); attackTarget = null; TravelTarget = null;
             actionLock = 0; queuedAttack = false;
             LastDashOrigin = Pos;
             dashT = 0.16f;
@@ -538,7 +655,12 @@ namespace Diverse
         void CastSkill(int i)
         {
             var s = Skills[i];
-            if (s.def == null || s.cd > 0 || actionLock > 0.05f || dashT > 0) return;
+            if (s.def == null)
+            {
+                if (Controls.Down(skillActs[i])) Fx.I?.Number(Pos + Vector2.up * 1.1f, "아직 익히지 않은 기술", new Color(0.7f, 0.65f, 0.8f), 0.7f, 0.6f);
+                return;
+            }
+            if (s.cd > 0 || actionLock > 0.05f || dashT > 0) return;
             path.Clear(); attackTarget = null;
             s.cd = s.def.cooldown * (1 - Stats[StatId.CooldownReduction]);
             Vector2 dir = (AimPoint - (Pos + Vector2.up * 0.4f)).SafeNormal(Facing);

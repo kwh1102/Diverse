@@ -62,6 +62,7 @@ namespace Diverse
                 case "wanderer": Wanderer(g, it); break;
                 case "tower_gate": Tower(g, it); break;
                 case "ferry": Ferry(g, it); break;
+                case "warpstone": WarpStoneTalk(g, it); break;
                 default: Show(new DialoguePage { speaker = it.label, text = "...", options = { Bye() } }); break;
             }
         }
@@ -185,8 +186,56 @@ namespace Diverse
                 if (BuyRaft(p)) Game.I.Ui.Toast("뗏목을 샀다! 이제 물 위로도 이동할 수 있다.");
                 Merchant(g);
             }, !p.HasRaft && p.Gold >= RaftCost));
+            int warpCost = DB.Progression.warpStoneCost;
+            page.options.Add(new DialogueOption($"워프 스톤 ({warpCost} 골드) — 들판에 세우면 지도에서 순간이동 (보유 {p.WarpStones})", () =>
+            {
+                if (p.Gold >= warpCost)
+                {
+                    p.Gold -= warpCost; p.WarpStones++;
+                    Sfx.Play("coin");
+                    Game.I.Ui.Toast($"워프 스톤을 샀다! 마을 밖 빈 곳에서 [{Controls.KeyName(Act.Interact)}]를 눌러 세운다.");
+                }
+                Merchant(g);
+            }, p.Gold >= warpCost));
             page.options.Add(Bye());
             Show(page);
+        }
+
+        /// <summary>Interact key with nothing to interact with while carrying a warp stone: confirm, then set it up here.</summary>
+        public static void OfferPlaceWarpStone(Game g)
+        {
+            bool ok = g.CanPlaceWarpStone(out var why);
+            Show(new DialoguePage
+            {
+                speaker = "워프 스톤", portrait = Art.Prop("warpstone"),
+                text = ok
+                    ? $"여기에 워프 스톤을 세울까? ({Diverse.World.I.Gen.RegionName(g.Player.Pos)}, 남은 돌 {g.Player.WarpStones}개)\n세운 돌은 모든 삶에서 계속 남는다."
+                    : $"지금은 세울 수 없다: {why}",
+                options =
+                {
+                    new DialogueOption("세우기", () => { Close(); g.PlaceWarpStone(); }, ok),
+                    Bye("그만두기"),
+                },
+            });
+        }
+
+        /// <summary>Talking to a warp stone: where it leads, and a shortcut to the map.</summary>
+        static void WarpStoneTalk(Game g, Interactable it)
+        {
+            var w = it.data as WarpStone;
+            int others = g.WarpStones().Count() - 1;
+            Show(new DialoguePage
+            {
+                speaker = $"워프 스톤 — {w?.name}", portrait = Art.Prop("warpstone"),
+                text = others > 0
+                    ? $"돌 속에서 푸른 빛이 맥동한다. 연결된 워프 스톤 {others}곳.\n지도를 열어 가고 싶은 워프 스톤을 누르면 그곳으로 이동한다."
+                    : "돌 속에서 푸른 빛이 맥동한다. 아직 연결된 다른 워프 스톤이 없다.\n상인에게서 워프 스톤을 사서 들판에 세워 보자.",
+                options =
+                {
+                    new DialogueOption("지도 열기", () => { Close(); g.OpenOverlay(GameState.Map); }, others > 0),
+                    Bye(),
+                },
+            });
         }
 
         public const int RaftCost = 150;
@@ -206,10 +255,24 @@ namespace Diverse
             var p = g.Player;
             int lvl = p.Weapon.baseDamage > DB.W(p.Weapon.kind).baseDamage ? Mathf.RoundToInt((p.Weapon.baseDamage / DB.W(p.Weapon.kind).baseDamage - 1) / 0.12f) : 0;
             int cost = 50 + lvl * 40;
-            var page = new DialoguePage { speaker = "대장장이 브루노", portrait = Art.Npc("bear", 0), text = $"흠. 쓸 만한 {p.Weapon.name}. 좀 더 벼려 줄까? (현재 강화 +{lvl})" };
+            // Weapon upgrades also unlock its QWER skills (in order) once the weapon reaches the level in ProgressionDef
+            var smithLevels = DB.Progression.smithSkillLevels;
+            int known = p.LearnedSkills;
+            int nextAt = known < smithLevels.Length && known < p.Skills.Length ? smithLevels[known] : -1;
+            var nextSkill = known < p.Skills.Length ? SkillDB.Get(p.Skills[known].id) : null;
+            string skillLine = nextSkill == null ? "이 무기의 기술은 모두 익혔구먼."
+                : nextAt >= 0 && lvl + 1 >= nextAt ? $"한 번 더 벼리면 [{nextSkill.name}] 쓰는 법도 알려 주지."
+                : nextAt >= 0 ? $"+{nextAt}까지 벼리면 [{nextSkill.name}] 쓰는 법을 알려 주지." : "";
+            var page = new DialoguePage { speaker = "대장장이 브루노", portrait = Art.Npc("bear", 0), text = $"흠. 쓸 만한 {p.Weapon.name}. 좀 더 벼려 줄까? (현재 강화 +{lvl})\n{skillLine}" };
             page.options.Add(new DialogueOption($"무기 강화 ({cost} 골드) — 공격력 +12%", () =>
             {
-                if (p.Gold >= cost) { p.Gold -= cost; p.Weapon.baseDamage *= 1.12f; p.RecalcStats(); Sfx.Play("hit_metal"); CameraRig.I.Shake(0.2f); Game.I.Ui.Toast($"{p.Weapon.name} +{lvl + 1}"); }
+                if (p.Gold >= cost)
+                {
+                    p.Gold -= cost; p.Weapon.baseDamage *= 1.12f; p.RecalcStats(); Sfx.Play("hit_metal"); CameraRig.I.Shake(0.2f);
+                    int newLvl = lvl + 1;
+                    var learned = nextAt >= 0 && newLvl >= nextAt ? p.LearnNextSkill() : null;
+                    Game.I.Ui.Toast(learned != null ? $"{p.Weapon.name} +{newLvl} — 새 기술 [{learned.def.name}] ({Controls.KeyName(p.SkillAct(learned))})" : $"{p.Weapon.name} +{newLvl}");
+                }
                 Close();
             }, p.Gold >= cost));
             page.options.Add(Bye());
@@ -355,9 +418,24 @@ namespace Diverse
             Show(page);
         }
 
+        static readonly string[] RuinLore =
+        {
+            "\"탑은 잊지 않기 위해 세워졌다. 그러나 아무것도 잊지 못하는 자는 탑을 오를 수도 없다.\"",
+            "\"토끼들은 몇 번이고 다시 태어난다. 그들이 한 일은 세계만이 기억한다.\"",
+            "\"꼭대기의 기사도 한때는 영웅이었다. 모든 것을 기억하기를 택한 자였다.\"",
+        };
+
         static void RuinAltar(Game g, Interactable it)
         {
             var s = it.data as StructureSpec;
+            // Stable lore line per ruin (string.GetHashCode is randomized per process)
+            string lore = RuinLore[(int)(Hash.Str(s.id) % (uint)RuinLore.Length)];
+            // Already read: the shard is gone. Before, the flag was set but the altar kept its shard and paid out again.
+            if (g.World.Flag("ruin:" + s.id))
+            {
+                Show(new DialoguePage { speaker = s.name, portrait = Art.Prop("altar_empty"), text = lore + "\n\n<color=#8c7aa8>제단 위의 조각은 이미 거두었다.</color>", options = { Bye() } });
+                return;
+            }
             if (!g.World.clearedCamps.Contains(s.id) && Actor.Nearest(it.Pos, 9, Team.Enemy) != null)
             {
                 Show(new DialoguePage { speaker = "고대 제단", portrait = Art.Prop("altar"), text = "몬스터들이 제단을 지키고 있다. 먼저 처리하자.", options = { Bye() } });
@@ -365,15 +443,13 @@ namespace Diverse
             }
             g.World.SetFlag("ruin:" + s.id);
             g.World.memoryShards += 1;
+            it.sr.sprite = Art.Prop("altar_empty");
+            it.label = "빈 제단";
+            Fx.I?.Burst(it.Pos + Vector2.up * 0.6f, Pal.ShadowEl, 14, 4, 0.6f, -3);
+            Sfx.Play("pickup");
             GameEvents.World("investigate", "ruins");
-            var lore = new[]
-            {
-                "\"탑은 잊지 않기 위해 세워졌다. 그러나 아무것도 잊지 못하는 자는 탑을 오를 수도 없다.\"",
-                "\"토끼들은 몇 번이고 다시 태어난다. 그들이 한 일은 세계만이 기억한다.\"",
-                "\"꼭대기의 기사도 한때는 영웅이었다. 모든 것을 기억하기를 택한 자였다.\"",
-            };
             g.World.Log($"{Ko.I(g.HeroName)} {s.name}에서 비문을 해독했다.", "lore");
-            Show(new DialoguePage { speaker = s.name, portrait = Art.Prop("altar"), text = lore[Mathf.Abs(s.id.GetHashCode()) % lore.Length] + "\n\n(기억의 조각 +1)", options = { Bye() } });
+            Show(new DialoguePage { speaker = s.name, portrait = Art.Prop("altar"), text = lore + "\n\n(기억의 조각 +1 — 제단 위의 조각이 흩어졌다)", options = { Bye() } });
         }
 
         static void Cage(Game g, Interactable it)

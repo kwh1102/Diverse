@@ -9,12 +9,18 @@ namespace Diverse
         [SerializeField] Text icon, cooldown, key;
         [SerializeField] Image cooldownShade;      // Filled image, vertical, shrinks as the skill recharges
 
-        public void Tick(Player p, SkillState s, string keyName, TooltipView tooltip)
+        public void Tick(Player p, SkillState s, string keyName, TooltipView tooltip, string lockedHint = null)
         {
             UIKit.Set(key, keyName);
             bool has = s != null && s.def != null;
             UIKit.Show(icon, has);
-            if (!has) { UIKit.Show(cooldownShade, false); UIKit.Show(cooldown, false); return; }
+            if (!has)
+            {
+                UIKit.Show(cooldownShade, false); UIKit.Show(cooldown, false);
+                if (tooltip != null && lockedHint != null && UIKit.Hovered((RectTransform)transform))
+                    tooltip.Show("<b>아직 익히지 않은 기술</b>", lockedHint);
+                return;
+            }
             UIKit.Set(icon, s.def.icon);
             icon.color = s.def.color;
             bool cd = s.cd > 0;

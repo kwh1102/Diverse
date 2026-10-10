@@ -16,17 +16,22 @@ MonoBehaviour:
     id: frostling
     name: "\uC11C\uB9AC \uC815\uB839"
     brain: 4
+    attack: 6
     hp: 34
     damage: 10
     speed: 1.8
     radius: 0.45
-    attackRange: 5.5
+    attackRange: 6
     attackWindup: 0.65
-    attackCooldown: 2
+    attackCooldown: 2.4
     aggroRange: 7
     xp: 11
     gold: 4
     mass: 1
+    hopInterval: 0
+    strafe: 0.3
+    attackParam: 1.0
+    attackCount: 7
     sprite: frostling
     projectileColor:
       serializedVersion: 2

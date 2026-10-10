@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -175,14 +176,109 @@ namespace Diverse.EditorTools
                     yield return Frames(30);
                 }
 
-                // 4) Overlays
+                // 3b) Every enemy's signature attack runs its full telegraph → strike → recover cycle without errors
                 var g = Game.I;
+                step = "enemy patterns";
+                // One enemy at a time, right next to the hero, so each gets a clear shot at its pattern
+                g.Player.invulnUntil = Time.time + 999;
+                // Leftover clones/summons from the weapon checks would kill the test enemies before they attack
+                foreach (var s in Object.FindObjectsByType<Summon>(FindObjectsSortMode.None)) Object.Destroy(s.gameObject);
+                foreach (var c in Object.FindObjectsByType<Clone>(FindObjectsSortMode.None)) Object.Destroy(c.gameObject);
+                foreach (var a in Actor.All.ToArray()) if (a is Enemy) Object.Destroy(a.gameObject);
+                yield return Frames(2);
+                Enemy.SignaturesFired.Clear();
+                var expected = new HashSet<string>();
+                foreach (var id in DB.Enemies.Keys)
+                {
+                    var def = DB.ScaledEnemy(id, 0);
+                    if (def.attack != EnemyAttack.Default && !def.boss) expected.Add(def.attack.ToString());
+                    var e = Enemy.Spawn(def, g.Player.Pos + Vector2.right * Mathf.Min(2f, def.attackRange * 0.7f), null);
+                    float until = Time.realtimeSinceStartup + (def.boss ? 8f : 4f);
+                    while (Time.realtimeSinceStartup < until && e != null && e.Alive) { g.Player.invulnUntil = Time.time + 999; yield return null; }
+                    if (def.attack != EnemyAttack.Default && !def.boss && !Enemy.SignaturesFired.Contains(def.attack.ToString()))
+                        Debug.Log($"[SmokeTest] {id}: {(e == null || !e.Alive ? "died before attacking" : "never attacked")} at {(e != null ? Vector2.Distance(e.Pos, g.Player.Pos) : -1):0.0}m");
+                    if (e != null) Object.Destroy(e.gameObject);
+                    yield return Frames(2);
+                }
+                foreach (var x in expected) if (!Enemy.SignaturesFired.Contains(x)) Fail($"signature attack {x} never fired");
+                g.Player.invulnUntil = 0;
+
+                // 3c) New hero: no QWER skills yet; leveling learns them; evolutions only every N levels
+                step = "progression";
+                if (g.Player.LearnedSkills != 0) Fail($"a new hero should start with no skills (has {g.Player.LearnedSkills})");
+                var prog = DB.Progression;
+                g.Player.PendingEvolutions = 0;
+                while (g.Player.Level < prog.skillLevels[0]) g.Player.GainXp(g.Player.XpToNext - g.Player.Xp + 0.01f);
+                if (g.Player.LearnedSkills != 1) Fail($"level {prog.skillLevels[0]} should teach the first skill (learned {g.Player.LearnedSkills})");
+                int expectEvolves = 0;
+                for (int l = 2; l <= g.Player.Level; l++) if (prog.EvolvesAt(l)) expectEvolves++;
+                if (g.Player.PendingEvolutions != expectEvolves) Fail($"evolutions {g.Player.PendingEvolutions} != {expectEvolves} expected for level {g.Player.Level}");
+                g.Player.PendingEvolutions = 0;
+                yield return Frames(2);
+
+                // 3d) Ruin altar pays its shard once
+                step = "ruin altar";
+                {
+                    var spec = new StructureSpec { id = "smoke_ruin", name = "시험 유적", kind = StructKind.Ruins, center = g.Player.Pos + Vector2.right * 6 };
+                    var chunk = WorldStreamer.I.ChunkAt(g.Player.Pos);
+                    var alt = Interactable.Create(chunk.transform, "ruin_altar", "ruin:" + spec.id, "고대 제단", spec.center, Art.Prop("altar"), chunk);
+                    alt.data = spec;
+                    int shards = g.World.memoryShards;
+                    Dialogue.Open(g, alt); yield return Frames(2); g.CloseOverlay(); yield return Frames(1);
+                    Dialogue.Open(g, alt); yield return Frames(2); g.CloseOverlay(); yield return Frames(1);
+                    if (g.World.memoryShards != shards + 1) Fail($"altar paid {g.World.memoryShards - shards} shards (expected 1)");
+                    Object.Destroy(alt.gameObject);
+                }
+
+                // 3e) Camp counts as cleared even if its chunk was reloaded mid-fight (spawn counter used to double)
+                step = "camp clear";
+                {
+                    var c1 = Enemy.Spawn(DB.ScaledEnemy("fox", 0), g.Player.Pos + Vector2.up * 4, "smoke_camp");
+                    var c2 = Enemy.Spawn(DB.ScaledEnemy("fox", 0), g.Player.Pos + Vector2.up * 5, "smoke_camp");
+                    var q = new QuestState { id = "smoke_q", kind = "clear", targetId = "smoke_camp", title = "시험", status = 1 };
+                    g.World.quests.Add(q);
+                    c1.TakeDamage(new DamageInfo { amount = 99999, source = g.Player, direction = Vector2.up });
+                    if (g.World.clearedCamps.Contains("smoke_camp")) Fail("camp cleared while a member is still alive");
+                    c2.TakeDamage(new DamageInfo { amount = 99999, source = g.Player, direction = Vector2.up });
+                    yield return Frames(2);
+                    if (!g.World.clearedCamps.Contains("smoke_camp")) Fail("camp not cleared after its last member died");
+                    if (q.status != 2) Fail($"clear quest not completed (status {q.status})");
+                    g.World.quests.Remove(q);
+                }
+
+                // 3f) Warp stones: buy → place in the field → map click travels back to town
+                step = "warp";
+                {
+                    g.Player.WarpStones = 1;
+                    var field = WorldStreamer.I.NearestWalkable(new Vector2(30, 0), g.Player.radius);
+                    WorldStreamer.I.Warm(field);
+                    g.Player.Pos = field;
+                    foreach (var a in Actor.All.ToArray()) if (a is Enemy e && Vector2.Distance(e.Pos, field) < 12) Object.Destroy(e.gameObject);
+                    yield return Frames(2);
+                    if (!g.PlaceWarpStone()) Fail("could not place a warp stone in the field");
+                    else
+                    {
+                        if (g.WarpStoneInReach() == null) Fail("placed warp stone not in reach");
+                        var town = g.WarpStones().First(w => w.id == Game.TownWarpId);
+                        if (!g.TryWarp(town, out var why)) Fail("warp failed: " + why);
+                        yield return Frames(5);
+                        if (Vector2.Distance(g.Player.Pos, town.Pos) > 3) Fail($"warp did not move the hero (at {g.Player.Pos})");
+                    }
+                }
+
+                // 4) Overlays
                 step = "map";
                 g.OpenOverlay(GameState.Map);
                 yield return Frames(5);
                 if (!Visible<MapView>()) Fail("map not visible");
                 g.CloseOverlay();
                 yield return Frames(2);
+
+                step = "map travel";
+                g.Player.SetTravelTarget(g.Player.Pos + new Vector2(6, 0));
+                for (int i = 0; i < 60; i++) yield return null;
+                if (g.Player.TravelTarget.HasValue && !g.Player.Moving) Fail("travel target set but the hero is not moving");
+                g.Player.StopMoving();
 
                 step = "pause";
                 g.OpenOverlay(GameState.Paused);
@@ -216,6 +312,22 @@ namespace Diverse.EditorTools
                     else opts.Last().onClick.Invoke();     // the last option leaves on every page
                     yield return Frames(3);
                     if (g.State == GameState.Dialogue) { g.CloseOverlay(); yield return Frames(2); }
+                }
+
+                // A RuleIR replacement dash must cancel main's map travel just like a normal dash.
+                step = "replacement dash travel";
+                {
+                    var p = g.Player;
+                    var replacement = new AbilityDef { id = "smoke_replace_dash", rules = { new RuleDef
+                    {
+                        kind = RuleKind.Replace, replaces = "Dash", ops = { new OpDef { op = "ReplaceWith", mode = "Blink" } },
+                    } } };
+                    p.Abilities.Add(replacement);
+                    p.SetTravelTarget(p.Pos + Vector2.right * 8);
+                    p.DashCharges = p.DashChargesMax;
+                    p.TryDash(Vector2.left);
+                    if (p.TravelTarget.HasValue || p.MovementPath.Count != 0) Fail("replacement dash resumed map travel");
+                    p.Abilities.Clear(); p.RecalcStats();
                 }
 
                 // Rule IR: every reference ability on one live player, then real combat events through the runtime
@@ -332,6 +444,12 @@ namespace Diverse.EditorTools
                 yield return Frames(10);
                 if (Game.I == null) { Fail("Game scene did not load the 2nd time"); yield break; }
                 Game.I.Player.Gold = 77;
+                Game.I.Player.WarpStones = 3;
+                Game.I.Player.LearnNextSkill();
+                var savedAbility = RuleSamples.FireSource();
+                savedAbility.EnsureLists(); RuleValidator.Tag(savedAbility);
+                Game.I.Player.Abilities.Add(savedAbility);
+                string savedSignature = savedAbility.Signature();
                 Game.I.OpenOverlay(GameState.Paused);
                 yield return Frames(2);
                 Click(Find<PauseView>(), "ToTitle");
@@ -341,6 +459,9 @@ namespace Diverse.EditorTools
                 yield return Frames(10);
                 if (Game.I == null || Game.I.Player == null) { Fail("continue did not load the life"); yield break; }
                 if (Game.I.Player.Gold != 77) Fail($"continued life lost its state (gold {Game.I.Player.Gold})");
+                if (Game.I.Player.WarpStones != 3) Fail("continued life lost carried warp stones");
+                if (Game.I.Player.LearnedSkills != 1) Fail("continued life lost learned skills");
+                if (!Game.I.Player.Abilities.Owned.Any(a => a.Signature() == savedSignature)) Fail("continued life lost RuleIR ability");
             }
 
             string CheckBoot()

@@ -173,6 +173,7 @@ namespace Diverse.EditorTools
             Add(new EnemyDef { id = "wisp", name = "떠도는 넋", brain = EnemyBrain.Caster, hp = 30, damage = 9, speed = 1.7f, xp = 10, gold = 3, sprite = "wisp", attackRange = 5.5f, attackWindup = 0.7f, attackCooldown = 2.1f, projectileColor = Pal.ShadowEl, element = Element.Shadow });
             Add(new EnemyDef { id = "boar", name = "돌갑옷 멧돼지", brain = EnemyBrain.Charger, hp = 70, damage = 14, speed = 1.8f, xp = 16, gold = 6, sprite = "boar", radius = 0.6f, mass = 2.5f, attackRange = 4.5f, attackWindup = 0.7f, attackCooldown = 2.4f });
             Add(new EnemyDef { id = "bat", name = "밤박쥐", brain = EnemyBrain.Swarm, hp = 12, damage = 5, speed = 3.4f, xp = 3, gold = 1, sprite = "bat", radius = 0.35f, attackRange = 0.9f, attackWindup = 0.25f, attackCooldown = 0.9f, mass = 0.5f });
+            Add(new EnemyDef { id = "frog", name = "개구리 사냥꾼", brain = EnemyBrain.Hopper, attack = EnemyAttack.Tongue, hp = 32, damage = 9, speed = 2.8f, xp = 8, gold = 3, sprite = "frog", radius = 0.42f, mass = 0.9f, attackRange = 3.6f, attackWindup = 0.5f, attackCooldown = 1.9f, aggroRange = 7.5f, hopInterval = 0.5f, attackParam = 3.4f });
             Add(new EnemyDef { id = "frostling", name = "서리 정령", brain = EnemyBrain.Caster, hp = 34, damage = 10, speed = 1.8f, xp = 11, gold = 4, sprite = "frostling", attackRange = 5.5f, attackWindup = 0.65f, attackCooldown = 2f, projectileColor = Pal.Frost, element = Element.Frost });
 
             Add(new EnemyDef

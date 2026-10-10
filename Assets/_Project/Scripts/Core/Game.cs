@@ -23,6 +23,8 @@ namespace Diverse
         [System.NonSerialized] public Player Player;
         [System.NonSerialized] public string HeroName;
         [System.NonSerialized] public bool UiCapturingMouse;
+        /// <summary>Frame on which a UI overlay used the click (e.g. map right-click), so the world must ignore it.</summary>
+        [System.NonSerialized] public int InputConsumedFrame = -10;
         public GameUI Ui;
         [SerializeField] Diverse.World worldManager;
 
@@ -86,7 +88,12 @@ namespace Diverse
                 HandleGlobalKeys();
                 discoverT -= dt;
                 if (discoverT <= 0) { discoverT = 0.5f; Diverse.World.I.UpdateDiscovery(Player.Pos); UpdateQuests(); }
-                if (Controls.Down(Act.Interact)) { var it = Interactable.Nearest(Player.Pos); if (it != null) Interact(it); }
+                if (Controls.Down(Act.Interact))
+                {
+                    var it = Interactable.Nearest(Player.Pos);
+                    if (it != null) Interact(it);
+                    else if (Player.WarpStones > 0) Dialogue.OfferPlaceWarpStone(this);
+                }
                 saveT -= Time.unscaledDeltaTime;
                 if (saveT <= 0) { saveT = 20; SaveSystem.SaveWorld(World); SaveRun(); }
                 UpdateFrontier(dt);
@@ -95,6 +102,14 @@ namespace Diverse
             }
             else if (State == GameState.Map || State == GameState.Paused || State == GameState.Dialogue || State == GameState.Evolving)
             {
+                if (State == GameState.Map && Player != null && Player.Alive)
+                {
+                    discoverT -= dt;
+                    if (discoverT <= 0) { discoverT = 0.5f; Diverse.World.I.UpdateDiscovery(Player.Pos); UpdateQuests(); }
+                    UpdateFrontier(dt);
+                    saveT -= Time.unscaledDeltaTime;
+                    if (saveT <= 0) { saveT = 20; SaveSystem.SaveWorld(World); SaveRun(); }
+                }
                 if (Controls.Down(Act.Pause) && State != GameState.Evolving && !Ui.ConsumesEscape) CloseOverlay();
                 if (State == GameState.Map && Controls.Down(Act.Map)) CloseOverlay();
             }
@@ -115,7 +130,8 @@ namespace Diverse
         public void OpenOverlay(GameState s, string tab = null)
         {
             State = s;
-            GameTime.Pause("overlay");
+            if (s == GameState.Map) GameTime.Resume("overlay");
+            else GameTime.Pause("overlay");
             Ui.OnOverlayOpened(s, tab);
             Sfx.Play("ui", 0.5f);
         }
@@ -156,7 +172,7 @@ namespace Diverse
             GameTime.ClearPauses();
             World.Log($"{World.lifeCount}번째 삶: {HeroName}({costume.name}, {w.name}) — 기억의 광장에서 눈을 떴다.", "life");
             if (World.lifeCount == 1)
-                Ui.Toast("우클릭 이동/공격 · 좌클릭 공격 · QWER 스킬 · Space 대시 · F 상호작용 · Tab 지도");
+                Ui.Toast("우클릭 이동/공격 · 좌클릭 공격 · Space 대시 · F 상호작용 · Tab 지도 (QWER 기술은 레벨업·대장간에서 익힌다)");
             else
                 Ui.Toast($"{World.lifeCount}번째 삶. 세계는 당신의 지난 삶을 기억한다.");
             EnsureQuests();
@@ -179,6 +195,7 @@ namespace Diverse
                 level = p.Level, xp = p.Xp, xpToNext = p.XpToNext, gold = p.Gold, kills = p.Kills, potions = p.Potions,
                 attrs = (int[])p.Attrs.Clone(), unspentAttr = p.UnspentAttr, pendingEvolutions = p.PendingEvolutions,
                 hp = p.hp, dashMax = p.DashChargesMax, x = p.Pos.x, y = p.Pos.y, raft = p.HasRaft,
+                warpStones = p.WarpStones, skillsLearned = p.LearnedSkills,
             };
             foreach (var a in p.Abilities.Owned) r.abilities.Add(AbilityRecord.From(a));
             foreach (var kv in p.Telemetry.intent) r.intent.Add(kv.Key + "=" + kv.Value);
@@ -211,6 +228,8 @@ namespace Diverse
             p.UnspentAttr = r.unspentAttr; p.PendingEvolutions = r.pendingEvolutions;
             p.DashChargesMax = p.DashCharges = Mathf.Max(2, r.dashMax);
             p.HasRaft = r.raft;
+            p.WarpStones = r.warpStones;
+            p.RestoreSkills(r.skillsLearned < 0 ? p.Skills.Length : r.skillsLearned);   // saves from before skill learning keep all 4
             foreach (var rec in r.abilities) { var g = rec.ToAbility(); if (g != null) p.Abilities.Restore(g); }
             foreach (var s in r.intent) { var kv = s.Split('='); if (kv.Length == 2 && int.TryParse(kv[1], out var n)) p.Telemetry.intent[kv[0]] = n; }
             p.RecalcStats();
@@ -262,7 +281,7 @@ namespace Diverse
             Pickup.Drop("gold", d.gold, e.Pos, Random.value < 0.6f ? 1 : 2);
             if (Random.value < 0.05f || d.boss) Pickup.Drop("heart", 20, e.Pos);
             if (d.boss) Pickup.Drop("shard", 1, e.Pos, 3);
-            Diverse.World.I.OnCampEnemyKilled(e.campId);
+            Diverse.World.I.OnCampEnemyKilled(e.campId, e);
             foreach (var q in World.quests)
                 if (q.status == 1 && q.kind == "hunt" && q.enemy == d.id) { q.have++; if (q.have >= q.need) { q.status = 2; Ui.Toast($"의뢰 완료: {q.title} — 게시판에 보고하세요"); } }
             if (d.boss) Player?.Abilities?.Raise("BossKilled", e.Pos);

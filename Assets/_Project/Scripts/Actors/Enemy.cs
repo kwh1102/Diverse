@@ -7,7 +7,7 @@ namespace Diverse
     /// 적. 상태: Idle(배회) → Chase → Windup(예고) → Strike → Recover.
     /// 모든 공격은 예고(경고 원/깜빡임)가 있어 회피(대시)가 가능하다 → '완벽한 회피' 판정의 근거.
     /// </summary>
-    public class Enemy : Actor
+    public partial class Enemy : Actor
     {
         [System.NonSerialized] public EnemyDef def;
         public string campId;               // 소속 군집 (전부 처치하면 군집 해결)
@@ -19,8 +19,11 @@ namespace Diverse
         [SerializeField] SpriteRenderer warn;   // attack telegraph (prefab child, hidden until windup)
         bool aggro;
         int bossPhase;
-        int bossAttack;
+        int bossAttack, lastBossAttack;
         float spawnT = 0.35f;
+        float hopT;                         // hopper movement: time until the next hop
+        int strikeStep;                     // multi-hit patterns (Lunge follow-up, Volley shots)
+        float strafeSign = 1;
 
         public static Enemy Spawn(EnemyDef def, Vector2 pos, string campId)
         {
@@ -58,6 +61,7 @@ namespace Diverse
             if (def.boss) t *= 0.35f;
             if (!Alive) return;
             state = S.Stunned; stunT = t; warn.enabled = false;
+            CancelSignature();   // a stun interrupts any pattern (and its telegraphs)
             Fx.I?.Number(Pos + Vector2.up * 1.1f, "기절", new Color(1f, 0.95f, 0.5f), 0.8f, 0.6f);
         }
 
@@ -67,10 +71,12 @@ namespace Diverse
             if (state != S.Windup) return false;
             float remain = Windup - stateT;
             if (remain > 0.25f) return false;
+            if (SignatureThreatens(playerPos, out bool hit)) return hit;
             return Vector2.Distance(Pos, playerPos) < def.attackRange + 1.2f || Vector2.Distance(strikeTarget, playerPos) < 1.6f;
         }
 
-        float Windup => def.attackWindup * (def.boss && bossPhase > 0 ? 0.8f : 1f);
+        float Windup => def.attackWindup * (def.boss && bossPhase > 0 ? 0.8f : 1f) * SignatureWindupMul;
+        float RecoverTime => def.boss ? 0.45f : signatureRecover > 0 ? signatureRecover : 0.35f;
 
         protected override Color BaseTint => def != null && def.elite ? new Color(1f, 0.72f, 0.78f) : Color.white;
 
@@ -120,10 +126,13 @@ namespace Diverse
                     if (Time.time < tauntUntil) { MoveToward(tauntAt, def.speed * slowMul, dt); Separate(dt); break; }
                     Facing = toP.SafeNormal(Facing);
                     float want = def.brain is EnemyBrain.Ranged or EnemyBrain.Caster ? def.attackRange * 0.8f : def.attackRange * 0.85f;
-                    if (def.brain is EnemyBrain.Ranged or EnemyBrain.Caster && dist < want * 0.55f)
+                    if (def.hopInterval > 0) ChaseHopping(p, toP, dist, want, slowMul, dt);
+                    else if (def.brain is EnemyBrain.Ranged or EnemyBrain.Caster && dist < want * 0.55f)
                         MoveToward(Pos - toP.normalized, def.speed * 0.8f * slowMul, dt);    // 거리 유지
                     else if (dist > want)
                         MoveToward(p.Pos, def.speed * slowMul * (def.brain == EnemyBrain.Swarm ? 1 + Mathf.Sin(Time.time * 6 + GetInstanceID()) * 0.3f : 1), dt);
+                    else if (def.strafe > 0 && attackCd > 0.2f)
+                        Strafe(toP, slowMul, dt);    // circle the hero between attacks instead of standing still
                     if (dist <= def.attackRange + p.radius && attackCd <= 0 && (def.brain is not (EnemyBrain.Ranged or EnemyBrain.Caster) || WorldStreamer.I.LineClear(Pos + Vector2.up * 0.4f, p.Pos + Vector2.up * 0.4f)))
                         BeginWindup(p);
                     Separate(dt);
@@ -131,11 +140,19 @@ namespace Diverse
 
                 case S.Windup:
                     UpdateWarn();
-                    if (stateT >= Windup) { state = S.Strike; stateT = 0; DoStrike(); }
+                    if (stateT >= Windup) { state = S.Strike; stateT = 0; strikeStep = 0; DoStrike(); }
                     break;
 
                 case S.Strike:
-                    if (def.brain == EnemyBrain.Charger || (def.boss && bossAttack == 1))
+                    if (def.attack != EnemyAttack.Default && !def.boss)
+                    {
+                        if (UpdateSignature(p, dt)) { state = S.Recover; stateT = 0; }
+                    }
+                    else if (def.boss && bossAttack >= 4)
+                    {
+                        if (UpdateBossSignature(p, dt)) { state = S.Recover; stateT = 0; }
+                    }
+                    else if (def.brain == EnemyBrain.Charger || (def.boss && bossAttack == 1))
                     {
                         // 돌진
                         var before = Pos;
@@ -154,7 +171,7 @@ namespace Diverse
                     break;
 
                 case S.Recover:
-                    if (stateT >= (def.boss ? 0.45f : 0.35f)) { state = S.Chase; stateT = 0; }
+                    if (stateT >= RecoverTime) { state = S.Chase; stateT = 0; }
                     break;
             }
         }
@@ -192,6 +209,12 @@ namespace Diverse
             Facing = strikeDir;
             if (def.boss) PickBossAttack(p);
             warn.enabled = true;
+            if ((def.attack != EnemyAttack.Default && !def.boss) || (def.boss && bossAttack >= 4))
+            {
+                if (def.boss) BeginBossSignature(p); else BeginSignature(p);
+                Sfx.Play("charge", 0.15f, 1.5f);
+                return;
+            }
             float r = def.brain switch
             {
                 EnemyBrain.Ranged or EnemyBrain.Caster => 0.9f,
@@ -208,6 +231,7 @@ namespace Diverse
         void UpdateWarn()
         {
             float k = stateT / Windup;
+            if ((def.attack != EnemyAttack.Default && !def.boss) || (def.boss && bossAttack >= 4)) { UpdateSignatureWarn(k); return; }
             Vector2 at = def.brain switch
             {
                 EnemyBrain.Ranged or EnemyBrain.Caster => strikeTarget,
@@ -227,6 +251,8 @@ namespace Diverse
             warn.enabled = false;
             squash = -0.5f;
             var p = Player.I;
+            if (def.boss && bossAttack >= 4) { StartBossSignature(p); return; }
+            if (def.attack != EnemyAttack.Default && !def.boss) { StartSignature(p); return; }
             switch (def.brain)
             {
                 case EnemyBrain.Melee:
@@ -299,8 +325,12 @@ namespace Diverse
                 Fx.I?.Play(Art.Shockwave(Pal.Blood, 40), Pos, 0, 18, 1, null, true);
             }
             float d = Vector2.Distance(p.Pos, Pos);
-            if (d > 3.5f) bossAttack = Random.value < 0.6f ? 1 : 3;    // 돌진 또는 탄막
+            // Every boss has its own signature move (4+), used more in phase 2; never the same signature twice in a row
+            float sig = bossPhase > 0 ? 0.45f : 0.25f;
+            if (lastBossAttack < 4 && Random.value < sig) bossAttack = BossSignature(d);
+            else if (d > 3.5f) bossAttack = Random.value < 0.6f ? 1 : 3;    // 돌진 또는 탄막
             else bossAttack = Random.value < 0.5f ? 0 : 2;              // 베기 또는 내려찍기
+            lastBossAttack = bossAttack;
         }
 
         void BossStrike(Player p)
@@ -347,12 +377,13 @@ namespace Diverse
             aggro = true;
             if (state == S.Idle) { state = S.Chase; stateT = 0; if (def.boss) BossIntro(); }
             // 강한 타격은 공격 예고를 끊는다 (보스 제외)
-            if (!def.boss && state == S.Windup && d.knockback >= 5) { state = S.Recover; stateT = 0; warn.enabled = false; }
+            if (!def.boss && state == S.Windup && d.knockback >= 5) { state = S.Recover; stateT = 0; warn.enabled = false; CancelSignature(); }
         }
 
         protected override void Die(DamageInfo killer)
         {
             warn.enabled = false;
+            CancelSignature();
             Sfx.Play("enemy_die", 0.6f);
             Fx.I?.Burst(Pos + Vector2.up * 0.4f, Pal.White, 12, 6, 0.45f);
             Fx.I?.Burst(Pos + Vector2.up * 0.4f, Pal.Hex("ffb3d1"), 8, 4, 0.5f, 0, 2, 360, 0, true);

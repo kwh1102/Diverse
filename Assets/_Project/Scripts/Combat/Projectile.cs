@@ -23,6 +23,7 @@ namespace Diverse
         public bool trail = true;
         public bool spin;
         public System.Action<Projectile, Actor> onHit;
+        public System.Action<Projectile, float> onUpdate;    // steering (curving shots); gets the age in seconds
         public System.Action<Projectile> onEnd;
         readonly HashSet<Actor> hitSet = new HashSet<Actor>();
         public static readonly List<Projectile> Live = new List<Projectile>();
@@ -57,6 +58,7 @@ namespace Diverse
             t += dt;
             if (t >= life) { End(); return; }
 
+            onUpdate?.Invoke(this, t);
             if (homing > 0)
             {
                 var tgt = Actor.Nearest(transform.position, 6f, targetTeam);

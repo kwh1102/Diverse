@@ -140,6 +140,11 @@ namespace Diverse.EditorTools
                     yield return F(60); Shot("11_evolve");
                     g.SkipEvolution(); yield return F(3);
                     g.OpenOverlay(GameState.Map); yield return F(5); Shot("12_map");
+                    // Widest zoom with the whole explored area marked: icons must sit on the terrain they belong to
+                    foreach (var s in World.I.Gen.StructuresNear(Vector2.zero, 200)) if (s.landmark) World.I.Discover(s.id);
+                    for (int cy = -14; cy <= 14; cy++) for (int cx = -14; cx <= 14; cx++) { var key = cx + "," + cy; if (!g.World.exploredChunks.Contains(key)) g.World.exploredChunks.Add(key); }
+                    var mv = Find<MapView>(); mv.Zoom = 0; yield return F(5); Shot("12b_map_widest");
+                    mv.Zoom = 3;
                     g.CloseOverlay(); yield return F(2);
                     g.Player.invulnUntil = 0;
                     g.Player.TakeDamage(new DamageInfo { amount = 999999, direction = Vector2.right, noEvents = true });

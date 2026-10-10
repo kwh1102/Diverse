@@ -254,9 +254,9 @@ namespace Diverse
                 Biome.Forest => new[] { "fox", "shroom", "raccoon", "bat" },
                 Biome.Dunes => new[] { "raccoon", "jelly", "boar" },
                 Biome.Tundra => new[] { "frostling", "boar", "bat" },
-                Biome.Marsh => new[] { "jelly", "wisp", "shroom" },
+                Biome.Marsh => new[] { "frog", "jelly", "wisp", "shroom" },
                 Biome.Ashland => new[] { "wisp", "boar", "bat" },
-                _ => new[] { "shroom", "jelly", "fox" },
+                _ => new[] { "shroom", "jelly", "fox", "frog" },
             };
             s.enemy = rng.Pick(pool);
             switch (s.kind)
