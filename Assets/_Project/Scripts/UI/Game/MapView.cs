@@ -76,6 +76,7 @@ namespace Diverse
                 exploredCount = g.World.exploredChunks.Count;
             }
             map.Paint((cx, cy) => explored.Contains(cx + "," + cy));
+            map.DrawRoute(g.Player);
             Markers();
 
             UIKit.Set(closeHint, $"{Controls.KeyName(Act.Map)}/Esc 닫기");

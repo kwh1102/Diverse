@@ -20,6 +20,9 @@ namespace Diverse
             map.Center = p;
             map.PixelsPerUnit = map.Rect.rect.width / viewUnits;
             map.Paint((cx, cy) => true);
+            map.DrawRoute(g.Player);
+            if (g.Player.TravelTarget.HasValue)
+                map.Marker(g.Player.TravelTarget.Value, "×", Pal.Gold, null, true, 13);
             foreach (var a in Actor.All)
             {
                 if (a == null || !a.Alive || a.team != Team.Enemy) continue;

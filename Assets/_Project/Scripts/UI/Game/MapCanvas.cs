@@ -19,6 +19,30 @@ namespace Diverse
         Texture2D tex;
         Color32[] px;
         int used;
+        MapRouteGraphic route;
+
+        public void DrawRoute(Player player)
+        {
+            if (route == null)
+            {
+                var go = new GameObject("Movement route", typeof(RectTransform), typeof(CanvasRenderer), typeof(MapRouteGraphic));
+                go.transform.SetParent(Rect, false);
+                var rt = (RectTransform)go.transform;
+                rt.anchorMin = Vector2.zero;
+                rt.anchorMax = Vector2.one;
+                rt.offsetMin = rt.offsetMax = Vector2.zero;
+                go.transform.SetAsFirstSibling();
+                route = go.GetComponent<MapRouteGraphic>();
+                route.raycastTarget = false;
+            }
+            route.Points.Clear();
+            if (player != null && player.MovementPath.Count > 0)
+            {
+                route.Points.Add(WorldToLocal(player.Pos));
+                foreach (var point in player.MovementPath) route.Points.Add(WorldToLocal(point));
+            }
+            route.SetVerticesDirty();
+        }
 
         public Vector2 Center;          // world point at the middle
         public float PixelsPerUnit = 3; // screen px per world unit (canvas units)
@@ -119,5 +143,52 @@ namespace Diverse
         }
 
         void OnDestroy() { if (tex != null) Destroy(tex); }
+    }
+
+    // Clip every segment to the map before building a constant-width UI line.
+    public class MapRouteGraphic : MaskableGraphic
+    {
+        public readonly List<Vector2> Points = new List<Vector2>();
+
+        protected override void OnPopulateMesh(VertexHelper vh)
+        {
+            vh.Clear();
+            var rect = rectTransform.rect;
+            for (int i = 1; i < Points.Count; i++)
+            {
+                var a = Points[i - 1];
+                var d = Points[i] - a;
+                float lo = 0, hi = 1;
+                if (!Clip(-d.x, a.x - rect.xMin + 1, ref lo, ref hi) ||
+                    !Clip(d.x, rect.xMax - a.x + 1, ref lo, ref hi) ||
+                    !Clip(-d.y, a.y - rect.yMin + 1, ref lo, ref hi) ||
+                    !Clip(d.y, rect.yMax - a.y + 1, ref lo, ref hi)) continue;
+                var start = a + d * lo;
+                var end = a + d * hi;
+                if ((end - start).sqrMagnitude < 0.001f) continue;
+                var normal = new Vector2(-d.y, d.x).normalized;
+                // Keep the two-pixel stroke inside the map even without a parent mask.
+                start.x = Mathf.Clamp(start.x, rect.xMin + 1, rect.xMax - 1);
+                start.y = Mathf.Clamp(start.y, rect.yMin + 1, rect.yMax - 1);
+                end.x = Mathf.Clamp(end.x, rect.xMin + 1, rect.xMax - 1);
+                end.y = Mathf.Clamp(end.y, rect.yMin + 1, rect.yMax - 1);
+                int n = vh.currentVertCount;
+                vh.AddVert(start - normal, Color.white, Vector2.zero);
+                vh.AddVert(start + normal, Color.white, Vector2.zero);
+                vh.AddVert(end + normal, Color.white, Vector2.zero);
+                vh.AddVert(end - normal, Color.white, Vector2.zero);
+                vh.AddTriangle(n, n + 1, n + 2);
+                vh.AddTriangle(n, n + 2, n + 3);
+            }
+        }
+
+        static bool Clip(float p, float q, ref float lo, ref float hi)
+        {
+            if (Mathf.Abs(p) < 0.00001f) return q >= 0;
+            float t = q / p;
+            if (p < 0) { if (t > hi) return false; lo = Mathf.Max(lo, t); }
+            else { if (t < lo) return false; hi = Mathf.Min(hi, t); }
+            return true;
+        }
     }
 }

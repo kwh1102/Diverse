@@ -102,6 +102,14 @@ namespace Diverse
             }
             else if (State == GameState.Map || State == GameState.Paused || State == GameState.Dialogue || State == GameState.Evolving)
             {
+                if (State == GameState.Map && Player != null && Player.Alive)
+                {
+                    discoverT -= dt;
+                    if (discoverT <= 0) { discoverT = 0.5f; Diverse.World.I.UpdateDiscovery(Player.Pos); UpdateQuests(); }
+                    UpdateFrontier(dt);
+                    saveT -= Time.unscaledDeltaTime;
+                    if (saveT <= 0) { saveT = 20; SaveSystem.SaveWorld(World); SaveRun(); }
+                }
                 if (Controls.Down(Act.Pause) && State != GameState.Evolving && !Ui.ConsumesEscape) CloseOverlay();
                 if (State == GameState.Map && Controls.Down(Act.Map)) CloseOverlay();
             }
@@ -122,7 +130,8 @@ namespace Diverse
         public void OpenOverlay(GameState s, string tab = null)
         {
             State = s;
-            GameTime.Pause("overlay");
+            if (s == GameState.Map) GameTime.Resume("overlay");
+            else GameTime.Pause("overlay");
             Ui.OnOverlayOpened(s, tab);
             Sfx.Play("ui", 0.5f);
         }

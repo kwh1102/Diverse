@@ -37,6 +37,7 @@ namespace Diverse
 
         // Movement
         readonly List<Vector2> path = new List<Vector2>();
+        public IReadOnlyList<Vector2> MovementPath => path;
         Actor attackTarget;
         float repathT;
         public Vector2 AimPoint;
@@ -263,9 +264,10 @@ namespace Diverse
         protected override void Update()
         {
             float dt = Time.deltaTime;
-            if (Alive && dt > 0 && !GameTime.Paused && Game.I != null && Game.I.State == GameState.Playing && !Ferrying)
+            if (Alive && dt > 0 && !GameTime.Paused && Game.I != null &&
+                (Game.I.State == GameState.Playing || Game.I.State == GameState.Map) && !Ferrying)
             {
-                HandleInput();
+                if (Game.I.State == GameState.Playing) HandleInput();
                 UpdateTravel(dt);
                 UpdateMovement(dt);
                 UpdateTimers(dt);
@@ -312,7 +314,7 @@ namespace Diverse
                 CameraRig.I.lookAhead = Vector2.ClampMagnitude((AimPoint - Pos) * 0.12f, 1.2f);
 
             // Right-click: move / target
-            if (Controls.Held(Act.Move) && !Controls.Down(Act.Move))
+            if (Controls.Held(Act.Move) && !Controls.Down(Act.Move) && !TravelTarget.HasValue)
             {
                 repathT -= Time.deltaTime;
                 if (repathT <= 0 && attackTarget == null) { repathT = 0.12f; TravelTarget = null; SetDestination(AimPoint, false); }
@@ -384,12 +386,16 @@ namespace Diverse
         public Vector2? TravelTarget { get; private set; }
         float travelRepathT;
         int travelStuck;
+        Vector2 travelProgress;
 
         public void SetTravelTarget(Vector2 target)
         {
             attackTarget = null;
-            TravelTarget = target;
+            if (Bound > 0 && target.magnitude > Bound - 0.5f)
+                target = target.normalized * Mathf.Max(Pos.magnitude, Bound - 0.5f);
+            TravelTarget = WorldStreamer.I.NearestWalkable(target, radius, 4, HasRaft);
             travelStuck = 0;
+            travelProgress = Pos;
             travelRepathT = 0;
             TravelLeg();
         }
@@ -407,14 +413,15 @@ namespace Diverse
         void UpdateTravel(float dt)
         {
             if (!TravelTarget.HasValue) return;
-            if (Vector2.Distance(Pos, TravelTarget.Value) < 1.2f) { TravelTarget = null; return; }
+            if (Vector2.Distance(Pos, TravelTarget.Value) < 0.1f) { TravelTarget = null; path.Clear(); return; }
             travelRepathT -= dt;
-            if (path.Count == 0 || travelRepathT <= 0)
+            if (travelRepathT <= 0)
             {
-                var before = Pos;
+                bool progressed = Vector2.Distance(Pos, travelProgress) >= 0.2f;
+                travelProgress = Pos;
                 TravelLeg();
                 // No way forward (blocked by water without a raft, or the frontier): give up after a few tries
-                if (path.Count == 0 || Vector2.Distance(path[path.Count - 1], before) < 0.6f)
+                if (!progressed)
                 {
                     if (++travelStuck >= 3) { TravelTarget = null; path.Clear(); GameEvents.Notify("목표 지점으로 가는 길을 찾지 못했다"); }
                 }
@@ -466,7 +473,8 @@ namespace Diverse
                 if (to.magnitude <= step + 0.02f)
                 {
                     Pos = WorldStreamer.I.Move(Pos, to, radius, HasRaft, Bound);
-                    path.RemoveAt(0);
+                    if (Vector2.Distance(Pos, next) < 0.02f) path.RemoveAt(0);
+                    else path.Clear();
                 }
                 else
                 {
