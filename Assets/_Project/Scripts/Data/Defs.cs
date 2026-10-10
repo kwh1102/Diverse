@@ -86,21 +86,75 @@ namespace Diverse
 
     public enum EnemyBrain { Melee, Hopper, Ranged, Charger, Caster, Swarm, Boss }
 
+    /// <summary>
+    /// The signature attack an enemy uses (on top of its brain's movement). Each one has its own telegraph shape and dodge window.
+    /// </summary>
+    public enum EnemyAttack
+    {
+        Default,     // whatever the brain does (slash / hop / shot / charge)
+        Lunge,       // fox: short dash that ends in a slash; a second quick slash follows
+        Tongue,      // frog-like: a long thin line telegraph, then a fast tongue lash that pulls the player in
+        Burrow,      // shroom: sinks, pops up under the player after a ring telegraph
+        Volley,      // raccoon: 3 aimed shots in a quick burst, the last one leading the player
+        Orbit,       // wisp: shots that curve around and converge on the player's position
+        IceLine,     // frostling: a line of frost spikes travelling toward the player
+        Gore,        // boar: charges, and if it hits a wall it is stunned briefly (punishable)
+        Dive,        // bat: hovers, then swoops in a straight line through the player
+    }
+
     [Serializable]
     public class EnemyDef
     {
         public string id, name;
         public EnemyBrain brain;
+        [Tooltip("Signature attack (see EnemyAttack). Default = the brain's basic attack.")]
+        public EnemyAttack attack;
         public float hp = 30, damage = 8, speed = 2.2f, radius = 0.45f;
         public float attackRange = 1.1f, attackWindup = 0.45f, attackCooldown = 1.4f;
         public float aggroRange = 7f, xp = 6, gold = 2;
         public float mass = 1f;
+        [Header("Movement")]
+        [Tooltip("Hopper movement: seconds between hops while chasing (0 = walk normally).")]
+        public float hopInterval;
+        [Tooltip("Strafe sideways while in range instead of standing still (0 = never, 1 = always).")]
+        public float strafe;
+        [Header("Signature attack")]
+        [Tooltip("Lunge/Gore/Dive travel speed, Tongue length, IceLine spike count… (meaning depends on the attack).")]
+        public float attackParam = 1f;
+        [Tooltip("Number of hits/projectiles in the pattern (Volley shots, Lunge follow-ups, Orbit shots).")]
+        public int attackCount = 1;
         public string sprite;
         public Color32 projectileColor = new Color32(0xff, 0x5a, 0x6e, 0xff);   // Pal.Blood
         public Element element;
         public bool boss;
         [NonSerialized] public bool elite;   // outer-ring variant (tinted, bigger); set at spawn time only
         public string[] lines;           // lines the boss speaks
+    }
+
+    /// <summary>
+    /// How a hero grows: XP curve, how often evolutions come, when skills unlock.
+    /// Lives in Resources/GameDatabase.asset so it can be tuned in the Inspector.
+    /// </summary>
+    [Serializable]
+    public class ProgressionDef
+    {
+        [Tooltip("XP needed for level 2.")]
+        public float xpBase = 60;
+        [Tooltip("Each level needs this much more than the last (×).")]
+        public float xpGrowth = 1.32f;
+        [Tooltip("An ability evolution is offered every N levels (1 = every level).")]
+        public int evolveEvery = 2;
+        [Tooltip("Levels at which the next QWER skill is learned (in order). Skills can also be learned from the smith.")]
+        public int[] skillLevels = { 3, 6, 10, 15 };
+        [Tooltip("Smith: weapon level at which each QWER skill can be learned (in order).")]
+        public int[] smithSkillLevels = { 1, 2, 4, 6 };
+        [Tooltip("Warp stone price at the merchant.")]
+        public int warpStoneCost = 120;
+        [Tooltip("How close (world units) the hero must be to a warp stone to travel from the map.")]
+        public float warpRange = 6f;
+
+        public float XpFor(int level) => Mathf.Round(xpBase * Mathf.Pow(xpGrowth, level - 1));
+        public bool EvolvesAt(int level) => evolveEvery <= 1 || level % evolveEvery == 0;
     }
 
     /// <summary>
@@ -122,6 +176,7 @@ namespace Diverse
             foreach (var e in Asset.enemies) if (e != null) Enemies[e.def.id] = e.def;
         }
 
+        public static ProgressionDef Progression => Asset.progression ?? (Asset.progression = new ProgressionDef());
         public static WeaponDef W(WeaponKind k) => Weapons[k];
         public static CostumeDef Costume(string id) => Costumes.Find(c => c.id == id) ?? Costumes[0];
         public static EnemyDef Enemy(string id) => Enemies.TryGetValue(id, out var e) ? e : Enemies["shroom"];
@@ -132,9 +187,10 @@ namespace Diverse
             float hpMul = 1f + tier * 0.35f, dmgMul = 1f + tier * 0.18f;
             return new EnemyDef
             {
-                id = b.id, name = b.name, brain = b.brain, hp = b.hp * hpMul, damage = b.damage * dmgMul, speed = b.speed * (1 + Mathf.Min(tier, 10) * 0.02f), radius = b.radius,
+                id = b.id, name = b.name, brain = b.brain, attack = b.attack, hp = b.hp * hpMul, damage = b.damage * dmgMul, speed = b.speed * (1 + Mathf.Min(tier, 10) * 0.02f), radius = b.radius,
                 attackRange = b.attackRange, attackWindup = b.attackWindup, attackCooldown = b.attackCooldown, aggroRange = b.aggroRange,
                 xp = b.xp * (1 + tier * 0.25f), gold = b.gold * (1 + tier * 0.25f), mass = b.mass, sprite = b.sprite, projectileColor = b.projectileColor,
+                hopInterval = b.hopInterval, strafe = b.strafe, attackParam = b.attackParam, attackCount = b.attackCount,
                 element = b.element, boss = b.boss, lines = b.lines,
             };
         }

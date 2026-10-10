@@ -43,7 +43,11 @@ namespace Diverse
             UIKit.Bind(send, Send);
             UIKit.Bind(reroll, () => g.RerollEvolution());
             UIKit.Bind(skip, () => g.SkipEvolution());
-            if (chatInput != null) chatInput.onSubmit.AddListener(_ => Send());
+            if (chatInput != null)
+            {
+                chatInput.onSubmit.AddListener(_ => Send());
+                Controls.TypingField = chatInput;   // keyboard game actions pause while this field has focus
+            }
         }
 
         bool Locked => g.OfferLocked || g.ChatBusy || showPipeline;
@@ -74,7 +78,7 @@ namespace Diverse
                 bool on = offer && i < g.Offer.Count;
                 UIKit.Show(cards[i], on);
                 if (on) cards[i].Tick(g.Offer[i], i, Locked, g.OfferLocked ? lockK : -1);
-                if (on && !Locked && !Typing && Controls.KeyDown(Key.Digit1 + i)) { g.ChooseEvolution(i); return; }
+                if (on && !Locked && Controls.KeyDown(Key.Digit1 + i)) { g.ChooseEvolution(i); return; }
             }
 
             bool chat = offer && AiClient.Enabled && !showPipeline;
@@ -83,14 +87,18 @@ namespace Diverse
             if (panel != null) panel.sizeDelta = new Vector2(panel.sizeDelta.x, chat || showPipeline ? heightWithChat : heightWithoutChat);
             if (chat)
             {
-                int n = g.Chat.Count + (g.ChatBusy ? 1 : 0);
-                if (n != lastChat || g.ChatBusy)
+                // Rebuild the log only when it changes (the "thinking" dots tick 3×/s). Rebuilding + ForceUpdateCanvases every
+                // frame re-laid-out the whole canvas, including the input field, which made typing stutter.
+                int dots = g.ChatBusy ? 1 + (int)(Time.unscaledTime * 3) % 3 : 0;
+                int n = (g.Chat.Count + (g.ChatBusy ? 1 : 0)) * 4 + dots;
+                if (n != lastChat)
                 {
+                    bool grew = lastChat < 0 || n / 4 != lastChat / 4;
                     lastChat = n;
                     var lines = g.Chat.Select(c => c.player ? $"<color=#fff2b3>나:</color> {c.text}" : $"<color=#c9b8ff>이야기꾼:</color> <color=#e6dcff>{c.text}</color>").ToList();
-                    if (g.ChatBusy) lines.Add("<color=#8c7aa8>이야기꾼이 생각하는 중" + new string('.', 1 + (int)(Time.unscaledTime * 3) % 3) + "</color>");
+                    if (g.ChatBusy) lines.Add("<color=#8c7aa8>이야기꾼이 생각하는 중" + new string('.', dots) + "</color>");
                     UIKit.Set(chatLog, string.Join("\n", lines));
-                    if (chatScroll != null) { Canvas.ForceUpdateCanvases(); chatScroll.verticalNormalizedPosition = 0; }
+                    if (grew && chatScroll != null) { Canvas.ForceUpdateCanvases(); chatScroll.verticalNormalizedPosition = 0; }
                 }
                 UIKit.Label(send, $"보내기 ({g.ChatCost}G)");
                 send.interactable = g.CanChat && !string.IsNullOrWhiteSpace(chatInput.text);

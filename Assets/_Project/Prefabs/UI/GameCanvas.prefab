@@ -7760,6 +7760,8 @@ MonoBehaviour:
   playerIcon: {fileID: 2060072578731459685}
   minZoom: 0.5
   maxZoom: 24
+  playerHighlight: {r: 1, g: 0.92, b: 0.3, a: 1}
+  warpPickRadius: 10
 --- !u!1 &3506468532455985272
 GameObject:
   m_ObjectHideFlags: 0
@@ -10301,8 +10303,8 @@ RectTransform:
   - {fileID: 960343566340129588}
   m_Father: {fileID: 45671357088314716}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 8, y: 4}
   m_Pivot: {x: 0, y: 1}

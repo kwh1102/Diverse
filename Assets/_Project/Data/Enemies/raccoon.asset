@@ -16,17 +16,22 @@ MonoBehaviour:
     id: raccoon
     name: "\uB108\uAD6C\uB9AC \uC0AC\uC218"
     brain: 2
+    attack: 4
     hp: 28
     damage: 9
     speed: 2.1
     radius: 0.45
     attackRange: 6
     attackWindup: 0.55
-    attackCooldown: 1.8
+    attackCooldown: 2.2
     aggroRange: 7
     xp: 9
     gold: 4
     mass: 1
+    hopInterval: 0
+    strafe: 0.8
+    attackParam: 1.0
+    attackCount: 3
     sprite: raccoon
     projectileColor:
       serializedVersion: 2

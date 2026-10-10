@@ -10,32 +10,32 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2b66f6304fb60134aa720186470999bd, type: 3}
-  m_Name: wisp
+  m_Name: frog
   m_EditorClassIdentifier: 
   def:
-    id: wisp
-    name: "\uB5A0\uB3C4\uB294 \uB10B"
-    brain: 4
-    attack: 5
-    hp: 30
+    id: frog
+    name: "\uAC1C\uAD6C\uB9AC \uC0AC\uB0E5\uAFBC"
+    brain: 1
+    attack: 2
+    hp: 32
     damage: 9
-    speed: 1.7
-    radius: 0.45
-    attackRange: 5.5
-    attackWindup: 0.7
-    attackCooldown: 2.6
-    aggroRange: 7
-    xp: 10
+    speed: 2.8
+    radius: 0.42
+    attackRange: 3.6
+    attackWindup: 0.5
+    attackCooldown: 1.9
+    aggroRange: 7.5
+    xp: 8
     gold: 3
-    mass: 1
-    hopInterval: 0
-    strafe: 0.5
-    attackParam: 1.0
-    attackCount: 4
-    sprite: wisp
+    mass: 0.9
+    hopInterval: 0.5
+    strafe: 0
+    attackParam: 3.4
+    attackCount: 1
+    sprite: frog
     projectileColor:
       serializedVersion: 2
-      rgba: 4294937777
-    element: 4
+      rgba: 4288324351
+    element: 0
     boss: 0
     lines: []

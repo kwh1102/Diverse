@@ -22,6 +22,7 @@ namespace Diverse
                 case "boar": return Boar(f);
                 case "bat": return Bat(f);
                 case "boss_knight": return Knight(f);
+                case "frog": return Frog(f);
             }
             return Shroom(f, 1, Pal.Hex("e8584f"), Pal.Hex("b23a3a"), false);
         }
@@ -120,6 +121,31 @@ namespace Diverse
             cv.InnerShade(fur, shade, 1, -1);
             cv.Outline(Pal.Outline);
             return cv.ToSprite(new Vector2(cx, 1));
+        }
+
+        /// <summary>Frog: 0 sitting, 1 crouched (about to hop), 2 mouth open (tongue windup).</summary>
+        static Sprite Frog(int f)
+        {
+            var cv = new PixelCanvas(22, 18);
+            var body = Pal.Hex("7cc95a"); var shade = Pal.Hex("4f9a3c"); var belly = Pal.Hex("e8f0b0");
+            float sq = f == 1 ? 0.8f : 1f;
+            // back legs
+            cv.Ellipse(4, 2, 3.5f, 2f, shade); cv.Ellipse(18, 2, 3.5f, 2f, shade);
+            // body + belly
+            cv.Ellipse(11, 6 * sq, 7.5f, 5.5f * sq, body);
+            cv.Ellipse(11, 4 * sq, 4.5f, 2.6f * sq, belly);
+            // eye bumps on top
+            int ey = (int)(11 * sq);
+            cv.Circle(7, ey, 2.6f, body); cv.Circle(15, ey, 2.6f, body);
+            cv.Circle(7, ey, 1.4f, Pal.White); cv.Circle(15, ey, 1.4f, Pal.White);
+            cv.Set(7, ey, Pal.EyeDark); cv.Set(15, ey, Pal.EyeDark);
+            if (f == 2) { cv.Rect(8, (int)(6 * sq), 6, 2, Pal.Hex("8a2a3a")); cv.Rect(10, (int)(6 * sq), 2, 1, Pal.Hex("ff7a9a")); }
+            else cv.Line(8, (int)(7 * sq), 14, (int)(7 * sq), Pal.Hex("2f5a26"));
+            // front feet
+            cv.Rect(6, 0, 3, 1, shade); cv.Rect(13, 0, 3, 1, shade);
+            cv.InnerShade(body, shade, 1, -1);
+            cv.Outline(Pal.Outline);
+            return cv.ToSprite(new Vector2(11, 1));
         }
 
         static Sprite Raccoon(int f)

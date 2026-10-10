@@ -16,17 +16,22 @@ MonoBehaviour:
     id: fox
     name: "\uC5EC\uC6B0 \uC0B0\uC801"
     brain: 0
+    attack: 1
     hp: 40
     damage: 10
     speed: 2.7
     radius: 0.45
-    attackRange: 1.1
-    attackWindup: 0.38
-    attackCooldown: 1.1
+    attackRange: 2.6
+    attackWindup: 0.42
+    attackCooldown: 1.5
     aggroRange: 7
     xp: 9
     gold: 4
     mass: 1
+    hopInterval: 0
+    strafe: 0.6
+    attackParam: 1.0
+    attackCount: 2
     sprite: fox
     projectileColor:
       serializedVersion: 2

@@ -285,7 +285,7 @@ namespace Diverse
             for (int i = 1; i <= n; i++)
             {
                 var p = Vector2.Lerp(a, b, i / (float)n);
-                if (!Walkable(p, swim) || !Walkable(p + side, swim) || !Walkable(p - side, swim)) return false;
+                if (!Free(p, 0.4f, swim) || !Walkable(p + side, swim) || !Walkable(p - side, swim)) return false;
             }
             return true;
         }
@@ -342,7 +342,8 @@ namespace Diverse
             var s = new Vector2Int(Mathf.FloorToInt(from.x), Mathf.FloorToInt(from.y));
             var t = new Vector2Int(Mathf.FloorToInt(to.x), Mathf.FloorToInt(to.y));
             float boundSq = bound > 0 ? Mathf.Max(bound * bound, from.sqrMagnitude + 1) : float.MaxValue;
-            bool Ok(int x, int y) => w.Walkable(x, y, swim) && (x + 0.5f) * (x + 0.5f) + (y + 0.5f) * (y + 0.5f) <= boundSq;
+            bool Ok(int x, int y) => w.Walkable(x, y, swim) && w.Free(new Vector2(x + 0.5f, y + 0.5f), 0.4f, swim)
+                && (x + 0.5f) * (x + 0.5f) + (y + 0.5f) * (y + 0.5f) <= boundSq;
 
             // If the destination is blocked, go to the nearest open tile
             if (!w.Walkable(t.x, t.y, swim))

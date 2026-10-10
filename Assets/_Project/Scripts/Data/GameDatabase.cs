@@ -13,6 +13,8 @@ namespace Diverse
         public List<WeaponData> weapons = new List<WeaponData>();
         public List<CostumeData> costumes = new List<CostumeData>();
         public List<EnemyData> enemies = new List<EnemyData>();
+        [Tooltip("XP curve, evolution frequency, skill unlock levels, warp stones.")]
+        public ProgressionDef progression = new ProgressionDef();
 
         [Header("Prefabs")]
         public Player playerPrefab;

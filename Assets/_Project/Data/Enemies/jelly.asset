@@ -16,6 +16,7 @@ MonoBehaviour:
     id: jelly
     name: "\uC824\uB9AC"
     brain: 1
+    attack: 0
     hp: 20
     damage: 6
     speed: 2.6
@@ -27,6 +28,10 @@ MonoBehaviour:
     xp: 4
     gold: 1
     mass: 1
+    hopInterval: 0.55
+    strafe: 0
+    attackParam: 1.0
+    attackCount: 1
     sprite: jelly
     projectileColor:
       serializedVersion: 2

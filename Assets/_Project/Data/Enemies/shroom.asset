@@ -16,17 +16,22 @@ MonoBehaviour:
     id: shroom
     name: "\uBC84\uC12F \uAF2C\uB9C8"
     brain: 0
+    attack: 3
     hp: 26
     damage: 7
     speed: 1.9
     radius: 0.45
-    attackRange: 1.1
-    attackWindup: 0.45
-    attackCooldown: 1.4
+    attackRange: 4.5
+    attackWindup: 0.6
+    attackCooldown: 2.6
     aggroRange: 7
     xp: 5
     gold: 1
     mass: 1
+    hopInterval: 0
+    strafe: 0
+    attackParam: 1.0
+    attackCount: 1
     sprite: shroom
     projectileColor:
       serializedVersion: 2
