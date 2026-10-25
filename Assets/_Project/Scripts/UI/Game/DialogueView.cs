@@ -40,6 +40,12 @@ namespace Diverse
                 options[i].interactable = o.enabled;
                 UIKit.Bind(options[i], () => o.act?.Invoke());
             }
+            Canvas.ForceUpdateCanvases();
+            foreach (var scroll in GetComponentsInChildren<ScrollRect>(true))
+            {
+                scroll.StopMovement();
+                scroll.verticalNormalizedPosition = 1;
+            }
         }
 
         void OnDisable() => shown = null;

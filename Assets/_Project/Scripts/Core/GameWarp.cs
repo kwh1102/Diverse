@@ -68,6 +68,30 @@ namespace Diverse
             Sfx.Play("evolve", 0.5f, 1.4f);
             Ui.Toast($"워프 스톤을 세웠다: {stone.name} (지도에서 다른 워프 스톤을 눌러 이동)");
             SaveSystem.SaveWorld(World);
+            SaveRun();
+            return true;
+        }
+
+        /// <summary>Dismantle a nearby field stone for half its price; the stone itself is consumed.</summary>
+        public bool RemoveWarpStone(WarpStone stone)
+        {
+            if (stone == null || stone.id == TownWarpId || Player == null) return false;
+            var placed = World.warpStones.FirstOrDefault(w => w.id == stone.id);
+            if (placed == null || Vector2.Distance(Player.Pos, placed.Pos) > DB.Progression.warpRange) return false;
+            World.warpStones.Remove(placed);
+            foreach (var it in Interactable.All.ToArray())
+                if (it != null && it.kind == "warpstone" && it.id == placed.id)
+                {
+                    it.gameObject.SetActive(false);
+                    Destroy(it.gameObject);
+                }
+            int refund = DB.Progression.warpStoneCost / 2;
+            // A refund is the purchase price returned, not loot affected by GoldGain bonuses.
+            Player.Gold += refund;
+            World.Log($"{Ko.I(HeroName)} {placed.name}의 워프 스톤을 철거했다.", "event");
+            SaveSystem.SaveWorld(World);
+            SaveRun();
+            Ui.Toast($"워프 스톤 철거: {refund} 골드 반환 (돌은 소모됨)");
             return true;
         }
 
@@ -75,6 +99,7 @@ namespace Diverse
         public bool TryWarp(WarpStone to, out string why)
         {
             why = null;
+            if (to == null || !WarpStones().Any(w => w.id == to.id)) { why = "이미 철거된 워프 스톤이다"; return false; }
             var from = WarpStoneInReach();
             if (from == null) { why = $"워프 스톤 근처({DB.Progression.warpRange:0}m 이내)에서만 이동할 수 있다"; return false; }
             if (from.id == to.id) { why = "이미 이 워프 스톤에 있다"; return false; }
