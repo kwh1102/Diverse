@@ -28,9 +28,19 @@ namespace Diverse
             // Exact rule text always comes from the graph (AI flavor text, if any, is shown in italics after it)
             string rule = a.Explain();
             bool flavor = a.source == "ai" && !string.IsNullOrEmpty(a.desc) && a.desc != rule;
-            UIKit.Set(desc, flavor ? $"{rule}\n<color=#8c7aa8><i>{a.desc}</i></color>" : rule);
-            UIKit.Show(reason, !string.IsNullOrEmpty(a.semanticReason));
-            if (!string.IsNullOrEmpty(a.semanticReason)) UIKit.Set(reason, $"<color=#8c7aa8><i>\"{a.semanticReason}\"</i></color>");
+            string details = flavor ? $"{rule}\n\n<color=#8c7aa8><i>{a.desc}</i></color>" : rule;
+            if (!string.IsNullOrEmpty(a.semanticReason)) details += $"\n\n<color=#8c7aa8><i>\"{a.semanticReason}\"</i></color>";
+            if (desc != null && desc.text != details)
+            {
+                var scroll = desc.GetComponentInParent<ScrollRect>();
+                if (scroll != null)
+                {
+                    scroll.StopMovement();
+                    scroll.content.anchoredPosition = Vector2.zero;
+                }
+            }
+            UIKit.Set(desc, details);
+            UIKit.Show(reason, false);
             UIKit.Set(tags, $"<color=#6b5c8a>{string.Join(" ", a.tags.Take(4))}</color>");
             button.interactable = !locked;
             if (group != null) group.alpha = locked ? 0.55f + 0.45f * Mathf.Max(0, lockK) : 1;

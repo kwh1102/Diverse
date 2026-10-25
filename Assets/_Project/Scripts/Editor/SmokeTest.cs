@@ -314,6 +314,62 @@ namespace Diverse.EditorTools
                     if (g.State == GameState.Dialogue) { g.CloseOverlay(); yield return Frames(2); }
                 }
 
+                step = "merchant purchase limits";
+                var merchant = Interactable.All.FirstOrDefault(i => i != null && i.kind == "npc_merchant");
+                if (merchant == null) Fail("merchant missing");
+                else
+                {
+                    int gold = g.Player.Gold, dashMax = g.Player.DashChargesMax, dash = g.Player.DashCharges;
+                    g.Player.Gold = 1000; g.Player.DashChargesMax = 2; g.Player.DashCharges = 2;
+                    Dialogue.Open(g, merchant);
+                    Dialogue.Current.options[1].act(); Dialogue.Current.options[1].act();
+                    yield return Frames(3);
+                    if (g.Player.DashChargesMax != 4 || Dialogue.Current.options[1].enabled) Fail("dash purchase limit not enforced");
+                    var buttons = Find<DialogueView>().GetComponentsInChildren<Button>(true);
+                    var shoe = buttons.FirstOrDefault(b => b.gameObject.activeInHierarchy && b.GetComponentInChildren<Text>().text.Contains("대시 신발"));
+                    if (shoe == null || shoe.interactable || shoe.colors.disabledColor == shoe.colors.normalColor) Fail("disabled purchase has no distinct appearance");
+                    int paid = g.Player.Gold;
+                    Dialogue.Current.options[1].act();
+                    if (g.Player.Gold != paid || g.Player.DashChargesMax != 4) Fail("disabled purchase callback charged gold");
+                    g.CloseOverlay(); g.Player.Gold = gold; g.Player.DashChargesMax = dashMax; g.Player.DashCharges = dash;
+                }
+
+                step = "warp stone removal";
+                {
+                    var pos = g.Player.Pos; int gold = g.Player.Gold, carried = g.Player.WarpStones;
+                    var stone = new WarpStone { id = "smoke_remove", name = "철거 검증", x = 50, y = 50 };
+                    g.World.warpStones.Add(stone);
+                    if (g.RemoveWarpStone(stone)) Fail("remote removal allowed");
+                    g.Player.Pos = stone.Pos;
+                    if (!g.RemoveWarpStone(stone)) Fail("nearby removal failed");
+                    if (g.Player.Gold != gold + DB.Progression.warpStoneCost / 2 || g.Player.WarpStones != carried) Fail("removal refund or stone consumption incorrect");
+                    if (g.World.warpStones.Any(w => w.id == stone.id) || g.RemoveWarpStone(stone)) Fail("removed stone can be refunded twice");
+                    if (g.RemoveWarpStone(new WarpStone { id = Game.TownWarpId })) Fail("town stone removal allowed");
+                    g.Player.Pos = pos; g.Player.Gold = gold;
+                }
+
+                step = "grave inheritance preview";
+                {
+                    var ability = new AbilityDef { id = "smoke_legacy", name = "기억 전승 검증", rules = { new RuleDef
+                    {
+                        kind = RuleKind.Replace, replaces = "Dash", ops = { new OpDef { op = "ReplaceWith", mode = "Blink" } },
+                    } } };
+                    var grave = new GraveRecord { heroName = "검증 영웅", abilities = { AbilityRecord.From(ability) } };
+                    var it = Object.Instantiate(DB.Asset.interactablePrefab);
+                    it.kind = "grave"; it.data = grave;
+                    Dialogue.Open(g, it); yield return Frames(2);
+                    int owned = g.Player.Abilities.Owned.Count;
+                    Dialogue.Current.options[0].act(); yield return Frames(2);
+                    if (grave.recovered || g.Player.Abilities.Owned.Count != owned || string.IsNullOrWhiteSpace(Dialogue.Current.text)) Fail("preview consumed ability or omitted description");
+                    Dialogue.Current.options[1].act(); yield return Frames(2);
+                    if (grave.recovered) Fail("back from preview consumed grave");
+                    Dialogue.Current.options[0].act(); yield return Frames(2);
+                    Dialogue.Current.options[0].act(); yield return Frames(2);
+                    if (!grave.recovered || g.Player.Abilities.Owned.Count != owned + 1) Fail("inheritance confirmation failed");
+                    g.Player.Abilities.Owned.RemoveAll(a => a.name == ability.name);
+                    Object.Destroy(it.gameObject);
+                }
+
                 // A RuleIR replacement dash must cancel main's map travel just like a normal dash.
                 step = "replacement dash travel";
                 {

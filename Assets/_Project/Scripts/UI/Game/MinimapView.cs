@@ -9,6 +9,7 @@ namespace Diverse
         [SerializeField] MapCanvas map;
         [SerializeField] float viewUnits = 48;
         [SerializeField] float refreshInterval = 0.1f;
+        [SerializeField, Min(1)] int enemyMarkerSize = 3, bossMarkerSize = 6;
         float t;
 
         public void Tick(Game g)
@@ -26,7 +27,8 @@ namespace Diverse
             foreach (var a in Actor.All)
             {
                 if (a == null || !a.Alive || a.team != Team.Enemy) continue;
-                map.Marker(a.Pos, "■", (a as Enemy).def.boss ? Color.magenta : new Color(1, 0.3f, 0.3f), null, false);
+                bool boss = a is Enemy enemy && enemy.def.boss;
+                map.Marker(a.Pos, "■", boss ? Color.magenta : new Color(1, 0.3f, 0.3f), null, false, boss ? bossMarkerSize : enemyMarkerSize);
             }
             foreach (var q in g.World.quests.Where(x => x.status == 1 && x.kind != "hunt")) map.Marker(new Vector2(q.tx, q.ty), "!", Pal.Gold, null, true);
             map.Marker(WorldGen.TowerPos, "▲", Pal.Hex("c9b8ff"), null, true);

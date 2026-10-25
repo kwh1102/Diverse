@@ -42,6 +42,7 @@ namespace Diverse.EditorTools
             if (!File.Exists(MenuScenePath)) BuildMenuScene(menu);
             if (!File.Exists(GameScenePath)) BuildGameScene(game);
             BuildSettings();
+            UILayoutRepair.Run();
         }
 
         static GameObject Prefab(string path, System.Func<GameObject> build)
@@ -280,7 +281,7 @@ namespace Diverse.EditorTools
             var scaler = go.AddComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = RefRes;
-            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
             scaler.matchWidthOrHeight = 1;           // follow height, like IMGUI's Screen.height / 360
             go.AddComponent<GraphicRaycaster>();
             return (RectTransform)go.transform;

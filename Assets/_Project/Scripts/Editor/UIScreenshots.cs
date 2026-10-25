@@ -23,7 +23,7 @@ namespace Diverse.EditorTools
 
         [MenuItem("Diverse/UI 스크린샷 찍기 (Logs/UIShots)", priority = 26)]
         public static void RunMenu() => Begin(false);
-        public static void RunBatch() => Begin(true);
+        public static void RunBatch() { UILayoutRepair.Run(); Begin(true); }
 
         static void Begin(bool batch)
         {
@@ -77,10 +77,10 @@ namespace Diverse.EditorTools
             /// Render the scene camera plus every overlay canvas into one image. Overlay canvases are switched to
             /// Screen Space - Camera for the shot (batch mode has no screen to read back), then restored.
             /// </summary>
-            static void Shot(string name)
+            static void Shot(string name, int width = W, int height = H)
             {
                 var cam = Camera.main;
-                var rt = new RenderTexture(W, H, 24);
+                var rt = new RenderTexture(width, height, 24);
                 var canvases = FindObjectsByType<Canvas>(FindObjectsSortMode.None).Where(c => c.isRootCanvas && c.enabled).ToList();
                 var modes = canvases.Select(c => c.renderMode).ToList();
                 // Sorting layer order keeps the canvas above world sprites, like Overlay does in the real game
@@ -90,15 +90,15 @@ namespace Diverse.EditorTools
                 cam.targetTexture = rt;
                 // CanvasScaler reads Screen.* — force the reference size for this render
                 foreach (var s in FindObjectsByType<CanvasScaler>(FindObjectsSortMode.None)) s.enabled = false;
-                foreach (var c in canvases) { c.scaleFactor = H / 360f; }
+                foreach (var c in canvases) { c.scaleFactor = Mathf.Min(width / 640f, height / 360f); }
                 Canvas.ForceUpdateCanvases();
                 cam.Render();
                 cam.targetTexture = oldTarget;
                 for (int i = 0; i < canvases.Count; i++) { canvases[i].renderMode = modes[i]; canvases[i].sortingOrder = orders[i]; }
                 foreach (var s in FindObjectsByType<CanvasScaler>(FindObjectsSortMode.None)) s.enabled = true;
                 RenderTexture.active = rt;
-                var tex = new Texture2D(W, H, TextureFormat.RGB24, false);
-                tex.ReadPixels(new Rect(0, 0, W, H), 0, 0);
+                var tex = new Texture2D(width, height, TextureFormat.RGB24, false);
+                tex.ReadPixels(new Rect(0, 0, width, height), 0, 0);
                 tex.Apply();
                 RenderTexture.active = null;
                 File.WriteAllBytes(Path.Combine(OutDir, name + ".png"), tex.EncodeToPNG());
@@ -126,6 +126,9 @@ namespace Diverse.EditorTools
                     g.Ui.Toast("우클릭 이동/공격 · 좌클릭 공격 · QWER 스킬 · Space 대시");
                     g.Player.UnspentAttr = 2;
                     yield return F(3); Shot("05_hud");
+                    var minimapEnemy = Enemy.Spawn(DB.ScaledEnemy("fox", 0), g.Player.Pos + Vector2.right * 8, null);
+                    yield return F(12); Shot("05b_minimap_enemy");
+                    Object.Destroy(minimapEnemy.gameObject);
                     g.Player.PendingEvolutions = 0;
                     g.OpenOverlay(GameState.Paused); yield return F(3); Shot("06_pause_abilities");
                     g.Ui.OpenTab("attrs"); yield return F(3); Shot("07_pause_attrs");
@@ -135,10 +138,66 @@ namespace Diverse.EditorTools
                     var npc = Interactable.All.Where(i => i != null && i.kind == "npc_storyteller").FirstOrDefault()
                               ?? Interactable.All.FirstOrDefault(i => i != null && i.kind.StartsWith("npc_"));
                     if (npc != null) { Dialogue.Open(g, npc); yield return F(3); Shot("10_dialogue"); g.CloseOverlay(); yield return F(2); }
+                    var merchant = Interactable.All.FirstOrDefault(i => i != null && i.kind == "npc_merchant");
+                    if (merchant != null)
+                    {
+                        g.Player.Gold = 1000; g.Player.DashChargesMax = 4; g.Player.Potions = 5;
+                        Dialogue.Open(g, merchant); yield return F(5); Shot("10b_merchant_disabled");
+                        Shot("10d_merchant_narrow", 640, 720);
+                        var optionsScroll = Find<DialogueView>().GetComponentsInChildren<ScrollRect>().FirstOrDefault(s => s.name == "OptionsScroll");
+                        if (optionsScroll != null) optionsScroll.verticalNormalizedPosition = 0;
+                        yield return F(3); Shot("10c_merchant_bottom");
+                        g.CloseOverlay(); yield return F(2);
+                    }
                     g.Player.PendingEvolutions = 1; g.BeginEvolution();
                     for (int i = 0; i < 300 && g.Offer == null; i++) yield return null;
                     yield return F(60); Shot("11_evolve");
+                    if (g.Offer != null && g.Offer.Count > 0)
+                    {
+                        foreach (var ability in g.Offer)
+                        {
+                            ability.source = "ai";
+                            ability.desc = string.Concat(Enumerable.Repeat("분신이 남긴 흔적이 이어져 새로운 힘을 깨웁니다. ", 12));
+                            ability.semanticReason = string.Concat(Enumerable.Repeat("플레이의 움직임과 공격 방식이 능력에 반영됩니다. ", 5));
+                        }
+                        yield return F(5); Shot("11b_evolve_long_text");
+                        Shot("11d_evolve_narrow", 640, 720);
+                        foreach (var scroll in Find<EvolveView>().GetComponentsInChildren<ScrollRect>())
+                            if (scroll.name == "DetailsScroll") scroll.verticalNormalizedPosition = 0;
+                        yield return F(3); Shot("11c_evolve_long_text_bottom");
+                        // Render the chat warning without enabling AI or making any network requests.
+                        var evolve = Find<EvolveView>();
+                        var serialized = new SerializedObject(evolve);
+                        var chatPanel = (GameObject)serialized.FindProperty("chatPanel").objectReferenceValue;
+                        var warning = (Text)serialized.FindProperty("chatWarning").objectReferenceValue;
+                        var panel = (RectTransform)serialized.FindProperty("panel").objectReferenceValue;
+                        chatPanel.SetActive(true); warning.gameObject.SetActive(true);
+                        warning.text = "대화에는 40 골드가 필요하다";
+                        panel.sizeDelta = new Vector2(panel.sizeDelta.x, 330);
+                        Shot("11e_evolve_chat_warning");
+                    }
+                    var legacy = g.Offer?.FirstOrDefault()?.Clone();
                     g.SkipEvolution(); yield return F(3);
+                    if (legacy != null)
+                    {
+                        var grave = new GraveRecord { heroName = "지난 영웅", abilities = { AbilityRecord.From(legacy) } };
+                        var it = Object.Instantiate(DB.Asset.interactablePrefab);
+                        it.kind = "grave"; it.data = grave;
+                        Dialogue.Open(g, it); yield return F(3);
+                        Dialogue.Current.options[0].act(); yield return F(3); Shot("10e_legacy_description");
+                        g.CloseOverlay(); Object.Destroy(it.gameObject); yield return F(2);
+                    }
+                    Dialogue.Current = new DialoguePage
+                    {
+                        speaker = "긴 대화 배치 검증",
+                        text = string.Concat(Enumerable.Repeat("아주 긴 설명도 다른 버튼이나 대사를 덮지 않고 끝까지 읽을 수 있어야 합니다.\n", 20)),
+                    };
+                    for (int i = 0; i < 9; i++) Dialogue.Current.options.Add(new DialogueOption(
+                        $"{i + 1}번째 긴 선택지: 줄바꿈이 필요한 설명을 포함해도 다음 버튼과 겹치지 않아야 합니다. 길이가 늘어난 선택지도 읽을 수 있습니다.", () => { }));
+                    g.OpenOverlay(GameState.Dialogue); yield return F(5); Shot("10f_dialogue_long_text");
+                    foreach (var scroll in Find<DialogueView>().GetComponentsInChildren<ScrollRect>()) scroll.verticalNormalizedPosition = 0;
+                    yield return F(3); Shot("10g_dialogue_long_text_bottom");
+                    g.CloseOverlay(); yield return F(2);
                     g.OpenOverlay(GameState.Map); yield return F(5); Shot("12_map");
                     // Widest zoom with the whole explored area marked: icons must sit on the terrain they belong to
                     foreach (var s in World.I.Gen.StructuresNear(Vector2.zero, 200)) if (s.landmark) World.I.Discover(s.id);

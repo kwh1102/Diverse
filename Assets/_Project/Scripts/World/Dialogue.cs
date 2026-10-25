@@ -178,7 +178,7 @@ namespace Diverse
             }, p.Gold >= 30 && p.Potions < 5));
             page.options.Add(new DialogueOption("대시 신발 (80 골드) — 대시 횟수 +1", () =>
             {
-                if (p.Gold >= 80) { p.Gold -= 80; p.DashChargesMax++; p.DashCharges++; Sfx.Play("coin"); }
+                if (p.Gold >= 80 && p.DashChargesMax < 4) { p.Gold -= 80; p.DashChargesMax++; p.DashCharges++; Sfx.Play("coin"); }
                 Merchant(g);
             }, p.Gold >= 80 && p.DashChargesMax < 4));
             page.options.Add(new DialogueOption(p.HasRaft ? "접이식 뗏목 — 이미 가지고 있다" : $"접이식 뗏목 ({RaftCost} 골드) — 강과 호수를 건널 수 있다", () =>
@@ -233,6 +233,10 @@ namespace Diverse
                 options =
                 {
                     new DialogueOption("지도 열기", () => { Close(); g.OpenOverlay(GameState.Map); }, others > 0),
+                    new DialogueOption($"철거하기 (골드 {DB.Progression.warpStoneCost / 2} 반환, 돌은 소모됨)", () =>
+                    {
+                        if (g.RemoveWarpStone(w)) Close();
+                    }, w != null && w.id != Game.TownWarpId),
                     Bye(),
                 },
             });
@@ -356,23 +360,39 @@ namespace Diverse
                 foreach (var rec in gr.abilities)
                 {
                     var r = rec;
-                    page.options.Add(new DialogueOption($"[{r.name}] 계승하기", () =>
+                    page.options.Add(new DialogueOption($"[{r.name}] 설명 보기 / 계승", () =>
                     {
-                        var graph = r.ToAbility();
-                        if (graph == null) { Close(); return; }
-                        graph.id = System.Guid.NewGuid().ToString("N").Substring(0, 8);
-                        // Rebalanced for this life's build; an ability the new build can't host keeps its carved numbers
-                        var probe = graph.Clone();
-                        if (RuleValidator.Validate(probe, BuildContext.Of(g.Player)).ok) { probe.id = graph.id; probe.name = graph.name; probe.desc = probe.Explain(); graph = probe; }
-                        g.Player.Abilities.Add(graph);
-                        gr.recovered = true;
-                        g.World.Log($"{Ko.I(g.HeroName)} {gr.heroName}의 무덤에서 [{graph.name}] 능력을 계승했다.", "legacy");
-                        Fx.I?.Play(Art.Shockwave(Pal.ShadowEl, 30), it.Pos, 0, 16, 1, null, true);
-                        Fx.I?.Burst(it.Pos + Vector2.up * 0.5f, Pal.ShadowEl, 30, 5, 1f, -3);
-                        Sfx.Play("evolve");
-                        Game.I.Ui.Toast($"{gr.heroName}의 능력 [{graph.name}] 계승");
-                        GameEvents.World("investigate", "grave");
-                        Close();
+                        var preview = r.ToAbility();
+                        if (preview == null) return;
+                        var probe = preview.Clone();
+                        if (RuleValidator.Validate(probe, BuildContext.Of(g.Player)).ok) preview = probe;
+                        Show(new DialoguePage
+                        {
+                            speaker = $"기억 전승 — {r.name}", portrait = Art.Prop("grave"),
+                            text = preview.Explain(),
+                            options =
+                            {
+                                new DialogueOption("이 능력 계승하기", () =>
+                                {
+                                    if (gr.recovered) return;
+                                    var graph = preview.Clone();
+                                    graph.id = System.Guid.NewGuid().ToString("N").Substring(0, 8);
+                                    graph.name = r.name;
+                                    graph.desc = graph.Explain();
+                                    g.Player.Abilities.Add(graph);
+                                    gr.recovered = true;
+                                    g.World.Log($"{Ko.I(g.HeroName)} {gr.heroName}의 무덤에서 [{graph.name}] 능력을 계승했다.", "legacy");
+                                    Fx.I?.Play(Art.Shockwave(Pal.ShadowEl, 30), it.Pos, 0, 16, 1, null, true);
+                                    Fx.I?.Burst(it.Pos + Vector2.up * 0.5f, Pal.ShadowEl, 30, 5, 1f, -3);
+                                    Sfx.Play("evolve");
+                                    Game.I.Ui.Toast($"{gr.heroName}의 능력 [{graph.name}] 계승");
+                                    GameEvents.World("investigate", "grave");
+                                    Close();
+                                }),
+                                new DialogueOption("다른 기억 보기", () => Grave(g, it)),
+                                Bye(),
+                            },
+                        });
                     }));
                 }
                 page.options.Add(new DialogueOption("편히 잠들게 두기 (기억의 조각 +1)", () => { gr.recovered = true; g.World.memoryShards++; Close(); }));

@@ -20,6 +20,9 @@ namespace Diverse
         [SerializeField] Color playerHighlight = new Color(1f, 0.92f, 0.3f, 1f);
         [Tooltip("How close (canvas px) a click must be to a warp stone icon to pick it.")]
         [SerializeField] float warpPickRadius = 10f;
+        [SerializeField] Color frontierColor = new Color(1f, 0.35f, 0.45f, 1f);
+        [SerializeField] Color frontierOutline = new Color(0.13f, 0.08f, 0.15f, 1f);
+        [SerializeField, Min(1)] int frontierMarkerSize = 6, frontierOutlineSize = 9;
 
         float zoom = 3f;
         bool dragging, dragMoved;
@@ -135,9 +138,14 @@ namespace Diverse
                 {
                     float radius = WorldGen.Rings[i].radius;
                     if (radius <= 0) continue;
-                    var col = i == open ? new Color(1f, 0.45f, 0.55f, 0.8f) : i < open ? new Color(0.8f, 0.75f, 1f, 0.25f) : new Color(0.6f, 0.55f, 0.7f, 0.35f);
+                    var col = i == open ? frontierColor : i < open ? new Color(0.8f, 0.75f, 1f, 0.25f) : new Color(0.6f, 0.55f, 0.7f, 0.35f);
                     int n = Mathf.Clamp(Mathf.RoundToInt(radius * zoom / 6f), 24, 360);
-                    for (int k = 0; k < n; k++) map.Marker(MathX.Dir(k * 360f / n) * radius, "·", col, null, false);
+                    for (int k = 0; k < n; k++)
+                    {
+                        var pos = MathX.Dir(k * 360f / n) * radius;
+                        if (i == open) map.Marker(pos, "●", frontierOutline, null, false, frontierOutlineSize);
+                        map.Marker(pos, i == open ? "●" : "·", col, null, false, i == open ? frontierMarkerSize : 0);
+                    }
                 }
             }
 
