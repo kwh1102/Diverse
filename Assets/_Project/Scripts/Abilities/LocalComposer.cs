@@ -24,6 +24,7 @@ namespace Diverse
                 if (g == null) continue;
                 g.source = "local";
                 g.EnsureLists();
+                if (g.IsStacking && Chance(rnd, c.owned.Any(a => a.IsStacking) ? 0.85 : 0.6)) continue;
                 if (results.Any(r => r.Signature() == g.Signature())) continue;
                 results.Add(g);
             }
@@ -42,7 +43,7 @@ namespace Diverse
             };
             if (t >= 2)
             {
-                list.Add((Accumulate, 1.6f));
+                list.Add((Accumulate, c.owned.Any(a => a.IsStacking) ? 0.15f : 0.5f));
                 list.Add((Threshold, 1.0f));
                 list.Add((TradeOff, 0.9f));
                 list.Add((BuildScaling, 0.8f));

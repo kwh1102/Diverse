@@ -51,6 +51,8 @@ namespace Diverse
 
         const string SystemPrompt =
 @"You design abilities for a pixel-art action roguelite where abilities EVOLVE from how the player actually plays.
+Prefer varied immediate, mobility, defensive and utility mechanics. At most one stacking ability per batch.
+Every accumulating state needs a finite maximum or decay. Write Korean text as noun phrases, never polite endings.
 An ability is a tiny PROGRAM in a closed rule language — never a finished named skill. Think TFT augments / Sephiria
 artifacts: trade-offs, things that accumulate and get released, conversions that redefine a game rule, replacing a
 player action, giving something up, scaling with the build, modifying the player's OTHER abilities, or the evolution system.
@@ -292,6 +294,7 @@ OUTPUT JSON: {""reply"":""..."",""changes"":[ {""card"":2, ...same intent schema
             var sb = new StringBuilder();
             sb.AppendLine("World: a gentle pixel fantasy where rabbit wanderers live, die, and are remembered by the world. Region: " + worldFlavor);
             sb.AppendLine("For each FINALIZED ability below, write a short evocative Korean name (2~4 words) and a one-line Korean flavor sentence (max 30 characters, no numbers — the exact rules are shown separately).");
+            sb.AppendLine("Use consistent Korean noun phrases for every description (e.g. 충격파 발산). Never mix polite endings with shorthand. Prefer varied immediate, mobility, defensive and utility mechanics; at most one stacking ability per batch. Every accumulating state must have a finite maximum or a decay duration.");
             for (int i = 0; i < abilities.Count; i++)
                 sb.AppendLine($"id={i}: concept: {abilities[i].concept} | rules: {abilities[i].Explain().Replace("\n", " / ")} | tags: {string.Join(" ", abilities[i].tags)}");
             sb.AppendLine("Return JSON: {\"names\":[{\"id\":\"0\",\"name\":\"...\",\"desc\":\"...\"}]}");
@@ -307,7 +310,9 @@ OUTPUT JSON: {""reply"":""..."",""changes"":[ {""card"":2, ...same intent schema
                         if (int.TryParse(n.id, out int i) && i >= 0 && i < abilities.Count && !string.IsNullOrWhiteSpace(n.name))
                         {
                             abilities[i].name = n.name.Trim();
-                            if (!string.IsNullOrWhiteSpace(n.desc)) abilities[i].desc = n.desc.Trim();
+                            if (!string.IsNullOrWhiteSpace(n.desc))
+                                abilities[i].desc = System.Text.RegularExpressions.Regex.IsMatch(n.desc, "(니다|세요|해요)")
+                                    ? abilities[i].Explain() : n.desc.Trim();
                         }
             }
             catch { }

@@ -40,6 +40,7 @@ namespace Diverse
         public string mechanic;              // machine-readable structure id
 
         public bool HasTag(string t) => tags != null && tags.Contains(t);
+        public bool IsStacking => rules != null && rules.Any(r => r.ops.Any(o => o.op == "AddState" || o.time == "Stack"));
         public StateDef State(string name) => states?.FirstOrDefault(s => s.name == name);
         public string Explain() => RuleText.Explain(this);
         public AbilityDef Clone() => JsonUtility.FromJson<AbilityDef>(JsonUtility.ToJson(this));
@@ -49,6 +50,8 @@ namespace Diverse
             states ??= new List<StateDef>();
             rules ??= new List<RuleDef>();
             tags ??= new List<string>();
+            foreach (var s in states)
+                if (float.IsNaN(s.max) || float.IsInfinity(s.max) || s.max <= 0) s.max = 3;
             foreach (var r in rules) { r.when ??= new List<CondDef>(); r.ops ??= new List<OpDef>(); }
         }
 

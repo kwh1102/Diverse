@@ -118,7 +118,7 @@ namespace Diverse
                 UIKit.Set(interactText, $"[{Controls.KeyName(Act.Interact)}] {it.label}");
             }
 
-            bool boss = g.Boss != null && g.Boss.Alive;
+            bool boss = g.Boss != null && g.Boss.Alive && Vector2.Distance(p.Pos, g.Boss.Pos) <= 20f;
             bossShown = boss ? Mathf.MoveTowards(bossShown, 1, Time.unscaledDeltaTime * 3) : 0;
             UIKit.Show(bossBar, boss);
             if (boss)

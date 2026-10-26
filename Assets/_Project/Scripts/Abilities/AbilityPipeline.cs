@@ -207,12 +207,13 @@ namespace Diverse
             foreach (var (g, _) in scored)
             {
                 if (pick.Count >= n) break;
+                if (g.IsStacking && pick.Any(x => x.IsStacking)) continue;
                 if (g.tier == 0 && pick.Any(x => x.tier == 0)) continue;
                 if (g.PrimaryTrigger != null && pick.Any(x => x.PrimaryTrigger == g.PrimaryTrigger)) continue;
                 if (pick.Count(x => x.tier == g.tier) >= 2) continue;
                 pick.Add(g);
             }
-            foreach (var (g, _) in scored) { if (pick.Count >= n) break; if (!pick.Contains(g)) pick.Add(g); }
+            foreach (var (g, _) in scored) { if (pick.Count >= n) break; if (!pick.Contains(g) && (!g.IsStacking || !pick.Any(x => x.IsStacking))) pick.Add(g); }
             return pick;
         }
     }
