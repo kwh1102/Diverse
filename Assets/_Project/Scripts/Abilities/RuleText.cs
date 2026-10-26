@@ -10,7 +10,10 @@ namespace Diverse
         public static string Explain(AbilityDef a)
         {
             if (a?.rules == null) return "";
-            return string.Join("\n", a.rules.Select(r => Rule(a, r)));
+            var lines = a.rules.Select(r => Rule(a, r)).ToList();
+            foreach (var s in a.states.Where(s => s.type is "Counter" or "StoredValue" or "Charge"))
+                lines.Add($"[{s.label ?? s.name}] 최대 {s.max:0.##}" + (s.decay > 0 ? $" · 초당 {s.decay:0.##} 감소" : ""));
+            return string.Join("\n", lines);
         }
 
         public static string Rule(AbilityDef a, RuleDef r)
@@ -198,7 +201,7 @@ namespace Diverse
                 "DetonateEntities" => $"{RuleLanguage.Selector(o.target)?.ko ?? o.target} 폭파 ({Mag(a, o, Pct)})",
                 "ExtendEntities" => $"{RuleLanguage.Selector(o.target)?.ko ?? o.target} 수명 +{o.amount:0.#}초",
                 "EmpowerNext" => $"다음 공격{(o.count > 1 ? " " + o.count + "회" : "")} {el}피해 +{Mag(a, o, Pct)}",
-                "AddState" => o.scale == "event.amount" && o.amount == 0 ? $"받은 양을 [{StateName(a, o.state)}]에 쌓음" : $"[{StateName(a, o.state)}] {(o.amount < 0 ? "-" : "+")}{Mag(a, o, v => $"{System.Math.Abs(v):0.##}")}",
+                "AddState" => o.scale == "event.amount" && o.amount == 0 ? $"받은 양을 [{StateName(a, o.state)}]에 누적" : $"[{StateName(a, o.state)}] {(o.amount < 0 ? "-" : "+")}{Mag(a, o, v => $"{System.Math.Abs(v):0.##}")}",
                 "SetState" => a?.State(o.state)?.type == "Timer" ? $"[{StateName(a, o.state)}] {o.amount:0.#}초 시작" : o.amount == 0 ? $"[{StateName(a, o.state)}] 소모" : $"[{StateName(a, o.state)}] = {o.amount:0.##}",
                 "StorePosition" => $"{At(o.at).Replace("에 ", "")}{(string.IsNullOrEmpty(o.at) ? "그 위치" : "")}를 [{StateName(a, o.state)}]에 기억",
                 "StoreTarget" => $"{Target(o.target).Replace("에게 ", "")}{(string.IsNullOrEmpty(o.target) || o.target == "EventTarget" ? "그 적" : "")}을 [{StateName(a, o.state)}]으로 기억",

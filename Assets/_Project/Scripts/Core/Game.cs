@@ -117,6 +117,7 @@ namespace Diverse
 
         void HandleGlobalKeys()
         {
+            if (DeveloperMode.CapturingInput) return;
             if (Controls.Down(Act.Map)) OpenOverlay(GameState.Map);
             else if (Controls.Down(Act.Pause)) OpenOverlay(GameState.Paused);
             else if (Controls.Down(Act.Abilities))

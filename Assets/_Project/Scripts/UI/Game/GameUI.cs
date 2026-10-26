@@ -26,6 +26,7 @@ namespace Diverse
         public void Init(Game game)
         {
             g = game;
+            if (GetComponent<DeveloperMode>() == null) gameObject.AddComponent<DeveloperMode>();
             hud.Init(game);
             pause.Init(game);
             dialogue.Init(game);
@@ -67,7 +68,7 @@ namespace Diverse
             Refresh();
             if (hud.isActiveAndEnabled) hud.Tick();
             // Clicks on UI must not also move/attack in the world
-            g.UiCapturingMouse = g.State != GameState.Playing || (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject());
+            g.UiCapturingMouse = DeveloperMode.CapturingInput || g.State != GameState.Playing || (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject());
         }
     }
 }

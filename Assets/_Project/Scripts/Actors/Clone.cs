@@ -76,7 +76,26 @@ namespace Diverse
         public void Mimic(Vector2 dir, ComboStep step)
         {
             if (!copy || owner == null) return;
-            Strike(dir, step.range * 0.9f, step.arc, step.damage);
+            dir = (owner.AimPoint - (Pos + Vector2.up * 0.45f)).SafeNormal(dir);
+            if (step.projectile) Shoot(dir, step);
+            else Strike(dir, step.range * 0.9f, step.arc, step.damage);
+        }
+
+        void Shoot(Vector2 dir, ComboStep step)
+        {
+            Facing = dir;
+            body.flipX = dir.x < 0;
+            if (weapon) weapon.transform.localRotation = Quaternion.Euler(0, 0, dir.Angle());
+            var col = element != Element.None ? Combat.ElementColor(element) : owner.Weapon.slashColor;
+            for (int i = 0; i < step.projectileCount; i++)
+            {
+                var d = dir.Rotate((i - (step.projectileCount - 1) / 2f) * step.projectileSpread);
+                var info = new DamageInfo { amount = owner.AttackPower * step.damage * power, source = owner,
+                    direction = d, knockback = step.knockback, hitstop = step.hitstop, canCrit = true,
+                    element = element, tags = tags, depth = depth + 1, fromAbility = true };
+                var bolt = Projectile.Spawn(Art.Bolt(), Pos + Vector2.up * 0.45f + d * 0.5f, d * 19f, Team.Enemy, owner, info);
+                bolt.color = col; bolt.life = step.range / 19f; bolt.sfx = owner.Weapon.sfxHit;
+            }
         }
 
         void Strike(Vector2 dir, float range, float arc, float mult)
@@ -124,11 +143,15 @@ namespace Diverse
                 if (t != null)
                 {
                     var to = t.Pos - Pos;
-                    if (phantom || to.magnitude > 1.1f) Pos = WorldStreamer.I.Move(Pos, to.normalized * (phantom ? 9f : 6f) * dt, 0.3f);
-                    if (atkT <= 0 && to.magnitude < 1.4f)
+                    bool ranged = !phantom && owner.Weapon.kind == WeaponKind.Crossbow;
+                    float reach = ranged ? owner.Weapon.attackRange : 1.4f;
+                    if (phantom || to.magnitude > reach * 0.8f) Pos = WorldStreamer.I.Move(Pos, to.normalized * (phantom ? 9f : 6f) * dt, 0.3f);
+                    if (atkT <= 0 && to.magnitude < reach)
                     {
                         atkT = phantom ? 0.3f : 0.45f;
-                        Strike(to.normalized, 1.5f, phantom ? 360 : 150, 0.8f);
+                        var dir = (owner.AimPoint - (Pos + Vector2.up * 0.45f)).SafeNormal(Facing);
+                        if (ranged) Shoot(dir, owner.Weapon.combo[0]);
+                        else Strike(dir, 1.5f, phantom ? 360 : 150, 0.8f);
                     }
                 }
                 body.flipX = Facing.x < 0;

@@ -72,6 +72,19 @@ namespace Diverse
 
         public void Recompute() => p.RecalcStats();
 
+        public void Remove(AbilityDef a)
+        {
+            if (!Owned.Remove(a)) return;
+            states.Remove(a); positions.Remove(a); targets.Remove(a); upgrades.Remove(a);
+            armed.RemoveAll(x => x.a == a);
+            empower.RemoveAll(x => (x.tags ?? "").Split(' ').Contains("ABILITY:" + a.id));
+            foreach (var r in a.rules) { lastFire.Remove(r); nextPeriodic.Remove(r); nth.Remove(r); }
+            lastClone.Remove(a); lastSummon.Remove(a);
+            RebuildMeta();
+            continuousStats.Clear();
+            Recompute();
+        }
+
         // ───────────────────────── System rules ─────────────────────────
 
         IEnumerable<OpDef> SystemOps => Owned.SelectMany(a => a.rules).Where(r => r.kind == RuleKind.System).SelectMany(r => r.ops);
@@ -717,7 +730,7 @@ namespace Diverse
             foreach (var o in r.ops)
             {
                 if (o.delay > 0) yield return new WaitForSeconds(o.delay);
-                if (p == null || !p.Alive) yield break;
+                if (p == null || !p.Alive || !Owned.Contains(a)) yield break;
                 switch (o.time)
                 {
                     case "UntilHit": case "UntilDamaged": case "UntilNextAttack": case "ForNextN":
@@ -825,6 +838,7 @@ namespace Diverse
 
         void Apply(AbilityDef a, RuleDef r, OpDef o, CombatEvent ev, float scale, int cascade = 0)
         {
+            if (!Owned.Contains(a)) return;
             var m = Meta(a);
             var el = RuleLanguage.ParseElement(o.element);
             if (el == Element.None && m.infuse != Element.None) el = m.infuse;

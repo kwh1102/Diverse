@@ -370,7 +370,7 @@ namespace Diverse.EditorTools
                     Object.Destroy(it.gameObject);
                 }
 
-                // A RuleIR replacement dash must cancel main's map travel just like a normal dash.
+                // Attacks and both dash variants pause movement without losing the map destination.
                 step = "replacement dash travel";
                 {
                     var p = g.Player;
@@ -382,8 +382,80 @@ namespace Diverse.EditorTools
                     p.SetTravelTarget(p.Pos + Vector2.right * 8);
                     p.DashCharges = p.DashChargesMax;
                     p.TryDash(Vector2.left);
-                    if (p.TravelTarget.HasValue || p.MovementPath.Count != 0) Fail("replacement dash resumed map travel");
+                    if (!p.TravelTarget.HasValue) Fail("replacement dash lost map travel");
                     p.Abilities.Clear(); p.RecalcStats();
+                    var destination = p.TravelTarget;
+                    p.TryDash(Vector2.left);
+                    if (p.TravelTarget != destination) Fail("normal dash lost map travel");
+                    yield return new WaitForSeconds(0.4f);
+                    typeof(Player).GetMethod("BasicAttack", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                        .Invoke(p, new object[] { Vector2.up });
+                    if (p.TravelTarget != destination) Fail("basic attack lost map travel");
+                    yield return new WaitForSeconds(1f);
+                    if (p.TravelTarget.HasValue && !p.Moving) Fail("movement did not resume after attack");
+                    p.LearnNextSkill();
+                    var skill = p.Skills.FirstOrDefault(s => s.def != null);
+                    if (skill != null)
+                    {
+                        skill.cd = 0;
+                        typeof(Player).GetMethod("CastSkill", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                            .Invoke(p, new object[] { System.Array.IndexOf(p.Skills, skill) });
+                        if (p.TravelTarget != destination) Fail("skill cast lost map travel");
+                        p.LearnNextSkill();
+                        var followup = p.Skills.FirstOrDefault(s => s.def != null && s != skill);
+                        if (followup != null)
+                        {
+                            followup.cd = 0;
+                            p.DashCharges = 2;
+                            p.TryDash(Vector2.up);
+                            if (!p.IsDashing || p.DashCharges != 1) Fail("dash blocked during skill motion");
+                            typeof(Player).GetMethod("CastSkill", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                                .Invoke(p, new object[] { System.Array.IndexOf(p.Skills, followup) });
+                            if (followup.cd <= 0) Fail("skill blocked during dash/skill motion");
+                            p.TryDash(Vector2.left);
+                            if (p.DashCharges != 0) Fail("second dash blocked during dash motion");
+                            // Readiness still applies while animation locks no longer block other actions.
+                            float cooldown = followup.cd;
+                            typeof(Player).GetMethod("CastSkill", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                                .Invoke(p, new object[] { System.Array.IndexOf(p.Skills, followup) });
+                            if (followup.cd != cooldown) Fail("skill cooldown bypassed");
+                        }
+                        yield return new WaitForSeconds(1f);
+                    }
+                    p.StopMoving();
+                }
+
+                step = "stack limits and removal";
+                {
+                    var p = g.Player;
+                    var a = new AbilityDef { id = "stack_regression", name = "스택 검증",
+                        states = { new StateDef { name = "count", label = "중첩", max = 3 } },
+                        rules = { new RuleDef { kind = RuleKind.Trigger, trigger = "Damaged",
+                            ops = { new OpDef { op = "AddState", state = "count", amount = 10 } } } } };
+                    p.Abilities.Add(a);
+                    p.Abilities.Fire(new CombatEvent { type = Trig.Damaged, source = p, position = p.Pos });
+                    if (p.Abilities.GetState(a, "count") != 3) Fail("stack exceeded its maximum");
+                    if (!a.Explain().Contains("최대 3")) Fail("stack description omitted its maximum");
+                    p.Abilities.Remove(a);
+                    if (p.Abilities.Owned.Contains(a) || p.Abilities.GetState(a, "count") != 0) Fail("ability removal retained state");
+                }
+
+                step = "developer level progression";
+                {
+                    var p = g.Player;
+                    int oldLevel = p.Level, oldPending = p.PendingEvolutions, oldPoints = p.UnspentAttr;
+                    int learned = p.LearnedSkills;
+                    int target = p.NextEvolveLevel + 5, expectedEvolutions = 0;
+                    for (int lv = oldLevel + 1; lv <= target; lv++) if (DB.Progression.EvolvesAt(lv)) expectedEvolutions++;
+                    p.DebugSetLevel(target);
+                    if (p.Level != target || p.PendingEvolutions != oldPending + expectedEvolutions)
+                        Fail("developer levels omitted evolution rewards");
+                    int awarded = p.PendingEvolutions;
+                    p.DebugSetLevel(target);
+                    if (p.PendingEvolutions != awarded) Fail("same developer level awarded duplicate evolutions");
+                    p.DebugSetLevel(oldLevel);
+                    if (p.Level != oldLevel || p.PendingEvolutions != awarded) Fail("level decrease corrupted earned evolutions");
+                    p.PendingEvolutions = oldPending; p.UnspentAttr = oldPoints; p.RestoreSkills(learned);
                 }
 
                 // Rule IR: every reference ability on one live player, then real combat events through the runtime
@@ -538,12 +610,82 @@ namespace Diverse.EditorTools
                 return null;
             }
 
+            string CheckAttackInput(Player p)
+            {
+                const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+                var input = typeof(Player).GetMethod("HandleAttackInput", flags);
+                var queued = typeof(Player).GetMethod("TryQueuedAttack", flags);
+                var timers = typeof(Player).GetMethod("UpdateTimers", flags);
+                float recovery = p.Weapon.combo.Max(s => s.windup + s.recovery) / p.Stats[StatId.AttackSpeed] + 0.2f;
+                int attacks = 0;
+                void Count(CombatEvent ev) { if (ev.source == p && ev.type == Trig.Attack) attacks++; }
+                void Input(bool pressed, bool held) => input.Invoke(p, new object[] { pressed, held, Vector2.right });
+                void Recover() { timers.Invoke(p, new object[] { recovery }); queued.Invoke(p, null); }
+                GameEvents.Combat += Count;
+                try
+                {
+                    // One physical click spans several frames before its release.
+                    Input(true, true);
+                    for (int frame = 0; frame < 5; frame++) Input(false, true);
+                    Input(false, false);
+                    Recover();
+                    if (attacks != 1) return "single click repeated an attack after release";
+
+                    Input(true, true);
+                    Recover();
+                    Input(false, true);
+                    if (attacks != 3) return "holding attack stopped repeating";
+                    Input(false, false);
+                    Recover();
+                    if (attacks != 3) return "held attack left an extra attack after release";
+
+                    Input(true, true);
+                    Input(true, true); // A second distinct click during recovery should still buffer.
+                    Input(false, false);
+                    Recover();
+                    if (attacks != 5) return "second click during recovery was lost";
+                    Recover();
+                    if (attacks != 5) return "buffered click executed more than once";
+
+                    p.DashCharges = 2;
+                    p.TryDash(Vector2.right);
+                    Input(true, true);
+                    queued.Invoke(p, null);
+                    if (attacks != 5) return "attack fired during dash";
+                    typeof(Player).GetMethod("UpdateMovement", flags).Invoke(p, new object[] { 0.2f });
+                    Recover();
+                    if (attacks != 6) return "click buffered during dash was lost";
+                    return null;
+                }
+                finally
+                {
+                    GameEvents.Combat -= Count;
+                    p.StopAllCoroutines();
+                }
+            }
+
             string Exercise(WeaponKind wk)
             {
                 var p = Game.I.Player;
                 if (p == null || !p.Alive) return "no live player";
                 if (p.Weapon.kind != wk) return "wrong weapon";
                 if (ReferenceEquals(p.Weapon, DB.W(wk))) return "player shares the asset's WeaponDef (smith upgrades would edit the asset)";
+                if (Object.FindFirstObjectByType<DeveloperMode>() == null) return "developer tools missing";
+                var attackInputError = CheckAttackInput(p);
+                if (attackInputError != null) return attackInputError;
+
+                if (wk == WeaponKind.Crossbow)
+                {
+                    var clone = Clone.Spawn(p, p.Pos + Vector2.left * 2, 1, 1, true, false, Element.None, "REGRESSION", 0);
+                    p.AimPoint = p.Pos + Vector2.up * 5;
+                    int before = Projectile.Live.Count;
+                    clone.Mimic(Vector2.right, p.Weapon.combo[0]);
+                    var bolts = Projectile.Live.Skip(before).ToArray();
+                    if (bolts.Length != p.Weapon.combo[0].projectileCount) return "crossbow clone did not shoot bolts";
+                    var expected = (p.AimPoint - (clone.Pos + Vector2.up * 0.45f)).normalized;
+                    if (Vector2.Dot(bolts[bolts.Length / 2].vel.normalized, expected) < 0.9f) return "clone did not aim from its position to cursor";
+                    Object.Destroy(clone.gameObject);
+                }
 
                 var e = Enemy.Spawn(DB.Elite(DB.ScaledEnemy("fox", 1)), p.Pos + Vector2.right * 2f, null);
                 e.TakeDamage(new DamageInfo { amount = 99999, source = p, direction = Vector2.right });

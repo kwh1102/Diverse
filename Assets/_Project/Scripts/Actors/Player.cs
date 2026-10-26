@@ -190,29 +190,35 @@ namespace Diverse
         public void GainXp(float amount)
         {
             if (Abilities != null) amount = Abilities.FilterXp(amount);
-            var prog = DB.Progression;
             Xp += amount * Stats[StatId.XpGain];
             while (Xp >= XpToNext)
             {
                 Xp -= XpToNext;
-                Level++;
-                XpToNext = prog.XpFor(Level);
-                UnspentAttr += 1;
-                bool evolve = prog.EvolvesAt(Level);
-                if (evolve) PendingEvolutions++;
-                RecalcStats();
-                hp = Mathf.Min(maxHp, hp + maxHp * 0.25f);
-                Fx.I?.Play(Art.Shockwave(Pal.Gold, 24), Pos, 0, 18, 1, null, true);
-                Fx.I?.Burst(Pos + Vector2.up * 0.5f, Pal.Gold, 24, 6, 0.8f, -4);
-                Fx.I?.Number(Pos + Vector2.up * 1.2f, "레벨 업!", new Color(1f, 0.9f, 0.4f), 1.3f, 1.2f);
-                Sfx.Play("levelup");
-                Abilities?.Raise("LevelUp");
-                var learned = LearnSkillsForLevel();
-                if (learned != null) GameEvents.Notify($"레벨 {Level}! 새 기술 [{learned.def.name}]{(Ko.HasBatchim(learned.def.name) ? "을" : "를")} 익혔다 ({Controls.KeyName(SkillAct(learned))})");
-                else if (evolve) GameEvents.Notify($"레벨 {Level}! 진화가 준비되었다 ({Controls.KeyName(Act.Abilities)} 또는 자동)");
-                else GameEvents.Notify($"레벨 {Level}! 능력치 포인트 +1 (다음 진화: 레벨 {NextEvolveLevel})");
-                if (evolve) Game.I?.RequestPrefetch();
+                AdvanceLevel();
             }
+        }
+
+        // Shared by experience gains and developer level controls.
+        void AdvanceLevel()
+        {
+            var prog = DB.Progression;
+            Level++;
+            XpToNext = prog.XpFor(Level);
+            UnspentAttr += 1;
+            bool evolve = prog.EvolvesAt(Level);
+            if (evolve) PendingEvolutions++;
+            RecalcStats();
+            hp = Mathf.Min(maxHp, hp + maxHp * 0.25f);
+            Fx.I?.Play(Art.Shockwave(Pal.Gold, 24), Pos, 0, 18, 1, null, true);
+            Fx.I?.Burst(Pos + Vector2.up * 0.5f, Pal.Gold, 24, 6, 0.8f, -4);
+            Fx.I?.Number(Pos + Vector2.up * 1.2f, "레벨 업!", new Color(1f, 0.9f, 0.4f), 1.3f, 1.2f);
+            Sfx.Play("levelup");
+            Abilities?.Raise("LevelUp");
+            var learned = LearnSkillsForLevel();
+            if (learned != null) GameEvents.Notify($"레벨 {Level}! 새 기술 [{learned.def.name}]{(Ko.HasBatchim(learned.def.name) ? "을" : "를")} 익혔다 ({Controls.KeyName(SkillAct(learned))})");
+            else if (evolve) GameEvents.Notify($"레벨 {Level}! 진화가 준비되었다 ({Controls.KeyName(Act.Abilities)} 또는 자동)");
+            else GameEvents.Notify($"레벨 {Level}! 능력치 포인트 +1 (다음 진화: 레벨 {NextEvolveLevel})");
+            if (evolve) Game.I?.RequestPrefetch();
         }
 
         /// <summary>Next level that offers an ability evolution.</summary>
@@ -325,7 +331,7 @@ namespace Diverse
 
         void HandleInput()
         {
-            if (Game.I.UiCapturingMouse || Game.I.InputConsumedFrame >= Time.frameCount - 1) return;
+            if (DeveloperMode.CapturingInput || Game.I.UiCapturingMouse || Game.I.InputConsumedFrame >= Time.frameCount - 1) return;
             AimPoint = CameraRig.I.MouseWorld();
             if (CameraRig.I != null)
                 CameraRig.I.lookAhead = Vector2.ClampMagnitude((AimPoint - Pos) * 0.12f, 1.2f);
@@ -353,14 +359,8 @@ namespace Diverse
             }
             if (Controls.Down(Act.Stop)) StopMoving();
 
-            // Left-click: attack toward the cursor (queued while locked)
-            if (Controls.Held(Act.Attack))
-            {
-                var dir = (AimPoint - (Pos + Vector2.up * 0.4f)).SafeNormal(Facing);
-                if (actionLock > 0.08f) { queuedAttack = true; queuedDir = dir; }
-                else if (actionLock <= 0) { path.Clear(); attackTarget = null; TravelTarget = null; BasicAttack(dir); }
-                else { queuedAttack = true; queuedDir = dir; }
-            }
+            HandleAttackInput(Controls.Down(Act.Attack), Controls.Held(Act.Attack),
+                (AimPoint - (Pos + Vector2.up * 0.4f)).SafeNormal(Facing));
 
             if (Controls.Down(Act.Dash)) TryDash((AimPoint - Pos).SafeNormal(Facing));
             if (Controls.Down(Act.SkillQ)) CastSkill(0);
@@ -369,7 +369,28 @@ namespace Diverse
             if (Controls.Down(Act.SkillR)) CastSkill(3);
             if (Controls.Down(Act.Potion)) UsePotion();
 
-            if (queuedAttack && actionLock <= 0)
+            TryQueuedAttack();
+        }
+
+        void HandleAttackInput(bool pressed, bool held, Vector2 dir)
+        {
+            // Only a fresh press may buffer an attack. Holding repeats when ready,
+            // without leaving an extra attack behind after the button is released.
+            if (pressed && (actionLock > 0 || dashT > 0))
+            {
+                queuedAttack = true;
+                queuedDir = dir;
+            }
+            else if ((pressed || held) && actionLock <= 0 && dashT <= 0)
+            {
+                queuedAttack = false;
+                BasicAttack(dir);
+            }
+        }
+
+        void TryQueuedAttack()
+        {
+            if (queuedAttack && actionLock <= 0 && dashT <= 0)
             {
                 queuedAttack = false;
                 BasicAttack(queuedDir);
@@ -455,7 +476,7 @@ namespace Diverse
                 Pos = WorldStreamer.I.Move(Pos, dashVel * dt, radius, HasRaft, Bound);
                 ghostT -= dt;
                 if (ghostT <= 0) { ghostT = 0.03f; Fx.I?.Afterimage(body, new Color(0.7f, 0.85f, 1f, 0.7f), 0.22f); }
-                if (dashT <= 0) { GameEvents.Raise(new CombatEvent { type = Trig.DashEnd, source = this, position = Pos }); Telemetry.Record("DashEnd"); }
+                if (dashT <= 0) { RepathMovement(); GameEvents.Raise(new CombatEvent { type = Trig.DashEnd, source = this, position = Pos }); Telemetry.Record("DashEnd"); }
                 return;
             }
             if (lungeT > 0)
@@ -605,13 +626,12 @@ namespace Diverse
 
         public void TryDash(Vector2 dir)
         {
-            if (DashCharges <= 0 || dashT > 0) return;
+            if (DashCharges <= 0) return;
             if (Abilities != null && Abilities.Forbids("Dash")) return;
             // Replacement rules (e.g. "dash becomes blink") take the input instead of the normal dash
-            if (Abilities != null && Abilities.ReplaceDash(dir)) { StopMoving(); DashCharges--; dashRecharge = 0; return; }
+            if (Abilities != null && Abilities.ReplaceDash(dir)) { DashCharges--; dashRecharge = 0; return; }
             DashCharges--;
             dashRecharge = 0;
-            path.Clear(); attackTarget = null; TravelTarget = null;
             actionLock = 0; queuedAttack = false;
             LastDashOrigin = Pos;
             dashT = 0.16f;
@@ -645,9 +665,10 @@ namespace Diverse
             if (Bound > 0 && dst.magnitude > Bound && dst.magnitude > Pos.magnitude) return;
             Fx.I?.Afterimage(body, new Color(0.7f, 0.6f, 1f, 0.8f), 0.3f);
             Fx.I?.Burst(Pos + Vector2.up * 0.5f, Pal.ShadowEl, 10, 4, 0.3f);
+            var destination = path.Count > 0 ? (Vector2?)path[path.Count - 1] : null;
             Pos = dst;
             Fx.I?.Burst(Pos + Vector2.up * 0.5f, Pal.ShadowEl, 10, 4, 0.3f);
-            path.Clear();
+            if (destination.HasValue) SetDestination(destination.Value, false);
         }
 
         // ───────────────────────── Skills ─────────────────────────
@@ -660,12 +681,11 @@ namespace Diverse
                 if (Controls.Down(skillActs[i])) Fx.I?.Number(Pos + Vector2.up * 1.1f, "아직 익히지 않은 기술", new Color(0.7f, 0.65f, 0.8f), 0.7f, 0.6f);
                 return;
             }
-            if (s.cd > 0 || actionLock > 0.05f || dashT > 0) return;
-            path.Clear(); attackTarget = null;
+            if (s.cd > 0) return;
             s.cd = s.def.cooldown * (1 - Stats[StatId.CooldownReduction]);
             Vector2 dir = (AimPoint - (Pos + Vector2.up * 0.4f)).SafeNormal(Facing);
             Facing = dir;
-            actionLock = s.def.lockTime;
+            actionLock = Mathf.Max(actionLock, s.def.lockTime);
             Telemetry.Record("SkillCast");
             SkillDB.Cast(this, s.def, dir, AimPoint);
             GameEvents.Raise(new CombatEvent { type = Trig.SkillCast, source = this, position = Pos, direction = dir, tags = Weapon.tags + " SKILL" });
@@ -827,5 +847,36 @@ namespace Diverse
         public bool IsDashing => dashT > 0;
         public bool InCombo => comboIndex > 0 && comboTimer > 0;
         public bool InAction => actionLock > 0;
+
+        void RepathMovement()
+        {
+            if (path.Count > 0) SetDestination(path[path.Count - 1], false);
+        }
+
+        public void DebugSetLevel(int level)
+        {
+            int target = Mathf.Clamp(level, 1, 999);
+            while (Level < target) AdvanceLevel();
+            Level = target;
+            Xp = 0; XpToNext = DB.Progression.XpFor(Level);
+            int spent = 0; foreach (int value in Attrs) spent += value;
+            UnspentAttr = Mathf.Max(0, Level - 1 - spent);
+            LearnSkillsForLevel();
+            RecalcStats();
+        }
+
+        public void DebugDie()
+        {
+            if (!Alive) return;
+            hp = 0;
+            Die(new DamageInfo { source = this, tags = "DEVELOPER" });
+        }
+
+        public void DebugTeleport(Vector2 target)
+        {
+            StopMoving();
+            dashT = lungeT = actionLock = 0; queuedAttack = false;
+            Pos = WorldStreamer.I.NearestWalkable(target, radius, 12, HasRaft);
+        }
     }
 }
