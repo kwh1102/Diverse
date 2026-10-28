@@ -37,9 +37,11 @@ namespace Diverse.EditorTools
             return DesignStore.SaveImage(cv);
         }
 
-        public static DesignPack Pictured(Player p)
+        public static DesignPack Pictured(Player p) => Pictured(DesignStore.PackOfCostume(p.Costume.id));
+
+        public static DesignPack Pictured(DesignPack basePack)
         {
-            var pack = (DesignStore.PackOfCostume(p.Costume.id) ?? DesignPack.Default()).Clone();
+            var pack = (basePack ?? DesignPack.Default()).Clone();
             pack.hero.frames = Enumerable.Range(0, 6).Select(i => Blob(14, 24 + i, Pal.Hex("9b6bd9"))).ToArray();
             pack.hero.image = pack.hero.frames[0];
             if (!DesignCombat.IsDesigned(pack.weapon)) pack.weapon.moves = new List<string> { "slash", "wide" };

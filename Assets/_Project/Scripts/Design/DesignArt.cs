@@ -409,12 +409,26 @@ namespace Diverse
             System.Func<Color32, Color32> tint = null;
             if (elder) tint = c => { byte g = (byte)((c.r + c.g + c.b) / 3); return Pal.Lerp(c, new Color32(g, g, g, 255), 0.6f); };
             bool sheet = f.Length > 1, six = f.Length >= 6;
+            if (f.Length >= 8)
+            {
+                // 8-cell sheet: a real 4-frame walk cycle (contact, passing, contact, passing), then idle / wind-up / strike / hurt
+                switch (pose)
+                {
+                    case Pose.Run0: case Pose.Run1: case Pose.Run2: case Pose.Run3: Draw(cv, Pick(pose - Pose.Run0), 0, 0, tint); break;
+                    case Pose.Idle1: Draw(cv, Pick(4), 0, 1, tint); break;
+                    case Pose.AttackWind: Draw(cv, Pick(5), 0, 0, tint); break;
+                    case Pose.AttackHit: case Pose.Cast: Draw(cv, Pick(6), 0, 0, tint, 1); break;
+                    case Pose.Hurt: Draw(cv, Pick(7), 1, 0, hurt, -1); break;
+                    default: Draw(cv, Pick(4), 0, elder ? 1 : 0, tint); break;
+                }
+                return cv.ToSprite(new Vector2(cv.W / 2f, 1));
+            }
             switch (pose)
             {
                 case Pose.Run0: Draw(cv, Pick(1), sheet ? 0 : 2, 0, tint); break;
-                case Pose.Run1: Draw(cv, Pick(0), sheet ? 2 : 1, 0, tint); break;
+                case Pose.Run1: Draw(cv, Pick(0), sheet ? 0 : 1, 0, tint); break;   // the smooth walking bob is Actor.Bob
                 case Pose.Run2: Draw(cv, Pick(2), sheet ? 0 : 2, 0, tint); break;
-                case Pose.Run3: Draw(cv, Pick(0), sheet ? 2 : 1, 0, tint); break;
+                case Pose.Run3: Draw(cv, Pick(0), sheet ? 0 : 1, 0, tint); break;
                 case Pose.Idle1: Draw(cv, Pick(0), 0, 1, tint); break;
                 case Pose.AttackWind: Draw(cv, six ? Pick(3) : Pick(0), 0, six ? 0 : 2, tint); break;
                 case Pose.AttackHit:
@@ -426,19 +440,20 @@ namespace Diverse
         }
 
         /// <summary>
-        /// Enemy frames, as the hand-made enemies use them: 0 = standing, 1 = moving, 2 = attacking (wind-up), 3 = hit
+        /// Enemy frames, as the hand-made enemies use them: 0 = standing, 1 / 4 = the two walking steps, 2 = attacking (wind-up), 3 = hit
         /// (standing, flashed and knocked back). Missing poses fall back to a squashed / tinted standing picture.
         /// </summary>
-        public static Sprite EnemyFrame(Texture2D idle, Texture2D move, Texture2D attack, int frame)
+        public static Sprite EnemyFrame(Texture2D idle, Texture2D move, Texture2D attack, int frame, Texture2D move2 = null)
         {
             int W = idle.width, H = idle.height;
-            foreach (var t in new[] { move, attack }) if (t != null) { W = Mathf.Max(W, t.width); H = Mathf.Max(H, t.height); }
+            foreach (var t in new[] { move, attack, move2 }) if (t != null) { W = Mathf.Max(W, t.width); H = Mathf.Max(H, t.height); }
             var cv = new PixelCanvas(W + 2, H + 2);
             switch (frame)
             {
                 case 1: Draw(cv, move ?? idle, 0, move == null ? 1 : 0, null); break;
                 case 2: Draw(cv, attack ?? move ?? idle, 0, 0, attack == null ? c => Pal.Lerp(c, new Color32(255, 90, 90, 255), 0.3f) : null, 1); break;
                 case 3: Draw(cv, idle, 1, 1, c => Pal.Lerp(c, Pal.White, 0.4f), -1); break;
+                case 4: Draw(cv, move2 ?? idle, 0, 0, null); break;   // the other step
                 default: Draw(cv, idle, 0, 0, null); break;
             }
             return cv.ToSprite(new Vector2(cv.W / 2f, 1));
@@ -456,13 +471,34 @@ namespace Diverse
 
         public enum EffectKind { Swing, Impact, Trail, Muzzle }
 
+        static bool WeightOnLeft(Color32[] px, int w, int h)
+        {
+            double sum = 0, sx = 0;
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++) { int a = px[y * w + x].a; sum += a; sx += a * (x + 0.5); }
+            return sum > 0 && sx / sum < w * 0.47;
+        }
+
+        static Color32[] MirrorPixels(Color32[] px, int w, int h)
+        {
+            var o = new Color32[px.Length];
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++) o[y * w + x] = px[y * w + w - 1 - x];
+            return o;
+        }
+
         /// <summary>One generated effect picture → an animation (growing, fading; swings sweep in) whose width is widthPx.</summary>
-        public static Sprite[] Effect(Texture2D t, EffectKind kind, int widthPx, float stretchX = 1)
+        /// <param name="flip">The player's manual "이펙트 좌우 반전" on top of the automatic orientation.</param>
+        public static Sprite[] Effect(Texture2D t, EffectKind kind, int widthPx, float stretchX = 1, bool flip = false)
         {
             var keys = kind switch { EffectKind.Swing => SwingKeys, EffectKind.Impact => ImpactKeys, EffectKind.Trail => TrailKeys, _ => MuzzleKeys };
             int bw = Mathf.Max(4, Mathf.RoundToInt(widthPx * stretchX)), bh = Mathf.Max(4, Mathf.RoundToInt(widthPx * t.height / (float)t.width));
             int cw = Mathf.CeilToInt(bw * 1.25f) + 2, ch = Mathf.CeilToInt(bh * 1.25f) + 2;
             var src = t.GetPixels32();
+            // A swing must sweep on the side it is played toward and a muzzle flash must burst forward (the game rotates
+            // both to the attack direction): when most of the picture sits on the left, the image model drew it backwards
+            bool mirror = (kind == EffectKind.Swing || kind == EffectKind.Muzzle) && WeightOnLeft(src, t.width, t.height);
+            if (mirror != flip) src = MirrorPixels(src, t.width, t.height);
             var frames = new Sprite[keys.Length];
             for (int k = 0; k < keys.Length; k++)
             {

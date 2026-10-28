@@ -19,7 +19,10 @@ namespace Diverse
         [SerializeField] Button generate, undo, resetTab;
         [SerializeField] Text info, status;
         [Header("Preview")]
-        [SerializeField] Image hero, heroWeapon, projectile, slash, ground, tree;
+        [SerializeField] Image hero, heroWeapon, projectile, slash, ground, tree, decor2;
+        [SerializeField] Button flipWeapon;            // mirror the weapon picture when the image model drew it backwards
+        [SerializeField] Button fixEnemies;            // repair older enemy pictures (cut-off neighbours, poses facing the wrong way)
+        [SerializeField] Button flipEffects;           // turn the swing / muzzle effect around when it still plays backwards
         [SerializeField] Image[] enemies = new Image[3];
         [SerializeField] Text enemyNames;
         [Header("Chassis (new life only)")]
@@ -60,13 +63,15 @@ namespace Diverse
         InputField prevTyping;
 
         public bool IsOpen => gameObject.activeSelf;
+        static bool Custom => Session.Mode == GameMode.Custom;
+        string openedFor;   // the save slot the work in progress belongs to
 
         public void Init(MenuUI m)
         {
             menu = m;
             BindCommon();
             UIKit.Bind(startButton, StartLife);
-            UIKit.Bind(backButton, () => menu.Show(MenuUI.Screen.Title));
+            UIKit.Bind(backButton, () => menu.Show(MenuUI.Screen.Slots));   // the studio is opened from a world on the slot screen
         }
 
         public void InitInGame(Game g)
@@ -82,6 +87,28 @@ namespace Diverse
         {
             for (int i = 0; i < tabs.Length; i++) { int k = i; UIKit.Bind(tabs[i], () => SelectTab(k)); }
             UIKit.Bind(generate, Generate);
+            UIKit.Bind(fixEnemies, () =>
+            {
+                if (busy) return;
+                Push();
+                busy = true;
+                statusText = "적 그림 정리 중…";
+                StartCoroutine(DesignAi.RepairEnemies(working, s => { busy = false; statusText = s; Preview(); }));
+            });
+            UIKit.Bind(flipEffects, () =>
+            {
+                if (busy) return;
+                Push();
+                working.attack.flipEffects = !working.attack.flipEffects;
+                Preview();
+            });
+            UIKit.Bind(flipWeapon, () =>
+            {
+                if (busy || working.weapon.image == null) return;
+                Push();
+                working.weapon.image = DesignStore.Mirrored(working.weapon.image);
+                Preview();
+            });
             UIKit.Bind(undo, () => { if (history.Count > 0 && !busy) { working = history.Pop(); Preview(); } });
             UIKit.Bind(resetTab, () =>
             {
@@ -110,7 +137,8 @@ namespace Diverse
             // Menu: start from the world's look once per visit; coming back from the classic select keeps the work in progress
             if (!InGame)
             {
-                if (working == null) Begin(DesignStore.OfWorld(Session.World).Clone());
+                string slot = Session.Mode + "_" + Session.Slot;
+                if (working == null || openedFor != slot) { openedFor = slot; Begin(DesignStore.OfWorld(Session.World).Clone()); }
                 else Preview();
             }
             prevTyping = Controls.TypingField;
@@ -144,6 +172,9 @@ namespace Diverse
             busy = false;
             UIKit.Label(startButton, InGame ? "적용하고 닫기" : "삶을 시작하기");
             UIKit.Label(backButton, InGame ? "취소" : "뒤로");
+            // Normal mode: only the character and weapon tabs
+            for (int i = 2; i < tabs.Length; i++) UIKit.Show(tabs[i], Custom);
+            if (!Custom && tab >= 2) tab = 0;
             SelectTab(tab);
             Preview();
         }
@@ -179,7 +210,8 @@ namespace Diverse
         {
             if (busy) return;
             // Every tab whose prompt changed goes into ONE request; with nothing changed, the current tab is redone
-            var sections = Enumerable.Range(0, 4).Select(i => drafts[i].Length > 0 && drafts[i] != sent[i]).ToArray();
+            // Normal mode designs only the hero and the weapon (the world and enemies stay hand-made)
+            var sections = Enumerable.Range(0, 4).Select(i => drafts[i].Length > 0 && drafts[i] != sent[i] && (Custom || i < 2)).ToArray();
             if (!sections.Any(s => s))
             {
                 if (drafts[tab].Length == 0) { statusText = "<color=#ffb36b>먼저 원하는 모습을 적어 주세요.</color>"; return; }
@@ -247,10 +279,25 @@ namespace Diverse
 
         CostumeDef previewCostume;
 
+        readonly Sprite[] previewDecor = new Sprite[2];
+
         void Preview()
         {
             DesignRuntime.Activate(working);
             previewCostume = DesignStore.PreviewCostume(working);
+            // The world's own scenery: its first large and first medium object (hand-made tree / rock otherwise)
+            var w = working.world;
+            for (int k = 0; k < 2; k++)
+            {
+                previewDecor[k] = null;
+                if (!w.HasDecor) continue;
+                string want = k == 0 ? "large" : "medium";
+                for (int i = 0; i < 12 && previewDecor[k] == null; i++)
+                {
+                    string size = w.decorSizes != null && w.decorSizes[i] != null ? w.decorSizes[i] : DesignLayout.Sizes[Mathf.Min(3, i / 3)];
+                    if (size == want && w.decorImages[i] != null) previewDecor[k] = DesignStore.Sprite(w.decorImages[i], new Vector2(0.5f, 0.5f));
+                }
+            }
         }
 
         void Update()
@@ -260,17 +307,27 @@ namespace Diverse
             if (InGame && (game.State != GameState.Paused || game.Player == null)) { Close(); return; }
 
             float t = Time.unscaledTime;
-            var run = (Pose)((int)Pose.Run0 + (int)(t * 8) % 4);
-            UIKit.Sprite(hero, Art.Rabbit(previewCostume, (int)(t * 0.5f) % 2 == 0 ? run : Pose.Idle0));
+            // The hero loops through what it does in play: walk, breathe, wind up and strike
+            float phase = t % 4f;
+            var pose = phase < 2f ? (Pose)((int)Pose.Run0 + (int)(t * 8) % 4)
+                     : phase < 3f ? ((int)(t * 2.2f) % 2 == 0 ? Pose.Idle0 : Pose.Idle1)
+                     : phase < 3.3f ? Pose.AttackWind : phase < 3.7f ? Pose.AttackHit : Pose.Idle0;
+            UIKit.Sprite(hero, Art.Rabbit(previewCostume, pose));
             var kind = DesignRuntime.Chassis(working);
             UIKit.Sprite(heroWeapon, DesignRuntime.WeaponHidden ? null : Art.Weapon(kind));
+            UIKit.Show(flipWeapon, working.weapon.image != null && !DesignRuntime.WeaponHidden);
+            UIKit.Show(fixEnemies, Custom && working.enemies.art.Any(a => a.image != null));
+            UIKit.Show(flipEffects, working.attack.effectImages != null);
             var shot = working.attack.projectile;
             var b = DesignCombat.For(working) ?? DB.W(kind);
             bool shoots = shot.image != null || shot.shape != "builtin" || shot.pixels != null || b.combo.Any(s => s.projectile) || kind == WeaponKind.Dagger;
             UIKit.Sprite(projectile, shoots ? (kind == WeaponKind.Dagger && shot.image == null && shot.shape == "builtin" && shot.pixels == null ? Art.Knife() : Art.Bolt()) : null);
-            UIKit.Sprite(slash, Art.Slash(b.slashColor, b.slashCore, 14, 160, 1)[(int)(t * 6) % 3]);
+            // Only the fully drawn frames of the swing (the first ones are still sweeping in and look cut off)
+            var swing = Art.Slash(b.slashColor, b.slashCore, 14, 160, 1);
+            UIKit.Sprite(slash, swing[Mathf.Min(swing.Length - 1, swing.Length / 2 + (int)(t * 5) % Mathf.Max(1, swing.Length - swing.Length / 2))]);
             UIKit.Sprite(ground, DesignArt.GroundSample());
-            UIKit.Sprite(tree, Art.Tree(Biome.Meadow, 1));
+            UIKit.Sprite(tree, previewDecor[0] ?? Art.Tree(Biome.Meadow, 1));
+            UIKit.Sprite(decor2, previewDecor[1] ?? Art.Rock(Biome.Meadow, 0));
             for (int i = 0; i < enemies.Length && i < EnemySamples.Length; i++)
                 UIKit.Sprite(enemies[i], Art.Enemy(EnemySamples[i], (int)(t * 3 + i) % 2));
             UIKit.Set(enemyNames, string.Join(" · ", EnemySamples.Select(id => DesignRuntime.EnemyName(id, DB.Enemy(id).name))));

@@ -10,7 +10,29 @@ namespace Diverse
     {
         // ───────────────────────────── 지면 ─────────────────────────────
 
+        // GroundColors runs for every tile and every border pixel of every chunk bake (and the minimap): parsing hex strings
+        // there made thousands of short-lived strings per chunk, and the garbage collections showed up as hitches.
+        // The colours are resolved once per look (DesignRuntime.Version) into a table.
+        static readonly Color32[] groundTable = new Color32[3 * 16];
+        static int groundTableFor = -1;
+        static readonly Color32 ShoreEdge = Pal.Hex("3b2f3a"), ShoreDeep = Pal.Hex("2f5fa8"), ShoreFoam = Pal.Hex("bfe6ff");
+
         public static void GroundColors(Ground g, out Color32 a, out Color32 b, out Color32 c)
+        {
+            if (groundTableFor != DesignRuntime.Version)
+            {
+                groundTableFor = DesignRuntime.Version;
+                foreach (Ground k in System.Enum.GetValues(typeof(Ground)))
+                {
+                    ResolveGroundColors(k, out var ka, out var kb, out var kc);
+                    groundTable[(int)k * 3] = ka; groundTable[(int)k * 3 + 1] = kb; groundTable[(int)k * 3 + 2] = kc;
+                }
+            }
+            int i = (int)g * 3;
+            a = groundTable[i]; b = groundTable[i + 1]; c = groundTable[i + 2];
+        }
+
+        static void ResolveGroundColors(Ground g, out Color32 a, out Color32 b, out Color32 c)
         {
             switch (g)
             {
@@ -69,8 +91,8 @@ namespace Diverse
                                 bool landL = l != Ground.Water && l != Ground.DeepWater;
                                 bool landR = r != Ground.Water && r != Ground.DeepWater;
                                 bool landD = d != Ground.Water && d != Ground.DeepWater;
-                                if (landUp && y >= T - 3) col = y == T - 1 ? Pal.Hex("3b2f3a") : Pal.Hex("2f5fa8");
-                                else if ((landL && x == 0) || (landR && x == T - 1) || (landD && y == 0)) col = Pal.Hex("bfe6ff");
+                                if (landUp && y >= T - 3) col = y == T - 1 ? ShoreEdge : ShoreDeep;
+                                else if ((landL && x == 0) || (landR && x == T - 1) || (landD && y == 0)) col = ShoreFoam;
                                 else if (((gx / 3 + gy * 2) % 13 == 0) && n > 0.5f) col = c;
                             }
 

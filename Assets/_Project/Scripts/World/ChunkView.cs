@@ -28,7 +28,7 @@ namespace Diverse
 
             // 1) 지면
             var tiles = w.GroundOf(k);
-            groundTex = Art.BakeGround(tiles, N, k.x * N, k.y * N, w.Gen.seed);
+            groundTex = w.TakeBakedGround(k) ?? Art.BakeGround(tiles, N, k.x * N, k.y * N, w.Gen.seed);
             ground.sprite = Sprite.Create(groundTex, new Rect(0, 0, N * Art.PPU, N * Art.PPU), Vector2.zero, Art.PPU, 0, SpriteMeshType.FullRect);
             ground.transform.position = origin;
 
@@ -104,7 +104,7 @@ namespace Diverse
             go.transform.SetParent(transform, false);
             go.transform.position = new Vector3(Mathf.Round(p.x * Art.PPU) / Art.PPU, Mathf.Round(p.y * Art.PPU) / Art.PPU, 0);
             var sr = Art.MakeRenderer(go, s, flat ? -31000 : Art.SortY(p.y));
-            if (!flat && name == "decor" && DesignRuntime.Active.world.HasDecor) sway.Add(go.transform);
+            if (!flat && name == "decor" && DesignLayout.Active) sway.Add(go.transform);
             if (block && bw > 0) solids.Add(w.AddSolid(shape, p + new Vector2(0, bh * 0.5f), bw, bh));
             if (block)
             {
@@ -136,7 +136,8 @@ namespace Diverse
             foreach (var e in spawned) if (e != null && e.Alive) e.Despawn();
             spawned.Clear();
             foreach (var i in interactables) if (i != null) Interactable.All.Remove(i);
-            if (groundTex != null) Destroy(groundTex);
+            w.KeepBakedGround(key, groundTex);   // re-used if the player walks back here
+            groundTex = null;
         }
     }
 }

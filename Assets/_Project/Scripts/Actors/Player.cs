@@ -72,6 +72,15 @@ namespace Diverse
         [SerializeField] SpriteRenderer weaponSr, shieldSr, raftSr;
         [SerializeField] Transform weaponPivot;
         float animT;
+        float moveRamp, walkStride;   // eased walking (start-up ramp, stride pulse)
+        bool wasMoving;
+        float swingGhostT;            // afterimages of the weapon while it swings (a smear that makes fast swings read)
+
+        // Smooth motion between animation frames (Actor.Render): lean into the run, a step-timed bob, a soft breath when idle
+        protected override float LeanTarget => !Alive ? 0 : dashT > 0 ? (Facing.x < 0 ? 8f : -8f)
+            : weaponSwingT < weaponSwingDur ? (Facing.x < 0 ? 7f : -7f)      // leaning into the attack
+            : Moving ? (Facing.x < 0 ? 3.5f : -3.5f) : 0;
+        protected override float Bob => !Alive ? 0 : Moving ? Mathf.Abs(Mathf.Sin(walkStride)) * 0.05f : Mathf.Sin(animT * 2.2f) * 0.012f;
         float stepDustT;
 
         public static Player Spawn(CostumeDef costume, WeaponDef weapon, Vector2 pos)
@@ -515,7 +524,12 @@ namespace Diverse
             {
                 Vector2 next = path[0];
                 Vector2 to = next - Pos;
-                float step = MoveSpeed * dt;
+                // Eased walk: ~0.14 s to reach full speed, slowing into the last point, a light stride pulse (average = MoveSpeed)
+                moveRamp = Mathf.MoveTowards(moveRamp, 1f, dt / 0.14f);
+                float ease = Mathf.SmoothStep(0.35f, 1f, moveRamp);
+                if (path.Count == 1) ease *= Mathf.Lerp(0.55f, 1f, Mathf.Clamp01(to.magnitude / 0.6f));
+                walkStride += MoveSpeed * dt * 2.4f;
+                float step = MoveSpeed * dt * ease * (0.9f + 0.2f * Mathf.Pow(Mathf.Sin(walkStride), 2));
                 Abilities?.Moved(Mathf.Min(step, to.magnitude));
                 if (to.magnitude <= step + 0.02f)
                 {
@@ -534,6 +548,7 @@ namespace Diverse
                 stepDustT -= dt;
                 if (stepDustT <= 0) { stepDustT = 0.28f; Fx.I?.Burst(Pos, Pal.Hex("e8dcc8"), 2, 1.2f, 0.3f, 0, 1, 60, (-Facing).Angle()); }
             }
+            else moveRamp = 0;   // standing: the next walk starts slow again
         }
 
         // ───────────────────────── Basic attack ─────────────────────────
@@ -806,11 +821,16 @@ namespace Diverse
             // A drawn hero has wind-up / strike poses (a punch or kick when bare-handed)
             else if (Costume.frames != null && weaponSwingT < weaponSwingDur) pose = weaponSwingT < weaponSwingDur * 0.45f ? Pose.AttackWind : Pose.AttackHit;
             else if (dashT > 0) pose = Pose.Run1;
-            else if (Moving) pose = (Pose)((int)Pose.Run0 + (int)(animT * 10) % 4);
+            else if (Moving) pose = (Pose)((int)Pose.Run0 + (int)(walkStride / (Mathf.PI * 0.5f)) % 4);   // 4 frames per two steps, in step with the stride
             else pose = (int)(animT * 2.2f) % 2 == 0 ? Pose.Idle0 : Pose.Idle1;
             body.sprite = Art.Rabbit(Costume, pose);
             UpdateRaft();
             bool left = Facing.x < -0.05f;
+            // Turning around squashes the body for a beat; starting to walk stretches it, stopping settles it
+            if (Mathf.Abs(Facing.x) > 0.05f && body.flipX != left && Alive) squash = Mathf.Max(squash, 0.28f);
+            if (Moving && !wasMoving) squash = Mathf.Min(squash, -0.18f);
+            else if (!Moving && wasMoving) squash = Mathf.Max(squash, 0.22f);
+            wasMoving = Moving;
             if (Mathf.Abs(Facing.x) > 0.05f) body.flipX = left;
 
             // Weapon: swings during attacks, otherwise held at the side
@@ -823,6 +843,14 @@ namespace Diverse
                     weaponSwingT += dt;
                     float k = MathX.EaseOutCubic(weaponSwingT / weaponSwingDur);
                     ang = Mathf.Lerp(weaponFrom, weaponTo, k);
+                    // Smear: fading copies of the weapon along the swing, tinted with the swing colour
+                    swingGhostT -= dt;
+                    if (swingGhostT <= 0 && weaponSr.enabled && Mathf.Abs(weaponTo - weaponFrom) > 1f)
+                    {
+                        swingGhostT = 0.016f;
+                        Color c = Weapon.slashColor; c.a = 0.55f;
+                        Fx.I?.Afterimage(weaponSr, c, 0.12f);
+                    }
                 }
                 else
                 {

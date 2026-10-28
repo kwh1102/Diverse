@@ -54,6 +54,8 @@ namespace Diverse
             cache.Clear();
             anims.Clear();
             overrides.Clear();
+            enemyFrames.Clear();
+            rabbitPoses.Clear();
         }
 
         public static Sprite[] GetAnim(string key, System.Func<Sprite[]> make)
@@ -81,9 +83,16 @@ namespace Diverse
 
         // ───────────────────────────── 캐릭터 (토끼) ─────────────────────────────
 
-        public static Sprite Rabbit(CostumeDef c, Pose pose) =>
-            Get($"rabbit_{c.id}_{pose}", () => c.frames != null ? DesignArt.HeroPose(c.frames, pose, false)
+        // Called every frame for the hero: a per-costume pose array so no lookup string is built per call
+        static readonly Dictionary<CostumeDef, Sprite[]> rabbitPoses = new Dictionary<CostumeDef, Sprite[]>();
+
+        public static Sprite Rabbit(CostumeDef c, Pose pose)
+        {
+            if (!rabbitPoses.TryGetValue(c, out var p)) rabbitPoses[c] = p = new Sprite[System.Enum.GetValues(typeof(Pose)).Length];
+            int i = (int)pose;
+            return p[i] != null ? p[i] : p[i] = Get($"rabbit_{c.id}_{pose}", () => c.frames != null ? DesignArt.HeroPose(c.frames, pose, false)
                 : DrawRabbit(c.fur, c.furShade, c.outfit, c.outfitShade, c.accent, c.style, pose, false, c.look));
+        }
 
         /// <summary>노쇠한 과거 영웅: 털이 바래고 지팡이를 짚는다.</summary>
         public static Sprite ElderRabbit(CostumeDef c) =>

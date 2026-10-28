@@ -18,7 +18,10 @@ namespace Diverse
         static readonly Dictionary<string, SkillDef> skillNames = new Dictionary<string, SkillDef>();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() { Active = DesignPack.Default(); activeJson = null; skillNames.Clear(); effects.Clear(); }
+        static void ResetStatics() { Active = DesignPack.Default(); activeJson = null; skillNames.Clear(); effects.Clear(); activeWeapon = null; tilePixels = null; }
+
+        /// <summary>Bumped by every Activate: caches built from the active look (scenery lists…) compare against it.</summary>
+        public static int Version { get; private set; }
 
         /// <summary>The WeaponKind this pack plays as: its designed weapon's internal kind, or the classic fallback.</summary>
         public static WeaponKind Chassis(DesignPack p)
@@ -32,6 +35,13 @@ namespace Diverse
         public static bool Activate(DesignPack p)
         {
             p ??= DesignPack.Default();
+            // Normal mode keeps the hand-made world and enemies whatever a pack says: only the hero and weapon are designed
+            if (Session.Mode == GameMode.Normal && (!p.world.IsDefault || !p.enemies.Identity || p.enemies.art.Count > 0 || p.enemies.names.Count > 0))
+            {
+                p = p.Clone();
+                p.world = new WorldLook();
+                p.enemies = new EnemyLook();
+            }
             var json = JsonUtility.ToJson(p);
             if (json == activeJson) return false;
             Active = p;
@@ -40,6 +50,9 @@ namespace Diverse
             MapCanvas.ClearCache();      // the map paints with the ground colours of the look
             skillNames.Clear();
             effects.Clear();
+            activeWeapon = DesignCombat.For(p);
+            CacheTiles(p.world);
+            Version++;
 
             // Generated weapon pictures point right with the grip at the left edge
             var wtex = DesignStore.Image(p.weapon.image);
@@ -145,7 +158,7 @@ namespace Diverse
                 var id = DB.Enemies.Values.FirstOrDefault(d => d.sprite == sprite)?.id ?? sprite;
                 var art = e.art.FirstOrDefault(a => a.id == id);
                 var idle = DesignStore.Image(art?.image);
-                if (idle != null) return DesignArt.EnemyFrame(idle, DesignStore.Image(art.image2), DesignStore.Image(art.image3), frame);
+                if (idle != null) return DesignArt.EnemyFrame(idle, DesignStore.Image(art.image2), DesignStore.Image(art.image3), frame, DesignStore.Image(art.image4));
                 return e.Identity ? s : DesignArt.Recolor(s, c => DesignArt.Shift(c, e));
             }
             var w = Active.world;
@@ -226,29 +239,55 @@ namespace Diverse
         public static bool GroundTexel(Ground g, int gx, int gy, out Color32 col)
         {
             col = default;
-            var w = Active.world;
             int slot = TileSlot(g);
-            if (!w.HasTiles || slot < 0) return false;
-            float patch = Noise.Perlin(gx / 16f, gy / 16f, 4711, 0.09f) + (Hash.F(gx / 4, gy / 4, 4712) - 0.5f) * 0.12f;
-            var tex = DesignStore.Image(w.tileImages[slot * 2 + (patch > 0.5f ? 1 : 0)]);
-            if (tex == null) return false;
-            int n = tex.width;
+            if (tilePixels == null || slot < 0) return false;
+            // This runs for every ground pixel of every chunk (65k per chunk): cached pixel arrays, and the variant patch
+            // noise once per 4x4 block (consecutive pixels of a row share it)
+            int bx = gx >> 2, by = gy >> 2;
+            if (bx != patchX || by != patchY)
+            {
+                patchX = bx; patchY = by;
+                patchB = Noise.Perlin(bx / 4f, by / 4f, 4711, 0.09f) + (Hash.F(bx, by, 4712) - 0.5f) * 0.12f > 0.5f;
+            }
+            var px = tilePixels[slot * 2 + (patchB ? 1 : 0)];
+            if (px == null) return false;
+            int n = tileSize;
             int x = (int)((uint)gx % (uint)(n * 2)), y = (int)((uint)gy % (uint)(n * 2));
             if (x >= n) x = n * 2 - 1 - x;
             if (y >= n) y = n * 2 - 1 - y;
-            col = tex.GetPixel(x, y);
+            col = px[y * n + x];
             if (g == Diverse.Ground.DarkGrass || g == Diverse.Ground.DeepWater || g == Diverse.Ground.Swamp) col = Pal.Mul(col, 0.82f);
             return true;
+        }
+
+        // Ground texture pixels of the active look (filled by Activate; null = no generated ground)
+        static Color32[][] tilePixels;
+        static int tileSize;
+        static int patchX = int.MinValue, patchY;
+        static bool patchB;
+
+        static void CacheTiles(WorldLook w)
+        {
+            tilePixels = null;
+            patchX = int.MinValue;
+            if (!w.HasTiles) return;
+            var tiles = w.tileImages.Select(DesignStore.Image).ToArray();
+            if (tiles.Any(t => t == null) || tiles.Any(t => t.width != tiles[0].width || t.height != tiles[0].width)) return;
+            tileSize = tiles[0].width;
+            tilePixels = tiles.Select(t => t.GetPixels32()).ToArray();
         }
 
         // ───────────────────────── Generated effects (called by Art / Player / Projectile) ─────────────────────────
 
         static readonly Dictionary<string, Sprite[]> effects = new Dictionary<string, Sprite[]>();
 
+        /// <summary>The active look's designed weapon (built once per Activate, not per hit).</summary>
+        static WeaponDef activeWeapon;
+
         /// <summary>Is this colour the designed weapon's? (its swings, hits and skills use the generated effects)</summary>
         static bool Mine(Color32 col)
         {
-            var w = DesignCombat.For(Active);
+            var w = activeWeapon;
             return w != null && w.slashColor.r == col.r && w.slashColor.g == col.g && w.slashColor.b == col.b;
         }
 
@@ -259,8 +298,9 @@ namespace Diverse
             var tex = DesignStore.Image(ids[slot]);
             if (tex == null) return null;
             widthPx = Mathf.Clamp(widthPx, 6, 96);
-            var key = $"{ids[slot]}_{widthPx}_{stretch}";
-            if (!effects.TryGetValue(key, out var f)) effects[key] = f = DesignArt.Effect(tex, kind, widthPx, stretch);
+            bool flip = Active.attack.flipEffects;
+            var key = $"{ids[slot]}_{widthPx}_{stretch}_{flip}";
+            if (!effects.TryGetValue(key, out var f)) effects[key] = f = DesignArt.Effect(tex, kind, widthPx, stretch, flip);
             return f;
         }
 

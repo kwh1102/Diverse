@@ -118,7 +118,9 @@ namespace Diverse.EditorTools
                 Click(Find<TitleView>(), "Settings"); yield return F(3); Shot("02_settings");
                 Click(Find<SettingsView>(), "KeysTab"); yield return F(3); Shot("03_keys");
                 Click(Find<SettingsView>(), "Back"); yield return F(2);
-                Click(Find<TitleView>(), "Start"); yield return F(3); Shot("04_design");
+                Click(Find<TitleView>(), "ChangeSlot"); yield return F(3); Shot("00_slots");
+                Click(Find<SaveSelectView>(), "CustomTab"); yield return F(1);
+                Click(Find<SaveSelectView>().transform.Find("Panel/Slots/Slot 0"), "Play"); yield return F(3); Shot("04_design");
                 var studio = Find<DesignStudioView>();
                 var promptField = studio.GetComponentInChildren<InputField>();
                 string[] prompts = { "민트색 털에 남색 망토, 마법사 모자를 쓴 토끼", "이쑤시개를 입에 물고 있다가 퉤 하고 발사, 공격력 10배", "가을 단풍 숲", "모든 적이 과자로 만들어진 세계" };
@@ -132,6 +134,13 @@ namespace Diverse.EditorTools
                     g.Ui.Toast("우클릭 이동/공격 · 좌클릭 공격 · QWER 스킬 · Space 대시");
                     g.Player.UnspentAttr = 2;
                     yield return F(3); Shot("05_hud");
+                    // Damage numbers: a plain hit, a crit, an elemental hit and a hit taken, mid-flight
+                    var at = g.Player.Pos + new Vector2(2.5f, 0.6f);
+                    Fx.I.Number(at, "24", Color.white, 1f, 0.8f, 1);
+                    Fx.I.Number(at + new Vector2(1.6f, 0), "87!", new Color(1f, 0.82f, 0.25f), 1.45f, 0.8f, 1, true);
+                    Fx.I.Number(at + new Vector2(-4.5f, 0), "31", Color.Lerp(Color.white, (Color)Combat.ElementColor(Element.Fire), 0.7f), 1.1f, 0.8f, -1);
+                    Fx.I.Number(g.Player.Pos + new Vector2(0, 0.6f), "12", new Color(1f, 0.4f, 0.45f), 1f, 0.8f, -1);
+                    yield return F(9); Shot("05d_damage_numbers");
                     var minimapEnemy = Enemy.Spawn(DB.ScaledEnemy("fox", 0), g.Player.Pos + Vector2.right * 8, null);
                     yield return F(12); Shot("05b_minimap_enemy");
                     Object.Destroy(minimapEnemy.gameObject);

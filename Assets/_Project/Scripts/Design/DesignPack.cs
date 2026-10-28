@@ -65,7 +65,7 @@ namespace Diverse
         public string species;            // Korean, e.g. "문어"
         public string imagePrompt;        // English description for the image model
         public string image;              // DesignStore image id: the idle pose (pixelized PNG)
-        public string[] frames;           // 6 poses from one sheet: idle, step A, step B, attack wind-up, attack strike, hurt (older packs: 4)
+        public string[] frames;           // 8 poses from one sheet: 4 walk frames, idle, attack wind-up, attack strike, hurt (older packs: 4 or 6)
         public string perkConcept;        // English: what the starting passive should express
         public AbilityRecord perk;        // generated starting passive (filled on the first life)
         public string basePerk = "white"; // local fallback only: which rabbit colors to start from
@@ -124,6 +124,7 @@ namespace Diverse
         public string slash, slashCore, trail;     // hex; empty = the chassis' colors
         public string[] effectPrompts;             // English: swing, impact, trail, muzzle (one 2x2 effect sheet)
         public string[] effectImages;              // DesignStore image ids in the same order
+        public bool flipEffects;                   // player's manual left/right flip of the swing and muzzle effects
     }
 
     /// <summary>Whole-palette transform (world vegetation/ground, enemies).</summary>
@@ -171,7 +172,7 @@ namespace Diverse
 
     /// <summary>A redrawn enemy: same behaviour and hitbox, new picture (drawn at the original sprite height).</summary>
     [Serializable]
-    public class EnemyArt { public string id, imagePrompt, image, image2, image3; }   // idle, moving, attacking
+    public class EnemyArt { public string id, imagePrompt, image, image2, image3, image4; }   // standing, step A, attacking, step B
 
     /// <summary>A kind of enemy in the theme; the engine turns families into one design per enemy id by role.</summary>
     [Serializable]

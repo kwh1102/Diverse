@@ -43,6 +43,213 @@ namespace Diverse.EditorTools
             Debug.Log("[Diverse] design studio installed");
         }
 
+        /// <summary>
+        /// Re-lay the studio's preview box into a tidy grid (character | weapon · shot · effect / ground · two scenery objects /
+        /// enemies). Patches the existing prefabs in place: positions only, plus the cells added since (labels, second scenery).
+        /// </summary>
+        [MenuItem("Diverse/디자인 스튜디오 미리보기 정리 (기존 프리팹에)")]
+        public static void UpdateDesignPreviewLayout()
+        {
+            font = Resources.Load<Font>("Fonts/Galmuri11");
+            fontBold = Resources.Load<Font>("Fonts/Galmuri11-Bold");
+            BuildFrames();
+            foreach (var path in new[] { UIPrefabDir + "/MenuCanvas.prefab", UIPrefabDir + "/GameCanvas.prefab" })
+                Patch(path, root =>
+                {
+                    var v = root.GetComponentInChildren<DesignStudioView>(true);
+                    var pv = v != null ? v.transform.Find("Panel/Preview") : null;
+                    if (pv == null) return false;
+                    LayoutPreview(pv, v);
+                    return true;
+                });
+            AssetDatabase.SaveAssets();
+            Debug.Log("[Diverse] design preview layout updated");
+        }
+
+        static void LayoutPreview(Transform pv, DesignStudioView v)
+        {
+            void Place(string name, float x, float y, float w, float h)
+            {
+                var rt = pv.Find(name) as RectTransform;
+                if (rt == null) return;
+                rt.anchorMin = rt.anchorMax = rt.pivot = TL;
+                rt.anchoredPosition = new Vector2(x, -y);
+                rt.sizeDelta = new Vector2(w, h);
+            }
+            Text Heading(string name, string text)
+            {
+                var t = pv.Find(name)?.GetComponent<Text>() ?? Label(pv, name, "", TL, Vector2.zero, new Vector2(10, 10), 8);
+                t.text = $"<color=#8c7aa8>{text}</color>";
+                return t;
+            }
+            Heading("PreviewHeading", "캐릭터");
+            Heading("AttackHeading", "무기 · 발사 · 효과");
+            Heading("WorldHeading", "세계");
+            Heading("EnemyHeading", "적");
+            if (pv.Find("Decor2") == null)
+            {
+                var d2 = Pic(pv, "Decor2", TL, Vector2.zero, new Vector2(10, 10), null);
+                d2.enabled = false;
+                Wire(v, "decor2", d2);
+            }
+            Place("PreviewHeading", 6, 4, 96, 12);
+            Place("Rabbit", 6, 16, 96, 96);
+            Place("AttackHeading", 110, 4, 106, 12);
+            Place("Weapon", 110, 18, 104, 30);
+            if (pv.Find("FlipWeapon") == null) Wire(v, "flipWeapon", Btn(pv, "FlipWeapon", "무기 좌우 반전", TL, Vector2.zero, new Vector2(10, 10), 8));
+            Place("FlipWeapon", 110, 49, 104, 13);
+            Place("Projectile", 110, 68, 48, 28);
+            Place("Slash", 162, 60, 52, 40);
+            if (pv.Find("FlipEffects") == null) Wire(v, "flipEffects", Btn(pv, "FlipEffects", "효과 반전", TL, Vector2.zero, new Vector2(10, 10), 8));
+            Place("FlipEffects", 162, 101, 52, 13);
+            Place("WorldHeading", 6, 116, 96, 12);
+            Place("Ground", 6, 130, 104, 58);
+            Place("Tree", 114, 118, 48, 72);
+            Place("Decor2", 166, 132, 46, 58);
+            if (pv.Find("FixEnemies") == null) Wire(v, "fixEnemies", Btn(pv, "FixEnemies", "적 방향·잘림 고치기", TL, Vector2.zero, new Vector2(10, 10), 8));
+            Place("EnemyHeading", 6, 194, 96, 12);
+            Place("FixEnemies", 110, 193, 104, 13);
+            for (int i = 0; i < 3; i++) Place("Enemy " + i, 14 + i * 70, 206, 40, 34);
+            Place("EnemyNames", 4, 242, 212, 12);
+        }
+
+        /// <summary>Mode + save slot screen (SaveSelectView) and the title's "모드·세계 선택" button, added to the existing MenuCanvas.</summary>
+        [MenuItem("Diverse/모드·세이브 슬롯 화면 추가 (기존 프리팹에)")]
+        public static void InstallSaveSlots()
+        {
+            font = Resources.Load<Font>("Fonts/Galmuri11");
+            fontBold = Resources.Load<Font>("Fonts/Galmuri11-Bold");
+            BuildFrames();
+            Patch(UIPrefabDir + "/MenuCanvas.prefab", root =>
+            {
+                var menu = root.GetComponent<MenuUI>();
+                if (menu == null || root.GetComponentInChildren<SaveSelectView>(true) != null) return false;
+                var v = BuildSaveSelect(root.transform);
+                UIKit.Show(v, false);
+                Wire(menu, "slots", v);
+                AddSlotButton(root.GetComponentInChildren<TitleView>(true));
+                return true;
+            });
+            AssetDatabase.SaveAssets();
+            Debug.Log("[Diverse] save slot screen installed");
+        }
+
+        static void AddSlotButton(TitleView title)
+        {
+            var col = title != null ? title.transform.Find("Buttons") as RectTransform : null;
+            if (col == null || col.Find("ChangeSlot") != null) return;
+            var b = Btn(col, "ChangeSlot", "모드·세계 선택", TL, Vector2.zero, new Vector2(140, 22));
+            var quit = col.Find("Quit");
+            if (quit != null) b.transform.SetSiblingIndex(quit.GetSiblingIndex());
+            col.sizeDelta = new Vector2(col.sizeDelta.x, 190);
+            Wire(title, "slotButton", b);
+        }
+
+        static SaveSelectView BuildSaveSelect(Transform parent)
+        {
+            const float W = 420, H = 270;
+            var shade = Stretch(parent, "SaveSelect");
+            Box(shade, whiteSpr, new Color(0.05f, 0.03f, 0.08f, 0.45f)).raycastTarget = true;
+            var v = shade.gameObject.AddComponent<SaveSelectView>();
+            var a = Panel(shade, "Panel", W, H);
+            Label(a, "Heading", "어떤 세계에서 살아갈까요?", TL, new Vector2(0, 8), new Vector2(W, 20), 17, TextAnchor.MiddleCenter, Pal.Hex("fff2d6"), bold: true);
+            var normal = Btn(a, "NormalTab", "일반 모드", TL, new Vector2(20, 36), new Vector2(186, 22));
+            var custom = Btn(a, "CustomTab", "커스텀 모드", TL, new Vector2(214, 36), new Vector2(186, 22));
+            var desc = Label(a, "ModeDesc", "", TL, new Vector2(20, 64), new Vector2(380, 28), 9, color: Pal.Hex("c9bcd8"));
+
+            var list = Node(a, "Slots", TL, new Vector2(20, 96), new Vector2(380, 140));
+            var vl = list.gameObject.AddComponent<VerticalLayoutGroup>();
+            vl.spacing = 6; vl.childControlHeight = false; vl.childControlWidth = true; vl.childForceExpandHeight = false;
+            var slot = Btn(list, "Slot", "세계 1", TL, Vector2.zero, new Vector2(380, 40), 10);
+            var txt = slot.transform.Find("Text") as RectTransform;
+            txt.offsetMin = new Vector2(10, 2); txt.offsetMax = new Vector2(-72, -2);
+            var t = txt.GetComponent<Text>();
+            t.alignment = TextAnchor.MiddleLeft; t.horizontalOverflow = HorizontalWrapMode.Wrap;
+            Btn(slot.transform, "Delete", "삭제", new Vector2(1, 0.5f), new Vector2(-8, 0), new Vector2(58, 22), 9).GetComponent<RectTransform>().pivot = new Vector2(1, 0.5f);
+
+            Btn(a, "Back", "뒤로", TL, new Vector2(20, H - 32), new Vector2(80, 22));
+            Wire(v, "normalTab", normal); Wire(v, "customTab", custom); Wire(v, "modeDesc", desc);
+            Wire(v, "slotTemplate", slot);
+            LayoutSaveSelect(v);
+            return v;
+        }
+
+        /// <summary>
+        /// Title keeps only 모드·세계 선택 / 설정 / 종료; each world row on the slot screen gets 이어하기·새 삶 / 삶 끝내기 / 삭제
+        /// and the slot screen a 뒤로 button. Patches the existing MenuCanvas in place.
+        /// </summary>
+        [MenuItem("Diverse/메인 메뉴 정리 (기존 프리팹에)")]
+        public static void UpdateMenuLayout()
+        {
+            font = Resources.Load<Font>("Fonts/Galmuri11");
+            fontBold = Resources.Load<Font>("Fonts/Galmuri11-Bold");
+            BuildFrames();
+            Patch(UIPrefabDir + "/MenuCanvas.prefab", root =>
+            {
+                var title = root.GetComponentInChildren<TitleView>(true);
+                var col = title != null ? title.transform.Find("Buttons") as RectTransform : null;
+                if (col != null)
+                {
+                    foreach (var n in new[] { "Continue", "Abandon", "Start", "ResetWorld" })
+                    {
+                        var b = col.Find(n);
+                        if (b != null) Object.DestroyImmediate(b.gameObject);
+                    }
+                    var slotB = col.Find("ChangeSlot");
+                    if (slotB != null) { slotB.SetAsFirstSibling(); Wire(title, "slotButton", slotB.GetComponent<Button>()); }
+                    col.sizeDelta = new Vector2(col.sizeDelta.x, 90);
+                }
+                var v = root.GetComponentInChildren<SaveSelectView>(true);
+                if (v != null) LayoutSaveSelect(v);
+                return true;
+            });
+            AssetDatabase.SaveAssets();
+            Debug.Log("[Diverse] main menu layout updated");
+        }
+
+        /// <summary>Slot screen: a wider panel, per-row Play / Abandon / Delete buttons, and 뒤로 (adds what is missing).</summary>
+        static void LayoutSaveSelect(SaveSelectView v)
+        {
+            const float W = 480, H = 290;
+            var a = v.transform.Find("Panel") as RectTransform;
+            a.sizeDelta = new Vector2(W, H);
+            void Place(Transform parent, string name, float x, float y, float w, float h)
+            {
+                var rt = parent.Find(name) as RectTransform;
+                if (rt == null) return;
+                rt.anchorMin = rt.anchorMax = rt.pivot = TL;
+                rt.anchoredPosition = new Vector2(x, -y);
+                rt.sizeDelta = new Vector2(w, h);
+            }
+            Place(a, "Heading", 0, 8, W, 20);
+            Place(a, "NormalTab", 20, 36, 216, 22);
+            Place(a, "CustomTab", 244, 36, 216, 22);
+            Place(a, "ModeDesc", 20, 64, 440, 28);
+            Place(a, "Slots", 20, 96, 440, 156);
+
+            var quit = a.Find("Quit");
+            if (quit != null) { quit.name = "Back"; UIKit.Label(quit.GetComponent<Button>(), "뒤로"); }
+            if (a.Find("Back") == null) Btn(a, "Back", "뒤로", TL, Vector2.zero, new Vector2(80, 22));
+            Place(a, "Back", 20, H - 32, 80, 22);
+            Wire(v, "backButton", a.Find("Back").GetComponent<Button>());
+
+            var slot = a.Find("Slots/Slot") as RectTransform;
+            slot.sizeDelta = new Vector2(440, 46);
+            var txt = slot.Find("Text") as RectTransform;
+            txt.offsetMin = new Vector2(10, 2); txt.offsetMax = new Vector2(-248, -2);
+            // Right-aligned row buttons: [Play][Abandon][Delete]
+            (string name, string caption, float w)[] row = { ("Delete", "삭제", 50), ("Abandon", "삶 끝내기", 76), ("Play", "이어하기", 104) };
+            float right = 8;
+            foreach (var (name, caption, w) in row)
+            {
+                var b = slot.Find(name) as RectTransform ?? Btn(slot, name, caption, new Vector2(1, 0.5f), Vector2.zero, new Vector2(w, 24), 9).GetComponent<RectTransform>();
+                b.anchorMin = b.anchorMax = b.pivot = new Vector2(1, 0.5f);
+                b.anchoredPosition = new Vector2(-right, 0);
+                b.sizeDelta = new Vector2(w, 24);
+                right += w + 4;
+            }
+        }
+
         static void Patch(string path, System.Func<GameObject, bool> edit)
         {
             var root = PrefabUtility.LoadPrefabContents(path);
@@ -130,6 +337,7 @@ namespace Diverse.EditorTools
             Wire(v, "ground", ground); Wire(v, "tree", tree);
             WireArray(v, "enemies", enemies);
             Wire(v, "enemyNames", enemyNames);
+            LayoutPreview(pv, v);
             Wire(v, "chassisRow", row.gameObject);
             Wire(v, "weaponBase", wb); Wire(v, "perkBase", pb);
             Wire(v, "weaponBaseButton", wbb); Wire(v, "perkBaseButton", pbb);

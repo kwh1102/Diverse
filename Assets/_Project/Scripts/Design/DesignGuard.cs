@@ -197,7 +197,7 @@ namespace Diverse
             wl.ambientColor = Hex(wl.ambientColor);
             p.attack.effectPrompts = Prompts(p.attack.effectPrompts, 4);
             p.attack.effectImages = Ids(p.attack.effectImages, 4);
-            if (p.hero.frames != null && p.hero.frames.Length != 4 && p.hero.frames.Length != 6) p.hero.frames = null;
+            if (p.hero.frames != null && p.hero.frames.Length != 4 && p.hero.frames.Length != 6 && p.hero.frames.Length != 8) p.hero.frames = null;
             p.weapon.attackPose = CleanImagePrompt(p.weapon.attackPose);
             Shift(p.enemies, 0.5f, 0.45f, 0.7f, 1.2f);
             p.enemies.theme = CleanName(p.enemies.theme);
@@ -207,7 +207,7 @@ namespace Diverse
                 .Take(4).ToList();
             p.enemies.art = (p.enemies.art ?? new List<EnemyArt>())
                 .Where(a => a != null && DB.Enemies.ContainsKey(a.id ?? ""))
-                .Select(a => new EnemyArt { id = a.id, imagePrompt = CleanImagePrompt(a.imagePrompt), image = a.image, image2 = a.image2, image3 = a.image3 })
+                .Select(a => new EnemyArt { id = a.id, imagePrompt = CleanImagePrompt(a.imagePrompt), image = a.image, image2 = a.image2, image3 = a.image3, image4 = a.image4 })
                 .GroupBy(a => a.id).Select(g => g.First()).ToList();
             p.enemies.names = p.enemies.names
                 .Where(n => n != null && DB.Enemies.ContainsKey(n.id ?? ""))

@@ -16,15 +16,27 @@ namespace Diverse
         public const int TimeoutSeconds = 150;
         public static string LastStatus = "";
 
-        public static string Model => string.IsNullOrEmpty(Game.Settings.imageModel) ? "gpt-image-1-mini" : Game.Settings.imageModel;
+        public static string Model => string.IsNullOrEmpty(Game.Settings.imageModel) ? "gpt-image-2.5-flare" : Game.Settings.imageModel;
+        static string Quality => Game.Settings.imageQuality == "medium" ? "medium" : "low";
 
-        /// <summary>USD per 1024x1024 low-quality image (for the studio's cost line). Unknown models → null.</summary>
-        public static float? PriceUsd(string model) => model switch
+        /// <summary>
+        /// Approximate USD per 1024x1024 picture at the current quality (for the studio's cost line; the API bills tokens).
+        /// Wide sheets (1536x1024) cost about 1.5x. Unknown models → null.
+        /// </summary>
+        public static float? PriceUsd(string model)
         {
-            "gpt-image-1-mini" => 0.005f,
-            "gpt-image-1" => 0.011f,
-            _ => null,
-        };
+            float? low = model switch
+            {
+                "gpt-image-2.5-flare" or "gpt-image-2.5-sunburst" or "gpt-image-2" => 0.006f,
+                "gpt-image-1-mini" => 0.005f,
+                "gpt-image-1.5" or "gpt-image-1" => 0.011f,
+                _ => null,
+            };
+            return low * (Quality == "medium" ? 4 : 1);
+        }
+
+        /// <summary>A 3x2 sheet (6 poses) on a wide canvas: every cell is a full 512x512 instead of 341x512.</summary>
+        public const string WideSize = "1536x1024";
 
         static string Endpoint
         {
@@ -42,11 +54,11 @@ namespace Diverse
 
         /// <summary>One picture. Calls back with null on failure (LastStatus says why).</summary>
         /// <param name="transparent">false for full-bleed textures (ground swatches).</param>
-        public static IEnumerator Generate(string prompt, Action<Texture2D> done, bool transparent = true)
+        public static IEnumerator Generate(string prompt, Action<Texture2D> done, bool transparent = true, string size = "1024x1024")
         {
             var key = SaveSystem.LoadApiKey();
             if (string.IsNullOrEmpty(key)) { LastStatus = "API 키 없음"; done(null); yield break; }
-            var body = Encoding.UTF8.GetBytes(JsonUtility.ToJson(new Req { model = Model, prompt = prompt, background = transparent ? "transparent" : "opaque" }));
+            var body = Encoding.UTF8.GetBytes(JsonUtility.ToJson(new Req { model = Model, prompt = prompt, size = size, quality = Quality, background = transparent ? "transparent" : "opaque" }));
             using var www = new UnityWebRequest(Endpoint, "POST");
             www.uploadHandler = new UploadHandlerRaw(body);
             www.downloadHandler = new DownloadHandlerBuffer();

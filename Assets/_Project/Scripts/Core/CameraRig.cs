@@ -23,6 +23,7 @@ namespace Diverse
         float trauma;                   // 0~1
         Vector2 kick;                   // 방향성 밀림 (빠르게 복귀)
         float zoomPunch;                // 강타 시 살짝 줌인
+        Vector2 lead, lastTarget;       // movement look-ahead (smoothed)
 
         /// <summary>Scene setup: the Main Camera object in Game.unity carries Camera + CameraRig, with the Global Volume as a child.</summary>
         void Awake()
@@ -38,7 +39,7 @@ namespace Diverse
 
         public Vignette Vignette { get; private set; }
 
-        public void Snap(Vector2 pos) { focus = pos; ApplyTransform(); }
+        public void Snap(Vector2 pos) { focus = pos; lead = Vector2.zero; lastTarget = pos; ApplyTransform(); }
 
         /// <summary>amount 0~1. 흔들림은 trauma²에 비례해서 작은 타격은 은은하고 큰 타격은 확실하게.</summary>
         public void Shake(float amount) => trauma = Mathf.Clamp01(Mathf.Max(trauma, amount) + amount * 0.25f);
@@ -53,7 +54,11 @@ namespace Diverse
             float dt = Time.unscaledDeltaTime;
             if (target != null)
             {
-                Vector2 goal = (Vector2)target.position + lookAhead;
+                // Lead a little in the direction of travel so the view glides ahead of the hero instead of trailing it
+                Vector2 tp = target.position;
+                if (Time.deltaTime > 0) lead = Vector2.Lerp(lead, Vector2.ClampMagnitude((tp - lastTarget) / Time.deltaTime * 0.16f, 1.1f), 1 - Mathf.Exp(-4f * dt));
+                lastTarget = tp;
+                Vector2 goal = tp + lookAhead + lead;
                 focus = Vector2.Lerp(focus, goal, 1 - Mathf.Exp(-followSharpness * dt));
             }
             trauma = Mathf.Max(0, trauma - dt * 1.6f);

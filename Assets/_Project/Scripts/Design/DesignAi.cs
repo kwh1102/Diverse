@@ -216,7 +216,9 @@ REQUESTED: hero (NEW), weapon (NEW)
             yield return FixFacing(result, sections, c => visionCost = c);
 
             var textCost = (AiClient.CostUsd(Game.Settings.aiModel, textIn, textOut) ?? 0) + visionCost;
-            var imageCost = (ImageClient.PriceUsd(ImageClient.Model) ?? 0) * (jobs.Count - failed);
+            // 3x2 sheets (hero, enemies) are drawn on a wide canvas: about 1.5x a square picture
+            int wide = jobs.Count(j => j.GetType().Name.Contains("HeroJob") || j.GetType().Name.Contains("EnemySheetJob"));
+            var imageCost = (ImageClient.PriceUsd(ImageClient.Model) ?? 0) * (jobs.Count - failed + wide * 0.5f);
             LastCostUsd = textCost + imageCost;
             string status = $"새 디자인 완성 (글 {textIn}+{textOut}토큰, 그림 {jobs.Count - failed}장 · 약 ${LastCostUsd:0.000})";
             if (failed > 0) status += $"\n<color=#ffb36b>그림 {failed}장 실패: {ImageClient.LastStatus} — 그 부분은 기본 도트로 표시</color>";
@@ -278,16 +280,20 @@ REQUESTED: hero (NEW), weapon (NEW)
             string attack = w.attackPose ?? (w.hold == "Hidden" ? "throwing a punch" : "swinging its arm");
             string hands = w.hold == "Hidden" ? "" : " Do not draw any weapon or held item; hands empty.";
             Texture2D tex = null;
-            yield return ImageClient.Generate(Style + "A sprite sheet in a grid of 3 columns and 2 rows: the SAME character drawn six times with identical " +
+            yield return ImageClient.Generate(Style + "A sprite sheet in a grid of 4 columns and 2 rows: the SAME character drawn eight times with identical " +
                 "design, colours and size, full body, side view facing right, each pose centered in its own cell with empty space around it. " +
-                "Top row: standing idle; walking with the front leg stepping forward; walking with the back leg stepping forward. " +
-                $"Bottom row: winding up to attack ({attack}, pulled back); the attack striking forward ({attack}, fully extended); flinching backward after being hit." +
-                hands + " Character: " + p.hero.imagePrompt, t => tex = t);
+                "Top row, a smooth walk cycle: front foot touching down; passing (legs together, body slightly raised); back foot touching down; passing again. " +
+                $"Bottom row: standing idle; winding up to attack ({attack}, pulled back); the attack striking forward ({attack}, fully extended); flinching backward after being hit." +
+                hands + " Character: " + p.hero.imagePrompt, t => tex = t, size: ImageClient.WideSize);
             if (tex == null) { p.hero.image = null; p.hero.frames = null; yield return false; yield break; }
-            var cells = Pixelizer.ConvertSet(tex, Enumerable.Range(0, 6).Select(i => Cell(tex, i % 3, i / 3, 3, 2)).ToArray(), 28, byHeight: true);
+            // The idle pose (cell 4) goes first: it sets the scale every other pose keeps
+            int[] order = { 4, 0, 1, 2, 3, 5, 6, 7 };
+            var converted = Pixelizer.ConvertSet(tex, order.Select(i => Cell(tex, i % 4, i / 4, 4, 2)).ToArray(), 28, byHeight: true, alignFacing: true);
+            var cells = new PixelCanvas[8];
+            for (int k = 0; k < 8; k++) cells[order[k]] = converted[k];
             UnityEngine.Object.Destroy(tex);
             p.hero.frames = cells.Select(Save).ToArray();
-            p.hero.image = p.hero.frames[0];
+            p.hero.image = p.hero.frames[4];
             if (p.hero.frames.Any(f => f == null)) p.hero.frames = null;
             yield return p.hero.image != null;
         }
@@ -366,23 +372,65 @@ REQUESTED: hero (NEW), weapon (NEW)
         /// <summary>Two enemies per sheet, each in three poses (standing / moving / attacking) so they walk and strike.</summary>
         static IEnumerator EnemySheetJob(List<EnemyArt> group)
         {
-            var layout = "A sprite sheet in a grid of 3 columns and 2 rows: two different monsters, each drawn three times with identical design, " +
+            var layout = "A sprite sheet in a grid of 4 columns and 2 rows: two different monsters, each drawn four times with identical design, " +
                          "colours and size, all facing right, each pose centered in its own cell with empty space around it. Each row is one monster: " +
-                         "standing; moving (mid-step); attacking (lunging forward). ";
+                         "standing; walking with one foot forward; walking with the other foot forward; attacking (lunging forward). ";
             var parts = group.Select((a, i) => $"Row {i + 1}: {a.imagePrompt}");
             Texture2D tex = null;
-            yield return ImageClient.Generate(Style + layout + string.Join(". ", parts) + ".", t => tex = t);
-            if (tex == null) { foreach (var a in group) a.image = a.image2 = a.image3 = null; yield return false; yield break; }
+            yield return ImageClient.Generate(Style + layout + string.Join(". ", parts) + ".", t => tex = t, size: ImageClient.WideSize);
+            if (tex == null) { foreach (var a in group) a.image = a.image2 = a.image3 = a.image4 = null; yield return false; yield break; }
             for (int i = 0; i < group.Count; i++)
             {
                 var d = DB.Enemy(group[i].id);
-                var poses = Pixelizer.ConvertSet(tex, Enumerable.Range(0, 3).Select(c => Cell(tex, c, i, 3, 2)).ToArray(), Art.EnemyHeight(d.sprite), byHeight: true);
+                var poses = Pixelizer.ConvertSet(tex, Enumerable.Range(0, 4).Select(c => Cell(tex, c, i, 4, 2)).ToArray(), Art.EnemyHeight(d.sprite), byHeight: true, alignFacing: true);
                 group[i].image = Save(poses[0]);
                 group[i].image2 = Save(poses[1]);
-                group[i].image3 = Save(poses[2]);
+                group[i].image4 = Save(poses[2]);   // second step
+                group[i].image3 = Save(poses[3]);   // attack
             }
             UnityEngine.Object.Destroy(tex);
             yield return group.All(a => a.image != null);
+        }
+
+        // ───────────────────────── Repair of already generated enemies ─────────────────────────
+
+        static PixelCanvas Canvas(string id)
+        {
+            var t = DesignStore.Image(id);
+            if (t == null) return null;
+            var cv = new PixelCanvas(t.width, t.height);
+            System.Array.Copy(t.GetPixels32(), cv.Px, cv.Px.Length);
+            return cv;
+        }
+
+        /// <summary>
+        /// Enemies drawn before the cropping / pose fixes: drop pieces of neighbouring figures, turn every pose the way the
+        /// standing pose faces, then one vision look at which way each enemy faces (flip the ones facing left). No new pictures.
+        /// done(status) gets a one-line result; the pack is changed in place (new picture ids).
+        /// </summary>
+        public static IEnumerator RepairEnemies(DesignPack p, Action<string> done)
+        {
+            int fixedCount = 0;
+            foreach (var a in p.enemies.art.Where(a => a.image != null))
+            {
+                var idle = Canvas(a.image);
+                if (idle == null) continue;
+                Pixelizer.CleanSprite(idle);
+                string Redo(string id)
+                {
+                    var cv = Canvas(id);
+                    if (cv == null) return id;
+                    Pixelizer.CleanSprite(cv);
+                    if (Pixelizer.FacesOpposite(cv, idle)) Pixelizer.Mirror(cv);
+                    return DesignStore.SaveImage(cv);
+                }
+                a.image = DesignStore.SaveImage(idle);
+                a.image2 = Redo(a.image2); a.image3 = Redo(a.image3); a.image4 = Redo(a.image4);
+                fixedCount++;
+            }
+            float cost = 0;
+            if (fixedCount > 0 && Available) yield return FixFacing(p, new[] { false, false, false, true }, c => cost = c);
+            done(fixedCount == 0 ? "고칠 적 그림이 없어요" : $"적 {fixedCount}종의 잘림·방향을 정리했어요" + (cost > 0 ? $" (방향 확인 약 ${cost:0.0000})" : ""));
         }
 
         // ───────────────────────── Facing check ─────────────────────────
@@ -398,20 +446,19 @@ REQUESTED: hero (NEW), weapon (NEW)
         {
             var subjects = new List<(string what, string id, Action<Func<string, string>> flip)>();
             if (sections[0] && p.hero.frames != null)
-                subjects.Add(("a character: which way it faces", p.hero.frames[0], f => { p.hero.frames = p.hero.frames.Select(f).ToArray(); p.hero.image = p.hero.frames[0]; }));
+                subjects.Add(("a character: which way it faces", p.hero.image, f => { p.hero.frames = p.hero.frames.Select(f).ToArray(); p.hero.image = p.hero.frames[p.hero.frames.Length >= 8 ? 4 : 0]; }));
             if (sections[1])
             {
                 var w = p.weapon; var a = p.attack;
-                if (w.image != null) subjects.Add(("a weapon or tool: on which side is the end that hits or shoots (tip, barrel, head)", w.image, f => w.image = f(w.image)));
+                if (w.image != null) subjects.Add(("a weapon or tool: is its working end (gun barrel / muzzle, blade tip, hammer head, bow string side away from the grip) on the left or the right? The grip / stock is on the opposite side", w.image, f => w.image = f(w.image)));
                 if (a.projectile.image != null) subjects.Add(("a flying shot: on which side is its front", a.projectile.image, f => a.projectile.image = f(a.projectile.image)));
-                if (a.effectImages != null) subjects.Add(("an attack sweep effect: toward which side does it curve or spread", a.effectImages[0], f => a.effectImages[0] = f(a.effectImages[0])));
             }
             if (sections[3])
                 foreach (var e in p.enemies.art.Where(e => e.image != null))
-                    subjects.Add(("a monster: which way it faces", e.image, f => { e.image = f(e.image); e.image2 = f(e.image2); e.image3 = f(e.image3); }));
+                    subjects.Add(("a monster: which way it faces", e.image, f => { e.image = f(e.image); e.image2 = f(e.image2); e.image3 = f(e.image3); e.image4 = f(e.image4); }));
             if (subjects.Count == 0) { cost(0); yield break; }
 
-            const int cell = 64;
+            const int cell = 96;   // big enough that a gun's barrel and grip are clearly different
             int cols = Mathf.Min(8, subjects.Count), rows = Mathf.CeilToInt(subjects.Count / (float)cols);
             var sheet = new PixelCanvas(cols * cell, rows * cell);
             sheet.Rect(0, 0, sheet.W, sheet.H, new Color32(205, 205, 205, 255));
@@ -420,7 +467,7 @@ REQUESTED: hero (NEW), weapon (NEW)
                 var tex = DesignStore.Image(subjects[i].id);
                 if (tex == null) continue;
                 var px = tex.GetPixels32();
-                int k = Mathf.Max(1, 56 / Mathf.Max(tex.width, tex.height));
+                int k = Mathf.Max(1, 88 / Mathf.Max(tex.width, tex.height));
                 int ox = (i % cols) * cell + (cell - tex.width * k) / 2, oy = (rows - 1 - i / cols) * cell + (cell - tex.height * k) / 2;
                 for (int y = 0; y < tex.height * k; y++)
                     for (int x = 0; x < tex.width * k; x++)
@@ -436,7 +483,7 @@ REQUESTED: hero (NEW), weapon (NEW)
                            "For each cell answer \"left\" or \"right\":\n" + string.Join("\n", subjects.Select((s, i) => $"cell {i}: {s.what}")) +
                            $"\nReturn JSON {{\"dirs\":[...]}} with exactly {subjects.Count} entries.";
             string json = null;
-            yield return AiClient.CompleteVision("You look at pixel-art game sprites and say which way they face. Output JSON only.", question, png, 300, r => json = r);
+            yield return AiClient.CompleteVision("You look at pixel-art game sprites and say which way they face or point. Look carefully at each cell. Output JSON only.", question, png, 400, r => json = r, "high");
             cost(AiClient.CostUsd(Game.Settings.aiModel, AiClient.LastPromptTokens, AiClient.LastCompletionTokens) ?? 0);
             if (json == null) yield break;
             List<string> dirs = null;

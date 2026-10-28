@@ -164,6 +164,18 @@ namespace Diverse
         public bool EvolvesAt(int level) => evolveEvery <= 1 || level % evolveEvery == 0;
     }
 
+    /// <summary>Global hit feel (Resources/GameDatabase.asset → feel). Weapons and skills ask for hit-stop; these cap it.</summary>
+    [Serializable]
+    public class FeelDef
+    {
+        [Tooltip("Longest hit-stop (seconds).")]
+        public float maxHitstop = 0.05f;
+        [Tooltip("Time scale during hit-stop (0 = full freeze). Above 0 keeps motion flowing.")]
+        public float minHitstopScale = 0.25f;
+        [Tooltip("A hit within this many seconds of the last hit-stop only gets 40% of it (flurries don't stutter).")]
+        public float hitstopChain = 0.2f;
+    }
+
     /// <summary>
     /// Game data tables, read from Resources/GameDatabase.asset.
     /// To tweak numbers, edit the assets under Assets/_Project/Data in the Inspector.

@@ -88,9 +88,15 @@ namespace Diverse
             }
             if (Game.Settings.damageNumbers && Fx.I != null)
             {
-                var col = d.crit ? new Color(1f, 0.85f, 0.3f) : (target.team == Team.Player ? new Color(1f, 0.4f, 0.45f) : Color.white);
+                // Colour says what kind of hit it was; size says how big it was for this target (a chunk of a boss's bar stays readable)
+                var col = d.crit ? new Color(1f, 0.82f, 0.25f)
+                        : target.team == Team.Player ? new Color(1f, 0.4f, 0.45f)
+                        : d.element != Element.None ? Color.Lerp(Color.white, (Color)ElementColor(d.element), 0.7f)
+                        : Color.white;
                 if (d.noEvents && d.fxColor.HasValue) col = d.fxColor.Value;
-                Fx.I.Number(at + Vector2.up * 0.2f, Mathf.RoundToInt(dealt) + (d.crit ? "!" : ""), col, d.crit ? 1.35f : 1f);
+                float weight = Mathf.Clamp01(dealt / Mathf.Max(1f, target.maxHp * 0.25f));
+                float size = (d.noEvents ? 0.75f : 1f) * (1f + weight * 0.35f) * (d.crit ? 1.45f : 1f);
+                Fx.I.Number(at + Vector2.up * 0.2f, Mathf.RoundToInt(dealt) + (d.crit ? "!" : ""), col, size, 0.8f, d.direction.x, d.crit);
             }
 
             if (fromPlayerSide && !d.noEvents)

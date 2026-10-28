@@ -139,9 +139,16 @@ namespace Diverse.EditorTools
                 // 1) MainMenu: title, settings round trip, character select
                 step = "menu";
                 if (Find<MenuUI>() == null) { Fail("MenuUI missing (MainMenu scene)"); yield break; }
-                if (!Visible<TitleView>()) Fail("title not visible");
+
+                // 0) Title (모드·세계 선택 / 설정 / 종료) → slot screen. A normal-mode world designs only the hero and weapon;
+                //    worlds are created, continued and deleted per row
+                step = "title";
+                var titleView = Find<TitleView>();
+                if (!Visible<TitleView>()) { Fail("title not shown first"); yield break; }
+                if (titleView.GetComponentsInChildren<Button>().Any(b => b.name is "Continue" or "Abandon" or "Start" or "ResetWorld"))
+                    Fail("title still has world buttons (they belong on the slot screen)");
                 if (Session.World == null) Fail("session not loaded");
-                Click(Find<TitleView>(), "Settings");
+                Click(titleView, "Settings");
                 yield return Frames(2);
                 if (!Visible<SettingsView>()) Fail("settings not visible");
                 Click(Find<SettingsView>(), "KeysTab");
@@ -149,8 +156,37 @@ namespace Diverse.EditorTools
                 Click(Find<SettingsView>(), "Back");
                 yield return Frames(2);
                 if (!Visible<TitleView>()) Fail("back from settings did not show the title");
-                Click(Find<TitleView>(), "Start");
+
+                step = "save slots";
+                Click(titleView, "ChangeSlot");
                 yield return Frames(2);
+                if (!Visible<SaveSelectView>()) { Fail("slot screen did not open from the title"); yield break; }
+                var slotsView = Find<SaveSelectView>();
+                Transform Row(int i) => slotsView.transform.Find("Panel/Slots/Slot " + i);
+                Click(slotsView, "NormalTab");
+                yield return Frames(1);
+                Click(Row(1), "Play");               // empty second slot → new world → design the first life
+                yield return Frames(2);
+                if (Session.Mode != GameMode.Normal || Session.Slot != 2) { Fail("creating a normal world failed"); yield break; }
+                var normalStudio = Find<DesignStudioView>();
+                if (!Visible<DesignStudioView>()) { Fail("a new world did not open the design studio"); yield break; }
+                if (normalStudio.GetComponentsInChildren<Button>().Any(b => b.name == "Tab 2" || b.name == "Tab 3")) Fail("normal mode still offers world/enemy design");
+                Click(normalStudio, "Back");
+                yield return Frames(2);
+                if (!Visible<SaveSelectView>()) { Fail("studio back did not return to the slot screen"); yield break; }
+                Click(slotsView, "NormalTab");
+                yield return Frames(2);
+                Click(Row(1), "Delete");
+                yield return Frames(1);
+                if (SaveSystem.Peek(GameMode.Normal, 2) == null) Fail("one press already deleted the world (no confirmation)");
+                Click(Row(1), "Delete");
+                yield return Frames(1);
+                if (SaveSystem.Peek(GameMode.Normal, 2) != null) Fail("deleting a world left it behind");
+                Click(slotsView, "CustomTab");
+                yield return Frames(1);
+                Click(Row(0), "Play");
+                yield return Frames(2);
+                if (Session.Mode != GameMode.Custom || Session.Slot != 1) { Fail("opening a custom world failed"); yield break; }
 
                 // Design pieces that the live AI path uses (no network here)
                 step = "design units";
@@ -672,7 +708,11 @@ namespace Diverse.EditorTools
                 Click(Find<PauseView>(), "ToTitle");
                 yield return Frames(10);
                 if (!Visible<TitleView>()) { Fail("to-title did not show the title"); yield break; }
-                Click(Find<TitleView>(), "Continue");
+                Click(Find<TitleView>(), "ChangeSlot");
+                yield return Frames(2);
+                var slotRow = Find<SaveSelectView>().transform.Find("Panel/Slots/Slot 0");
+                if (slotRow.Find("Abandon") == null || !slotRow.Find("Abandon").gameObject.activeInHierarchy) Fail("a world with a life in progress offers no 삶 끝내기");
+                Click(slotRow, "Play");              // 이어하기
                 yield return Frames(10);
                 if (Game.I == null || Game.I.Player == null) { Fail("continue did not load the life"); yield break; }
                 if (Game.I.Player.Gold != 77) Fail($"continued life lost its state (gold {Game.I.Player.Gold})");
@@ -705,6 +745,24 @@ namespace Diverse.EditorTools
                 var mirrored = DesignStore.Image(DesignStore.Mirrored(DesignStore.SaveImage(cells[0])));
                 if (mirrored == null || mirrored.width != cells[0].W) return "mirroring a picture failed";
                 Object.DestroyImmediate(sheet);
+
+                // A neighbour's figure spilling over the grid line is cut away; a pose drawn facing the other way is turned back
+                var spill = new Texture2D(64, 32, TextureFormat.RGBA32, false);
+                var sp = new Color32[64 * 32];
+                for (int y = 4; y < 28; y++) for (int x = 10; x < 20; x++) sp[y * 64 + x] = new Color32(200, 80, 80, 255);    // subject, cell 0
+                for (int y = 4; y < 28; y++) sp[y * 64 + 8] = new Color32(200, 80, 80, 255);                                     // its arm (left)
+                for (int y = 2; y < 26; y++) for (int x = 26; x < 32; x++) sp[y * 64 + x] = new Color32(80, 80, 200, 255);    // neighbour spill at the edge
+                // cell 1: an L-shaped pose, mirrored relative to cell 0's arm side
+                for (int y = 4; y < 28; y++) for (int x = 44; x < 54; x++) sp[y * 64 + x] = new Color32(200, 80, 80, 255);
+                for (int y = 4; y < 28; y++) sp[y * 64 + 55] = new Color32(200, 80, 80, 255);                                    // arm on the right
+                spill.SetPixels32(sp); spill.Apply();
+                var two = Pixelizer.ConvertSet(spill, new[] { new RectInt(0, 0, 32, 32), new RectInt(32, 0, 32, 32) }, 24, true, alignFacing: true);
+                Object.DestroyImmediate(spill);
+                if (two[0] == null || two[1] == null) return "pixelizer lost a cell";
+                bool blue = false;
+                foreach (var c in two[0].Px) if (c.a > 0 && c.b > c.r + 40) blue = true;
+                if (blue) return "a neighbouring figure that spilled into the cell was kept";
+                if (Pixelizer.FacesOpposite(two[1], two[0])) return "a pose facing the other way was not turned around";
                 return null;
             }
 

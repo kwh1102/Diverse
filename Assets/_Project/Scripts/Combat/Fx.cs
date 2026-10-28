@@ -47,7 +47,10 @@ namespace Diverse
             public TextMesh tm;
             public MeshRenderer mr;
             public Vector2 pos;
-            public float t, life, vy;
+            public float t, life, vy, vx, rot;
+            public Vector2 start;
+            public bool crit;
+            public TextMesh[] outline;      // 4 dark copies behind (a pixel outline that reads on any ground)
             public Color col;
             public float scale;
             public bool active;
@@ -58,6 +61,11 @@ namespace Diverse
         readonly List<Ghost> ghosts = new List<Ghost>();
         readonly List<Popup> pops = new List<Popup>();
         [SerializeField] Font font;       // damage numbers (Galmuri11-Bold)
+        [Header("Damage numbers")]
+        [SerializeField, Tooltip("Size multiplier of every damage number.")] float numberSize = 2.6f;
+        [SerializeField, Tooltip("Initial upward speed (world units/s).")] float numberRise = 4.6f;
+        [SerializeField, Tooltip("How fast numbers fall back after rising.")] float numberGravity = 13f;
+        [SerializeField, Tooltip("Sideways drift away from the hit.")] float numberSpread = 1.1f;
 
         void Awake() => I = this;
         void OnDestroy() { if (I == this) I = null; }
@@ -154,6 +162,7 @@ namespace Diverse
             g.go.transform.localScale = src.transform.lossyScale;
             g.sr.sprite = silhouette ? Art.Silhouette(src.sprite) : src.sprite;
             g.sr.flipX = src.flipX;
+            g.sr.flipY = src.flipY;
             g.sr.sharedMaterial = Art.AddMat;
             g.sr.sortingOrder = src.sortingOrder - 1;
             g.col = col;
@@ -163,7 +172,31 @@ namespace Diverse
 
         // ───────── 데미지 숫자 ─────────
 
-        public void Number(Vector2 pos, string text, Color col, float scale = 1f, float life = 0.75f)
+        static readonly Vector2[] OutlineDirs = { new Vector2(1, 0), new Vector2(-1, 0), new Vector2(0, 1), new Vector2(0, -1) };
+
+        TextMesh NumberMesh(Transform parent, string name, int order)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            var tm = go.AddComponent<TextMesh>();
+            tm.font = font;
+            tm.fontSize = 32;
+            tm.characterSize = 0.045f;
+            tm.anchor = TextAnchor.MiddleCenter;
+            tm.alignment = TextAlignment.Center;
+            var mr = go.GetComponent<MeshRenderer>();
+            if (font != null) mr.sharedMaterial = font.material;
+            if (font != null) font.material.mainTexture.filterMode = FilterMode.Point;
+            mr.sortingOrder = order;
+            return tm;
+        }
+
+        /// <summary>
+        /// A damage / heal number. It pops in with an elastic overshoot, arcs up and falls away from the hit (dirX = which way
+        /// the blow went), wears a dark pixel outline so it reads on any ground; crits are bigger, flash gold and wobble.
+        /// Numbers landing on the same spot within a moment stack upward instead of overlapping.
+        /// </summary>
+        public void Number(Vector2 pos, string text, Color col, float scale = 1f, float life = 0.75f, float dirX = 0, bool crit = false)
         {
             Popup p = null;
             foreach (var x in pops) if (!x.active) { p = x; break; }
@@ -181,16 +214,33 @@ namespace Diverse
                 if (font != null) mr.sharedMaterial = font.material;
                 if (font != null) font.material.mainTexture.filterMode = FilterMode.Point;
                 mr.sortingOrder = 32000;
-                p = new Popup { go = go, tm = tm, mr = mr };
+                p = new Popup { go = go, tm = tm, mr = mr, outline = new TextMesh[OutlineDirs.Length] };
+                for (int i = 0; i < OutlineDirs.Length; i++)
+                {
+                    p.outline[i] = NumberMesh(go.transform, "outline", 31999);
+                    p.outline[i].transform.localPosition = OutlineDirs[i] * 0.025f;   // ≈1 screen pixel at the usual sizes (children scale with the number)
+                }
                 pops.Add(p);
             }
             p.active = true;
             p.go.SetActive(true);
             p.tm.text = text;
+            foreach (var o in p.outline) o.text = text;
+            p.crit = crit;
+            // Stack on numbers that just appeared at the same spot
+            float stack = 0;
+            foreach (var x in pops)
+                if (x != p && x.active && x.t < 0.25f && Mathf.Abs(x.start.x - pos.x) < 0.6f && Mathf.Abs(x.start.y - pos.y) < 0.6f) stack += 0.32f;
+            p.start = pos;
+            p.vx = (dirX != 0 ? Mathf.Sign(dirX) : (Random.value < 0.5f ? -1 : 1)) * Random.Range(0.6f, 1.4f) * numberSpread;
+            p.rot = crit ? Random.Range(-12f, 12f) : 0;
+            scale *= numberSize;
+            life *= crit ? 1.25f : 1f;
+            pos.y += stack;
             p.col = col;
             p.tm.color = col;
-            p.pos = pos + new Vector2(Random.Range(-0.2f, 0.2f), 0.6f);
-            p.vy = 3.2f;
+            p.pos = pos + new Vector2(Random.Range(-0.15f, 0.15f), 0.6f);
+            p.vy = numberRise * (crit ? 1.2f : 1f);
             p.t = 0; p.life = life; p.scale = scale;
         }
 
@@ -247,15 +297,23 @@ namespace Diverse
                 if (!p.active) continue;
                 p.t += udt;
                 if (p.t >= p.life) { p.active = false; p.go.SetActive(false); continue; }
-                p.vy = Mathf.Max(0, p.vy - 9f * udt);
+                // Arc: up, then gravity pulls it down while it drifts away from the hit
+                p.vy -= numberGravity * udt;
                 p.pos.y += p.vy * udt;
-                float pop = p.t < 0.08f ? Mathf.Lerp(1.6f, 1f, p.t / 0.08f) : 1f;
-                p.go.transform.position = new Vector3(p.pos.x, p.pos.y, 0);
-                p.go.transform.localScale = Vector3.one * p.scale * pop;
-                var c = p.col;
+                p.pos.x += p.vx * udt;
+                p.vx *= Mathf.Exp(-2.5f * udt);
                 float k = p.t / p.life;
+                // Elastic pop-in (overshoot, settle), then shrink away at the end
+                float pop = p.t < 0.22f ? 1 + Mathf.Sin(p.t / 0.22f * Mathf.PI * 1.5f) * Mathf.Exp(-p.t * 14f) * (p.crit ? 1.4f : 0.9f) : 1f;
+                float shrink = k > 0.75f ? Mathf.Lerp(1f, 0.6f, (k - 0.75f) / 0.25f) : 1f;
+                p.go.transform.position = new Vector3(p.pos.x, p.pos.y, 0);
+                p.go.transform.localScale = Vector3.one * p.scale * pop * shrink;
+                p.go.transform.localRotation = Quaternion.Euler(0, 0, p.crit ? p.rot * Mathf.Cos(p.t * 30f) * Mathf.Exp(-p.t * 6f) : 0);
+                var c = p.crit && p.t < 0.12f ? Color.Lerp(Color.white, p.col, p.t / 0.12f) : p.col;   // crits flash white-hot first
                 c.a = k < 0.7f ? 1 : 1 - (k - 0.7f) / 0.3f;
                 p.tm.color = c;
+                var oc = new Color(0.08f, 0.05f, 0.12f, c.a);
+                foreach (var o in p.outline) o.color = oc;
             }
         }
 

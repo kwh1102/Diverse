@@ -58,6 +58,10 @@ namespace Diverse
 
         readonly Dictionary<Vector2Int, ChunkView> chunks = new Dictionary<Vector2Int, ChunkView>();
         readonly Dictionary<Vector2Int, Ground[,]> groundCache = new Dictionary<Vector2Int, Ground[,]>();
+        // Baked ground textures of chunks that were unloaded: walking back re-uses them instead of baking again (LRU)
+        readonly Dictionary<Vector2Int, Texture2D> bakedGround = new Dictionary<Vector2Int, Texture2D>();
+        readonly LinkedList<Vector2Int> bakedOrder = new LinkedList<Vector2Int>();
+        const int BakedGroundKept = 40;
         // Obstacle shapes, indexed by every tile their bounding box touches (point queries)
         readonly Dictionary<Vector2Int, List<Solid>> solidCells = new Dictionary<Vector2Int, List<Solid>>();
         // Tiles whose center is covered by an obstacle (pathfinding). Counted because shapes can overlap.
@@ -79,6 +83,7 @@ namespace Diverse
         {
             Clear();
             groundCache.Clear();
+            DropBakedGround();
             Gen = new WorldGen(seed);
         }
 
@@ -103,6 +108,7 @@ namespace Diverse
             }
             chunks.Clear();
             buildQueue.Clear();
+            DropBakedGround();       // … and paints the ground differently (after Unload handed the old textures back)
         }
 
         public static Vector2Int ChunkOf(Vector2 p) =>
@@ -165,6 +171,38 @@ namespace Diverse
         // ───────────── Terrain queries ─────────────
 
         /// <summary>Tile array for a chunk (+1 border). Cached once computed.</summary>
+        /// <summary>A chunk's ground texture baked earlier (null = bake it). The caller owns it again.</summary>
+        public Texture2D TakeBakedGround(Vector2Int k)
+        {
+            if (!bakedGround.TryGetValue(k, out var t)) return null;
+            bakedGround.Remove(k);
+            bakedOrder.Remove(k);
+            return t;
+        }
+
+        /// <summary>An unloading chunk hands its ground texture back; the oldest beyond the limit are destroyed.</summary>
+        public void KeepBakedGround(Vector2Int k, Texture2D t)
+        {
+            if (t == null) return;
+            if (bakedGround.TryGetValue(k, out var old) && old != t) Destroy(old);
+            bakedGround[k] = t;
+            bakedOrder.Remove(k);
+            bakedOrder.AddLast(k);
+            while (bakedOrder.Count > BakedGroundKept)
+            {
+                var oldest = bakedOrder.First.Value;
+                bakedOrder.RemoveFirst();
+                if (bakedGround.TryGetValue(oldest, out var o)) { Destroy(o); bakedGround.Remove(oldest); }
+            }
+        }
+
+        void DropBakedGround()
+        {
+            foreach (var t in bakedGround.Values) if (t != null) Destroy(t);
+            bakedGround.Clear();
+            bakedOrder.Clear();
+        }
+
         public Ground[,] GroundOf(Vector2Int k)
         {
             if (groundCache.TryGetValue(k, out var g)) return g;

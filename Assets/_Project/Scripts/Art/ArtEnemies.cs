@@ -1,11 +1,20 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Diverse
 {
     public static partial class Art
     {
-        /// <summary>적 스프라이트 2프레임(대기/이동 교차) + 피격 프레임.</summary>
-        public static Sprite Enemy(string key, int frame) => Get($"enemy_{key}_{frame}", () => DrawEnemy(key, frame));
+        // Called every frame by every enemy: a per-key frame array so no lookup string is built per call
+        static readonly Dictionary<string, Sprite[]> enemyFrames = new Dictionary<string, Sprite[]>();
+
+        /// <summary>적 스프라이트: 0 대기, 1·4 이동(두 걸음), 2 공격, 3 피격.</summary>
+        public static Sprite Enemy(string key, int frame)
+        {
+            if (!enemyFrames.TryGetValue(key, out var f)) enemyFrames[key] = f = new Sprite[8];
+            if (frame < 0 || frame >= f.Length) return Get($"enemy_{key}_{frame}", () => DrawEnemy(key, frame));
+            return f[frame] != null ? f[frame] : f[frame] = Get($"enemy_{key}_{frame}", () => DrawEnemy(key, frame));
+        }
 
         /// <summary>Height in pixels of the hand-made enemy sprite (redrawn enemies keep it, so hitboxes still match).</summary>
         public static int EnemyHeight(string key) => Mathf.RoundToInt(DrawEnemy(key, 0).rect.height);

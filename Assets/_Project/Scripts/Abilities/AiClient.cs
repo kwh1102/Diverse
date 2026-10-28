@@ -26,10 +26,14 @@ namespace Diverse
         public static bool HasKey => !string.IsNullOrEmpty(SaveSystem.LoadApiKey());
         public static bool Enabled => Game.Settings.aiEnabled && HasKey;
 
-        /// <summary>Selectable models. All of them accept the request format below (temperature + max_tokens + json_object).</summary>
+        /// <summary>
+        /// Selectable models. Classic chat models take temperature + max_tokens; reasoning models (IsReasoning) take
+        /// max_completion_tokens + reasoning_effort instead — PostOnce sends whichever the model accepts.
+        /// </summary>
         public static readonly (string id, string label, string desc)[] Models =
         {
-            ("gpt-4o-mini", "GPT-4o mini", "빠르고 저렴함 (기본값)"),
+            ("gpt-6-luna", "GPT-6 Luna", "최신 · 가장 저렴하고 똑똑함 (기본값)"),
+            ("gpt-4o-mini", "GPT-4o mini", "이전 기본값, 빠름"),
             ("gpt-4.1-mini", "GPT-4.1 mini", "조금 더 똑똑함, 비용 약 2배"),
             ("gpt-4.1-nano", "GPT-4.1 nano", "가장 빠르고 저렴함, 품질은 낮음"),
             ("gpt-4.1", "GPT-4.1", "가장 높은 품질, 느리고 비쌈"),
@@ -38,7 +42,7 @@ namespace Diverse
         /// <summary>USD per 1M tokens (input, output) for the cost estimate shown in the design studio. Unknown models → null.</summary>
         static readonly (string id, float input, float output)[] Prices =
         {
-            ("gpt-4o-mini", 0.15f, 0.60f), ("gpt-4.1-mini", 0.40f, 1.60f), ("gpt-4.1-nano", 0.10f, 0.40f), ("gpt-4.1", 2.00f, 8.00f),
+            ("gpt-6-luna", 0.10f, 0.50f), ("gpt-4o-mini", 0.15f, 0.60f), ("gpt-4.1-mini", 0.40f, 1.60f), ("gpt-4.1-nano", 0.10f, 0.40f), ("gpt-4.1", 2.00f, 8.00f),
         };
 
         /// <summary>Token usage of the last successful call (0 when the endpoint didn't report it).</summary>
@@ -56,6 +60,12 @@ namespace Diverse
         [Serializable] class Msg { public string role; public string content; }
         [Serializable] class RespFmt { public string type = "json_object"; }
         [Serializable] class Req { public string model; public List<Msg> messages; public float temperature; public RespFmt response_format; public int max_tokens; }
+        [Serializable] class ReasoningReq { public string model; public List<Msg> messages; public RespFmt response_format; public int max_completion_tokens; public string reasoning_effort = "low"; }
+
+        /// <summary>gpt-5 / gpt-6 / o-series: no temperature, completion budget includes hidden reasoning tokens.</summary>
+        static bool IsReasoning(string model) => model != null && (model.StartsWith("gpt-5") || model.StartsWith("gpt-6") || model.StartsWith("o1") || model.StartsWith("o3") || model.StartsWith("o4"));
+        /// <summary>Models whose request format turned out to be the other one (a 400 "unsupported parameter" flips it once).</summary>
+        static readonly HashSet<string> flippedFormat = new HashSet<string>();
         [Serializable] class Choice { public Msg message; public string finish_reason; }
         [Serializable] class Usage { public int prompt_tokens; public int completion_tokens; }
         [Serializable] class Resp { public List<Choice> choices; public Usage usage; }
@@ -379,12 +389,12 @@ OUTPUT JSON: {""reply"":""..."",""changes"":[ {""card"":2, ...same intent schema
         /// One JSON-mode question about a picture (low detail: a few hundred tokens). Used by the design studio to check which
         /// way generated sprites face. Calls back with null on failure.
         /// </summary>
-        public static IEnumerator CompleteVision(string system, string question, byte[] png, int maxTokens, Action<string> done)
+        public static IEnumerator CompleteVision(string system, string question, byte[] png, int maxTokens, Action<string> done, string detail = "low")
         {
             var key = SaveSystem.LoadApiKey();
             if (string.IsNullOrEmpty(key)) { LastStatus = "API 키 없음"; done(null); yield break; }
             var content = "[{\"type\":\"text\",\"text\":" + JsonString(question) + "},{\"type\":\"image_url\",\"image_url\":{\"url\":\"data:image/png;base64,"
-                          + Convert.ToBase64String(png) + "\",\"detail\":\"low\"}}]";
+                          + Convert.ToBase64String(png) + "\",\"detail\":\"" + detail + "\"}}]";
             var msgs = new List<Msg> { new Msg { role = "system", content = system }, new Msg { role = "user", content = ImageMarker } };
             string answer = null;
             yield return PostOnce(key, msgs, 0, maxTokens, (c, _) => answer = c, content);
@@ -405,19 +415,16 @@ OUTPUT JSON: {""reply"":""..."",""changes"":[ {""card"":2, ...same intent schema
         }
 
         /// <param name="imageContent">Vision: JSON content array that replaces the user message marked ImageMarker.</param>
-        static IEnumerator PostOnce(string key, List<Msg> messages, float temp, int maxTokens, Action<string, bool> done, string imageContent = null)
+        static IEnumerator PostOnce(string key, List<Msg> messages, float temp, int maxTokens, Action<string, bool> done, string imageContent = null, bool retried = false)
         {
             float started = Time.realtimeSinceStartup;
             LastFatal = false;
-            var req = new Req
-            {
-                model = Game.Settings.aiModel,
-                temperature = temp,
-                max_tokens = maxTokens,
-                response_format = new RespFmt(),
-                messages = messages,
-            };
-            var json = JsonUtility.ToJson(req);
+            string model = Game.Settings.aiModel;
+            bool reasoning = IsReasoning(model) != flippedFormat.Contains(model);
+            // Reasoning models spend hidden tokens thinking before the answer: give the budget headroom (low effort keeps it small)
+            var json = reasoning
+                ? JsonUtility.ToJson(new ReasoningReq { model = model, messages = messages, response_format = new RespFmt(), max_completion_tokens = maxTokens + 1500 })
+                : JsonUtility.ToJson(new Req { model = model, temperature = temp, max_tokens = maxTokens, response_format = new RespFmt(), messages = messages });
             if (imageContent != null) json = json.Replace("\"" + ImageMarker + "\"", imageContent);
             var body = Encoding.UTF8.GetBytes(json);
             using var www = new UnityWebRequest(Game.Settings.aiEndpoint, "POST");
@@ -432,6 +439,14 @@ OUTPUT JSON: {""reply"":""..."",""changes"":[ {""card"":2, ...same intent schema
             if (www.result != UnityWebRequest.Result.Success)
             {
                 string msg = www.downloadHandler?.text ?? "";
+                // The model wants the other request format (e.g. no temperature / max_completion_tokens): remember and retry once
+                if (www.responseCode == 400 && !retried && (msg.Contains("unsupported_parameter") || msg.Contains("Unsupported parameter") || msg.Contains("unsupported_value")))
+                {
+                    if (!flippedFormat.Add(model)) flippedFormat.Remove(model);
+                    Debug.LogWarning($"[AI] {model} rejected the {(reasoning ? "reasoning" : "classic")} request format — retrying with the other one");
+                    yield return PostOnce(key, messages, temp, maxTokens, done, imageContent, true);
+                    yield break;
+                }
                 bool quota = msg.Contains("insufficient_quota");
                 // UnityWebRequest reports a timeout as a connection error with code 0 — tell them apart by the elapsed time
                 bool timedOut = www.responseCode == 0 && (www.error?.IndexOf("timed out", StringComparison.OrdinalIgnoreCase) >= 0

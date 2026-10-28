@@ -19,22 +19,32 @@ namespace Diverse
 
         class Item { public Sprite sprite; public string size, place; public bool building; }
 
-        static string builtFor;
+        static int builtFor = -1;   // DesignRuntime.Version the lists were built for
+        static readonly Dictionary<string, List<Item>> buckets = new Dictionary<string, List<Item>>();   // per "size/place"
         static readonly List<Item> items = new List<Item>();
 
         static WorldLook World => DesignRuntime.Active.world;
 
         /// <summary>A designed world with its own scenery: ChunkView hands decoration over to Decorate.</summary>
-        public static bool Active => World.HasDecor;
+        public static bool Active
+        {
+            get
+            {
+                if (activeFor != DesignRuntime.Version) { activeFor = DesignRuntime.Version; active = World.HasDecor; }
+                return active;
+            }
+        }
+        static bool active;
+        static int activeFor = -1;
 
         static List<Item> Items
         {
             get
             {
                 var w = World;
-                string key = string.Join(",", w.decorImages ?? new string[0]) + string.Join(",", w.townImages ?? new string[0]);
-                if (key == builtFor) return items;
-                builtFor = key;
+                if (builtFor == DesignRuntime.Version) return items;
+                builtFor = DesignRuntime.Version;
+                buckets.Clear();
                 items.Clear();
                 for (int i = 0; i < 12 && w.decorImages != null; i++)
                 {
@@ -88,11 +98,17 @@ namespace Diverse
 
         // ───────────────────────── Scenery (called by ChunkView per open tile) ─────────────────────────
 
+        /// <summary>An object of this size for this place (any non-rare one of the size if none fits). Lists are built once per look.</summary>
         static Item Pick(string size, string place, float r)
         {
             var list = Items;
-            var exact = list.Where(i => i.size == size && i.place == place).ToList();
-            if (exact.Count == 0) exact = list.Where(i => i.size == size && i.place != "rare").ToList();
+            string key = size + "/" + place;
+            if (!buckets.TryGetValue(key, out var exact))
+            {
+                exact = list.Where(i => i.size == size && i.place == place).ToList();
+                if (exact.Count == 0) exact = list.Where(i => i.size == size && i.place != "rare").ToList();
+                buckets[key] = exact;
+            }
             if (exact.Count == 0) return null;
             return exact[Mathf.Min(exact.Count - 1, (int)(r * exact.Count))];
         }

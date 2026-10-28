@@ -16,6 +16,9 @@ namespace Diverse
         [Tooltip("XP curve, evolution frequency, skill unlock levels, warp stones.")]
         public ProgressionDef progression = new ProgressionDef();
 
+        [Tooltip("Hit-stop limits: how hits feel (a short slow-down, never a hard freeze).")]
+        public FeelDef feel = new FeelDef();
+
         [Header("Ability rules (Rule IR limits, power budget, tier unlocks)")]
         public AbilityRulesData abilityRules;
 

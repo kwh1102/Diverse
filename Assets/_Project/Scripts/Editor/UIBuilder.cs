@@ -332,6 +332,9 @@ namespace Diverse.EditorTools
             var design = BuildDesignStudio(root, false);
             UIKit.Show(design, false);
             Wire(menu, "design", design);
+            var slots = BuildSaveSelect(root);
+            UIKit.Show(slots, false);
+            Wire(menu, "slots", slots);
             UIKit.Show(select, false);
             UIKit.Show(settings, false);
             Wire(menu, "title", title);
@@ -361,11 +364,9 @@ namespace Diverse.EditorTools
             var layout = col.gameObject.AddComponent<VerticalLayoutGroup>();
             layout.spacing = 6; layout.childControlHeight = false; layout.childControlWidth = true; layout.childForceExpandHeight = false;
             Button B(string n, string cap) { var b = Btn(col, n, cap, TL, Vector2.zero, new Vector2(140, 22)); return b; }
-            var cont = B("Continue", "이어하기 — 영웅 Lv.1");
-            var abandon = B("Abandon", "이 삶을 끝내고 새로 시작");
-            var start = B("Start", "새로운 삶 시작");
+            // Worlds are continued / started / ended / deleted on the slot screen (SaveSelectView); the title only leads there
+            var slotB = B("ChangeSlot", "모드·세계 선택");
             var settings = B("Settings", "설정");
-            var reset = B("ResetWorld", "새로운 세계 시작");
             var quit = B("Quit", "종료");
             var footer = Label(rt, "Footer", "AI 진화: 로컬 모드   ·   세계 시드 0", BL, new Vector2(8, -18), new Vector2(620, 14), 9);
             footer.rectTransform.pivot = new Vector2(0, 0);
@@ -373,8 +374,7 @@ namespace Diverse.EditorTools
 
             Wire(v, "logo", logo.rectTransform);
             WireArray(v, "rabbits", rabbits);
-            Wire(v, "continueButton", cont); Wire(v, "abandonButton", abandon); Wire(v, "startButton", start);
-            Wire(v, "settingsButton", settings); Wire(v, "resetButton", reset); Wire(v, "quitButton", quit);
+            Wire(v, "slotButton", slotB); Wire(v, "settingsButton", settings); Wire(v, "quitButton", quit);
             Wire(v, "footer", footer);
             return v;
         }

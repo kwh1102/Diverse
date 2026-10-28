@@ -15,6 +15,10 @@ namespace Diverse
         enum S { Idle, Chase, Windup, Strike, Recover, Stunned, Dying }
         S state;
         float stateT, attackCd, wanderT, animT, stunT;
+
+        // Smooth motion between the two walk frames (Actor.Render): a hop-timed bob and a lean while chasing
+        protected override float LeanTarget => state == S.Chase && Mathf.Abs(Facing.x) > 0.05f ? (Facing.x < 0 ? 3f : -3f) : 0;
+        protected override float Bob => state == S.Chase ? Mathf.Abs(Mathf.Sin(stride)) * 0.06f : Mathf.Sin(animT * 3f) * 0.01f;
         Vector2 wanderTo, strikeDir, strikeTarget;
         [SerializeField] SpriteRenderer warn;   // attack telegraph (prefab child, hidden until windup)
         bool aggro;
@@ -83,7 +87,17 @@ namespace Diverse
         protected override void Update()
         {
             float dt = Time.deltaTime;
-            if (dt > 0 && Alive) Think(dt);
+            if (dt > 0 && Alive)
+            {
+                var startPos = Pos;
+                movedThisFrame = false;
+                Think(dt);
+                Coast(dt);
+                // Fast moves (lunges, charges, dives, being knocked flying) leave fading afterimages
+                float speed = (Pos - startPos).magnitude / dt;
+                ghostT -= dt;
+                if (speed > 6.5f && ghostT <= 0) { ghostT = 0.035f; Fx.I?.Afterimage(body, new Color(1f, 0.75f, 0.75f, 0.5f), 0.18f); }
+            }
             base.Update();
             Animate(dt);
         }
@@ -176,16 +190,38 @@ namespace Diverse
             }
         }
 
+        // Eased walking: velocity eases toward the wanted one (slow start, speeding up), and each stride pulses (slow at foot
+        // contact, fastest mid-step; the average is the plain speed, so chases are as fast as before). Coast glides to a stop.
+        Vector2 moveVel;
+        float stride;               // radians; one step = PI
+        bool movedThisFrame;
+        float ghostT;
+        const float StridePerUnit = 2.6f;
+
         void MoveToward(Vector2 target, float speed, float dt)
         {
             Vector2 to = target - Pos;
             if (to.sqrMagnitude < 0.01f) return;
+            stride += speed * dt * StridePerUnit;
+            float pulse = 0.7f + 0.6f * Mathf.Pow(Mathf.Sin(stride), 2);
+            moveVel = Vector2.Lerp(moveVel, to.normalized * speed * pulse, 1 - Mathf.Exp(-9f * dt));
+            movedThisFrame = true;
+            float step = moveVel.magnitude * dt;
             var before = Pos;
-            Pos = WorldStreamer.I.Move(Pos, to.normalized * speed * dt, radius);
+            Pos = WorldStreamer.I.Move(Pos, moveVel * dt, radius);
             // 막혔으면 옆으로 비켜가기
-            if ((Pos - before).sqrMagnitude < speed * dt * speed * dt * 0.1f)
+            if ((Pos - before).sqrMagnitude < step * step * 0.1f)
                 Pos = WorldStreamer.I.Move(Pos, to.normalized.Rotate(GetInstanceID() % 2 == 0 ? 75 : -75) * speed * dt, radius);
             if (Mathf.Abs(to.x) > 0.05f) Facing = to.normalized;
+        }
+
+        /// <summary>Not walking this frame: glide to a stop instead of halting dead.</summary>
+        void Coast(float dt)
+        {
+            if (movedThisFrame) return;
+            if (moveVel.sqrMagnitude < 0.01f) { moveVel = Vector2.zero; return; }
+            moveVel *= Mathf.Exp(-11f * dt);
+            Pos = WorldStreamer.I.Move(Pos, moveVel * dt, radius);
         }
 
         void Separate(float dt)
@@ -423,14 +459,16 @@ namespace Diverse
                 return;
             }
             animT += dt * (state == S.Chase ? 2.2f : 1.2f);
-            int frame = (int)(animT * 3) % 2;
+            // Walking alternates the two steps (1 / 4); standing still keeps the old 0 / 1 shuffle
+            // Walking frames follow the stride: the step picture changes at foot contact, the slow point of the stride pulse
+            int frame = state == S.Chase ? ((int)(stride / Mathf.PI) % 2 == 0 ? 1 : 4) : (int)(animT * 3) % 2;
             if (state == S.Windup) frame = 2;
             else if (flash > 0.3f) frame = 3;      // just got hit
             body.sprite = Art.Enemy(def.sprite, frame);
             if (Mathf.Abs(Facing.x) > 0.05f) body.flipX = Facing.x < 0;
             if (state == S.Windup && (int)(stateT * 16) % 2 == 0) flash = Mathf.Max(flash, 0.35f);
             if (state == S.Stunned) visual.localRotation = Quaternion.Euler(0, 0, Mathf.Sin(Time.time * 20) * 6);
-            else visual.localRotation = Quaternion.identity;
+            else visual.localRotation = Quaternion.Euler(0, 0, lean);
         }
     }
 }
