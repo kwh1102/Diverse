@@ -104,7 +104,7 @@ namespace Diverse
             foreach (var gr in w.graves.Where(x => string.IsNullOrEmpty(x.forgottenBy)).Take(4))
             {
                 var grave = gr;
-                page.options.Add(new DialogueOption($"{grave.life}번째 삶 {grave.heroName} (Lv.{grave.level}, {DB.W((WeaponKind)grave.weapon).name})", () =>
+                page.options.Add(new DialogueOption($"{grave.life}번째 삶 {grave.heroName} (Lv.{grave.level}, {DesignStore.WeaponName(grave.costume, grave.weapon)})", () =>
                 {
                     Show(new DialoguePage
                     {
@@ -257,7 +257,7 @@ namespace Diverse
         static void Smith(Game g)
         {
             var p = g.Player;
-            int lvl = p.Weapon.baseDamage > DB.W(p.Weapon.kind).baseDamage ? Mathf.RoundToInt((p.Weapon.baseDamage / DB.W(p.Weapon.kind).baseDamage - 1) / 0.12f) : 0;
+            int lvl = p.Weapon.baseDamage > p.Weapon.Origin.baseDamage ? Mathf.RoundToInt((p.Weapon.baseDamage / p.Weapon.Origin.baseDamage - 1) / 0.12f) : 0;
             int cost = 50 + lvl * 40;
             // Weapon upgrades also unlock its QWER skills (in order) once the weapon reaches the level in ProgressionDef
             var smithLevels = DB.Progression.smithSkillLevels;
@@ -352,7 +352,7 @@ namespace Diverse
             var page = new DialoguePage
             {
                 speaker = $"{gr.life}번째 삶 — {gr.heroName}의 무덤", portrait = Art.Prop("grave"),
-                text = $"\"{gr.epitaph}\"\n레벨 {gr.level} · {DB.W((WeaponKind)gr.weapon).name} · 몬스터 {gr.kills}마리 처치",
+                text = $"\"{gr.epitaph}\"\n레벨 {gr.level} · {DesignStore.WeaponName(gr.costume, gr.weapon)} · 몬스터 {gr.kills}마리 처치",
             };
             if (!gr.recovered && gr.abilities.Count > 0)
             {

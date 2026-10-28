@@ -15,6 +15,7 @@ namespace Diverse
         readonly List<Interactable> interactables = new List<Interactable>();
         [SerializeField] SpriteRenderer ground;     // baked per chunk at runtime
         Texture2D groundTex;
+        readonly List<Transform> sway = new List<Transform>();   // designed-world decorations that move in the wind
         WorldStreamer w;
 
         public void Build(WorldStreamer world, Vector2Int k)
@@ -47,6 +48,12 @@ namespace Diverse
                     var p = new Vector2(wx + 0.5f, wy + 0.5f);
                     if (InStructure(structs, p, 1.5f)) continue;
                     if (p.y > 0 && p.y < WorldGen.TowerPos.y && Mathf.Abs(p.x - Mathf.Sin(p.y * 0.08f) * 3f) < 3f) continue;
+                    // A designed world arranges its own scenery by layout (streets, groves, rows…) instead of the biome rules
+                    if (DesignLayout.Active)
+                    {
+                        if (p.magnitude > WorldGen.TownRadius + 3) DesignLayout.Decorate(this, tiles, tx, ty, wx, wy, p, w.Gen.seed);
+                        continue;
+                    }
                     var biome = w.Gen.BiomeAt(p.x, p.y);
                     float density = Noise.Perlin(p.x, p.y, w.Gen.seed + 333, 0.05f);
                     float r = Hash.F(wx, wy, w.Gen.seed + 17);
@@ -97,6 +104,7 @@ namespace Diverse
             go.transform.SetParent(transform, false);
             go.transform.position = new Vector3(Mathf.Round(p.x * Art.PPU) / Art.PPU, Mathf.Round(p.y * Art.PPU) / Art.PPU, 0);
             var sr = Art.MakeRenderer(go, s, flat ? -31000 : Art.SortY(p.y));
+            if (!flat && name == "decor" && DesignRuntime.Active.world.HasDecor) sway.Add(go.transform);
             if (block && bw > 0) solids.Add(w.AddSolid(shape, p + new Vector2(0, bh * 0.5f), bw, bh));
             if (block)
             {
@@ -106,6 +114,14 @@ namespace Diverse
                 Art.MakeRenderer(sh, Art.Shadow(Mathf.RoundToInt(s.rect.width * 0.7f)), -30000);
             }
             return sr;
+        }
+
+        void Update()
+        {
+            if (sway.Count == 0) return;
+            float t = Time.time;
+            foreach (var s in sway)
+                if (s != null) s.localRotation = Quaternion.Euler(0, 0, Mathf.Sin(t * 1.4f + s.position.x * 0.9f + s.position.y * 0.4f) * 1.6f);
         }
 
         public void BlockArea(Vector2 center, float wdt, float hgt, Footprint shape = Footprint.Rect) => solids.Add(w.AddSolid(shape, center, wdt, hgt));

@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Diverse
 {
-    public enum Pose { Idle0, Idle1, Run0, Run1, Run2, Run3, Hurt, Cast }
+    public enum Pose { Idle0, Idle1, Run0, Run1, Run2, Run3, Hurt, Cast, AttackWind, AttackHit }
 
     /// <summary>
     /// 모든 도트 스프라이트를 코드로 생성·캐시한다. 외부 PNG를 넣고 싶으면
@@ -32,14 +32,28 @@ namespace Diverse
             }
         }
 
+        /// <summary>Sprites from the active design pack (DesignRuntime) that replace a key outright.</summary>
+        static readonly Dictionary<string, Sprite> overrides = new Dictionary<string, Sprite>();
+
         public static Sprite Get(string key, System.Func<Sprite> make)
         {
+            if (overrides.TryGetValue(key, out var o)) return o;
             if (cache.TryGetValue(key, out var s) && s != null) return s;
             var custom = Resources.Load<Sprite>("Sprites/" + key);
-            s = custom != null ? custom : make();
+            s = DesignRuntime.Restyle(key, custom != null ? custom : make());
             if (s != null) s.name = key;
             cache[key] = s;
             return s;
+        }
+
+        public static void Override(string key, Sprite s) { if (s == null) overrides.Remove(key); else overrides[key] = s; }
+
+        /// <summary>A new design pack was activated: drop every cached sprite and override so they are drawn again with its look.</summary>
+        public static void ResetLooks()
+        {
+            cache.Clear();
+            anims.Clear();
+            overrides.Clear();
         }
 
         public static Sprite[] GetAnim(string key, System.Func<Sprite[]> make)
@@ -68,18 +82,21 @@ namespace Diverse
         // ───────────────────────────── 캐릭터 (토끼) ─────────────────────────────
 
         public static Sprite Rabbit(CostumeDef c, Pose pose) =>
-            Get($"rabbit_{c.id}_{pose}", () => DrawRabbit(c.fur, c.furShade, c.outfit, c.outfitShade, c.accent, c.style, pose, false));
+            Get($"rabbit_{c.id}_{pose}", () => c.frames != null ? DesignArt.HeroPose(c.frames, pose, false)
+                : DrawRabbit(c.fur, c.furShade, c.outfit, c.outfitShade, c.accent, c.style, pose, false, c.look));
 
         /// <summary>노쇠한 과거 영웅: 털이 바래고 지팡이를 짚는다.</summary>
         public static Sprite ElderRabbit(CostumeDef c) =>
             Get($"elder_{c.id}", () =>
             {
+                if (c.frames != null) return DesignArt.HeroPose(c.frames, Pose.Idle0, true);
                 var fur = Pal.Lerp(c.fur, Pal.Hex("cfc8c0"), 0.6f);
                 var shade = Pal.Lerp(c.furShade, Pal.Hex("9d948c"), 0.6f);
-                return DrawRabbit(fur, shade, Pal.Mul(c.outfit, 0.75f), Pal.Mul(c.outfitShade, 0.75f), c.accent, c.style, Pose.Idle0, true);
+                return DrawRabbit(fur, shade, Pal.Mul(c.outfit, 0.75f), Pal.Mul(c.outfitShade, 0.75f), c.accent, c.style, Pose.Idle0, true, c.look);
             });
 
-        static Sprite DrawRabbit(Color32 fur, Color32 furShade, Color32 outfit, Color32 outfitShade, Color32 accent, int style, Pose pose, bool elder)
+        /// <param name="look">Designed hero (null for the built-in costumes): adds its headwear/accessory.</param>
+        static Sprite DrawRabbit(Color32 fur, Color32 furShade, Color32 outfit, Color32 outfitShade, Color32 accent, int style, Pose pose, bool elder, HeroLook look = null)
         {
             var cv = new PixelCanvas(26, 30);
             int bob = 0, lf = 0, rf = 0, earSway = 0;
@@ -171,6 +188,8 @@ namespace Diverse
             cv.Set(cx + 4, ey - 1, Pal.Hex("e07a8a"));
             cv.Rect(cx - 1, ey - 2, 2, 1, Pal.A(Pal.Blush, 200));
             cv.Rect(cx + 6, ey - 2, 2, 1, Pal.A(Pal.Blush, 200));
+
+            DesignArt.Decorate(cv, look, cx, hy, ey, accent);
 
             // 스카프(목) — style 0,1
             if (style == 0 || style == 1) { cv.Rect(cx - 4, by + 7, 9, 2, accent); cv.Rect(cx - 5, by + 5, 2, 3, accent); }

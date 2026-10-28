@@ -81,7 +81,7 @@ namespace Diverse
             GameTime.Tick();
             float dt = Time.deltaTime;
 
-            if (Player != null) WorldStreamer.I.Tick(Player.Pos);
+            if (Player != null) { WorldStreamer.I.Tick(Player.Pos); DesignRuntime.TickAmbient(Player.Pos, dt); }
 
             if (State == GameState.Playing && Player != null && Player.Alive)
             {
@@ -157,8 +157,10 @@ namespace Diverse
             Fx.I.ClearAll();
 
             // Start position: plaza (a little in front of the well)
-            var w = DB.W(weapon);
+            // A designed hero fights with its own weapon (DesignCombat: parts from the assets, power-normalized)
+            var w = DesignCombat.For(DesignStore.PackOfCostume(costume.id)) ?? DB.W(weapon);
             var weaponCopy = w.Clone();
+            if (DesignRuntime.BeginRun(costume, weaponCopy)) WorldStreamer.I.UnloadAll();
             if (Player != null) Destroy(Player.gameObject);
             WorldStreamer.I.Warm(new Vector2(0, -1.5f));
             Player = Player.Spawn(costume, weaponCopy, new Vector2(0, -1.5f));
@@ -169,6 +171,8 @@ namespace Diverse
             CameraRig.I.Snap(Player.Pos);
             Offer = null; Generating = false; Boss = null; ChatBusy = false;
             ResetPrefetch();
+            var heroPack = DesignStore.PackOfCostume(costume.id);
+            if (heroPack != null) StartCoroutine(StartingPerkRoutine(heroPack));
             State = GameState.Playing;
             GameTime.ClearPauses();
             World.Log($"{World.lifeCount}번째 삶: {HeroName}({costume.name}, {w.name}) — 기억의 광장에서 눈을 떴다.", "life");
@@ -184,6 +188,26 @@ namespace Diverse
 
         // ───────────────────────── Continuing a life ─────────────────────────
 
+
+        /// <summary>
+        /// Design studio (pause menu) committed a new look for this life: redraw the hero, weapon and world.
+        /// The chassis is locked by the studio, so only names, colors and sprites change — never the numbers.
+        /// </summary>
+        public void ApplyDesign(DesignPack committed)
+        {
+            var p = Player;
+            if (p == null) return;
+            p.Costume = DesignStore.CostumeOf(committed);
+            DesignRuntime.Activate(committed);
+            DesignRuntime.Skin(p.Weapon);
+            p.RefreshLook();
+            WorldStreamer.I.UnloadAll();
+            WorldStreamer.I.Warm(p.Pos);
+            World.Log($"{Ko.I(HeroName)} 세계의 모습을 새로 그렸다. {committed.summary}", "event");
+            Ui.Toast("디자인을 적용했다: " + (string.IsNullOrEmpty(committed.summary) ? "새로운 모습" : committed.summary));
+            SaveSystem.SaveWorld(World);
+            SaveRun();
+        }
 
         /// <summary>Snapshot the current life so it can be continued later.</summary>
         public void SaveRun()
@@ -209,14 +233,16 @@ namespace Diverse
         {
             var r = Session.PendingRun;
             if (r == null) return;
-            var costume = DB.Costumes.FirstOrDefault(c => c.id == r.costume) ?? DB.Costumes[0];
+            var costume = DB.Costume(r.costume);
             var weapon = (WeaponKind)r.weapon;
             HeroName = r.heroName;
             Diverse.World.I.ResetForRun();
             Fx.I.ClearAll();
-            var w = DB.W(weapon);
+            // A designed hero fights with its own weapon (DesignCombat: parts from the assets, power-normalized)
+            var w = DesignCombat.For(DesignStore.PackOfCostume(costume.id)) ?? DB.W(weapon);
             var weaponCopy = w.Clone();
             if (r.weaponDamage > 0) weaponCopy.baseDamage = r.weaponDamage;
+            if (DesignRuntime.BeginRun(costume, weaponCopy)) WorldStreamer.I.UnloadAll();
             if (Player != null) Destroy(Player.gameObject);
             var pos = new Vector2(r.x, r.y);
             WorldStreamer.I.Warm(pos);

@@ -7,6 +7,9 @@ namespace Diverse
         /// <summary>적 스프라이트 2프레임(대기/이동 교차) + 피격 프레임.</summary>
         public static Sprite Enemy(string key, int frame) => Get($"enemy_{key}_{frame}", () => DrawEnemy(key, frame));
 
+        /// <summary>Height in pixels of the hand-made enemy sprite (redrawn enemies keep it, so hitboxes still match).</summary>
+        public static int EnemyHeight(string key) => Mathf.RoundToInt(DrawEnemy(key, 0).rect.height);
+
         static Sprite DrawEnemy(string key, int f)
         {
             switch (key)

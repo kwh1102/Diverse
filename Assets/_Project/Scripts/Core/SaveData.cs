@@ -30,6 +30,9 @@ namespace Diverse
         public List<WarpStone> warpStones = new List<WarpStone>();                // placed warp stones (shared by every life)
         public string lastCostume = "white";
         public int lastWeapon;
+        public string designId;               // this world's look (designs/<id>.json); empty = the built-in art
+        public int designCalls;               // AI design generations in this world (shown in the studio)
+        public float designCostUsd;           // their estimated API cost
 
         public bool Flag(string key) => flags.Contains(key);
         public void SetFlag(string key) { if (!flags.Contains(key)) flags.Add(key); }
@@ -126,6 +129,7 @@ namespace Diverse
         public List<string> bindings = new List<string>();   // "action=path"
         public string aiEndpoint = "https://api.openai.com/v1/chat/completions";
         public string aiModel = "gpt-4o-mini";
+        public string imageModel = "gpt-image-1-mini";   // design studio pictures (Images API)
         public bool aiEnabled = true;
     }
 
@@ -133,6 +137,8 @@ namespace Diverse
     {
         /// <summary>Tests set DIVERSE_SAVE_DIR to a scratch folder so they never touch the player's saves.</summary>
         static string Dir => System.Environment.GetEnvironmentVariable("DIVERSE_SAVE_DIR") is { Length: > 0 } d ? d : Application.persistentDataPath;
+        /// <summary>Design packs (DesignStore). Kept when a world is reset so graves of older worlds' heroes still draw.</summary>
+        public static string DesignDir => Path.Combine(Dir, "designs");
         static string WorldPath => Path.Combine(Dir, "world.json");
         static string SettingsPath => Path.Combine(Dir, "settings.json");
         static string RunPath => Path.Combine(Dir, "run.json");

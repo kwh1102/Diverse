@@ -18,7 +18,7 @@ namespace Diverse.EditorTools
     /// Layout units match the old IMGUI screens: a 640x360 reference canvas (CanvasScaler) where 1 unit = U(1).
     /// Never overwrites an existing prefab or scene: delete one to have it rebuilt.
     /// </summary>
-    public static class UIBuilder
+    public static partial class UIBuilder
     {
         internal const string UIDir = Root + "/UI";
         const string UIPrefabDir = PrefabDir + "/UI";
@@ -329,6 +329,9 @@ namespace Diverse.EditorTools
             var title = BuildTitle(root);
             var select = BuildSelect(root);
             var settings = BuildSettingsView(root, standalone: true);
+            var design = BuildDesignStudio(root, false);
+            UIKit.Show(design, false);
+            Wire(menu, "design", design);
             UIKit.Show(select, false);
             UIKit.Show(settings, false);
             Wire(menu, "title", title);
@@ -525,8 +528,10 @@ namespace Diverse.EditorTools
             var death = BuildDeath(root);
             var evolve = BuildEvolve(root);
             var map = BuildMap(root);
+            var studio = BuildDesignStudio(root, true);
+            WireDesignButton(pause, studio);
             tooltip.transform.SetAsLastSibling();
-            foreach (var go in new Component[] { pause, dialogue, death, evolve, map }) UIKit.Show(go, false);
+            foreach (var go in new Component[] { pause, dialogue, death, evolve, map, studio }) UIKit.Show(go, false);
             UIKit.Show(dim.gameObject, false);
 
             Wire(ui, "hud", hud); Wire(ui, "pause", pause); Wire(ui, "dialogue", dialogue); Wire(ui, "death", death);

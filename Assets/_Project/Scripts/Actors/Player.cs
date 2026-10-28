@@ -107,10 +107,18 @@ namespace Diverse
             body.sprite = Art.Rabbit(Costume, Pose.Idle0);
             SetShadowSize(14);
             weaponPivot.localPosition = Art.HandAnchor;
-            weaponSr.sprite = Art.Weapon(Weapon.kind);
+            RefreshLook();
             // The shield child is always in the prefab; only sword & shield shows it
             if (Weapon.kind == WeaponKind.SwordShield) shieldSr.sprite = Art.Shield();
             else { shieldSr.gameObject.SetActive(false); shieldSr = null; }
+        }
+
+        /// <summary>Re-read the sprites after a design pack change (the body re-reads its sprite every frame).</summary>
+        public void RefreshLook()
+        {
+            weaponSr.sprite = Art.Weapon(Weapon.kind);
+            weaponSr.enabled = !DesignRuntime.WeaponHidden;
+            if (shieldSr != null) shieldSr.sprite = Art.Shield();
         }
 
         // ───────────────────────── Stats ─────────────────────────
@@ -581,13 +589,19 @@ namespace Diverse
                 Knockback(-dir, step.recoil * 30f);
                 CameraRig.I?.Kick(-dir, step.kick);
                 CameraRig.I?.Shake(step.shake * 0.6f * Game.Settings.shakeScale);
-                Fx.I?.Burst(origin + dir * 0.6f, Pal.Hex("fff1b0"), 6, 6, 0.2f, 0, 1, 50, dir.Angle());
+                // The design pack decides where shots come out (hand, mouth, eyes…) and their trail color — never their numbers
+                Vector2 muzzle = Pos + DesignRuntime.AttackOrigin(dir);
+                Color32 trail = DesignRuntime.Trail ?? Pal.Hex("fff1b0");
+                if (DesignRuntime.MuzzleFx is { } flash) Fx.I?.Play(flash, muzzle + dir * 0.6f, dir.Angle(), 20, 1, null, true);
+                else Fx.I?.Burst(muzzle + dir * 0.6f, trail, 6, 6, 0.2f, 0, 1, 50, dir.Angle());
                 for (int i = 0; i < step.projectileCount; i++)
                 {
                     var d = dir.Rotate((i - (step.projectileCount - 1) / 2f) * step.projectileSpread);
                     var info = new DamageInfo { amount = dmg, source = this, direction = d, knockback = step.knockback, hitstop = step.hitstop, canCrit = true, tags = w.tags, element = w.element };
-                    var pr = Projectile.Spawn(Art.Bolt(), origin + d * 0.5f, d * 19f, Team.Enemy, this, info);
-                    pr.color = Pal.Hex("fff1b0"); pr.life = step.range / 19f; pr.shake = step.shake; pr.kick = step.kick; pr.sfx = w.sfxHit;
+                    var pr = Projectile.Spawn(Art.Bolt(), muzzle + d * 0.5f, d * 19f, Team.Enemy, this, info);
+                    pr.color = trail; pr.life = step.range / 19f; pr.shake = step.shake; pr.kick = step.kick; pr.sfx = w.sfxHit;
+                    pr.spin = DesignRuntime.ShotSpins;
+                    pr.trailFx = DesignRuntime.TrailFx;
                 }
             }
             else
@@ -789,6 +803,8 @@ namespace Diverse
             Pose pose;
             if (!Alive) pose = Pose.Hurt;
             else if (flash > 0.5f) pose = Pose.Hurt;
+            // A drawn hero has wind-up / strike poses (a punch or kick when bare-handed)
+            else if (Costume.frames != null && weaponSwingT < weaponSwingDur) pose = weaponSwingT < weaponSwingDur * 0.45f ? Pose.AttackWind : Pose.AttackHit;
             else if (dashT > 0) pose = Pose.Run1;
             else if (Moving) pose = (Pose)((int)Pose.Run0 + (int)(animT * 10) % 4);
             else pose = (int)(animT * 2.2f) % 2 == 0 ? Pose.Idle0 : Pose.Idle1;
@@ -800,6 +816,7 @@ namespace Diverse
             // Weapon: swings during attacks, otherwise held at the side
             if (weaponSr != null)
             {
+                bool mouth = DesignRuntime.HoldInMouth;
                 float ang;
                 if (weaponSwingT < weaponSwingDur)
                 {
@@ -811,13 +828,15 @@ namespace Diverse
                 {
                     float idle = Weapon.kind == WeaponKind.Crossbow ? Facing.Angle() : (body.flipX ? 120 : 60) + Mathf.Sin(animT * 3) * 3;
                     if (Weapon.kind == WeaponKind.Crossbow && actionLock <= 0) idle = (AimPoint - Pos).Angle();
+                    if (mouth) idle = (body.flipX ? 180 : 0) + Mathf.Sin(animT * 2) * 4;   // held between the teeth
                     ang = idle;
                 }
                 weaponPivot.localRotation = Quaternion.Euler(0, 0, ang);
-                bool behind = ang > 20 && ang < 160 && weaponSwingT >= weaponSwingDur;
+                bool behind = !mouth && ang > 20 && ang < 160 && weaponSwingT >= weaponSwingDur;
                 weaponSr.sortingOrder = body.sortingOrder + (behind ? -1 : 1);
                 weaponSr.flipY = Mathf.Abs(Mathf.DeltaAngle(ang, 0)) > 90;
-                weaponPivot.localPosition = new Vector3(body.flipX ? -Art.HandAnchor.x : Art.HandAnchor.x, Art.HandAnchor.y, 0);
+                var anchor = mouth ? DesignRuntime.MouthAnchor(Costume) : Art.HandAnchor;
+                weaponPivot.localPosition = new Vector3(body.flipX ? -anchor.x : anchor.x, anchor.y, 0);
             }
             if (shieldSr != null)
             {

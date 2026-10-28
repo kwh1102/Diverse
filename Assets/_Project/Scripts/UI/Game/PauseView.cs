@@ -22,6 +22,9 @@ namespace Diverse
         [SerializeField] Text chronicleHeader, chronicleList;
         [Header("Buttons")]
         [SerializeField] Button resume, toTitle;
+        [Header("Design studio (child of GameCanvas, opened over the pause menu)")]
+        [SerializeField] Button designButton;
+        [SerializeField] DesignStudioView design;
         [SerializeField] Color selectedTint = new Color(1f, 0.95f, 0.7f);
 
         static readonly string[] TabIds = { "abilities", "attrs", "chronicle", "settings", "keys" };
@@ -46,6 +49,8 @@ namespace Diverse
             }
             UIKit.Bind(resume, () => g.CloseOverlay());
             UIKit.Bind(toTitle, () => g.SaveAndQuitToTitle());
+            if (design != null) { design.InitInGame(game); UIKit.Bind(designButton, design.OpenInGame); }
+            else UIKit.Show(designButton, false);
         }
 
         public void Open(string id)

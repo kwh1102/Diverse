@@ -54,6 +54,11 @@ namespace Diverse
 
         /// <summary>Per-run copy (the smith upgrades baseDamage on it). Combo/skill arrays stay shared with the asset.</summary>
         public WeaponDef Clone() => (WeaponDef)MemberwiseClone();
+
+        /// <summary>Designed weapons (DesignCombat): the built template. Asset weapons: null.</summary>
+        [NonSerialized] public WeaponDef origin;
+        /// <summary>What the smith compares upgrades against.</summary>
+        public WeaponDef Origin => origin ?? DB.W(kind);
     }
 
     /// <summary>One costume perk line: stat += value (Add) or stat *= 1 + value (Mul).</summary>
@@ -75,6 +80,8 @@ namespace Diverse
         public int style;
         public StatMod[] mods;
         public string tags;              // costume-specific tags (fed into the AI context)
+        [NonSerialized] public HeroLook look;   // designed hero (DesignStore "d:" costumes): extra decorations
+        [NonSerialized] public Texture2D[] frames; // designed hero poses (pixelized: idle, step A, step B, action); Art animates them
 
         public void Apply(Stats s)
         {
@@ -178,7 +185,7 @@ namespace Diverse
 
         public static ProgressionDef Progression => Asset.progression ?? (Asset.progression = new ProgressionDef());
         public static WeaponDef W(WeaponKind k) => Weapons[k];
-        public static CostumeDef Costume(string id) => Costumes.Find(c => c.id == id) ?? Costumes[0];
+        public static CostumeDef Costume(string id) => DesignStore.Costume(id) ?? Costumes.Find(c => c.id == id) ?? Costumes[0];
         public static EnemyDef Enemy(string id) => Enemies.TryGetValue(id, out var e) ? e : Enemies["shroom"];
 
         public static EnemyDef ScaledEnemy(string id, float tier)
@@ -187,7 +194,7 @@ namespace Diverse
             float hpMul = 1f + tier * 0.35f, dmgMul = 1f + tier * 0.18f;
             return new EnemyDef
             {
-                id = b.id, name = b.name, brain = b.brain, attack = b.attack, hp = b.hp * hpMul, damage = b.damage * dmgMul, speed = b.speed * (1 + Mathf.Min(tier, 10) * 0.02f), radius = b.radius,
+                id = b.id, name = DesignRuntime.EnemyName(b.id, b.name), brain = b.brain, attack = b.attack, hp = b.hp * hpMul, damage = b.damage * dmgMul, speed = b.speed * (1 + Mathf.Min(tier, 10) * 0.02f), radius = b.radius,
                 attackRange = b.attackRange, attackWindup = b.attackWindup, attackCooldown = b.attackCooldown, aggroRange = b.aggroRange,
                 xp = b.xp * (1 + tier * 0.25f), gold = b.gold * (1 + tier * 0.25f), mass = b.mass, sprite = b.sprite, projectileColor = b.projectileColor,
                 hopInterval = b.hopInterval, strafe = b.strafe, attackParam = b.attackParam, attackCount = b.attackCount,

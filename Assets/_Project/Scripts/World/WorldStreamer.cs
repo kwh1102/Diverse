@@ -91,6 +91,20 @@ namespace Diverse
             buildQueue.Clear();
         }
 
+        /// <summary>Drop every loaded chunk properly (the design look changed); Warm/Tick builds them again with the new art.</summary>
+        public void UnloadAll()
+        {
+            groundCache.Clear();     // a designed layout may lay different roads
+            foreach (var view in chunks.Values)
+            {
+                if (view == null) continue;
+                view.Unload();
+                Destroy(view.gameObject);
+            }
+            chunks.Clear();
+            buildQueue.Clear();
+        }
+
         public static Vector2Int ChunkOf(Vector2 p) =>
             new Vector2Int(Mathf.FloorToInt(p.x / WorldGen.Chunk), Mathf.FloorToInt(p.y / WorldGen.Chunk));
 

@@ -63,7 +63,8 @@ namespace Diverse
             D("kt_flash", "천 번 베기", "순식간에 공간이 갈라진다. 범위 안의 모든 적을 찢는다.", 24, 0.9f, "e6f8ff", "✧");
         }
 
-        public static SkillDef Get(string id) => defs.TryGetValue(id, out var d) ? d : null;
+        /// <summary>A designed weapon may rename its skills (DesignRuntime); behaviour and numbers stay this table's.</summary>
+        public static SkillDef Get(string id) => DesignRuntime.RenameSkill(defs.TryGetValue(id, out var d) ? d : null);
 
         static DamageInfo Dmg(Player p, float mult, Vector2 dir, float kb, float hs, Element el = Element.None) => new DamageInfo
         {

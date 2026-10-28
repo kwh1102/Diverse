@@ -425,7 +425,8 @@ namespace Diverse
             animT += dt * (state == S.Chase ? 2.2f : 1.2f);
             int frame = (int)(animT * 3) % 2;
             if (state == S.Windup) frame = 2;
-            body.sprite = Art.Enemy(def.sprite, frame == 2 ? 2 : frame);
+            else if (flash > 0.3f) frame = 3;      // just got hit
+            body.sprite = Art.Enemy(def.sprite, frame);
             if (Mathf.Abs(Facing.x) > 0.05f) body.flipX = Facing.x < 0;
             if (state == S.Windup && (int)(stateT * 16) % 2 == 0) flash = Mathf.Max(flash, 0.35f);
             if (state == S.Stunned) visual.localRotation = Quaternion.Euler(0, 0, Mathf.Sin(Time.time * 20) * 6);

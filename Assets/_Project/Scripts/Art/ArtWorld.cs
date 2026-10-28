@@ -26,6 +26,7 @@ namespace Diverse
                 case Ground.DeepWater: a = Pal.Hex("3f78c9"); b = Pal.Hex("3567b0"); c = Pal.Hex("5a92dc"); break;
                 default: a = Pal.Hex("5aa0e0"); b = Pal.Hex("4b8fd1"); c = Pal.Hex("8cc6f2"); break;
             }
+            DesignRuntime.Ground(g, ref a, ref b, ref c);
         }
 
         /// <summary>
@@ -50,6 +51,7 @@ namespace Diverse
                             Color32 col = a;
                             if (n < 0.18f) col = b;
                             else if (n > 0.94f) col = c;
+                            if (DesignRuntime.GroundTexel(g, gx, gy, out var texel)) col = texel;   // generated ground texture
 
                             // 이웃 타일과의 경계 처리
                             Ground l = tiles[tx, ty + 1], r = tiles[tx + 2, ty + 1], d = tiles[tx + 1, ty], u = tiles[tx + 1, ty + 2];

@@ -23,10 +23,10 @@ namespace Diverse
             UIKit.Bind(abandonButton, () =>
             {
                 // Abandoning a life counts as a death: the hero gets a grave where they stood
-                if (confirmAbandon) { Session.AbandonRun(); confirmAbandon = false; menu.Show(MenuUI.Screen.CharacterSelect); }
+                if (confirmAbandon) { Session.AbandonRun(); confirmAbandon = false; menu.Show(menu.NewLifeScreen); }
                 else confirmAbandon = true;
             });
-            UIKit.Bind(startButton, () => menu.Show(MenuUI.Screen.CharacterSelect));
+            UIKit.Bind(startButton, () => menu.Show(menu.NewLifeScreen));
             UIKit.Bind(settingsButton, () => menu.Show(MenuUI.Screen.Settings));
             UIKit.Bind(resetButton, () =>
             {

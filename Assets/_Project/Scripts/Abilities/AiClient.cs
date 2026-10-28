@@ -35,6 +35,21 @@ namespace Diverse
             ("gpt-4.1", "GPT-4.1", "가장 높은 품질, 느리고 비쌈"),
         };
 
+        /// <summary>USD per 1M tokens (input, output) for the cost estimate shown in the design studio. Unknown models → null.</summary>
+        static readonly (string id, float input, float output)[] Prices =
+        {
+            ("gpt-4o-mini", 0.15f, 0.60f), ("gpt-4.1-mini", 0.40f, 1.60f), ("gpt-4.1-nano", 0.10f, 0.40f), ("gpt-4.1", 2.00f, 8.00f),
+        };
+
+        /// <summary>Token usage of the last successful call (0 when the endpoint didn't report it).</summary>
+        public static int LastPromptTokens, LastCompletionTokens;
+
+        public static float? CostUsd(string model, int promptTokens, int completionTokens)
+        {
+            foreach (var p in Prices) if (p.id == model) return (promptTokens * p.input + completionTokens * p.output) / 1_000_000f;
+            return null;
+        }
+
         public static bool IsPresetModel(string id) => Array.Exists(Models, m => m.id == id);
         public static string ModelLabel(string id) { foreach (var m in Models) if (m.id == id) return m.label; return id; }
 
@@ -42,7 +57,8 @@ namespace Diverse
         [Serializable] class RespFmt { public string type = "json_object"; }
         [Serializable] class Req { public string model; public List<Msg> messages; public float temperature; public RespFmt response_format; public int max_tokens; }
         [Serializable] class Choice { public Msg message; public string finish_reason; }
-        [Serializable] class Resp { public List<Choice> choices; }
+        [Serializable] class Usage { public int prompt_tokens; public int completion_tokens; }
+        [Serializable] class Resp { public List<Choice> choices; public Usage usage; }
         [Serializable] class IntentList { public List<AbilityIntent> abilities; }
         [Serializable] class NameItem { public string id; public string name; public string desc; }
         [Serializable] class NameList { public List<NameItem> names; }
@@ -119,12 +135,15 @@ EXAMPLES
         }
 
         /// <summary>LLM #1: generate candidates (concept → Rule IR). Calls back with null on failure.</summary>
-        public static IEnumerator Generate(GenerationContext ctx, int count, Action<List<AbilityDef>> done)
+        /// <param name="concept">Design studio: the hero the player described — candidates must express it (starting passive).</param>
+        public static IEnumerator Generate(GenerationContext ctx, int count, Action<List<AbilityDef>> done, string concept = null)
         {
             var key = SaveSystem.LoadApiKey();
             if (string.IsNullOrEmpty(key)) { LastStatus = "API 키 없음 → 로컬 생성"; done(null); yield break; }
 
             LastPrompt = Request(ctx) +
+                (concept == null ? "" : "THIS IS THE HERO'S STARTING PASSIVE, made from how the player described their hero: \"" + concept +
+                    "\". Every candidate must clearly express that identity. Keep it simple (one mechanic macro).\n") +
                 $"Generate {count} STRUCTURALLY DIFFERENT candidates (develop the dominant behavior / synergy with owned abilities / stateful, trade-off or exploratory). " +
                 $"Use complexity up to tier {ctx.maxTier}. The \"abilities\" array MUST contain exactly {count} candidates. " +
                 "Keep each one compact (1~2 mechanic macros, omit empty fields) but never skip candidates.";
@@ -325,7 +344,7 @@ OUTPUT JSON: {""reply"":""..."",""changes"":[ {""card"":2, ...same intent schema
             var key = SaveSystem.LoadApiKey();
             if (string.IsNullOrEmpty(key)) { done(null); yield break; }
             var abil = string.Join(", ", g.abilities.ConvertAll(a => a.name));
-            string prompt = $"Write a one-sentence Korean epitaph (max 40 characters) for a rabbit hero. Name: {g.heroName}. Weapon: {DB.W((WeaponKind)g.weapon).name}. Level {g.level}. Kills {g.kills}. Cause of death: {g.cause}. Abilities: {abil}. Return JSON {{\"text\":\"...\"}}";
+            string prompt = $"Write a one-sentence Korean epitaph (max 40 characters) for a hero ({DB.Costume(g.costume).name}). Name: {g.heroName}. Weapon: {DesignStore.WeaponName(g.costume, g.weapon)}. Level {g.level}. Kills {g.kills}. Cause of death: {g.cause}. Abilities: {abil}. Return JSON {{\"text\":\"...\"}}";
             string json = null;
             yield return Post(key, "You are the Storyteller. Output JSON only.", prompt, 0.9f, 120, r => json = r);
             if (json == null) { done(null); yield break; }
@@ -340,8 +359,37 @@ OUTPUT JSON: {""reply"":""..."",""changes"":[ {""card"":2, ...same intent schema
         /// </summary>
         public const int TimeoutSeconds = 75;
 
+        /// <summary>One JSON-mode completion for other generators (design studio). Calls back with null on failure (see LastStatus).</summary>
+        public static IEnumerator Complete(string system, string user, float temp, int maxTokens, Action<string> done)
+        {
+            var key = SaveSystem.LoadApiKey();
+            if (string.IsNullOrEmpty(key)) { LastStatus = "API 키 없음"; done(null); yield break; }
+            yield return Post(key, system, user, temp, maxTokens, done);
+        }
+
         static IEnumerator Post(string key, string system, string user, float temp, int maxTokens, Action<string> done) =>
             PostMessages(key, new List<Msg> { new Msg { role = "system", content = system }, new Msg { role = "user", content = user } }, temp, maxTokens, done);
+
+        const string ImageMarker = "__DIVERSE_IMAGE_CONTENT__";
+
+        [Serializable] class Str { public string s; }
+        static string JsonString(string s) { var j = JsonUtility.ToJson(new Str { s = s }); return j.Substring(5, j.Length - 6); }
+
+        /// <summary>
+        /// One JSON-mode question about a picture (low detail: a few hundred tokens). Used by the design studio to check which
+        /// way generated sprites face. Calls back with null on failure.
+        /// </summary>
+        public static IEnumerator CompleteVision(string system, string question, byte[] png, int maxTokens, Action<string> done)
+        {
+            var key = SaveSystem.LoadApiKey();
+            if (string.IsNullOrEmpty(key)) { LastStatus = "API 키 없음"; done(null); yield break; }
+            var content = "[{\"type\":\"text\",\"text\":" + JsonString(question) + "},{\"type\":\"image_url\",\"image_url\":{\"url\":\"data:image/png;base64,"
+                          + Convert.ToBase64String(png) + "\",\"detail\":\"low\"}}]";
+            var msgs = new List<Msg> { new Msg { role = "system", content = system }, new Msg { role = "user", content = ImageMarker } };
+            string answer = null;
+            yield return PostOnce(key, msgs, 0, maxTokens, (c, _) => answer = c, content);
+            done(answer);
+        }
 
         static IEnumerator PostMessages(string key, List<Msg> messages, float temp, int maxTokens, Action<string> done)
         {
@@ -356,7 +404,8 @@ OUTPUT JSON: {""reply"":""..."",""changes"":[ {""card"":2, ...same intent schema
             done(content);
         }
 
-        static IEnumerator PostOnce(string key, List<Msg> messages, float temp, int maxTokens, Action<string, bool> done)
+        /// <param name="imageContent">Vision: JSON content array that replaces the user message marked ImageMarker.</param>
+        static IEnumerator PostOnce(string key, List<Msg> messages, float temp, int maxTokens, Action<string, bool> done, string imageContent = null)
         {
             float started = Time.realtimeSinceStartup;
             LastFatal = false;
@@ -368,7 +417,9 @@ OUTPUT JSON: {""reply"":""..."",""changes"":[ {""card"":2, ...same intent schema
                 response_format = new RespFmt(),
                 messages = messages,
             };
-            var body = Encoding.UTF8.GetBytes(JsonUtility.ToJson(req));
+            var json = JsonUtility.ToJson(req);
+            if (imageContent != null) json = json.Replace("\"" + ImageMarker + "\"", imageContent);
+            var body = Encoding.UTF8.GetBytes(json);
             using var www = new UnityWebRequest(Game.Settings.aiEndpoint, "POST");
             www.uploadHandler = new UploadHandlerRaw(body);
             www.downloadHandler = new DownloadHandlerBuffer();
@@ -403,6 +454,8 @@ OUTPUT JSON: {""reply"":""..."",""changes"":[ {""card"":2, ...same intent schema
             {
                 var resp = JsonUtility.FromJson<Resp>(www.downloadHandler.text);
                 var ch = resp?.choices != null && resp.choices.Count > 0 ? resp.choices[0] : null;
+                LastPromptTokens = resp?.usage?.prompt_tokens ?? 0;
+                LastCompletionTokens = resp?.usage?.completion_tokens ?? 0;
                 done(ch?.message?.content, ch?.finish_reason == "length");
             }
             catch (Exception e) { LastStatus = "AI 응답 해석 실패"; Debug.LogWarning(e); done(null, false); }
