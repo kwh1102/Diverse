@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace Diverse
@@ -18,8 +19,11 @@ namespace Diverse
         readonly List<Transform> sway = new List<Transform>();   // designed-world decorations that move in the wind
         WorldStreamer w;
 
+        static readonly ProfilerMarker BuildMarker = new ProfilerMarker("Diverse.ChunkBuild");   // read by DesignPerf / PerfProbe
+
         public void Build(WorldStreamer world, Vector2Int k)
         {
+            using var _perf = BuildMarker.Auto();
             w = world;
             key = k;
             int N = WorldGen.Chunk;

@@ -27,6 +27,7 @@ Shader "Diverse/Sprite"
             struct Varyings { float4 positionCS : SV_POSITION; half4 color : COLOR; float2 uv : TEXCOORD0; UNITY_VERTEX_OUTPUT_STEREO };
 
             TEXTURE2D(_MainTex); SAMPLER(sampler_MainTex);
+            #include "DiversePixel.hlsl"
             CBUFFER_START(UnityPerMaterial)
                 half4 _Color;
                 half4 _FlashColor;
@@ -48,7 +49,7 @@ Shader "Diverse/Sprite"
 
             half4 frag(Varyings i) : SV_Target
             {
-                half4 c = i.color * SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, i.uv);
+                half4 c = i.color * SamplePixelArt(TEXTURE2D_ARGS(_MainTex, sampler_MainTex), i.uv);
                 c.rgb = lerp(c.rgb, _FlashColor.rgb, _Flash);
                 clip(c.a - 0.01);
                 return c;

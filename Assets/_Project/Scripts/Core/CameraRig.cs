@@ -15,7 +15,15 @@ namespace Diverse
         public Camera Cam { get; private set; }
 
         public Transform target;
-        public int zoom = 4;            // 도트 1px = 화면 zoom px
+        public float zoom = 4;          // 도트 1px = 화면 zoom px (현재 목표값, 정수가 아닐 수 있음)
+        [Tooltip("가장 넓은 시야(기본)에서 화면 세로에 들어가는 대략의 도트 수. 클수록 넓게 보인다.")]
+        public float widestViewPx = 315;
+        [Tooltip("휠 한 칸에 확대되는 비율 (0.1 = 10%)")]
+        public float zoomStep = 0.1f;
+        [Tooltip("마우스 휠로 기본 시야에서 몇 칸까지 확대할 수 있는지")]
+        public int maxZoomIn = 8;
+        [Tooltip("휠 확대/축소가 따라가는 속도")]
+        public float zoomSharpness = 12f;
         public float followSharpness = 10f;
         public Vector2 lookAhead;       // 마우스 방향으로 살짝 시선 이동
 
@@ -24,6 +32,8 @@ namespace Diverse
         Vector2 kick;                   // 방향성 밀림 (빠르게 복귀)
         float zoomPunch;                // 강타 시 살짝 줌인
         Vector2 lead, lastTarget;       // movement look-ahead (smoothed)
+        int zoomIn;                     // wheel steps in from the widest view (0 = widest)
+        float zoomShown = -1;           // pixel scale on screen, eases towards zoom
 
         /// <summary>Scene setup: the Main Camera object in Game.unity carries Camera + CameraRig, with the Global Volume as a child.</summary>
         void Awake()
@@ -31,8 +41,26 @@ namespace Diverse
             I = this;
             Cam = GetComponent<Camera>();
             // Volume.profile (unlike sharedProfile) returns a runtime copy, so the low-HP vignette never writes into the asset
-            var vol = GetComponentInChildren<Volume>();
-            if (vol != null && vol.sharedProfile != null && vol.profile.TryGet<Vignette>(out var vig)) Vignette = vig;
+            volume = GetComponentInChildren<Volume>();
+            if (volume != null && volume.sharedProfile != null)
+            {
+                if (volume.profile.TryGet<Vignette>(out var vig)) Vignette = vig;
+                volume.profile.TryGet(out bloom);
+            }
+            SetPostFx(GraphicsQuality.PostFx);
+        }
+
+        Volume volume;
+        Bloom bloom;
+
+        /// <summary>Post-processing level (설정 → 그래픽): 0 off, 1 without bloom/HDR (the costly part), 2 full.</summary>
+        public void SetPostFx(int level)
+        {
+            if (Cam == null) return;
+            var data = Cam.GetUniversalAdditionalCameraData();
+            if (data != null) data.renderPostProcessing = level > 0;
+            Cam.allowHDR = level >= 2;
+            if (bloom != null) bloom.active = level >= 2;
         }
 
         void OnDestroy() { if (I == this) I = null; }
@@ -64,14 +92,32 @@ namespace Diverse
             trauma = Mathf.Max(0, trauma - dt * 1.6f);
             kick = Vector2.Lerp(kick, Vector2.zero, 1 - Mathf.Exp(-18f * dt));
             zoomPunch = Mathf.Lerp(zoomPunch, 0, 1 - Mathf.Exp(-12f * dt));
+            HandleWheel();
+            zoomShown = Mathf.Lerp(zoomShown, zoom, 1 - Mathf.Exp(-zoomSharpness * dt));
+            if (Mathf.Abs(zoomShown - zoom) < 0.002f) zoomShown = zoom;
             ApplyTransform();
         }
+
+        /// <summary>Mouse wheel while playing (not over UI): up zooms in, down back out to the widest view.</summary>
+        void HandleWheel()
+        {
+            var g = Game.I;
+            if (g == null || g.State != GameState.Playing || g.UiCapturingMouse) return;
+            float wheel = Controls.Scroll;
+            if (Mathf.Abs(wheel) < 0.01f) return;
+            zoomIn = Mathf.Clamp(zoomIn + (wheel > 0 ? 1 : -1), 0, Mathf.Max(0, maxZoomIn));
+        }
+
+        /// <summary>Widest pixel scale for this screen (screen pixels per art pixel, at least 1). Not a whole number in general:
+        /// the sprite shader (DiversePixel.hlsl) keeps the art pixels even at in-between scales.</summary>
+        float WidestZoom => Mathf.Max(1f, Screen.height / Mathf.Max(60f, widestViewPx));
 
         void ApplyTransform()
         {
             if (Cam == null) return;
-            zoom = Mathf.Max(2, Mathf.RoundToInt(Screen.height / 270f));
-            float baseSize = Screen.height / (2f * Art.PPU * zoom);
+            zoom = WidestZoom * Mathf.Pow(1f + zoomStep, zoomIn);
+            if (zoomShown <= 0) zoomShown = zoom;
+            float baseSize = Screen.height / (2f * Art.PPU * zoomShown);
             Cam.orthographicSize = baseSize * (1f - zoomPunch * 0.06f);
 
             float t = Time.unscaledTime * 38f;
@@ -79,13 +125,8 @@ namespace Diverse
             Vector2 shake = new Vector2(Mathf.PerlinNoise(t, 3.1f) - 0.5f, Mathf.PerlinNoise(7.7f, t) - 0.5f) * (s * 0.9f);
 
             Vector2 p = focus + shake + kick;
-            // 도트 격자에 맞춰 반올림 (흔들림 중에는 해제해 부드럽게)
-            float unit = 1f / (Art.PPU * zoom);
-            if (s < 0.01f && kick.sqrMagnitude < 0.0001f)
-            {
-                p.x = Mathf.Round(p.x / unit) * unit;
-                p.y = Mathf.Round(p.y / unit) * unit;
-            }
+            // No rounding to the screen-pixel grid: at walking speed that scrolled the world in alternating 4/5-pixel steps
+            // (visible judder). The sprite shader keeps art pixels clean at any sub-pixel camera position.
             transform.position = new Vector3(p.x, p.y, -10);
         }
 

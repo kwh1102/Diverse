@@ -50,6 +50,7 @@ namespace Diverse
             Settings = SaveSystem.LoadSettings();
             Sfx.Volume = Settings.sfx;
             Sfx.MusicVolume = Settings.music;
+            GraphicsQuality.Apply(Settings);
             Controls.Init(Settings);
             SaveSystem.MigrateLegacySaves();
             LoadSlot((GameMode)Mathf.Clamp(Settings.lastMode, 0, 1), Mathf.Clamp(Settings.lastSlot, 1, SaveSystem.SlotCount));

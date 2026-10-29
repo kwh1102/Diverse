@@ -174,6 +174,22 @@ namespace Diverse
         public float minHitstopScale = 0.25f;
         [Tooltip("A hit within this many seconds of the last hit-stop only gets 40% of it (flurries don't stutter).")]
         public float hitstopChain = 0.2f;
+
+        [Header("Attack variety (looks only, never hit areas or numbers)")]
+        [Tooltip("Melee swing/thrust effects are drawn this far (world units) in front of the body instead of centred on it.")]
+        public float meleeFxOffset = 0.4f;
+        [Tooltip("Each swing effect is turned up to this many degrees at random, so repeated swings don't look identical.")]
+        public float swingAngleJitter = 9f;
+        [Tooltip("Each swing effect is scaled up or down by up to this share at random.")]
+        public float swingScaleJitter = 0.1f;
+        [Tooltip("Body twist (degrees) on combo swings; steps alternate its direction.")]
+        public float attackTwist = 110f;
+        [Tooltip("Hop on the third combo step (world units per second, upward).")]
+        public float comboHop = 1.6f;
+        [Tooltip("Hop on a combo finisher.")]
+        public float finisherHop = 2.8f;
+        [Tooltip("Hurt reactions vary by up to this share (tilt strength), so a pack of hit enemies doesn't move in lockstep.")]
+        public float hurtVariance = 0.3f;
     }
 
     /// <summary>

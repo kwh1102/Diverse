@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace Diverse
@@ -31,6 +32,7 @@ namespace Diverse
 
         public static Enemy Spawn(EnemyDef def, Vector2 pos, string campId)
         {
+            HitchLog.Spawned++;
             var e = Instantiate(DB.Asset.enemyPrefab);
             e.name = def.name;
             e.Init(def, pos, campId);
@@ -84,8 +86,11 @@ namespace Diverse
 
         protected override Color BaseTint => def != null && def.elite ? new Color(1f, 0.72f, 0.78f) : Color.white;
 
+        static readonly ProfilerMarker EnemyMarker = new ProfilerMarker("Diverse.Enemies");   // read by PerfProbe
+
         protected override void Update()
         {
+            using var _perf = EnemyMarker.Auto();
             float dt = Time.deltaTime;
             if (dt > 0 && Alive)
             {
@@ -203,7 +208,7 @@ namespace Diverse
             Vector2 to = target - Pos;
             if (to.sqrMagnitude < 0.01f) return;
             stride += speed * dt * StridePerUnit;
-            float pulse = 0.7f + 0.6f * Mathf.Pow(Mathf.Sin(stride), 2);
+            float pulse = 0.88f + 0.24f * Mathf.Pow(Mathf.Sin(stride), 2);
             moveVel = Vector2.Lerp(moveVel, to.normalized * speed * pulse, 1 - Mathf.Exp(-9f * dt));
             movedThisFrame = true;
             float step = moveVel.magnitude * dt;

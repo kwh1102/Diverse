@@ -1,4 +1,5 @@
 using System.Linq;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace Diverse
@@ -12,8 +13,11 @@ namespace Diverse
         [SerializeField, Min(1)] int enemyMarkerSize = 3, bossMarkerSize = 6;
         float t;
 
+        static readonly ProfilerMarker MinimapMarker = new ProfilerMarker("Diverse.Minimap");   // read by DesignPerf / PerfProbe
+
         public void Tick(Game g)
         {
+            using var _perf = MinimapMarker.Auto();
             t -= Time.unscaledDeltaTime;
             if (t > 0) return;
             t = refreshInterval;

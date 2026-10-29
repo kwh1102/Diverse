@@ -8,7 +8,7 @@ namespace Diverse
     /// <summary>Pause menu (Game scene): 능력 / 능력치 / 연대기 / 설정 / 키 설정 tabs.</summary>
     public class PauseView : MonoBehaviour
     {
-        [SerializeField] Button[] tabs = new Button[5];     // abilities, attrs, chronicle, settings, keys
+        [SerializeField] Button[] tabs = new Button[6];     // abilities, attrs, chronicle, settings, keys, graphics
         [SerializeField] GameObject abilitiesPage, attrsPage, chroniclePage;
         [SerializeField] SettingsView settings;
         [Header("Abilities")]
@@ -27,7 +27,7 @@ namespace Diverse
         [SerializeField] DesignStudioView design;
         [SerializeField] Color selectedTint = new Color(1f, 0.95f, 0.7f);
 
-        static readonly string[] TabIds = { "abilities", "attrs", "chronicle", "settings", "keys" };
+        static readonly string[] TabIds = { "abilities", "attrs", "chronicle", "settings", "keys", "graphics" };
         string tab = "abilities";
         Game g;
 
@@ -56,13 +56,13 @@ namespace Diverse
         public void Open(string id)
         {
             tab = System.Array.IndexOf(TabIds, id) >= 0 ? id : "abilities";
-            for (int i = 0; i < tabs.Length; i++) tabs[i].image.color = TabIds[i] == tab ? selectedTint : Color.white;
+            for (int i = 0; i < tabs.Length; i++) if (tabs[i] != null) tabs[i].image.color = TabIds[i] == tab ? selectedTint : Color.white;
             UIKit.Show(abilitiesPage, tab == "abilities");
             UIKit.Show(attrsPage, tab == "attrs");
             UIKit.Show(chroniclePage, tab == "chronicle");
-            bool set = tab == "settings" || tab == "keys";
+            bool set = tab == "settings" || tab == "keys" || tab == "graphics";
             UIKit.Show(settings, set);
-            if (set) settings.Page(tab == "keys");
+            if (set) settings.Page(tab == "keys" ? SettingsView.KeysPage : tab == "graphics" ? SettingsView.GraphicsPage : SettingsView.SettingsPage);
         }
 
         void Update()

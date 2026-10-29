@@ -117,6 +117,7 @@ namespace Diverse.EditorTools
                 Shot("01_title");
                 Click(Find<TitleView>(), "Settings"); yield return F(3); Shot("02_settings");
                 Click(Find<SettingsView>(), "KeysTab"); yield return F(3); Shot("03_keys");
+                Click(Find<SettingsView>(), "GraphicsTab"); yield return F(3); Shot("03b_graphics");
                 Click(Find<SettingsView>(), "Back"); yield return F(2);
                 Click(Find<TitleView>(), "ChangeSlot"); yield return F(3); Shot("00_slots");
                 Click(Find<SaveSelectView>(), "CustomTab"); yield return F(1);
@@ -141,6 +142,13 @@ namespace Diverse.EditorTools
                     Fx.I.Number(at + new Vector2(-4.5f, 0), "31", Color.Lerp(Color.white, (Color)Combat.ElementColor(Element.Fire), 0.7f), 1.1f, 0.8f, -1);
                     Fx.I.Number(g.Player.Pos + new Vector2(0, 0.6f), "12", new Color(1f, 0.4f, 0.45f), 1f, 0.8f, -1);
                     yield return F(9); Shot("05d_damage_numbers");
+                    // A basic attack mid-swing: the swing picture should sit in front of the hero, not on it
+                    var weaponBefore = g.Player.Weapon;
+                    g.Player.Weapon = DB.W(WeaponKind.Katana);
+                    typeof(Player).GetMethod("BasicAttack", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                        ?.Invoke(g.Player, new object[] { Vector2.right });
+                    for (int i = 0; i < 4; i++) { yield return F(2); Shot("05e_attack_swing_" + i); }
+                    g.Player.Weapon = weaponBefore;
                     var minimapEnemy = Enemy.Spawn(DB.ScaledEnemy("fox", 0), g.Player.Pos + Vector2.right * 8, null);
                     yield return F(12); Shot("05b_minimap_enemy");
                     Object.Destroy(minimapEnemy.gameObject);
@@ -149,6 +157,7 @@ namespace Diverse.EditorTools
                     g.Ui.OpenTab("attrs"); yield return F(3); Shot("07_pause_attrs");
                     g.Ui.OpenTab("chronicle"); yield return F(3); Shot("08_pause_chronicle");
                     g.Ui.OpenTab("settings"); yield return F(3); Shot("09_pause_settings");
+                    g.Ui.OpenTab("graphics"); yield return F(3); Shot("09b_pause_graphics");
                     Click(Find<PauseView>(), "Design"); yield return F(3); Shot("09b_pause_design");
                     g.CloseOverlay(); yield return F(30); Shot("09c_world_designed");
                     // A pictured city (local stand-in pictures): street grid, buildings along the streets, two-variant ground

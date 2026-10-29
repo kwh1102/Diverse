@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace Diverse
@@ -58,6 +59,7 @@ namespace Diverse
 
         readonly List<Anim> anims = new List<Anim>();
         readonly List<Particle> parts = new List<Particle>();
+        int partCursor;
         readonly List<Ghost> ghosts = new List<Ghost>();
         readonly List<Popup> pops = new List<Popup>();
         [SerializeField] Font font;       // damage numbers (Galmuri11-Bold)
@@ -70,6 +72,21 @@ namespace Diverse
         void Awake() => I = this;
         void OnDestroy() { if (I == this) I = null; }
 
+        /// <summary>
+        /// Build the effect pools and the damage-number glyphs while the game loads (that frame is long anyway) instead of
+        /// during the first steps or the first fight. Everything is played far off screen and switched off again.
+        /// </summary>
+        public void Prewarm(int particles = 120, int animations = 24, int numbers = 12)
+        {
+            var far = new Vector2(-50000, -50000);
+            for (int i = 0; i < particles; i++) GetParticle(1 + i % 3, i % 2 == 0);
+            for (int i = 0; i < animations; i++) Play(Art.Dust(), far, 0, 24, 1, null, i % 2 == 0);
+            for (int i = 0; i < numbers; i++) Number(far, "0123456789!", Color.white, 1, 0.1f, 0, i == 0);
+            foreach (var p in parts) { p.active = false; p.go.SetActive(false); }
+            foreach (var a in anims) { a.active = false; a.go.SetActive(false); }
+            foreach (var p in pops) { p.active = false; p.go.SetActive(false); }
+        }
+
         // ───────── 스프라이트 애니메이션 ─────────
 
         public SpriteRenderer Play(Sprite[] frames, Vector2 pos, float angle = 0, float fps = 24, float scale = 1, Color? tint = null, bool additive = false, int order = 0, Transform follow = null, bool flipY = false)
@@ -79,6 +96,7 @@ namespace Diverse
             foreach (var x in anims) if (!x.active) { a = x; break; }
             if (a == null)
             {
+                HitchLog.PoolGrew++;
                 var go = new GameObject("fx");
                 go.transform.SetParent(transform, false);
                 a = new Anim { go = go, sr = go.AddComponent<SpriteRenderer>() };
@@ -105,6 +123,7 @@ namespace Diverse
 
         public void Burst(Vector2 pos, Color32 col, int count, float speed, float life = 0.45f, float gravity = 0f, int size = 2, float spreadDeg = 360, float dirDeg = 0, bool ground = false, bool additive = false)
         {
+            if (count > 1) count = Mathf.Max(1, Mathf.RoundToInt(count * GraphicsQuality.EffectScale));   // 설정 → 그래픽 → 효과
             for (int i = 0; i < count; i++)
             {
                 var p = GetParticle(size, additive);
@@ -126,10 +145,16 @@ namespace Diverse
 
         Particle GetParticle(int size, bool additive)
         {
+            // Next-fit: carry on from the last slot handed out (a scan from the start made big bursts O(n²))
             Particle p = null;
-            foreach (var x in parts) if (!x.active) { p = x; break; }
+            for (int k = 0; k < parts.Count; k++)
+            {
+                partCursor = (partCursor + 1) % parts.Count;
+                if (!parts[partCursor].active) { p = parts[partCursor]; break; }
+            }
             if (p == null)
             {
+                HitchLog.PoolGrew++;
                 var go = new GameObject("p");
                 go.transform.SetParent(transform, false);
                 p = new Particle { go = go, sr = go.AddComponent<SpriteRenderer>() };
@@ -146,11 +171,12 @@ namespace Diverse
 
         public void Afterimage(SpriteRenderer src, Color col, float life = 0.25f, bool silhouette = true)
         {
-            if (src == null || src.sprite == null) return;
+            if (src == null || src.sprite == null || !GraphicsQuality.KeepOptional()) return;
             Ghost g = null;
             foreach (var x in ghosts) if (!x.active) { g = x; break; }
             if (g == null)
             {
+                HitchLog.PoolGrew++;
                 var go = new GameObject("ghost");
                 go.transform.SetParent(transform, false);
                 g = new Ghost { go = go, sr = go.AddComponent<SpriteRenderer>() };
@@ -202,6 +228,7 @@ namespace Diverse
             foreach (var x in pops) if (!x.active) { p = x; break; }
             if (p == null)
             {
+                HitchLog.PoolGrew++;
                 var go = new GameObject("num");
                 go.transform.SetParent(transform, false);
                 var tm = go.AddComponent<TextMesh>();
@@ -244,8 +271,11 @@ namespace Diverse
             p.t = 0; p.life = life; p.scale = scale;
         }
 
+        static readonly ProfilerMarker FxMarker = new ProfilerMarker("Diverse.Fx");   // read by DesignPerf / PerfProbe
+
         void Update()
         {
+            using var _perf = FxMarker.Auto();
             float dt = Time.deltaTime;
             float udt = Time.unscaledDeltaTime;
 
@@ -327,11 +357,31 @@ namespace Diverse
 
         // ───────── 자주 쓰는 조합 ─────────
 
-        public void HitSpark(Vector2 pos, Vector2 dir, Color32 col, bool crit, float scale = 1f)
+        /// <param name="heavy">0~1 how hard the blow was (knockback): heavier hits get a ring and shards.</param>
+        public void HitSpark(Vector2 pos, Vector2 dir, Color32 col, bool crit, float scale = 1f, float heavy = 0f)
         {
-            Play(Art.HitSpark(col, crit ? 12 : 9), pos, Random.Range(0, 360f), 28, scale, null, true);
-            Burst(pos, col, crit ? 12 : 7, crit ? 9 : 7, 0.35f, 0, 2, 70, dir.Angle());
-            Burst(pos, Pal.White, crit ? 6 : 3, 6, 0.25f, 0, 1, 120, dir.Angle());
+            float ang = dir.Angle();
+            Play(Art.HitSpark(col, crit ? 12 : 9), pos, Random.Range(0, 360f), Random.Range(24f, 32f), scale * Random.Range(0.9f, 1.1f), null, true);
+            // A second layer that changes from hit to hit: a cut mark for crits, a ring + shards for heavy blows,
+            // otherwise now and then a few shards or a small cut (code-drawn, no AI pictures)
+            if (GraphicsQuality.KeepOptional())
+            {
+                if (crit) Play(Art.ImpactCross(col, 11), pos, ang + Random.Range(-20f, 20f), 26, scale, null, true);
+                if (heavy > 0.5f || (crit && heavy > 0.25f))
+                {
+                    Play(Art.ImpactRing(col, 10), pos, Random.Range(0, 360f), 24, scale, null, true);
+                    Play(Art.ImpactShards(col, 10), pos, ang + Random.Range(-10f, 10f), 24, scale, null, true);
+                }
+                else if (!crit)
+                {
+                    float roll = Random.value;
+                    if (roll < 0.35f) Play(Art.ImpactShards(col, 8), pos, ang + Random.Range(-15f, 15f), 26, scale, null, true);
+                    else if (roll < 0.6f) Play(Art.ImpactCross(col, 7), pos, ang + Random.Range(-35f, 35f), 30, scale * 0.85f, null, true);
+                }
+            }
+            float spread = Random.Range(50f, 95f);
+            Burst(pos, col, crit ? 12 : 7, (crit ? 9 : 7) * Random.Range(0.85f, 1.2f), 0.35f, 0, 2, spread, ang);
+            Burst(pos, Pal.White, crit ? 6 : 3, 6, 0.25f, 0, 1, 120, ang);
         }
 
         public void DustPuff(Vector2 pos, bool flip)

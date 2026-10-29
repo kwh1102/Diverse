@@ -216,6 +216,17 @@ namespace Diverse
             knockVel += dir.normalized * force / Mathf.Max(0.3f, mass);
         }
 
+        /// <summary>
+        /// Body motion for an action (attack poses): a twist of the body (degrees per second into the tilt spring, + = counter-
+        /// clockwise), an upward pop, and a squash (>0 flatten, &lt;0 stretch). Visual only, the springs bring it back.
+        /// </summary>
+        protected void Motion(float twist, float hopUp = 0, float squashTo = float.NaN)
+        {
+            tiltVel += twist;
+            if (hopUp > 0) hopVel = Mathf.Max(hopVel, hopUp);
+            if (!float.IsNaN(squashTo)) { squash = squashTo; squashVel = 0; }
+        }
+
         /// <summary>Apply damage. Returns the final damage dealt.</summary>
         public virtual float TakeDamage(DamageInfo d)
         {
@@ -230,11 +241,14 @@ namespace Diverse
                 float heavy = Mathf.Clamp01(d.knockback / 5f) + (d.crit ? 0.4f : 0f);
                 var dir = d.direction.SafeNormal(Vector2.zero);
                 float side = Mathf.Abs(dir.x) > 0.1f ? Mathf.Sign(dir.x) : (Random.value < 0.5f ? -1f : 1f);
-                squash = 0.6f + 0.3f * heavy;
+                // Each reaction varies a little (strength, push angle, now and then a small pop) so hits don't repeat exactly
+                float vary = 1f + Random.Range(-1f, 1f) * (DB.Asset.feel?.hurtVariance ?? 0.3f);
+                squash = (0.6f + 0.3f * heavy) * vary;
                 squashVel = 0;
-                recoil = dir * (0.1f + 0.14f * heavy); recoilVel = Vector2.zero;
-                tiltVel = -side * (240f + 360f * heavy);          // the top of the body is knocked the way the blow went
-                if (heavy > 0.5f) hopVel = Mathf.Max(hopVel, 2.2f + 2.4f * heavy);
+                recoil = dir.Rotate(Random.Range(-18f, 18f)) * (0.1f + 0.14f * heavy) * vary; recoilVel = Vector2.zero;
+                tiltVel = -side * (240f + 360f * heavy) * vary;   // the top of the body is knocked the way the blow went
+                if (heavy > 0.5f) hopVel = Mathf.Max(hopVel, (2.2f + 2.4f * heavy) * vary);
+                else if (heavy > 0.15f && Random.value < 0.25f) hopVel = Mathf.Max(hopVel, 1.2f);
                 if (heavy > 0.3f) Fx.I?.Burst(Pos, new Color32(0xcd, 0xbb, 0xa5, 0xff), 4, 3f, 0.35f, 0, 2, 70, (-dir).Angle(), true);
                 if (d.knockback > 0) Knockback(d.direction, d.knockback);
             }

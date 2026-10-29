@@ -509,6 +509,7 @@ namespace Diverse.EditorTools
                 var back = Btn(panel, "Back", "뒤로", TL, new Vector2(12, 300 - 30), new Vector2(110, 20));
                 Wire(v, "settingsTab", t1); Wire(v, "keysTab", t2); Wire(v, "backButton", back);
             }
+            AddGraphicsPage(v);
             return v;
         }
 
@@ -666,6 +667,7 @@ namespace Diverse.EditorTools
             Wire(v, "interactHint", ih); Wire(v, "interactText", ihText);
             Wire(v, "bossBar", bb); Wire(v, "bossName", bossName); Wire(v, "bossFill", bossFill);
             Wire(v, "generatingText", gen); Wire(v, "tooltip", tooltip);
+            AddFpsLabel(v);
             return v;
         }
 
@@ -695,7 +697,7 @@ namespace Diverse.EditorTools
             var tabsRt = Node(a, "Tabs", TL, new Vector2(12, 10), new Vector2(446, 20));
             var tl = tabsRt.gameObject.AddComponent<HorizontalLayoutGroup>();
             tl.spacing = 4; tl.childControlWidth = true; tl.childForceExpandWidth = true; tl.childControlHeight = true;
-            string[] names = { "능력", "능력치", "연대기", "설정", "키 설정" };
+            string[] names = { "능력", "능력치", "연대기", "설정", "키 설정", "그래픽" };
             var tabs = names.Select(n => (Object)Btn(tabsRt, "Tab " + n, n, TL, Vector2.zero, new Vector2(80, 20))).ToArray();
 
             var pageRect = new Vector2(446, 228);

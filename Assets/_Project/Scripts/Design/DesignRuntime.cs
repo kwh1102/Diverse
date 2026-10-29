@@ -321,9 +321,11 @@ namespace Diverse
             if (w.ambient == "none" || Fx.I == null) return;
             ambientT -= dt;
             if (ambientT > 0) return;
-            ambientT = w.ambient == "rain" ? 0.02f : 0.07f;
+            // Fewer specks at lower effect settings; spread over the whole view (the wheel changes how much is visible)
+            ambientT = (w.ambient == "rain" ? 0.02f : 0.07f) / GraphicsQuality.EffectScale;
             var col = string.IsNullOrEmpty(w.ambientColor) ? Pal.White : Pal.Hex(w.ambientColor);
-            var p = center + new Vector2(UnityEngine.Random.Range(-12f, 12f), UnityEngine.Random.Range(-7f, 8f));
+            var view = CameraRig.I != null ? CameraRig.I.ViewRect() : new Rect(center.x - 12, center.y - 7, 24, 15);
+            var p = new Vector2(UnityEngine.Random.Range(view.xMin, view.xMax), UnityEngine.Random.Range(view.yMin, view.yMax + 1));
             switch (w.ambient)
             {
                 case "snow": Fx.I.Burst(p, col, 1, 0.8f, 3f, 0.4f, 1, 60, 270); break;

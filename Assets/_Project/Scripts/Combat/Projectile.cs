@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace Diverse
@@ -52,8 +53,11 @@ namespace Diverse
             return p;
         }
 
+        static readonly ProfilerMarker ProjectileMarker = new ProfilerMarker("Diverse.Projectiles");   // read by DesignPerf / PerfProbe
+
         void Update()
         {
+            using var _perf = ProjectileMarker.Auto();
             float dt = Time.deltaTime;
             if (dt <= 0) return;
             t += dt;

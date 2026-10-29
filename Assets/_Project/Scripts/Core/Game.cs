@@ -40,11 +40,10 @@ namespace Diverse
         {
             if (I != null && I != this) { Destroy(gameObject); return; }
             I = this;
-            Application.targetFrameRate = 120;
-            QualitySettings.vSyncCount = 1;
             GameTime.Reset();
             GameEvents.ClearAll();
             Session.EnsureLoaded();
+            Art.Preload();
 
             // CameraRig, Fx, Sfx, UI and WorldManager are placed in Game.unity and register themselves in their own Awake.
             // Game runs after them (DefaultExecutionOrder) and hands out the data they need.
@@ -76,8 +75,11 @@ namespace Diverse
             if (I == this) { I = null; GameEvents.ClearAll(); GameTime.Reset(); }
         }
 
+        static readonly Unity.Profiling.ProfilerMarker GameMarker = new Unity.Profiling.ProfilerMarker("Diverse.Game");   // read by PerfProbe
+
         void Update()
         {
+            using var _perf = GameMarker.Auto();
             GameTime.Tick();
             float dt = Time.deltaTime;
 
@@ -169,6 +171,7 @@ namespace Diverse
             World.gold -= Player.Gold;
             CameraRig.I.target = Player.transform;
             CameraRig.I.Snap(Player.Pos);
+            PrewarmRun();
             Offer = null; Generating = false; Boss = null; ChatBusy = false;
             ResetPrefetch();
             var heroPack = DesignStore.PackOfCostume(costume.id);
@@ -210,6 +213,37 @@ namespace Diverse
         }
 
         /// <summary>Snapshot the current life so it can be continued later.</summary>
+        /// <summary>
+        /// First-time work moved into the loading frame (already long), so the first steps and swings after the world
+        /// appears don't hitch: the hero's poses, this weapon's swing / hit effects, the effect pools.
+        /// </summary>
+        void PrewarmRun()
+        {
+            var p = Player;
+            var w = p.Weapon;
+            foreach (Pose pose in System.Enum.GetValues(typeof(Pose))) Art.Rabbit(p.Costume, pose);
+            foreach (var step in w.combo)
+            {
+                if (step.projectile) { Art.Bolt(); continue; }
+                int lengthPx = Mathf.RoundToInt(step.range * Art.PPU);
+                if (step.thrust) Art.Thrust(w.slashColor, w.slashCore, lengthPx);
+                else Art.Slash(w.slashColor, w.slashCore, Mathf.RoundToInt(step.range * Art.PPU * 0.85f), Mathf.Min(step.arc, 359), step.spin ? 1 : step.swingDir);
+                Art.Shockwave(w.slashColor, Mathf.RoundToInt(lengthPx * 0.7f));
+                Art.SpeedLines(w.slashColor, lengthPx);
+                Art.SpeedLines(w.slashColor, Mathf.RoundToInt(lengthPx * 0.9f));
+            }
+            foreach (var col in new[] { w.slashColor, Pal.Blood })
+            {
+                Art.HitSpark(col, 9); Art.HitSpark(col, 12);
+                Art.ImpactCross(col, 7); Art.ImpactCross(col, 11);
+                Art.ImpactRing(col, 10);
+                Art.ImpactShards(col, 8); Art.ImpactShards(col, 10);
+            }
+            Art.Dust(); Art.ClickMarker();
+            for (int s = 1; s <= 3; s++) Art.Particle(s);
+            Fx.I?.Prewarm();
+        }
+
         public void SaveRun()
         {
             var p = Player;
@@ -264,6 +298,7 @@ namespace Diverse
             p.Pos = WorldStreamer.I.NearestWalkable(pos, p.radius, 8, p.HasRaft);
             CameraRig.I.target = p.transform;
             CameraRig.I.Snap(p.Pos);
+            PrewarmRun();
             Offer = null; Generating = false; Boss = null; ChatBusy = false;
             ResetPrefetch();
             State = GameState.Playing;

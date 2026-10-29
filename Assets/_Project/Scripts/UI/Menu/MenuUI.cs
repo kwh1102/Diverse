@@ -20,7 +20,6 @@ namespace Diverse
 
         void Awake()
         {
-            Application.targetFrameRate = 120;
             GameTime.Reset();
             Time.timeScale = 1;
             Session.EnsureLoaded();
@@ -50,7 +49,7 @@ namespace Diverse
             UIKit.Show(settings, s == Screen.Settings);
             UIKit.Show(design, s == Screen.Design);
             UIKit.Show(slots, s == Screen.Slots);
-            if (s == Screen.Settings) settings.Page(false);
+            if (s == Screen.Settings) settings.Page(SettingsView.SettingsPage);
         }
     }
 }

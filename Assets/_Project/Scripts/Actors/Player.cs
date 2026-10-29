@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace Diverse
@@ -40,6 +41,7 @@ namespace Diverse
         public IReadOnlyList<Vector2> MovementPath => path;
         Actor attackTarget;
         float repathT;
+        Vector2 heldAim;
         public Vector2 AimPoint;
         public Vector2 LastDashOrigin;
         public bool Moving { get; private set; }
@@ -301,8 +303,11 @@ namespace Diverse
 
         // ───────────────────────── Update ─────────────────────────
 
+        static readonly ProfilerMarker PlayerMarker = new ProfilerMarker("Diverse.Player");   // read by PerfProbe
+
         protected override void Update()
         {
+            using var _perf = PlayerMarker.Auto();
             float dt = Time.deltaTime;
             if (Alive && dt > 0 && !GameTime.Paused && Game.I != null &&
                 (Game.I.State == GameState.Playing || Game.I.State == GameState.Map) && !Ferrying)
@@ -357,7 +362,10 @@ namespace Diverse
             if (Controls.Held(Act.Move) && !Controls.Down(Act.Move) && !TravelTarget.HasValue)
             {
                 repathT -= Time.deltaTime;
-                if (repathT <= 0 && attackTarget == null) { repathT = 0.12f; TravelTarget = null; SetDestination(AimPoint, false); }
+                // Re-plan only when the cursor really moved (a held button used to run A* 8 times a second regardless);
+                // the cursor is on screen, so a small search budget is enough
+                if (repathT <= 0 && attackTarget == null && (path.Count == 0 || (AimPoint - heldAim).sqrMagnitude > 0.36f))
+                { repathT = 0.12f; heldAim = AimPoint; TravelTarget = null; SetDestination(AimPoint, false, 1200); }
             }
             if (Controls.Down(Act.Move))
             {
@@ -426,10 +434,10 @@ namespace Diverse
             return best;
         }
 
-        public void SetDestination(Vector2 target, bool showMarker)
+        public void SetDestination(Vector2 target, bool showMarker, int maxNodes = 4000)
         {
             path.Clear();
-            path.AddRange(PathFinder.Find(WorldStreamer.I, Pos, target, 4000, HasRaft, Bound));
+            path.AddRange(PathFinder.Find(WorldStreamer.I, Pos, target, maxNodes, HasRaft, Bound));
             if (showMarker) Fx.I?.Play(Art.ClickMarker(), path.Count > 0 ? path[path.Count - 1] : target, 0, 14);
         }
 
@@ -522,26 +530,38 @@ namespace Diverse
 
             if (path.Count > 0)
             {
-                Vector2 next = path[0];
-                Vector2 to = next - Pos;
-                // Eased walk: ~0.14 s to reach full speed, slowing into the last point, a light stride pulse (average = MoveSpeed)
+                Vector2 to = path[0] - Pos;
+                // Eased walk: ~0.14 s to reach full speed, slowing into the last point. The speed is otherwise constant:
+                // the stride only shows in the body bob (a speed pulse made the camera, which follows the hero, wobble).
                 moveRamp = Mathf.MoveTowards(moveRamp, 1f, dt / 0.14f);
                 float ease = Mathf.SmoothStep(0.35f, 1f, moveRamp);
-                if (path.Count == 1) ease *= Mathf.Lerp(0.55f, 1f, Mathf.Clamp01(to.magnitude / 0.6f));
+                float toEnd = path.Count == 1 ? to.magnitude : float.MaxValue;
+                if (path.Count == 1) ease *= Mathf.Lerp(0.55f, 1f, Mathf.Clamp01(toEnd / 0.6f));
                 walkStride += MoveSpeed * dt * 2.4f;
-                float step = MoveSpeed * dt * ease * (0.9f + 0.2f * Mathf.Pow(Mathf.Sin(walkStride), 2));
-                Abilities?.Moved(Mathf.Min(step, to.magnitude));
-                if (to.magnitude <= step + 0.02f)
+                float step = MoveSpeed * dt * ease;
+                // Spend the whole step this frame, past as many path corners as it reaches (stopping at a corner and
+                // wasting the rest of the frame's distance gave a tiny hitch at every corner)
+                float left = step;
+                while (left > 0.0001f && path.Count > 0)
                 {
-                    Pos = WorldStreamer.I.Move(Pos, to, radius, HasRaft, Bound);
-                    if (Vector2.Distance(Pos, next) < 0.02f) path.RemoveAt(0);
-                    else path.Clear();
-                }
-                else
-                {
-                    var before = Pos;
-                    Pos = WorldStreamer.I.Move(Pos, to.normalized * step, radius, HasRaft, Bound);
-                    if ((Pos - before).sqrMagnitude < step * step * 0.04f) { path.Clear(); }   // stuck → stop
+                    Vector2 next = path[0];
+                    to = next - Pos;
+                    float d = to.magnitude;
+                    Abilities?.Moved(Mathf.Min(left, d));
+                    if (d <= left + 0.02f)
+                    {
+                        Pos = WorldStreamer.I.Move(Pos, to, radius, HasRaft, Bound);
+                        if (Vector2.Distance(Pos, next) >= 0.02f) { path.Clear(); break; }   // blocked short of the corner
+                        path.RemoveAt(0);
+                        left -= d;
+                    }
+                    else
+                    {
+                        var before = Pos;
+                        Pos = WorldStreamer.I.Move(Pos, to / d * left, radius, HasRaft, Bound);
+                        if ((Pos - before).sqrMagnitude < left * left * 0.04f) path.Clear();   // stuck → stop
+                        break;
+                    }
                 }
                 Facing = to.SafeNormal(Facing);
                 Moving = true;
@@ -558,7 +578,8 @@ namespace Diverse
             if (actionLock > 0 || dashT > 0) return;
             var steps = Weapon.combo;
             var step = steps[comboIndex % steps.Length];
-            bool finisher = comboIndex % steps.Length == steps.Length - 1;
+            int stepIndex = comboIndex % steps.Length;
+            bool finisher = stepIndex == steps.Length - 1;
             comboIndex++;
             float aspd = Stats[StatId.AttackSpeed];
             actionLock = (step.windup + step.recovery) / aspd;
@@ -575,11 +596,11 @@ namespace Diverse
             else { weaponFrom = baseAngle + step.arc * 0.5f * step.swingDir; weaponTo = baseAngle - step.arc * 0.5f * step.swingDir; }
             weaponSwingT = 0; weaponSwingDur = Mathf.Max(0.08f, step.windup / aspd + 0.08f);
 
-            StartCoroutine(AttackRoutine(step, dir, finisher, aspd));
+            StartCoroutine(AttackRoutine(step, dir, finisher, aspd, stepIndex));
             foreach (var c in Clone.Active.ToArray()) if (c != null) c.Mimic(dir, step);
         }
 
-        System.Collections.IEnumerator AttackRoutine(ComboStep step, Vector2 dir, bool finisher, float aspd)
+        System.Collections.IEnumerator AttackRoutine(ComboStep step, Vector2 dir, bool finisher, float aspd, int stepIndex)
         {
             // Windup: pull back slightly (anticipation)
             squash = -0.25f;
@@ -591,8 +612,24 @@ namespace Diverse
             lungeT = 0.12f;
             lungeVel = dir * step.lunge / 0.06f;
             squash = 0.35f;
+            // Body motion changes along the combo: a twist one way, back the other way, a little hop, and a big leap on
+            // the finisher (looks only; reach and timing come from the weapon data)
+            var feel = DB.Asset.feel ?? new FeelDef();
+            float facing = dir.x >= 0 ? 1f : -1f, vary = Random.Range(0.8f, 1.2f);
+            if (finisher && !step.projectile)
+            {
+                Motion(-facing * feel.attackTwist * 1.6f * vary, feel.finisherHop * vary, -0.45f);
+                Fx.I?.Afterimage(body, new Color(1f, 0.95f, 0.8f, 0.6f), 0.22f);
+            }
+            else switch (stepIndex % 3)
+            {
+                case 0: Motion(-facing * feel.attackTwist * vary); break;
+                case 1: Motion(facing * feel.attackTwist * 1.2f * vary, 0, -0.3f); break;
+                default: Motion(-facing * feel.attackTwist * 0.6f * vary, feel.comboHop * vary); break;
+            }
 
             Vector2 origin = Pos + Vector2.up * 0.45f;
+            Vector2 fxOrigin = Combat.MeleeFxOrigin(origin, dir);   // the swing picture sits a little in front of the body
             Color32 col = Weapon.slashColor;
             var w = Weapon;
             float dmg = AttackPower * step.damage;
@@ -621,13 +658,41 @@ namespace Diverse
             }
             else
             {
-                // Slash effect
+                // Slash effect. Each swing is turned / sized a little differently, and layers change along the combo
+                // (an echo trail, sparks off the blade tip, speed lines, a ground ring on the finisher). Looks only:
+                // the hit area below still uses the exact direction and range.
                 int radiusPx = Mathf.RoundToInt(step.range * Art.PPU * 0.85f);
+                float fxAng = dir.Angle() + Random.Range(-feel.swingAngleJitter, feel.swingAngleJitter);
+                float fxScale = step.fxScale * (1f + Random.Range(-feel.swingScaleJitter, feel.swingScaleJitter));
                 if (step.thrust)
-                    Fx.I?.Play(Art.Thrust(col, w.slashCore, Mathf.RoundToInt(step.range * Art.PPU)), origin, dir.Angle(), 32, step.fxScale, null, true, 0, transform);
+                {
+                    Fx.I?.Play(Art.Thrust(col, w.slashCore, Mathf.RoundToInt(step.range * Art.PPU)), fxOrigin, fxAng, 32, fxScale, null, true, 0, transform);
+                    if (GraphicsQuality.KeepOptional())
+                        Fx.I?.Play(Art.SpeedLines(col, Mathf.RoundToInt(step.range * Art.PPU * 0.9f)), origin - dir * 0.3f, dir.Angle(), 30, 1f, new Color(1, 1, 1, 0.7f), true);
+                }
                 else
-                    Fx.I?.Play(Art.Slash(col, w.slashCore, radiusPx, Mathf.Min(step.arc, 359), step.spin ? 1 : step.swingDir), origin, dir.Angle(), step.spin ? 28 : 32, step.fxScale, null, true, 0, transform, step.swingDir < 0 && !step.spin);
-                if (step.spin) Fx.I?.Play(Art.Slash(col, w.slashCore, radiusPx, 359, -1), origin, dir.Angle() + 180, 28, step.fxScale, null, true, 0, transform);
+                {
+                    var frames = Art.Slash(col, w.slashCore, radiusPx, Mathf.Min(step.arc, 359), step.spin ? 1 : step.swingDir);
+                    bool flipY = step.swingDir < 0 && !step.spin;
+                    Fx.I?.Play(frames, step.spin ? origin : fxOrigin, fxAng, step.spin ? 28 : 32, fxScale, null, true, 0, transform, flipY);
+                    if (!step.spin && GraphicsQuality.KeepOptional())
+                    {
+                        // Odd steps and finishers: a fainter, wider echo trailing behind the swing
+                        if (stepIndex % 2 == 1 || finisher)
+                            Fx.I?.Play(frames, fxOrigin, fxAng + step.swingDir * 16f, 22, fxScale * 1.15f, new Color(1, 1, 1, 0.45f), true, 0, transform, flipY);
+                        // Sparks thrown off where the blade finishes its arc
+                        var tip = dir.Rotate(-step.arc * 0.5f * step.swingDir);
+                        Fx.I?.Burst(fxOrigin + tip * step.range * 0.85f, w.slashCore, 3, 5f, 0.25f, 0, 1, 40, tip.Rotate(-90 * step.swingDir).Angle());
+                    }
+                }
+                if (step.spin) Fx.I?.Play(Art.Slash(col, w.slashCore, radiusPx, 359, -1), origin, fxAng + 180, 28, fxScale, null, true, 0, transform);
+                if (finisher)
+                {
+                    Fx.I?.Play(Art.Shockwave(col, Mathf.RoundToInt(step.range * Art.PPU * 0.7f)), Pos + dir * 0.4f, 0, 22, 1f, null, true);
+                    Fx.I?.Burst(Pos + dir * 0.5f, Pal.Hex("e8dcc8"), 8, 4f, 0.4f, 0, 2, 140, dir.Angle(), true);
+                    if (!step.thrust && GraphicsQuality.KeepOptional())
+                        Fx.I?.Play(Art.SpeedLines(col, Mathf.RoundToInt(step.range * Art.PPU)), Pos - dir * 0.6f + Vector2.up * 0.4f, dir.Angle(), 28, 1f, new Color(1, 1, 1, 0.55f), true);
+                }
 
                 List<Actor> targets = step.thrust
                     ? new List<Actor>(Combat.Line(origin, origin + dir * step.range, 0.55f, Team.Enemy))

@@ -65,6 +65,7 @@ namespace Diverse
         AudioClip Clip(string name)
         {
             if (clips.TryGetValue(name, out var c)) return c;
+            HitchLog.SoundsMade++;
             c = Resources.Load<AudioClip>("Sfx/" + name) ?? Synth(name);
             clips[name] = c;
             return c;

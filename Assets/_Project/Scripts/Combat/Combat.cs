@@ -11,6 +11,13 @@ namespace Diverse
     {
         static readonly List<Actor> buffer = new List<Actor>();
 
+        /// <summary>
+        /// Where a directional melee swing/thrust picture is centred: a little in front of the body (FeelDef.meleeFxOffset),
+        /// so the arc doesn't sit on the character. Looks only; hit areas use the real origin.
+        /// </summary>
+        public static Vector2 MeleeFxOrigin(Vector2 bodyCenter, Vector2 dir) =>
+            bodyCenter + dir.SafeNormal(Vector2.right) * (DB.Asset.feel?.meleeFxOffset ?? 0.4f);
+
         /// <summary>부채꼴 범위 판정. arc 360이면 원형.</summary>
         public static List<Actor> Arc(Vector2 origin, Vector2 dir, float range, float arcDeg, Team targetTeam)
         {
@@ -83,7 +90,7 @@ namespace Diverse
                     CameraRig.I.Kick(d.direction, kick * (d.crit ? 1.5f : 1f) * s);
                     if (d.crit) CameraRig.I.Punch(0.5f);
                 }
-                Fx.I?.HitSpark(at, d.direction.SafeNormal(Vector2.right), d.fxColor ?? fxColor, d.crit, d.crit ? 1.3f : 1f);
+                Fx.I?.HitSpark(at, d.direction.SafeNormal(Vector2.right), d.fxColor ?? fxColor, d.crit, d.crit ? 1.3f : 1f, Mathf.Clamp01(d.knockback / 5f));
                 Sfx.Play(d.crit ? "crit" : sfx, d.crit ? 0.9f : 0.7f);
             }
             if (Game.Settings.damageNumbers && Fx.I != null)

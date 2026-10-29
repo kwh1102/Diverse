@@ -104,7 +104,7 @@ namespace Diverse
             var w = owner.Weapon;
             Color32 col = element != Element.None ? Combat.ElementColor(element) : w.slashColor;
             Vector2 origin = Pos + Vector2.up * 0.45f;
-            Fx.I?.Play(Art.Slash(col, Pal.White, Mathf.RoundToInt(range * Art.PPU * 0.8f), Mathf.Min(arc, 200), 1), origin, dir.Angle(), 30, 1, new Color(1, 1, 1, 0.85f), true);
+            Fx.I?.Play(Art.Slash(col, Pal.White, Mathf.RoundToInt(range * Art.PPU * 0.8f), Mathf.Min(arc, 200), 1), Combat.MeleeFxOrigin(origin, dir), dir.Angle(), 30, 1, new Color(1, 1, 1, 0.85f), true);
             foreach (var a in new List<Actor>(Combat.Arc(origin, dir, range, arc, Team.Enemy)))
             {
                 var d = new DamageInfo

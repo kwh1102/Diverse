@@ -153,6 +153,16 @@ namespace Diverse.EditorTools
                 if (!Visible<SettingsView>()) Fail("settings not visible");
                 Click(Find<SettingsView>(), "KeysTab");
                 yield return Frames(2);
+                // Graphics page: presets set the frame cap / effect / post-processing options together
+                Click(Find<SettingsView>(), "GraphicsTab");
+                yield return Frames(2);
+                Click(Find<SettingsView>(), "낮음");
+                yield return Frames(1);
+                if (Session.Settings.effects != 0 || Session.Settings.postFx != 0 || QualitySettings.vSyncCount != 0 || Application.targetFrameRate != 60)
+                    Fail("graphics preset 낮음 did not apply");
+                Click(Find<SettingsView>(), "높음");
+                yield return Frames(1);
+                if (GraphicsQuality.Effects != 2 || QualitySettings.vSyncCount != 1) Fail("graphics preset 높음 did not apply");
                 Click(Find<SettingsView>(), "Back");
                 yield return Frames(2);
                 if (!Visible<TitleView>()) Fail("back from settings did not show the title");
@@ -629,7 +639,8 @@ namespace Diverse.EditorTools
                 if (g.Offer == null) Fail("no evolution offer (local composer)");
                 else
                 {
-                    for (int i = 0; i < 120 && g.OfferLocked; i++) yield return null;
+                    // The cards unlock after a moment of real time (not a number of frames: the frame rate depends on the settings)
+                    for (float t0 = Time.realtimeSinceStartup; g.OfferLocked && Time.realtimeSinceStartup - t0 < 5;) yield return null;
                     yield return Frames(2);
                     var card = Find<EvolveView>().GetComponentsInChildren<EvolveCard>().FirstOrDefault();
                     if (card == null) Fail("no card");

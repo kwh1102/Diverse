@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace Diverse
@@ -34,17 +35,35 @@ namespace Diverse
 
         /// <summary>Sprites from the active design pack (DesignRuntime) that replace a key outright.</summary>
         static readonly Dictionary<string, Sprite> overrides = new Dictionary<string, Sprite>();
+        static readonly ProfilerMarker SpriteMarker = new ProfilerMarker("Diverse.SpriteMake");   // first-time sprite drawing (read by PerfProbe)
 
         public static Sprite Get(string key, System.Func<Sprite> make)
         {
             if (overrides.TryGetValue(key, out var o)) return o;
             if (cache.TryGetValue(key, out var s) && s != null) return s;
-            var custom = Resources.Load<Sprite>("Sprites/" + key);
-            s = DesignRuntime.Restyle(key, custom != null ? custom : make());
+            Hand().TryGetValue(key, out var custom);
+            HitchLog.SpritesMade++;
+            using (SpriteMarker.Auto()) s = DesignRuntime.Restyle(key, custom != null ? custom : make());
             if (s != null) s.name = key;
             cache[key] = s;
             return s;
         }
+
+        /// <summary>
+        /// Hand-drawn sprites in Resources/Sprites (they win over the code-drawn ones), loaded together once. Looking each
+        /// one up with Resources.Load on first use read it from disk mid-fight (a 20+ ms hitch per new enemy or chunk).
+        /// </summary>
+        static Dictionary<string, Sprite> hand;
+        static Dictionary<string, Sprite> Hand()
+        {
+            if (hand != null) return hand;
+            hand = new Dictionary<string, Sprite>();
+            foreach (var sp in Resources.LoadAll<Sprite>("Sprites")) hand[sp.name] = sp;
+            return hand;
+        }
+
+        /// <summary>Load the hand-drawn sprites now (scene start) instead of on the first sprite that needs one.</summary>
+        public static void Preload() => Hand();
 
         public static void Override(string key, Sprite s) { if (s == null) overrides.Remove(key); else overrides[key] = s; }
 
@@ -61,7 +80,8 @@ namespace Diverse
         public static Sprite[] GetAnim(string key, System.Func<Sprite[]> make)
         {
             if (anims.TryGetValue(key, out var s) && s != null) return s;
-            s = make();
+            HitchLog.SpritesMade++;
+            using (SpriteMarker.Auto()) s = make();
             anims[key] = s;
             return s;
         }

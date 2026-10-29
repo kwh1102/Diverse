@@ -137,6 +137,11 @@ namespace Diverse
         public bool screenShake = true;
         public float shakeScale = 1f;
         public bool damageNumbers = true;
+        // Graphics (설정 → 그래픽, GraphicsQuality.Apply)
+        public int fpsCap;                  // 0 = follow the monitor (VSync), else a frame cap without VSync (30 / 60 / 120)
+        public int effects = 2;             // 0 low · 1 medium · 2 high: particles, afterimages, ambient specks
+        public int postFx = 2;              // 0 off · 1 light (no bloom) · 2 full
+        public bool showFps;
         public List<string> bindings = new List<string>();   // "action=path"
         public string aiEndpoint = "https://api.openai.com/v1/chat/completions";
         public string aiModel = "gpt-6-luna";
