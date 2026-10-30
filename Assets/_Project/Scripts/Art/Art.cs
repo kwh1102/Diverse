@@ -65,6 +65,9 @@ namespace Diverse
         /// <summary>Load the hand-drawn sprites now (scene start) instead of on the first sprite that needs one.</summary>
         public static void Preload() => Hand();
 
+        /// <summary>A sprite that only exists as a PNG in Resources/Sprites (zone art, effects); null when there is none.</summary>
+        public static Sprite HandSprite(string key) => !string.IsNullOrEmpty(key) && Hand().TryGetValue(key, out var s) ? s : null;
+
         public static void Override(string key, Sprite s) { if (s == null) overrides.Remove(key); else overrides[key] = s; }
 
         /// <summary>A new design pack was activated: drop every cached sprite and override so they are drawn again with its look.</summary>

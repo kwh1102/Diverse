@@ -1,0 +1,68 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7dc880171eb3a7343845fe03fe049b6d, type: 3}
+  m_Name: Area
+  m_EditorClassIdentifier: 
+  def:
+    style: 7
+    name: "\uB465\uC9C0 \uD3C9\uC6D0"
+    prefix: "\uAD70\uCCB4"
+    buildName: "\uAD11\uC5ED"
+    desc: "\uB05D\uC5C6\uC774 \uBAB0\uB824\uC624\uB294 \uBB34\uB9AC, \uC4F0\uB7EC\uC9C0\uBA74
+      \uC0C8\uB07C\uAC00 \uAE30\uC5B4 \uB098\uC628\uB2E4. \uD55C\uAEBC\uBC88\uC5D0
+      \uC4F8\uC5B4\uBC84\uB824\uB77C."
+    biome: 8
+    color:
+      serializedVersion: 2
+      rgba: 4282034408
+    enemies:
+    - hive_grub
+    - hive_wasp
+    - hive_ant
+    boss: boss_hivequeen
+    primary: 12
+    secondary: 13
+    deepName: "\uC5EC\uC655\uC758 \uB465\uC9C0"
+    art:
+      theme: a sprawling insect hive plain of amber honeycomb, waxy mounds and golden
+        grass
+      ground: 13
+      groundAccent: 26
+      tilePrompts:
+      - amber waxy hive ground with small honey drips
+      - golden brown earth with tiny wax flakes
+      - golden honeycomb pattern texture
+      - amber honeycomb cells partly filled with honey
+      decorPrompts:
+      - a tall waxy hive spire tower with holes
+      - a giant honey-dripping yellow flower
+      - a large round beehive mound
+      - a tree wrapped in honeycomb
+      - a chunk of amber with a bug inside
+      - a small dirt ant hill
+      - a broken honeycomb piece
+      - a bush of golden flowers
+      - a clump of tall yellow grass
+      - tiny honey droplets
+      - small golden pollen flowers
+      monsterPrompts:
+      - a plump round amber honey larva grub with tiny legs
+      - a small yellow and black striped worker wasp with clear wings
+      - an armored red soldier ant standing upright with huge mandibles
+      bossPrompt: a giant hive queen wasp with an amber crown, translucent wings
+        and a huge striped abdomen
+      effectPrompts:
+      - a small glowing amber honey stinger, flying to the right
+      - a splash of golden honey
+      - a big round burst of honey and tiny swarming bees
+      - a single small floating golden pollen speck
+      ambient: pollen

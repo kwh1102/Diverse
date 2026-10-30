@@ -83,7 +83,7 @@ namespace Diverse
             GameTime.Tick();
             float dt = Time.deltaTime;
 
-            if (Player != null) { WorldStreamer.I.Tick(Player.Pos); DesignRuntime.TickAmbient(Player.Pos, dt); }
+            if (Player != null) { WorldStreamer.I.Tick(Player.Pos); DesignRuntime.TickAmbient(Player.Pos, dt); TickZoneAmbient(dt); }
 
             if (State == GameState.Playing && Player != null && Player.Alive)
             {
@@ -156,6 +156,7 @@ namespace Diverse
             World.lastWeapon = (int)weapon;
             HeroName = MakeHeroName(costume);
             Diverse.World.I.ResetForRun();
+            EnsureSurface();
             Fx.I.ClearAll();
 
             // Start position: plaza (a little in front of the well)
@@ -365,6 +366,7 @@ namespace Diverse
                 if (q.status == 1 && q.targetId == id) { q.status = 2; Ui.Toast($"의뢰 완료: {q.title}"); }
             if (spec != null && spec.kind == StructKind.Lair) Pickup.Drop("shard", 2, Player.Pos);
             Player?.Abilities?.Raise("CampCleared");
+            OnZoneSiteCleared(spec);
         }
 
         public void ShowBoss(Enemy e) { Boss = e; }
@@ -384,7 +386,7 @@ namespace Diverse
             var grave = new GraveRecord
             {
                 life = World.lifeCount, heroName = HeroName, costume = p.Costume.id, weapon = (int)p.Weapon.kind, level = p.Level, kills = p.Kills,
-                x = p.Pos.x, y = p.Pos.y, cause = cause,
+                x = p.Pos.x, y = p.Pos.y, cause = cause, layer = ZoneMap.LayerKey(World),
             };
             // Abilities carved on the grave (the 2 strongest) → the next life can visit the grave and recover them
             foreach (var g in p.Abilities.Owned.Where(a => a.tier >= 1).OrderByDescending(a => a.power).Take(2)) grave.abilities.Add(AbilityRecord.From(g));

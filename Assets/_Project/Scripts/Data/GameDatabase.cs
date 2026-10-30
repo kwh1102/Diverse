@@ -13,6 +13,10 @@ namespace Diverse
         public List<WeaponData> weapons = new List<WeaponData>();
         public List<CostumeData> costumes = new List<CostumeData>();
         public List<EnemyData> enemies = new List<EnemyData>();
+        [Tooltip("The 8 zone types a normal-mode world picks its five zones from.")]
+        public List<ZoneData> zones = new List<ZoneData>();
+        [Tooltip("Five-zone layout, boss placement, and how hard the zone mechanics get with distance.")]
+        public ZoneRulesDef zoneRules = new ZoneRulesDef();
         [Tooltip("XP curve, evolution frequency, skill unlock levels, warp stones.")]
         public ProgressionDef progression = new ProgressionDef();
 

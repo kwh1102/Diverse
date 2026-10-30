@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Diverse
 {
-    public enum StructKind { Town, Tower, Camp, Ruins, Shrine, Grove, Graveyard, Lair, Chest, Pond, Wanderer, Ferry, Obelisk, Fortress }
+    public enum StructKind { Town, Tower, Camp, Ruins, Shrine, Grove, Graveyard, Lair, Chest, Pond, Wanderer, Ferry, Obelisk, Fortress, ZoneBoss, BorderBoss, Keep, Village }
 
     /// <summary>
     /// A structure spec produced by the generator. Being pure data (no Unity objects),
@@ -22,6 +22,8 @@ namespace Diverse
         public int enemyCount;
         public string boss;
         public bool landmark;          // whether it shows on the map
+        public ZoneDef zone, zone2;    // zone bosses: their zone (border mid-bosses: the two zones they stand between)
+        public SiteSpec site;          // keeps / villages: the tile layout (Landforms)
     }
 
     /// <summary>
@@ -36,7 +38,7 @@ namespace Diverse
         public const int RegionChunks = 3;      // one structure candidate per region
         public const float TownRadius = 15f;
         public static readonly Vector2 TowerPos = new Vector2(0, 92);
-        const int TrailSpacing = 96;            // bridges sit where a (hidden) trail line crosses a river
+        const float OpenHome = 62f;             // no mountains or walls this close to the spawn (the home fields stay open)
 
         // ───────────── Frontier rings ─────────────
         // The world is infinite, but the Mist of Oblivion keeps the unproven close to home.
@@ -72,14 +74,26 @@ namespace Diverse
         }
 
         public readonly int seed;
+        /// <summary>Normal mode: the five zones (biomes, monsters, bosses). Null = the classic noise-biome world (custom mode).</summary>
+        public readonly ZoneMap Zones;
+        /// <summary>A zone's deep layer: no tower, the whole world is that zone.</summary>
+        public bool Deep => Zones != null && Zones.deep;
         readonly Dictionary<Vector2Int, List<StructureSpec>> regionCache = new Dictionary<Vector2Int, List<StructureSpec>>();
+        /// <summary>Mountains, rivers, lakes, keeps: the large landforms (pure functions of the seed and world coordinates).</summary>
+        public readonly Landforms Land;
 
-        public WorldGen(int seed) { this.seed = seed; }
+        public WorldGen(int seed, ZoneMap zones = null)
+        {
+            Zones = zones;
+            this.seed = zones != null ? zones.seed : seed;
+            Land = new Landforms(this.seed, p => (!Deep && Vector2.Distance(p, TowerPos) < 50) || NearZoneBoss(p, 44));
+        }
 
         // ───────────── Terrain ─────────────
 
         public Biome BiomeAt(float x, float y)
         {
+            if (Zones != null) return Zones.BiomeAt(x, y);
             float d = new Vector2(x, y).magnitude;
             if (d < 40) return Biome.Meadow;     // starting area is always meadow
             float t = Noise.Fractal(x, y, seed + 11, 0.006f, 2);   // temperature
@@ -93,6 +107,51 @@ namespace Diverse
             return Biome.Meadow;
         }
 
+        /// <summary>
+        /// The ground of a chunk with a 1-tile border, as the streamer shows it. The raw per-tile ground is computed with a
+        /// 3-tile border, then rock is eroded twice (a rock tile with fewer than two rocky neighbours becomes gravel), which
+        /// takes the pebbles and hairline spurs off the ranges. Each pass only reads the pass before it, so a tile's result
+        /// depends on raw values within 2 tiles of it: the same in every chunk that contains it, whatever was built first.
+        /// </summary>
+        public Ground[,] GroundOf(Vector2Int k)
+        {
+            const int B = 3, Passes = 2;
+            int N = Chunk, M = N + 2 * B;
+            var raw = new Ground[M, M];
+            for (int y = 0; y < M; y++)
+                for (int x = 0; x < M; x++)
+                    raw[x, y] = GroundAt(k.x * N + x - B, k.y * N + y - B);
+            var cur = raw;
+            for (int pass = 1; pass <= Passes; pass++)
+            {
+                var next = new Ground[M, M];
+                for (int y = pass; y < M - pass; y++)
+                    for (int x = pass; x < M - pass; x++)
+                    {
+                        var g = cur[x, y];
+                        if (g == Ground.Rock || g == Ground.Peak)
+                        {
+                            int n = 0;
+                            if (IsRock(cur[x - 1, y])) n++;
+                            if (IsRock(cur[x + 1, y])) n++;
+                            if (IsRock(cur[x, y - 1])) n++;
+                            if (IsRock(cur[x, y + 1])) n++;
+                            if (n < 2) g = Ground.Scree;
+                        }
+                        next[x, y] = g;
+                    }
+                cur = next;
+            }
+            var outTiles = new Ground[N + 2, N + 2];
+            for (int y = 0; y < N + 2; y++)
+                for (int x = 0; x < N + 2; x++)
+                    outTiles[x, y] = cur[x + B - 1, y + B - 1];
+            return outTiles;
+        }
+
+        static bool IsRock(Ground g) => g == Ground.Rock || g == Ground.Peak;
+
+        /// <summary>The raw ground of one tile (before the rock erosion of GroundOf). Pure: the same for the same seed and tile.</summary>
         public Ground GroundAt(int tx, int ty)
         {
             float x = tx + 0.5f, y = ty + 0.5f;
@@ -107,48 +166,67 @@ namespace Diverse
                 return Ground.Grass;
             }
             // Road from the town to the tower
-            if (y > 0 && y < TowerPos.y && Mathf.Abs(x - Mathf.Sin(y * 0.08f) * 3f) < 1.6f) return Ground.Path;
-            if (Vector2.Distance(pos, TowerPos) < 8) return Ground.Plaza;
+            if (!Deep && y > 0 && y < TowerPos.y && Mathf.Abs(x - Mathf.Sin(y * 0.08f) * 3f) < 1.6f) return Ground.Path;
+            if (!Deep && Vector2.Distance(pos, TowerPos) < 8) return Ground.Plaza;
 
-            // Ground around structures
+            // Ground around structures (their yards stay free of mountains and water)
+            bool inYard = false;
             foreach (var s in StructuresNear(pos, 20))
             {
                 float d = Vector2.Distance(pos, s.center);
+                if (s.kind == StructKind.Keep || s.kind == StructKind.Village) continue;   // laid out tile by tile by Landforms
+                // Boss arenas get a wide open approach; other yards just stay clear of rock and water
+                if (d < s.radius + (s.kind is StructKind.ZoneBoss or StructKind.BorderBoss ? 16 : 3)) inYard = true;
                 if (d > s.radius) continue;
                 switch (s.kind)
                 {
                     case StructKind.Camp: if (d < s.radius * 0.8f) return Ground.Path; break;
                     case StructKind.Ruins: if (Hash.F(tx, ty, seed + 3) > 0.35f && d < s.radius * 0.85f) return Ground.Plaza; break;
                     case StructKind.Shrine: if (d < 3.2f) return Ground.Plaza; break;
-                    case StructKind.Graveyard: if (d < s.radius * 0.9f) return Ground.DarkGrass; break;
+                    case StructKind.Graveyard: if (d < s.radius * 0.9f) return ZoneGround(s, Ground.DarkGrass); break;
                     case StructKind.Pond: if (d < s.radius * 0.7f) return d < s.radius * 0.4f ? Ground.DeepWater : Ground.Water; break;
-                    case StructKind.Lair: if (d < s.radius * 0.9f) return Ground.Ash; break;
+                    case StructKind.Lair: if (d < s.radius * 0.9f) return ZoneGround(s, Ground.Ash); break;
                     case StructKind.Obelisk: if (d < s.radius * 0.75f) return Ground.Plaza; break;
-                    case StructKind.Fortress: if (d < s.radius * 0.9f) return Hash.F(tx, ty, seed + 4) > 0.2f ? Ground.Plaza : Ground.Ash; break;
+                    case StructKind.Fortress: if (d < s.radius * 0.9f) return Hash.F(tx, ty, seed + 4) > 0.2f ? Ground.Plaza : ZoneGround(s, Ground.Ash); break;
                     case StructKind.Ferry: if (d < 2.2f) return Ground.Path; break;
+                    case StructKind.ZoneBoss: if (d < s.radius * 0.85f) return Hash.F(tx, ty, seed + 6) > 0.25f ? Ground.Plaza : BossGround(s.zone); break;
+                    case StructKind.BorderBoss: if (d < s.radius * 0.8f) return Hash.F(tx, ty, seed + 7) > 0.5f ? BossGround(s.zone) : BossGround(s.zone2); break;
                 }
             }
 
-            // Rivers / lakes (avoid near the town and on roads)
-            float water = Noise.Fractal(x, y, seed + 51, 0.018f, 3);
-            float river = Mathf.Abs(Noise.Fractal(x, y, seed + 77, 0.006f, 2) - 0.5f);
+            // Large landforms: mountains, rivers, lakes, keeps. The home fields, the tower and every yard stay open and dry.
             bool nearTown = dTown < TownRadius + 6;
-            if (!nearTown && (water > 0.72f || river < 0.012f))
+            bool nearTower = !Deep && Vector2.Distance(pos, TowerPos) < 24;
+            var b = BiomeAt(x, y);
+            var land = Land.At(tx, ty, b, relief: dTown >= OpenHome && !nearTower && !inYard, water: !nearTown && !nearTower && !inYard);
+            switch (land.feature)
             {
-                // A plank bridge where a trail crosses a river (not over lakes)
-                if (water <= 0.72f && OnTrail(tx, ty)) return Ground.Wood;
-                return water > 0.78f ? Ground.DeepWater : Ground.Water;
+                case Feature.Mountain: return Ground.Rock;
+                case Feature.Peak: return Ground.Peak;
+                case Feature.Wall: return Ground.Wall;
+                case Feature.Scree: case Feature.Canyon: return Ground.Scree;
+                case Feature.River: case Feature.Lake: return Ground.Water;
+                case Feature.DeepRiver: return Ground.DeepWater;
+                case Feature.Ford: return Ground.Ford;
+                case Feature.Bridge: return Ground.Wood;
+                case Feature.Causeway: case Feature.Road: return Ground.Path;
+                case Feature.Rubble: return Ground.Rubble;
+                case Feature.Court: return Ground.Plaza;
+                case Feature.Wetland: return Noise.Perlin(x, y, seed + 93, 0.1f) > 0.55f ? Ground.DarkGrass : Ground.Swamp;
             }
 
             // A designed world can lay its own roads / lanes / paving over open land (never right next to the town)
-            var open = OpenGround(x, y, water);
+            var open = OpenGround(x, y, b, land.lake, land.forest);
             return nearTown ? open : DesignLayout.Ground(tx, ty, open, seed);
         }
 
-        Ground OpenGround(float x, float y, float water)
+        Ground OpenGround(float x, float y, Biome b, float water, bool forest)
         {
-            var b = BiomeAt(x, y);
             float detail = Noise.Perlin(x, y, seed + 91, 0.12f);
+            if (forest && (b == Biome.Meadow || b == Biome.Forest)) return detail > 0.8f ? Ground.Grass : Ground.DarkGrass;   // the floor of a deep wood
+            // Zone worlds: every zone lays its own pair of grounds (main, with accent patches)
+            if (Zones != null && b != Biome.Meadow && Zones.ByBiome(b) is { } z)
+                return detail > 0.6f ? z.art.groundAccent : z.art.ground;
             switch (b)
             {
                 case Biome.Forest: return detail > 0.55f ? Ground.DarkGrass : Ground.Grass;
@@ -156,39 +234,36 @@ namespace Diverse
                 case Biome.Tundra: return detail > 0.7f ? Ground.Grass : Ground.Snow;
                 case Biome.Marsh: return detail > 0.6f ? Ground.DarkGrass : Ground.Swamp;
                 case Biome.Ashland: return Ground.Ash;
+                case Biome.Volcano: return detail > 0.68f ? Ground.Ash : Ground.Scorch;
+                case Biome.Starlit: return detail > 0.64f ? Ground.DarkGrass : Ground.Starstone;
+                case Biome.Hive: return detail > 0.66f ? Ground.Sand : Ground.Hive;
                 default:
                     if (water > 0.66f) return Ground.Sand;   // sandy shore
                     return detail > 0.62f ? Ground.DarkGrass : Ground.Grass;
             }
         }
 
+        /// <summary>The ground a boss arena is paved with: its zone's plain ground.</summary>
+        /// <summary>Ground of a camp-like site: in a zone world its zone's accent ground, else the classic one.</summary>
+        Ground ZoneGround(StructureSpec s, Ground classic) => Zones?.ByBiome(s.biome) is { } z ? z.art.groundAccent : classic;
+
+        static Ground BossGround(ZoneDef z) => z == null ? Ground.Ash : z.art.groundAccent;
+
+        /// <summary>Water that needs a raft (a ford is wadable).</summary>
         public static bool IsWater(Ground g) => g == Ground.Water || g == Ground.DeepWater;
 
-        /// <summary>
-        /// Invisible north-south / east-west trails, one every TrailSpacing tiles (offset per line).
-        /// They only show up where they cross a river — as a 3-wide bridge — so crossings are sparse but reliable.
-        /// </summary>
-        bool OnTrail(int tx, int ty)
+        /// <summary>Ground nothing walks through or shoots across: mountain rock, crests, walls.</summary>
+        public static bool IsSolid(Ground g) => Art.IsTall(g);
+
+        /// <summary>What large landform the tile lies on (scenery rules, region names).</summary>
+        public Feature FeatureAt(int tx, int ty)
         {
-            int cx = MathX.FloorDiv(tx, TrailSpacing), cy = MathX.FloorDiv(ty, TrailSpacing);
-            int lineX = cx * TrailSpacing + 20 + (int)(Hash.U(cx, 0, seed + 601) % (TrailSpacing - 40));
-            int lineY = cy * TrailSpacing + 20 + (int)(Hash.U(0, cy, seed + 607) % (TrailSpacing - 40));
-            return Mathf.Abs(tx - lineX) <= 1 || Mathf.Abs(ty - lineY) <= 1;
+            var p = new Vector2(tx + 0.5f, ty + 0.5f);
+            return Land.At(tx, ty, BiomeAt(p.x, p.y), relief: p.magnitude >= OpenHome).feature;
         }
 
-        /// <summary>Any water within r tiles (used to place ferrymen by rivers).</summary>
-        bool WaterNear(Vector2 c, int r)
-        {
-            for (int y = -r; y <= r; y += 2)
-                for (int x = -r; x <= r; x += 2)
-                {
-                    float px = c.x + x, py = c.y + y;
-                    float water = Noise.Fractal(px, py, seed + 51, 0.018f, 3);
-                    float river = Mathf.Abs(Noise.Fractal(px, py, seed + 77, 0.006f, 2) - 0.5f);
-                    if (water > 0.72f || river < 0.012f) return true;
-                }
-            return false;
-        }
+        /// <summary>Inside a dense forest (ChunkView plants it thick, with clearings)?</summary>
+        public bool ForestAt(int tx, int ty, Biome b) => Land.At(tx, ty, b).forest;
 
         // ───────────── Structures ─────────────
 
@@ -205,8 +280,33 @@ namespace Diverse
             // Fixed structures
             if (InRegion(Vector2.zero, regionMin, regionSize))
                 list.Add(new StructureSpec { id = "town", kind = StructKind.Town, center = Vector2.zero, radius = TownRadius, name = "기억의 광장", landmark = true });
-            if (InRegion(TowerPos, regionMin, regionSize))
+            if (!Deep && InRegion(TowerPos, regionMin, regionSize))
                 list.Add(new StructureSpec { id = "tower", kind = StructKind.Tower, center = TowerPos, radius = 8, name = "기억의 탑", landmark = true, boss = "boss_knight", tier = 3 });
+            if (Zones != null)
+                foreach (var b in Zones.bosses)
+                    if (InRegion(b.center, regionMin, regionSize))
+                    {
+                        b.biome = BiomeAt(b.center.x, b.center.y);
+                        b.tier = Mathf.RoundToInt(TierAt(b.center.magnitude) + (Deep ? DB.ZoneRules.deepTierBonus : 0));
+                        b.enemy = Zones.PickEnemy(b.center, new Rng(Hash.Str(b.id)));
+                        b.enemyCount = b.kind == StructKind.ZoneBoss ? 4 + b.tier / 2 : 2 + b.tier / 3;
+                        list.Add(b);
+                    }
+            string idPre = Deep ? $"L{Zones.layerKey}:" : "";
+            // Keeps and villages of the trail network whose centre lies in this region
+            foreach (var site in Land.SitesNear(regionMin + Vector2.one * regionSize / 2, regionSize))
+                if (InRegion(site.Center, regionMin, regionSize))
+                {
+                    var biome = BiomeAt(site.Center.x, site.Center.y);
+                    int tier = Mathf.RoundToInt(TierAt(site.Center.magnitude) + (Deep ? DB.ZoneRules.deepTierBonus : 0));
+                    var spec = new StructureSpec
+                    {
+                        id = idPre + site.id, kind = site.kind == SiteKind.Keep ? StructKind.Keep : StructKind.Village,
+                        center = site.Center, radius = site.Radius, biome = biome, tier = tier, site = site, name = site.name, landmark = true,
+                    };
+                    FillSpec(spec, new Rng(site.seed));
+                    list.Add(spec);
+                }
 
             var rng = new Rng(Hash.U(rx, ry, seed + 1009));
             // 1–2 candidates per region
@@ -215,25 +315,36 @@ namespace Diverse
             {
                 var c = regionMin + new Vector2(rng.Range(8f, regionSize - 8f), rng.Range(8f, regionSize - 8f));
                 if (c.magnitude < TownRadius + 14) continue;
-                if (Vector2.Distance(c, TowerPos) < 18) continue;
-                if (c.y > 0 && c.y < TowerPos.y && Mathf.Abs(c.x) < 8) continue;   // keep the road clear
+                if (!Deep && Vector2.Distance(c, TowerPos) < 18) continue;
+                if (!Deep && c.y > 0 && c.y < TowerPos.y && Mathf.Abs(c.x) < 8) continue;   // keep the road clear
+                if (NearZoneBoss(c, 26)) continue;
                 bool overlaps = false;
                 foreach (var o in list) if (Vector2.Distance(o.center, c) < o.radius + 12) overlaps = true;
+                foreach (var o in Land.SitesNear(c, 14)) if (Vector2.Distance(o.Center, c) < o.Radius + 14) overlaps = true;
                 if (overlaps) continue;
 
                 var biome = BiomeAt(c.x, c.y);
+                // Not inside a range or a lake: the yard is kept open, but a camp walled in by mountains could not be reached
+                if (Land.OpenAround(c, 13, biome) < 0.6f || Land.OpenAround(c, 20, biome) < 0.5f || !Land.CanLeave(c, biome)) continue;
                 float dist = c.magnitude;
-                int tier = Mathf.RoundToInt(TierAt(dist));
+                int tier = Mathf.RoundToInt(TierAt(dist) + (Deep ? DB.ZoneRules.deepTierBonus : 0));
                 var spec = new StructureSpec
                 {
-                    id = $"s{rx}_{ry}_{i}", center = c, biome = biome, tier = tier,
+                    id = $"{idPre}s{rx}_{ry}_{i}", center = c, biome = biome, tier = tier,
                 };
                 spec.kind = PickKind(rng, biome, dist);
-                if (spec.kind == StructKind.Wanderer && WaterNear(c, 9)) spec.kind = StructKind.Ferry;
+                if (spec.kind == StructKind.Wanderer && Land.WaterNear(c, 9, biome)) spec.kind = StructKind.Ferry;
                 FillSpec(spec, rng);
                 list.Add(spec);
             }
             return list;
+        }
+
+        bool NearZoneBoss(Vector2 c, float pad)
+        {
+            if (Zones == null) return false;
+            foreach (var b in Zones.bosses) if (Vector2.Distance(b.center, c) < b.radius + pad) return true;
+            return false;
         }
 
         static bool InRegion(Vector2 p, Vector2 min, float size) =>
@@ -265,7 +376,7 @@ namespace Diverse
                 Biome.Ashland => new[] { "wisp", "boar", "bat" },
                 _ => new[] { "shroom", "jelly", "fox", "frog" },
             };
-            s.enemy = rng.Pick(pool);
+            s.enemy = Zones != null ? Zones.PickEnemy(s.center, rng) : rng.Pick(pool);
             switch (s.kind)
             {
                 case StructKind.Camp:
@@ -292,12 +403,26 @@ namespace Diverse
                     s.boss = "boss_knight";
                     s.name = rng.Pick(new[] { "망각의 요새", "검은 성채", "무너진 왕의 보루" });
                     break;
-                case StructKind.Graveyard: s.radius = 7; s.enemy = "wisp"; s.enemyCount = 3 + s.tier; s.name = "옛 묘지"; s.landmark = true; break;
+                case StructKind.Graveyard: s.radius = 7; if (Zones == null) s.enemy = "wisp"; s.enemyCount = 3 + s.tier; s.name = "옛 묘지"; s.landmark = true; break;
                 case StructKind.Lair:
                     s.radius = 10; s.enemyCount = 3 + s.tier; s.landmark = true;
                     s.boss = s.biome == Biome.Forest || s.biome == Biome.Meadow ? "boss_fox" : "boss_shroom";
                     s.name = s.boss == "boss_fox" ? "붉은 꼬리의 소굴" : "버섯왕의 고목";
                     break;
+                case StructKind.Keep:
+                    // A garrison holds the yard; its captain waits in the inner keep
+                    s.enemyCount = 7 + s.tier + rng.Range(0, 3);
+                    s.boss = "boss_knight";
+                    break;
+                case StructKind.Village:
+                    s.enemyCount = 5 + s.tier + rng.Range(0, 3);
+                    break;
+            }
+            // Zone worlds: a site's boss is a captain of its zone's master (same body; World.SpawnBoss makes it smaller in name and HP)
+            if (Zones != null && s.boss != null && (Zones.ByBiome(s.biome) ?? Zones.MainZone(s.center)) is { } home)
+            {
+                s.boss = home.boss;
+                if (s.kind == StructKind.Lair) s.name = $"{home.prefix} 우두머리의 소굴";
             }
         }
 
@@ -347,7 +472,10 @@ namespace Diverse
         public string RegionName(Vector2 p)
         {
             if (p.magnitude < TownRadius + 4) return "기억의 광장";
-            if (Vector2.Distance(p, TowerPos) < 14) return "기억의 탑";
+            if (!Deep && Vector2.Distance(p, TowerPos) < 14) return "기억의 탑";
+            var site = Land.SiteCovering(Mathf.FloorToInt(p.x), Mathf.FloorToInt(p.y));
+            if (site != null) return site.name;
+            if (Zones != null) return p.magnitude < DB.ZoneRules.centerRadius ? (Deep ? Zones.zones[0].deepName + " 입구" : "바람결 초원") : Zones.RegionName(p);
             var b = BiomeAt(p.x, p.y);
             return b switch
             {

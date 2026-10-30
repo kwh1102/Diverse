@@ -21,6 +21,9 @@ namespace Diverse
             public bool active;
             public Transform follow;
             public Vector3 followOffset;
+            public float life, scale0, scale1;   // Pop: grows from scale0 to scale1 and fades out over life (0 = plain frame animation)
+            public Vector2 drift;
+            public Color tint;
         }
 
         class Particle
@@ -105,6 +108,7 @@ namespace Diverse
             a.active = true;
             a.frames = frames;
             a.t = 0;
+            a.life = 0;
             a.frameTime = 1f / fps;
             a.follow = follow;
             a.followOffset = follow != null ? (Vector3)pos - follow.position : Vector3.zero;
@@ -117,6 +121,16 @@ namespace Diverse
             a.sr.sharedMaterial = additive ? Art.AddMat : Art.SpriteMat;
             a.sr.sortingOrder = order != 0 ? order : Art.SortY(pos.y) + 40;
             return a.sr;
+        }
+
+        /// <summary>One drawn effect sprite that grows from scale0 to scale1, drifts, and fades out over life seconds.</summary>
+        public SpriteRenderer Pop(Sprite s, Vector2 pos, float life, float scale0, float scale1, float angle = 0, bool additive = false, Vector2 drift = default, Color? tint = null)
+        {
+            if (s == null || life <= 0) return null;
+            var sr = Play(new[] { s }, pos, angle, 1, scale0, tint, additive);
+            var a = anims.Find(x => x.sr == sr);
+            a.life = life; a.scale0 = scale0; a.scale1 = scale1; a.drift = drift; a.tint = tint ?? Color.white;
+            return sr;
         }
 
         // ───────── 파티클 (도트 사각형) ─────────
@@ -283,6 +297,17 @@ namespace Diverse
             {
                 if (!a.active) continue;
                 a.t += dt;
+                if (a.life > 0)
+                {
+                    float k = a.t / a.life;
+                    if (k >= 1) { a.active = false; a.go.SetActive(false); continue; }
+                    float s = Mathf.Lerp(a.scale0, a.scale1, MathX.EaseOutCubic(k));
+                    a.go.transform.localScale = new Vector3(s, s, 1);
+                    a.go.transform.position += (Vector3)(a.drift * dt);
+                    var c = a.tint; c.a *= k < 0.6f ? 1 : 1 - (k - 0.6f) / 0.4f;
+                    a.sr.color = c;
+                    continue;
+                }
                 int f = (int)(a.t / a.frameTime);
                 if (f >= a.frames.Length) { a.active = false; a.go.SetActive(false); continue; }
                 a.sr.sprite = a.frames[f];

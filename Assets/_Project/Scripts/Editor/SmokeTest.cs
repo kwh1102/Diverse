@@ -338,6 +338,74 @@ namespace Diverse.EditorTools
                     g.World.quests.Remove(q);
                 }
 
+                // 3e2) Zone mechanics (normal-mode zones): each one blocks / punishes / spawns what it should
+                step = "zone mechanics";
+                {
+                    foreach (var a in Actor.All.ToArray()) if (a is Enemy) Object.Destroy(a.gameObject);
+                    yield return Frames(2);
+                    g.Player.invulnUntil = Time.time + 999;
+                    var near = g.Player.Pos + Vector2.right * 1.5f;
+                    var far = g.Player.Pos + Vector2.right * 5f;
+                    Enemy Make(ZoneMods m, Vector2 at, string camp = null)
+                    {
+                        var d = DB.ScaledEnemy("boar", 0);
+                        d.mods = m; d.hp = 500; d.attackCooldown = 99;
+                        return Enemy.Spawn(d, WorldStreamer.I.NearestWalkable(at, d.radius), camp);
+                    }
+                    var hit = new DamageInfo { amount = 20, source = g.Player, direction = Vector2.right };
+                    var shielded = Make(new ZoneMods { shieldHits = 2 }, near);
+                    float hp0 = shielded.hp;
+                    shielded.TakeDamage(hit); shielded.TakeDamage(hit);
+                    if (shielded.hp != hp0) Fail("hit shield did not block its hits");
+                    shielded.TakeDamage(hit);
+                    if (shielded.hp >= hp0) Fail("a hit did not land after the shield broke");
+                    var armored = Make(new ZoneMods { armor = 0.02f }, near + Vector2.up * 2);
+                    float hpBefore = armored.hp;
+                    armored.TakeDamage(hit);
+                    if (hpBefore - armored.hp > 12) Fail($"armor did not reduce a small hit ({hpBefore - armored.hp:0.0} taken)");
+                    var deflector = Make(new ZoneMods { deflect = 1 }, far);
+                    if (Vector2.Distance(deflector.Pos, g.Player.Pos) > 3.2f)
+                    {
+                        hpBefore = deflector.hp;
+                        deflector.TakeDamage(hit);
+                        if (deflector.hp != hpBefore) Fail("deflect did not block a hit from range");
+                    }
+                    var thorny = Make(new ZoneMods { thorns = 1 }, near + Vector2.down);
+                    float heroHp = g.Player.hp;
+                    thorny.TakeDamage(hit);
+                    if (g.Player.hp >= heroHp) Fail("thorns did not prick the hero on a melee hit");
+                    g.Player.hp = g.Player.maxHp;
+                    Enemy.SignaturesFired.Clear();
+                    var bursting = Make(new ZoneMods { deathBurst = 0.01f, brood = 2 }, far + Vector2.up * 3, "smoke_brood");
+                    bursting.TakeDamage(new DamageInfo { amount = 99999, source = g.Player, direction = Vector2.up });
+                    if (g.World.clearedCamps.Contains("smoke_brood")) Fail("a camp counted as cleared while its brood was about to hatch");
+                    yield return Frames(3);
+                    int brood = Actor.All.Count(a => a is Enemy e && e.Alive && e.campId == "smoke_brood");
+                    if (brood != 2) Fail($"brood left {brood} copies (expected 2)");
+                    var shooter = Make(new ZoneMods { barrage = 1, miasma = 0.01f, skittish = 1 }, near);
+                    shooter.TakeDamage(new DamageInfo { amount = 1, source = g.Player, direction = Vector2.right });
+                    float until = Time.realtimeSinceStartup + 5f;
+                    while (Time.realtimeSinceStartup < until) { g.Player.hp = g.Player.maxHp; g.Player.invulnUntil = Time.time + 999; yield return null; }
+                    if (!Enemy.SignaturesFired.Contains("ZoneDeathBurst")) Fail("death burst never went off");
+                    if (!Enemy.SignaturesFired.Contains("ZoneBarrage")) Fail("barrage never fired");
+                    foreach (var a in Actor.All.ToArray()) if (a is Enemy) Object.Destroy(a.gameObject);
+                    g.Player.invulnUntil = 0;
+                    yield return Frames(2);
+                }
+
+                // 3e3) Deep layer round trip: the world is rebuilt around the hero both ways
+                step = "zone layers";
+                {
+                    var zone = DB.Zones.Values.First();
+                    g.EnterDeepLayer(zone);
+                    yield return Frames(10);
+                    if (g.World.layer != 1 || WorldStreamer.I.ChunkAt(g.Player.Pos) == null) Fail("entering a deep layer did not rebuild the world");
+                    g.LeaveDeepLayer();
+                    yield return Frames(10);
+                    if (g.World.layer != 0 || WorldStreamer.I.ChunkAt(g.Player.Pos) == null) Fail("leaving the deep layer did not rebuild the world");
+                    if (!g.Player.Alive) Fail("the hero did not survive the layer switch");
+                }
+
                 // 3f) Warp stones: buy → place in the field → map click travels back to town
                 step = "warp";
                 {

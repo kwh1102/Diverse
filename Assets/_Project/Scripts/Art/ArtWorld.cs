@@ -2,9 +2,18 @@ using UnityEngine;
 
 namespace Diverse
 {
-    public enum Ground : byte { Grass, DarkGrass, Path, Sand, Snow, Swamp, Ash, Plaza, Water, DeepWater, Wood }
+    public enum Ground : byte
+    {
+        Grass, DarkGrass, Path, Sand, Snow, Swamp, Ash, Plaza, Water, DeepWater, Wood, Scorch, Starstone, Hive,
+        // Zone grounds (normal mode): each zone has its own pair (ZoneArtDef.ground / groundAccent), textured from Resources/Sprites
+        Magma, JungleFloor, JungleMoss, Glacier, Frost, Bog, BogMoss, Dune, DuneRidge, Grave, GraveMoss, StarMoss, Comb,
+        // Landforms (Landforms.cs): mountain rock and snowy crests, keep walls (all impassable), foothill gravel,
+        // shallow fords, fallen masonry (walkable)
+        Rock, Peak, Wall, Scree, Ford, Rubble,
+    }
 
-    public enum Biome : byte { Meadow, Forest, Dunes, Tundra, Marsh, Ashland }
+    /// <summary>Volcano / Starlit / Hive only appear in normal-mode zone worlds (ZoneMap).</summary>
+    public enum Biome : byte { Meadow, Forest, Dunes, Tundra, Marsh, Ashland, Volcano, Starlit, Hive }
 
     public static partial class Art
     {
@@ -13,9 +22,17 @@ namespace Diverse
         // GroundColors runs for every tile and every border pixel of every chunk bake (and the minimap): parsing hex strings
         // there made thousands of short-lived strings per chunk, and the garbage collections showed up as hitches.
         // The colours are resolved once per look (DesignRuntime.Version) into a table.
-        static readonly Color32[] groundTable = new Color32[3 * 16];
+        const int GroundKinds = 64;
+        static readonly Color32[] groundTable = new Color32[3 * GroundKinds];
         static int groundTableFor = -1;
         static readonly Color32 ShoreEdge = Pal.Hex("3b2f3a"), ShoreDeep = Pal.Hex("2f5fa8"), ShoreFoam = Pal.Hex("bfe6ff");
+        static readonly Color32 CliffFace = Pal.Hex("3e3747"), CliffCrack = Pal.Hex("2a2430"), CliffLip = Pal.Hex("57505f"), CliffLit = Pal.Hex("9d97aa");
+        static readonly Color32 SnowCap = Pal.Hex("f4f2ff"), SnowShade = Pal.Hex("c9c6dc");
+        static readonly Color32 WallFace = Pal.Hex("5d5869"), WallMortar = Pal.Hex("3f3a4a"), WallTop = Pal.Hex("9b95a8"), WallMerlon = Pal.Hex("b1abbd");
+        static readonly Color32 FordStone = Pal.Hex("8e8a7c"), FordStoneShade = Pal.Hex("5f5c54"), RubbleStone = Pal.Hex("6e6878");
+
+        /// <summary>Tiles that stand up out of the ground (drawn with a cliff face, never dithered into neighbours; impassable).</summary>
+        public static bool IsTall(Ground g) => g == Ground.Rock || g == Ground.Peak || g == Ground.Wall;
 
         public static void GroundColors(Ground g, out Color32 a, out Color32 b, out Color32 c)
         {
@@ -46,9 +63,80 @@ namespace Diverse
                 case Ground.Plaza: a = Pal.Hex("cbbfb0"); b = Pal.Hex("b5a898"); c = Pal.Hex("ddd2c4"); break;
                 case Ground.Wood: a = Pal.Hex("b07f55"); b = Pal.Hex("946644"); c = Pal.Hex("c4936a"); break;
                 case Ground.DeepWater: a = Pal.Hex("3f78c9"); b = Pal.Hex("3567b0"); c = Pal.Hex("5a92dc"); break;
-                default: a = Pal.Hex("5aa0e0"); b = Pal.Hex("4b8fd1"); c = Pal.Hex("8cc6f2"); break;
+                case Ground.Scorch: a = Pal.Hex("6b4038"); b = Pal.Hex("57332e"); c = Pal.Hex("e0693a"); break;      // ember flecks
+                case Ground.Starstone: a = Pal.Hex("b4add6"); b = Pal.Hex("9f98c4"); c = Pal.Hex("f2ecff"); break;   // star glints
+                case Ground.Hive: a = Pal.Hex("c99a52"); b = Pal.Hex("b3843f"); c = Pal.Hex("e6bb6c"); break;
+                case Ground.Water: a = Pal.Hex("5aa0e0"); b = Pal.Hex("4b8fd1"); c = Pal.Hex("8cc6f2"); break;
+                case Ground.Rock: a = Pal.Hex("7a7488"); b = Pal.Hex("5f5a6c"); c = Pal.Hex("928ca1"); break;
+                case Ground.Peak: a = Pal.Hex("a8a3b8"); b = Pal.Hex("837e94"); c = Pal.Hex("f4f2ff"); break;
+                case Ground.Wall: a = Pal.Hex("8d8799"); b = Pal.Hex("6a6577"); c = Pal.Hex("a9a3b5"); break;
+                case Ground.Scree: a = Pal.Hex("8e8478"); b = Pal.Hex("736a5f"); c = Pal.Hex("a79d90"); break;
+                case Ground.Ford: a = Pal.Hex("8cc0e8"); b = Pal.Hex("6fa8d8"); c = Pal.Hex("d8ecf8"); break;
+                case Ground.Rubble: a = Pal.Hex("a39c94"); b = Pal.Hex("857e76"); c = Pal.Hex("c0b8ae"); break;
+                default:
+                    // Zone grounds: the colours of their drawn texture (map, minimap, tile borders); a plain grey until drawn
+                    a = Pal.Hex("8a8478"); b = Pal.Mul(a, 0.85f); c = Pal.Mul(a, 1.15f);
+                    break;
+            }
+            if (SwatchPixels(g, 0) is { } px)
+            {
+                // A drawn texture sets the tone: its average, and a darker / lighter step from it
+                long r = 0, gg = 0, bl = 0;
+                foreach (var p in px) { r += p.r; gg += p.g; bl += p.b; }
+                a = new Color32((byte)(r / px.Length), (byte)(gg / px.Length), (byte)(bl / px.Length), 255);
+                b = Pal.Mul(a, 0.86f); c = Pal.Mul(a, 1.14f);
             }
             DesignRuntime.Ground(g, ref a, ref b, ref c);
+        }
+
+        // ───────────── Drawn ground textures (Resources/Sprites/ground_<Ground>_<0|1>.png, 32x32, tiled mirrored) ─────────────
+
+        static readonly Color32[][] swatches = new Color32[GroundKinds * 2][];
+        static readonly bool[] swatchLooked = new bool[GroundKinds * 2];
+        static int swatchSize;
+        static int swatchX = int.MinValue, swatchY;
+        static bool swatchB;
+
+        /// <summary>The pixels of a drawn ground texture (variant 0 / 1), or null. Only with the built-in look: a designed world keeps its own ground.</summary>
+        static Color32[] SwatchPixels(Ground g, int variant)
+        {
+            if (!DesignRuntime.Active.world.IsDefault) return null;
+            int i = (int)g * 2 + variant;
+            if (i >= swatches.Length) return null;
+            if (!swatchLooked[i])
+            {
+                swatchLooked[i] = true;
+                var s = HandSprite($"ground_{g}_{variant}");
+                if (s != null && s.texture.isReadable)
+                {
+                    var r = s.rect;
+                    swatchSize = (int)r.width;
+                    swatches[i] = s.texture.GetPixels32();
+                }
+            }
+            return swatches[i];
+        }
+
+        /// <summary>One ground pixel from a drawn texture: two variants mixed in soft patches, mirrored so it tiles without seams.</summary>
+        static bool GroundSwatch(Ground g, int gx, int gy, out Color32 col)
+        {
+            col = default;
+            var a = SwatchPixels(g, 0);
+            if (a == null) return false;
+            int bx = gx >> 2, by = gy >> 2;
+            if (bx != swatchX || by != swatchY)
+            {
+                swatchX = bx; swatchY = by;
+                swatchB = Noise.Perlin(bx / 4f, by / 4f, 4811, 0.09f) + (Hash.F(bx, by, 4812) - 0.5f) * 0.12f > 0.5f;
+            }
+            var px = swatchB ? SwatchPixels(g, 1) ?? a : a;
+            int n = swatchSize;
+            if (px.Length != n * n) return false;
+            int x = (int)((uint)gx % (uint)(n * 2)), y = (int)((uint)gy % (uint)(n * 2));
+            if (x >= n) x = n * 2 - 1 - x;
+            if (y >= n) y = n * 2 - 1 - y;
+            col = px[y * n + x];
+            return true;
         }
 
         /// <summary>
@@ -64,7 +152,8 @@ namespace Diverse
                 {
                     var g = tiles[tx + 1, ty + 1];
                     GroundColors(g, out var a, out var b, out var c);
-                    bool water = g == Ground.Water || g == Ground.DeepWater;
+                    bool water = g == Ground.Water || g == Ground.DeepWater || g == Ground.Ford;
+                    bool tall = IsTall(g);
                     for (int y = 0; y < T; y++)
                         for (int x = 0; x < T; x++)
                         {
@@ -74,26 +163,43 @@ namespace Diverse
                             if (n < 0.18f) col = b;
                             else if (n > 0.94f) col = c;
                             if (DesignRuntime.GroundTexel(g, gx, gy, out var texel)) col = texel;   // generated ground texture
+                            else if (GroundSwatch(g, gx, gy, out var swatch)) col = swatch;         // drawn zone ground
 
                             // 이웃 타일과의 경계 처리
                             Ground l = tiles[tx, ty + 1], r = tiles[tx + 2, ty + 1], d = tiles[tx + 1, ty], u = tiles[tx + 1, ty + 2];
-                            if (!water)
+                            if (tall)
                             {
+                                col = TallTexel(g, a, b, c, x, y, gx, gy, seed, !IsTall(l), !IsTall(r), !IsTall(d), !IsTall(u));
+                            }
+                            else if (!water)
+                            {
+                                // Standing in front of a cliff or wall: its shadow falls on the top rows of this tile
+                                if (IsTall(u) && y >= T - 3) col = Pal.Mul(col, y == T - 1 ? 0.62f : y == T - 2 ? 0.72f : 0.86f);
+                                if (g == Ground.Scree && Hash.F(gx / 2, gy / 2, seed + 21) > 0.9f) col = Hash.F(gx, gy, seed + 22) > 0.5f ? RubbleStone : c;   // loose stones
+                                if (g == Ground.Rubble && Hash.F(gx / 3, gy / 3, seed + 23) > 0.84f) col = Hash.F(gx / 3, gy / 3, seed + 24) > 0.4f ? RubbleStone : WallMortar;   // fallen blocks
                                 if (x == 0 && l != g && Pri(l) > Pri(g)) col = Mix(col, l, gx, gy, seed);
                                 if (x == T - 1 && r != g && Pri(r) > Pri(g)) col = Mix(col, r, gx, gy, seed);
                                 if (y == 0 && d != g && Pri(d) > Pri(g)) col = Mix(col, d, gx, gy, seed);
                                 if (y == T - 1 && u != g && Pri(u) > Pri(g)) col = Mix(col, u, gx, gy, seed);
+                                // Drawn grounds fade into each other over a few pixels instead of meeting on the tile line
+                                col = SoftEdge(col, g, l, x, gx, gy, seed);
+                                col = SoftEdge(col, g, r, T - 1 - x, gx, gy, seed);
+                                col = SoftEdge(col, g, d, y, gx, gy, seed);
+                                col = SoftEdge(col, g, u, T - 1 - y, gx, gy, seed);
                             }
                             else
                             {
                                 // 물가: 위쪽 땅과 맞닿으면 거품/모래 테두리, 잔물결
-                                bool landUp = u != Ground.Water && u != Ground.DeepWater;
-                                bool landL = l != Ground.Water && l != Ground.DeepWater;
-                                bool landR = r != Ground.Water && r != Ground.DeepWater;
-                                bool landD = d != Ground.Water && d != Ground.DeepWater;
+                                bool landUp = !IsWaterLike(u);
+                                bool landL = !IsWaterLike(l);
+                                bool landR = !IsWaterLike(r);
+                                bool landD = !IsWaterLike(d);
                                 if (landUp && y >= T - 3) col = y == T - 1 ? ShoreEdge : ShoreDeep;
                                 else if ((landL && x == 0) || (landR && x == T - 1) || (landD && y == 0)) col = ShoreFoam;
                                 else if (((gx / 3 + gy * 2) % 13 == 0) && n > 0.5f) col = c;
+                                // A ford: stepping stones poking out of the shallows
+                                if (g == Ground.Ford && Hash.F(gx / 4, gy / 4, seed + 25) > 0.88f && (gx & 3) != 0 && (gy & 3) != 3)
+                                    col = (gy & 3) == 0 ? FordStoneShade : FordStone;
                             }
 
                             // Bridge: planks across the travel direction, dark rails where it borders water
@@ -122,13 +228,88 @@ namespace Diverse
             return tex;
         }
 
+        static bool IsWaterLike(Ground g) => g == Ground.Water || g == Ground.DeepWater || g == Ground.Ford;
+
+        /// <summary>
+        /// A pixel of a tile that stands up (rock, crest, wall): a lit top face, a dark cliff face on its south side where the
+        /// ground is open, a bright lip on the north edge, darker sides — so a range reads as a mass with height from above.
+        /// </summary>
+        static Color32 TallTexel(Ground g, Color32 a, Color32 b, Color32 c, int x, int y, int gx, int gy, int seed, bool openL, bool openR, bool openD, bool openU)
+        {
+            const int T = PPU, Face = 10;
+            bool wall = g == Ground.Wall;
+            Color32 col;
+            if (wall)
+            {
+                // Flagstones on top of the wall; merlons along every open edge
+                col = (gx & 7) == 0 || (gy & 7) == 0 ? Pal.Mul(WallTop, 0.86f) : Hash.F(gx >> 2, gy >> 2, seed + 31) > 0.85f ? Pal.Mul(WallTop, 0.94f) : WallTop;
+                bool merlonU = openU && y >= T - 3, merlonL = openL && x < 3, merlonR = openR && x >= T - 3;
+                if (merlonU) col = (gx & 7) < 6 ? WallMerlon : Pal.Mul(WallTop, 0.7f);
+                else if (merlonL || merlonR) col = (gy & 7) < 6 ? WallMerlon : Pal.Mul(WallTop, 0.7f);
+            }
+            else
+            {
+                // Top face: coarse stone grain (4x4 px blocks), a few cracks
+                float grain = Hash.F(gx >> 2, gy >> 2, seed + 31);
+                col = grain < 0.12f ? b : grain > 0.97f ? c : a;
+                if (g == Ground.Peak)
+                {
+                    // Snow lies in soft patches on the top face, a shaded rim on each patch's south edge
+                    float snow = Hash.F(gx >> 2, gy >> 2, seed + 33), below = Hash.F(gx >> 2, (gy - 4) >> 2, seed + 33);
+                    if (snow > 0.3f) col = (y & 3) == 0 && below <= 0.3f ? SnowShade : SnowCap;
+                }
+                if (Hash.F(gx / 3, gy / 6, seed + 35) > 0.94f && (gx % 3) == 1) col = Pal.Mul(col, 0.72f);
+                if (openU && y >= T - 2) col = y == T - 1 ? CliffLit : Pal.Lerp(col, CliffLit, 0.5f);   // sunlit north lip
+                if (openL && x < 2) col = x == 0 ? CliffCrack : CliffLip;
+                if (openR && x >= T - 2) col = x == T - 1 ? CliffCrack : CliffLip;
+            }
+            if (openD && y < Face)
+            {
+                // The cliff / wall face: in shadow, with vertical cracks (rock) or masonry courses (wall), a lit lip on top
+                if (wall)
+                {
+                    int course = y / 3, brick = ((gx + (course & 1) * 3) / 6);
+                    col = (y % 3 == 2) || ((gx + (course & 1) * 3) % 6 == 0) ? WallMortar : brick % 3 == 1 ? Pal.Mul(WallFace, 1.12f) : WallFace;
+                    if (y == Face - 1) col = Pal.Mul(WallTop, 0.72f);
+                }
+                else
+                {
+                    col = y == Face - 1 ? CliffLip : y >= Face - 3 ? Pal.Lerp(CliffFace, CliffLip, 0.4f) : CliffFace;
+                    int crack = (gx * 7 + (gy >> 3)) % 11;
+                    if (crack == 3 || (crack == 8 && y < 5)) col = CliffCrack;
+                    if ((gy & 3) == 1 && Hash.F(gx >> 2, gy >> 2, seed + 37) > 0.6f) col = Pal.Mul(col, 0.85f);   // strata
+                    if (y == 0) col = CliffCrack;   // foot of the cliff
+                }
+            }
+            return col;
+        }
+
         static int Pri(Ground g) => g switch
         {
-            Ground.Water or Ground.DeepWater => -1,
+            Ground.Rock or Ground.Peak or Ground.Wall => -2,
+            Ground.Water or Ground.DeepWater or Ground.Ford => -1,
+            Ground.Rubble => 6, Ground.Scree => 2,
             Ground.Path => 6, Ground.Plaza => 7, Ground.Wood => 8,
-            Ground.Snow => 5, Ground.Sand => 4, Ground.Ash => 3, Ground.Swamp => 2, Ground.DarkGrass => 1,
+            Ground.Snow => 5, Ground.Sand => 4, Ground.Starstone => 4, Ground.Hive => 4, Ground.Ash => 3, Ground.Scorch => 3, Ground.Swamp => 2, Ground.DarkGrass => 1,
             _ => 0,
         };
+
+        /// <summary>
+        /// Where a drawn (textured) ground meets another ground, the one on top dithers into this tile over a few pixels,
+        /// thinning out with distance from the edge. Exactly one side of each pair dithers (priority, then enum order).
+        /// </summary>
+        static Color32 SoftEdge(Color32 col, Ground g, Ground other, int dist, int gx, int gy, int seed)
+        {
+            const int Band = 6;
+            if (dist >= Band || other == g || other == Ground.Water || other == Ground.DeepWater) return col;
+            if (SwatchPixels(g, 0) == null && SwatchPixels(other, 0) == null) return col;
+            if (Pri(other) < Pri(g) || (Pri(other) == Pri(g) && other < g)) return col;
+            float p = (Band - dist) / (Band + 1f) * 0.9f;
+            if (Hash.F(gx, gy, seed + 13) >= p) return col;
+            if (GroundSwatch(other, gx, gy, out var t)) return t;
+            GroundColors(other, out var a, out var b, out _);
+            return Hash.F(gx, gy, seed + 14) < 0.2f ? b : a;
+        }
 
         static Color32 Mix(Color32 baseCol, Ground other, int gx, int gy, int seed)
         {
@@ -147,6 +328,9 @@ namespace Diverse
                 case Biome.Dunes: return Cactus(variant);
                 case Biome.Marsh: return RoundTree(Pal.Hex("6a7f4a"), Pal.Hex("4a5a33"), Pal.Hex("8a9f5e"), variant, true);
                 case Biome.Ashland: return DeadTree(variant);
+                case Biome.Volcano: return DeadTree(variant + 1, Pal.Hex("3a2a2c"), Pal.Hex("241a1c"));   // charred, glowing embers
+                case Biome.Starlit: return Pine(Pal.Hex("c9b8ff"), Pal.Hex("8a78d6"), false, variant);     // crystal spires
+                case Biome.Hive: return RoundTree(Pal.Hex("e0a84a"), Pal.Hex("a8742c"), Pal.Hex("ffd37a"), variant, true);   // honey-dripping
                 default:
                     return variant % 3 == 2
                         ? RoundTree(Pal.Hex("f2a7c3"), Pal.Hex("d07a9e"), Pal.Hex("ffd1e1"), variant)
@@ -209,10 +393,11 @@ namespace Diverse
             return cv.ToSprite(new Vector2(10, 1));
         }
 
-        static Sprite DeadTree(int v)
+        static Sprite DeadTree(int v) => DeadTree(v, Pal.Hex("5a4a52"), Pal.Hex("3d3239"));
+
+        static Sprite DeadTree(int v, Color32 w, Color32 s)
         {
             var cv = new PixelCanvas(28, 36);
-            var w = Pal.Hex("5a4a52"); var s = Pal.Hex("3d3239");
             cv.ThickLine(new Vector2(14, 0), new Vector2(14, 22), 2.2f, w);
             cv.ThickLine(new Vector2(14, 14), new Vector2(5, 26), 1.3f, w);
             cv.ThickLine(new Vector2(14, 18), new Vector2(23, 30), 1.3f, w);
@@ -226,13 +411,20 @@ namespace Diverse
         public static Sprite Rock(Biome b, int v) => Get($"rock_{b}_{v}", () =>
         {
             var cv = new PixelCanvas(20, 16);
-            Color32 a = b == Biome.Tundra ? Pal.Hex("b8c8dc") : b == Biome.Dunes ? Pal.Hex("d9a873") : b == Biome.Ashland ? Pal.Hex("5a5060") : Pal.Hex("a7a3b3");
+            Color32 a = b switch
+            {
+                Biome.Tundra => Pal.Hex("b8c8dc"), Biome.Dunes => Pal.Hex("d9a873"), Biome.Ashland => Pal.Hex("5a5060"),
+                Biome.Volcano => Pal.Hex("4a3436"), Biome.Starlit => Pal.Hex("cfc6f0"), Biome.Hive => Pal.Hex("c48a3e"),
+                _ => Pal.Hex("a7a3b3"),
+            };
             Color32 s = Pal.Mul(a, 0.72f);
             var rng = new Rng((uint)(v * 31 + 7));
             cv.Ellipse(10, 6, 8.5f, 5.5f, a);
             cv.Ellipse(8 + rng.Range(-2f, 2f), 9, 5, 4, a);
             cv.Ellipse(7, 9, 2, 1.4f, Pal.Mul(a, 1.18f));
             if (b == Biome.Tundra) cv.Rect(4, 11, 9, 2, Pal.White);
+            if (b == Biome.Volcano) { cv.Set(6, 4, Pal.Hex("ff7a3d")); cv.Set(7, 4, Pal.Hex("ff7a3d")); cv.Set(13, 6, Pal.Hex("ffb35a")); }
+            if (b == Biome.Starlit) { cv.Set(8, 10, Pal.White); cv.Set(13, 7, Pal.White); }
             if (b == Biome.Meadow && v % 2 == 0) { cv.Set(14, 9, Pal.Hex("6fbf5a")); cv.Set(15, 8, Pal.Hex("6fbf5a")); }
             cv.InnerShade(a, s, 1, -1);
             cv.Outline(Pal.Outline);
@@ -242,7 +434,12 @@ namespace Diverse
         public static Sprite Bush(Biome b, int v) => Get($"bush_{b}_{v}", () =>
         {
             var cv = new PixelCanvas(18, 12);
-            Color32 a = b == Biome.Marsh ? Pal.Hex("7a8f52") : b == Biome.Forest ? Pal.Hex("3f8a4f") : Pal.Hex("5fb85a");
+            Color32 a = b switch
+            {
+                Biome.Marsh => Pal.Hex("7a8f52"), Biome.Forest => Pal.Hex("3f8a4f"),
+                Biome.Starlit => Pal.Hex("a493e6"), Biome.Hive => Pal.Hex("d9a24c"),
+                _ => Pal.Hex("5fb85a"),
+            };
             Color32 s = Pal.Mul(a, 0.72f);
             cv.Ellipse(9, 5, 8, 4.5f, a);
             cv.Circle(5, 7, 3.5f, a); cv.Circle(12, 7.5f, 3.8f, a);
@@ -268,7 +465,9 @@ namespace Diverse
             Color32 g = b switch
             {
                 Biome.Tundra => Pal.Hex("cfe0f0"), Biome.Dunes => Pal.Hex("c9a26c"), Biome.Ashland => Pal.Hex("80758a"),
-                Biome.Marsh => Pal.Hex("80916a"), Biome.Forest => Pal.Hex("3f8a4f"), _ => Pal.Hex("5aa850"),
+                Biome.Marsh => Pal.Hex("80916a"), Biome.Forest => Pal.Hex("3f8a4f"),
+                Biome.Volcano => Pal.Hex("8a4a3a"), Biome.Starlit => Pal.Hex("e0d8ff"), Biome.Hive => Pal.Hex("a87a3a"),
+                _ => Pal.Hex("5aa850"),
             };
             cv.Line(1, 0, 0, 3, g); cv.Line(3, 0, 3, 5, g); cv.Line(5, 0, 6, 4, g); if (v % 2 == 0) cv.Line(7, 0, 8, 2, g);
             return cv.ToSprite(new Vector2(4.5f, 0));

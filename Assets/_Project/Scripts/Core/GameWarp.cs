@@ -18,7 +18,7 @@ namespace Diverse
         public System.Collections.Generic.IEnumerable<WarpStone> WarpStones()
         {
             yield return new WarpStone { id = TownWarpId, name = "마을", x = TownWarpPos.x, y = TownWarpPos.y };
-            foreach (var w in World.warpStones) yield return w;
+            foreach (var w in World.warpStones) if (w.layer == ZoneMap.LayerKey(World)) yield return w;
         }
 
         /// <summary>The stone the hero is standing next to (can travel from here), or null.</summary>
@@ -58,7 +58,7 @@ namespace Diverse
             {
                 id = "warp_" + System.Guid.NewGuid().ToString("N").Substring(0, 6),
                 name = Diverse.World.I.Gen.RegionName(pos),
-                x = pos.x, y = pos.y,
+                x = pos.x, y = pos.y, layer = ZoneMap.LayerKey(World),
             };
             World.warpStones.Add(stone);
             Diverse.World.I.BuildWarpStone(stone);

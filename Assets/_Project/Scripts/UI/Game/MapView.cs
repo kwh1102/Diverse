@@ -149,7 +149,7 @@ namespace Diverse
                 }
             }
 
-            map.Marker(WorldGen.TowerPos, "▲", Pal.Hex("c9b8ff"), "기억의 탑", true);
+            if (!World.I.Gen.Deep) map.Marker(WorldGen.TowerPos, "▲", Pal.Hex("c9b8ff"), "기억의 탑", true);
 
             var view = map.Rect.rect;
             var a = map.LocalToWorld(view.min); var b = map.LocalToWorld(view.max);
@@ -167,12 +167,20 @@ namespace Diverse
                         {
                             StructKind.Town => "◘", StructKind.Camp => cleared ? "○" : "×", StructKind.Ruins => "▥", StructKind.Shrine => "◇", StructKind.Lair => cleared ? "○" : "♠",
                             StructKind.Graveyard => "†", StructKind.Chest => "▣", StructKind.Wanderer => "?",
-                            StructKind.Ferry => "≈", StructKind.Obelisk => cleared ? "○" : "◆", StructKind.Fortress => cleared ? "○" : "▦", _ => "•",
+                            StructKind.Ferry => "≈", StructKind.Obelisk => cleared ? "○" : "◆", StructKind.Fortress => cleared ? "○" : "▦",
+                            StructKind.ZoneBoss => cleared ? "◎" : "★", StructKind.BorderBoss => cleared ? "○" : "◆",
+                            StructKind.Keep => cleared ? "○" : "▦", StructKind.Village => cleared ? "○" : "▥", _ => "•",
                         };
-                        Color32 col = cleared ? Pal.Hex("8bff9a") : s.kind is StructKind.Camp or StructKind.Lair or StructKind.Graveyard or StructKind.Obelisk or StructKind.Fortress ? Pal.Hex("ff8a8a") : Pal.Hex("fff2b3");
+                        Color32 col = cleared ? Pal.Hex("8bff9a") : s.kind is StructKind.Camp or StructKind.Lair or StructKind.Graveyard or StructKind.Obelisk or StructKind.Fortress or StructKind.BorderBoss or StructKind.Keep or StructKind.Village ? Pal.Hex("ff8a8a") : Pal.Hex("fff2b3");
+                        if (s.kind == StructKind.ZoneBoss && s.zone != null)
+                        {
+                            // The goals of the world: always labeled, in their zone's color
+                            map.Marker(s.center, cleared ? "◎" : "★", cleared ? Pal.Hex("8bff9a") : s.zone.color, s.name + (cleared ? " (문 열림)" : ""), true, 15);
+                            continue;
+                        }
                         map.Marker(s.center, icon, col, zoom > 2.5f ? s.name : null, false);
                     }
-            foreach (var gr in w.graves)
+            foreach (var gr in w.graves.Where(x => x.layer == ZoneMap.LayerKey(w)))
                 map.Marker(new Vector2(gr.x, gr.y), gr.statue ? "Ω" : "†", gr.recovered ? Pal.Hex("8c7aa8") : Pal.Hex("e6dcff"), zoom > 4 ? gr.heroName : null, false);
             foreach (var q in w.quests.Where(x => x.status == 1 && x.kind != "hunt"))
                 map.Marker(new Vector2(q.tx, q.ty), "!", Pal.Gold, q.title, true);

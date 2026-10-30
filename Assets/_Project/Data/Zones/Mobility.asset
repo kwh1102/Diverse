@@ -1,0 +1,67 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7dc880171eb3a7343845fe03fe049b6d, type: 3}
+  m_Name: Mobility
+  m_EditorClassIdentifier: 
+  def:
+    style: 4
+    name: "\uD3ED\uD48D \uC0AC\uB9C9"
+    prefix: "\uBAA8\uB798\uD3ED\uD48D"
+    buildName: "\uC774\uB3D9 \uC18D\uB3C4"
+    desc: "\uC7AC\uBE60\uB978 \uAD34\uBB3C\uB4E4\uC774 \uAC00\uAE4C\uC774 \uAC00\uBA74
+      \uB3C4\uC57D\uD574 \uB2EC\uC544\uB09C\uB2E4. \uB354 \uBE60\uB978 \uCABD\uC774
+      \uC774\uAE34\uB2E4."
+    biome: 2
+    color:
+      serializedVersion: 2
+      rgba: 4284530928
+    enemies:
+    - dune_slinger
+    - dune_lizard
+    - dune_scarab
+    boss: boss_dunefox
+    primary: 6
+    secondary: 7
+    deepName: "\uD3ED\uD48D\uC758 \uB208"
+    art:
+      theme: a stormy golden desert of sand dunes, sandstone ruins and dry cactus
+      ground: 21
+      groundAccent: 22
+      tilePrompts:
+      - smooth golden sand with fine wind ripples
+      - golden sand with a few small pebbles
+      - darker orange windswept sand ridges
+      - orange sand with long wavy ripples
+      decorPrompts:
+      - a tall saguaro cactus
+      - a broken sandstone pillar
+      - a dead bare desert tree
+      - a sandstone obelisk ruin
+      - a sandstone boulder
+      - a half-buried animal skull
+      - a cluster of desert rocks
+      - a dry tumbleweed
+      - a small round cactus with a pink flower
+      - tiny sand pebbles
+      - a small dry grass tuft
+      monsterPrompts:
+      - a fennec fox bandit with big ears, a striped scarf and a leather sling
+      - a fast sand-colored lizard warrior with a curved scimitar and a cloth wrap
+      - a heavy golden scarab beetle with a shiny metallic shell and horn
+      bossPrompt: a huge desert sand fox with a swirling whirlwind tail, golden jewelry
+        and a red scarf
+      effectPrompts:
+      - a small spinning sandstone pebble, flying to the right
+      - a burst of sand and dust
+      - a big round explosion of swirling golden sand and dust clouds
+      - a small wisp of blowing sand dust
+      ambient: dust

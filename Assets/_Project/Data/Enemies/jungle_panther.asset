@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b66f6304fb60134aa720186470999bd, type: 3}
+  m_Name: jungle_panther
+  m_EditorClassIdentifier: 
+  def:
+    id: jungle_panther
+    name: "\uD54F\uBE5B \uD45C\uBC94 \uC804\uC0AC"
+    brain: 0
+    attack: 1
+    hp: 40
+    damage: 10
+    speed: 2.7
+    radius: 0.45
+    attackRange: 2.6
+    attackWindup: 0.42
+    attackCooldown: 1.5
+    aggroRange: 7
+    xp: 9
+    gold: 4
+    mass: 1
+    hopInterval: 0
+    strafe: 0.6
+    attackParam: 1
+    attackCount: 2
+    sprite: jungle_panther
+    signature: 
+    shot: zfx_MeleeSpeed_shot
+    hitFx: zfx_MeleeSpeed_hit
+    projectileColor:
+      serializedVersion: 2
+      rgba: 4285422335
+    element: 0
+    boss: 0
+    lines: []

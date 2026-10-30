@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b66f6304fb60134aa720186470999bd, type: 3}
+  m_Name: boss_bloodtail
+  m_EditorClassIdentifier: 
+  def:
+    id: boss_bloodtail
+    name: "\uD54F\uBE5B \uAF2C\uB9AC \uAD70\uC8FC"
+    brain: 6
+    attack: 0
+    hp: 660
+    damage: 15
+    speed: 3
+    radius: 0.9
+    attackRange: 2.5
+    attackWindup: 0.55
+    attackCooldown: 0.95
+    aggroRange: 10
+    xp: 220
+    gold: 100
+    mass: 7
+    hopInterval: 0
+    strafe: 0
+    attackParam: 1
+    attackCount: 1
+    sprite: boss_bloodtail
+    signature: boss_fox
+    shot: zfx_MeleeSpeed_shot
+    hitFx: zfx_MeleeSpeed_hit
+    projectileColor:
+      serializedVersion: 2
+      rgba: 4284104928
+    element: 8
+    boss: 1
+    lines:
+    - "\uBC00\uB9BC\uC740 \uB290\uB9B0 \uC790\uB97C \uBA39\uB294\uB2E4."
+    - "\uB354 \uBE68\uB9AC, \uB354 \uB9CE\uC774!"
+    - "\uAF2C\uB9AC\uAC00... \uBB34\uAC81\uAD6C\uB098..."

@@ -28,6 +28,11 @@ namespace Diverse
         public List<string> exploredChunks = new List<string>();
         public List<AbilityRecord> legacyAbilities = new List<AbilityRecord>(); // abilities recovered from graves
         public List<WarpStone> warpStones = new List<WarpStone>();                // placed warp stones (shared by every life)
+        // Five zones (normal mode): BuildStyle names clockwise from the zone at the layout's start angle. Empty = not chosen yet.
+        public List<string> zones = new List<string>();
+        public int layer;                     // 0 = the five-zone surface, 1 = a zone's deep layer (reached through its gate)
+        public string deepZone;               // BuildStyle of the deep layer the hero is in
+        public List<string> conquered = new List<string>();   // deep layers cleared (a finished run each)
         public string lastCostume = "white";
         public int lastWeapon;
         public string designId;               // this world's look (designs/<id>.json); empty = the built-in art
@@ -79,6 +84,7 @@ namespace Diverse
         public int weapon;
         public int level;
         public float x, y;
+        public int layer;             // ZoneMap.LayerKey: 0 surface, 1+ a deep layer (graves only show where they were made)
         public string cause;
         public List<AbilityRecord> abilities = new List<AbilityRecord>();
         public bool recovered;
@@ -95,6 +101,7 @@ namespace Diverse
         public string id;
         public string name;
         public float x, y;
+        public int layer;             // ZoneMap.LayerKey: stones only work on the layer they were set in
         public Vector2 Pos => new Vector2(x, y);
     }
 

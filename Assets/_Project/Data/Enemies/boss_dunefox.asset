@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b66f6304fb60134aa720186470999bd, type: 3}
+  m_Name: boss_dunefox
+  m_EditorClassIdentifier: 
+  def:
+    id: boss_dunefox
+    name: "\uBAA8\uB798\uD3ED\uD48D \uC5EC\uC6B0"
+    brain: 6
+    attack: 0
+    hp: 620
+    damage: 17
+    speed: 3.5
+    radius: 0.9
+    attackRange: 2.5
+    attackWindup: 0.55
+    attackCooldown: 1.1
+    aggroRange: 10
+    xp: 220
+    gold: 100
+    mass: 7
+    hopInterval: 0
+    strafe: 0
+    attackParam: 1
+    attackCount: 1
+    sprite: boss_dunefox
+    signature: boss_fox
+    shot: zfx_Mobility_shot
+    hitFx: zfx_Mobility_hit
+    projectileColor:
+      serializedVersion: 2
+      rgba: 4284530928
+    element: 7
+    boss: 1
+    lines:
+    - "\uC7A1\uC744 \uC218 \uC788\uB2E4\uBA74 \uC7A1\uC544 \uBD10."
+    - "\uD3ED\uD48D\uC774 \uBD84\uB2E4!"
+    - "...\uBC14\uB78C\uC774 \uBA4E\uC5C8\uB124."

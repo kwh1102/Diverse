@@ -1,0 +1,70 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7dc880171eb3a7343845fe03fe049b6d, type: 3}
+  m_Name: MeleeBurst
+  m_EditorClassIdentifier: 
+  def:
+    style: 0
+    name: "\uD654\uC0B0 \uB300\uC7A5\uAC04"
+    prefix: "\uC6A9\uC554"
+    buildName: "\uADFC\uC811 \uD55C\uBC29 \uADF9\uB51C"
+    desc: "\uAC11\uD53C\uB97C \uB450\uB978 \uAD34\uBB3C\uB4E4\uC774 \uC6D0\uAC70\uB9AC
+      \uACF5\uACA9\uC744 \uD295\uACA8\uB0B8\uB2E4. \uB2E4\uAC00\uAC00 \uD06C\uAC8C
+      \uD55C \uBC29."
+    biome: 6
+    color:
+      serializedVersion: 2
+      rgba: 4282215167
+    enemies:
+    - forge_beast
+    - forge_imp
+    - forge_moth
+    boss: boss_forge
+    primary: 1
+    secondary: 3
+    deepName: "\uC6A9\uC554\uC758 \uC2EC\uC5F0"
+    art:
+      theme: a volcanic forge land of black obsidian, glowing lava cracks and iron
+        anvils
+      ground: 11
+      groundAccent: 14
+      tilePrompts:
+      - warm reddish-brown volcanic rock ground with grey ash and faint orange specks, medium brightness
+      - reddish-brown volcanic gravel with light grey ash patches, medium brightness
+      - dark red cooled lava crust with glowing orange veins, medium brightness
+      - rust-red cracked lava rock with a few glowing cracks, medium brightness
+      decorPrompts:
+      - a charred black dead tree with glowing ember cracks
+      - a tall jagged black obsidian crystal spire
+      - a smoking volcanic vent rock chimney with an orange glow
+      - an iron anvil on a stone block with a hammer leaning on it
+      - a black basalt boulder with glowing lava veins
+      - a pile of dark slag rocks
+      - a glowing hot magma rock
+      - a small cluster of red fire flowers
+      - a dry thorny ash shrub
+      - tiny glowing orange ember pebbles
+      - a small crack glowing with lava
+      monsterPrompts:
+      - a hulking armadillo-like beast covered in black obsidian plates with glowing
+        orange lava cracks between them
+      - a small chubby soot imp with glowing ember eyes holding a tiny blacksmith
+        hammer
+      - a tiny moth with burning orange flame wings and a glowing ember body
+      bossPrompt: a towering molten lava golem blacksmith with an anvil-shaped fist,
+        an iron apron and a glowing magma core in its chest
+      effectPrompts:
+      - a small glowing molten lava ball with a short flame tail, flying to the right
+      - a burst of orange sparks and embers
+      - a big round fiery explosion of lava and dark smoke
+      - a single tiny glowing orange ember
+      ambient: embers

@@ -1,0 +1,68 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7dc880171eb3a7343845fe03fe049b6d, type: 3}
+  m_Name: RangedSpeed
+  m_EditorClassIdentifier: 
+  def:
+    style: 3
+    name: "\uB3C5 \uB2AA\uC9C0"
+    prefix: "\uB3C5\uC548\uAC1C"
+    buildName: "\uC6D0\uAC70\uB9AC \uACF5\uC18D"
+    desc: "\uBCF4\uD638\uB9C9\uC740 \uD69F\uC218\uB85C \uAE68\uC9C0\uACE0, \uAC00\uC2DC
+      \uB3CB\uCE5C \uBAB8\uC740 \uADFC\uC811 \uD0C0\uACA9\uC744 \uB418\uB3CC\uB9B0\uB2E4.
+      \uBA40\uB9AC\uC11C \uBE60\uB974\uAC8C."
+    biome: 4
+    color:
+      serializedVersion: 2
+      rgba: 4283093146
+    enemies:
+    - bog_toad
+    - bog_slime
+    - bog_shroom
+    boss: boss_bogking
+    primary: 2
+    secondary: 4
+    deepName: "\uC369\uC740 \uB2AA\uC758 \uBC11\uBC14\uB2E5"
+    art:
+      theme: a toxic swamp of murky green water, giant mushrooms, reeds and bubbling
+        poison
+      ground: 19
+      groundAccent: 20
+      tilePrompts:
+      - murky dark green swamp mud with small puddles
+      - dark olive swamp mud with tiny bubbles
+      - slimy bright green moss with tiny bubbles
+      - green algae moss with small purple specks
+      decorPrompts:
+      - a giant purple mushroom tree
+      - a twisted swamp tree with hanging moss
+      - a tall glowing green mushroom
+      - a dead mangrove tree on tangled roots
+      - a mossy rotten swamp stump
+      - a slimy green rock
+      - a cluster of small glowing mushrooms
+      - a clump of tall swamp reeds
+      - a bush with toxic purple berries
+      - tiny green bubbles in mud
+      - a small lily pad sprout
+      monsterPrompts:
+      - a warty purple bog toad with a spiny thorny back and yellow eyes
+      - a bubbling bright green toxic slime blob with a tiny skull floating inside
+      - a walking toxic purple mushroom with glowing green spore sacs on its cap
+      bossPrompt: a giant toxic toadstool king with a mossy beard, a crown dripping
+        poison and glowing green eyes
+      effectPrompts:
+      - a small glowing green poison glob, flying to the right
+      - a splash of bright green toxic goo
+      - a burst of puffy toxic green gas clouds with bright highlights, bubbles and drips flying outward
+      - a single small glowing green spore
+      ambient: spores
