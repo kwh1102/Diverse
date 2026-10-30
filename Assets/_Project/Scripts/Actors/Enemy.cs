@@ -54,6 +54,7 @@ namespace Diverse
             wanderTo = pos;
             warn.enabled = false;
             visual.localScale = Vector3.zero;
+            InitZone();
         }
 
         public void Despawn() { Destroy(gameObject); }
@@ -84,7 +85,7 @@ namespace Diverse
         float Windup => def.attackWindup * (def.boss && bossPhase > 0 ? 0.8f : 1f) * SignatureWindupMul;
         float RecoverTime => def.boss ? 0.45f : signatureRecover > 0 ? signatureRecover : 0.35f;
 
-        protected override Color BaseTint => def != null && def.elite ? new Color(1f, 0.72f, 0.78f) : Color.white;
+        protected override Color BaseTint => def == null ? Color.white : (def.elite ? new Color(1f, 0.72f, 0.78f) : Color.white) * def.tint * ZoneTint;
 
         static readonly ProfilerMarker EnemyMarker = new ProfilerMarker("Diverse.Enemies");   // read by PerfProbe
 
@@ -97,6 +98,7 @@ namespace Diverse
                 var startPos = Pos;
                 movedThisFrame = false;
                 Think(dt);
+                TickZone(dt);
                 Coast(dt);
                 // Fast moves (lunges, charges, dives, being knocked flying) leave fading afterimages
                 float speed = (Pos - startPos).magnitude / dt;
@@ -314,7 +316,7 @@ namespace Diverse
                     for (int i = 0; i < n; i++)
                     {
                         var d = dir.Rotate((i - (n - 1) / 2f) * 15);
-                        var pr = Projectile.Spawn(Art.EnemyShot(def.projectileColor), o, d * (def.brain == EnemyBrain.Caster ? 6f : 9f), Team.Player, this,
+                        var pr = Projectile.Spawn(ShotSprite, o, d * (def.brain == EnemyBrain.Caster ? 6f : 9f), Team.Player, this,
                             new DamageInfo { amount = def.damage, source = this, direction = d, knockback = 3, element = def.element });
                         pr.life = 1.6f; pr.color = def.projectileColor; pr.radius = 0.2f;
                     }
@@ -344,6 +346,7 @@ namespace Diverse
         {
             if (p.TakeDamage(new DamageInfo { amount = def.damage * mult, source = this, direction = dir, knockback = kb, hitstop = 0.05f, element = def.element }) > 0)
                 Fx.I?.HitSpark(p.Pos + Vector2.up * 0.5f, dir, Pal.Blood, false);
+                if (!string.IsNullOrEmpty(def.hitFx)) Fx.I?.Pop(Art.HandSprite(def.hitFx), p.Pos + Vector2.up * 0.5f, 0.3f, 0.6f, 1.2f, dir.Angle());
         }
 
         // ───────────── 보스 패턴 ─────────────
@@ -401,7 +404,7 @@ namespace Diverse
                     for (int i = 0; i < n; i++)
                     {
                         var d = MathX.Dir(off + i * 360f / n);
-                        var pr = Projectile.Spawn(Art.EnemyShot(col), Pos + Vector2.up * 0.6f, d * 5.5f, Team.Player, this,
+                        var pr = Projectile.Spawn(ShotSprite, Pos + Vector2.up * 0.6f, d * 5.5f, Team.Player, this,
                             new DamageInfo { amount = def.damage * 0.8f, source = this, direction = d, knockback = 3, element = def.element });
                         pr.life = 2.4f; pr.color = col; pr.radius = 0.22f;
                     }
@@ -435,6 +438,7 @@ namespace Diverse
                 CameraRig.I?.Shake(0.8f);
                 if (def.lines != null && def.lines.Length > 2) GameEvents.Notify($"{def.name}: \"{def.lines[2]}\"");
             }
+            ZoneOnDeath();   // before the kill is counted: brood copies keep the camp alive
             Game.I?.OnEnemyKilled(this);
             // 사라지는 연출: 납작해지며 깜빡임
             StartCoroutine(DeathAnim());
@@ -451,6 +455,8 @@ namespace Diverse
                 body.color = new Color(1, 1, 1, 1 - t * 4);
                 yield return null;
             }
+            body.enabled = false;
+            while (burstPending) yield return null;   // a death burst still has to go off
             Destroy(gameObject);
         }
 

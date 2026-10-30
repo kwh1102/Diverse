@@ -42,6 +42,15 @@ namespace Diverse.EditorTools
 
         public static void BuildAllBatch() => BuildAll();
 
+        /// <summary>Only the data assets (new zones / enemies get created, existing ones are kept). Batch: -executeMethod …BuildDataBatch</summary>
+        public static void BuildDataBatch()
+        {
+            EnsureDir(DataDir); EnsureDir(ResDir);
+            BuildData();
+            AssetDatabase.SaveAssets();
+            Debug.Log("[Diverse] 데이터 에셋 채우기 완료");
+        }
+
         static void BuildAll()
         {
             EnsureDir(DataDir); EnsureDir(PrefabDir); EnsureDir(ResDir);
@@ -64,6 +73,8 @@ namespace Diverse.EditorTools
                 .Select(c => DataAsset<CostumeData>($"{DataDir}/Costumes/{c.id}.asset", a => a.def = c)).ToList();
             db.enemies = DefaultData.Enemies.Values
                 .Select(e => DataAsset<EnemyData>($"{DataDir}/Enemies/{e.id}.asset", a => a.def = e)).ToList();
+            db.zones = DefaultData.Zones
+                .Select(z => DataAsset<ZoneData>($"{DataDir}/Zones/{z.style}.asset", a => a.def = z)).ToList();
             if (db.abilityRules == null) db.abilityRules = DataAsset<AbilityRulesData>($"{DataDir}/AbilityRules.asset", a => a.def = new AbilityRulesDef());
             // Seed the primitive tuning table once (later edits in the Inspector are kept)
             if (db.abilityRules.def.prims == null || db.abilityRules.def.prims.Count == 0)

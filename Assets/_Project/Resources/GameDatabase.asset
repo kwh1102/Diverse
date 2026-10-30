@@ -34,11 +34,84 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 2f2575773662f474da9701b3d3bdbddc, type: 2}
   - {fileID: 11400000, guid: dfed5548b3b0e1543b1657d6607655bc, type: 2}
   - {fileID: 11400000, guid: f323493657434904b8e20ea7b2a9cf44, type: 2}
+  - {fileID: 11400000, guid: a50e7fd111d3478dbb30abd3990a2301, type: 2}
   - {fileID: 11400000, guid: 07bf42efa935da74fb322c1296d7d83e, type: 2}
   - {fileID: 11400000, guid: c396242efb352874b81d799ac4e192ec, type: 2}
   - {fileID: 11400000, guid: 913292148c2fc8246b24b00614607658, type: 2}
   - {fileID: 11400000, guid: 236f666e96255fe40af9194156a22967, type: 2}
-  - {fileID: 11400000, guid: a50e7fd111d3478dbb30abd3990a2301, type: 2}
+  - {fileID: 11400000, guid: 062668e56183c5b4eb64f0eedd8555e5, type: 2}
+  - {fileID: 11400000, guid: 128a29cf8fe1c1e4f983c54de768e380, type: 2}
+  - {fileID: 11400000, guid: f50ec1669e3764d40985ff0506d30aa8, type: 2}
+  - {fileID: 11400000, guid: 7ac8d19cb3a71e84dbf159f9d3a63ee9, type: 2}
+  - {fileID: 11400000, guid: 4841349e3ecbd9f448c85c3baa9c60d9, type: 2}
+  - {fileID: 11400000, guid: e4e025f48e1447b47a68b2ccb0e6fe6d, type: 2}
+  - {fileID: 11400000, guid: a3e034c4546de644e9742f39f5761dba, type: 2}
+  - {fileID: 11400000, guid: 03ad2d68aa9cb344a83f9c3114420996, type: 2}
+  - {fileID: 11400000, guid: 8d68ec766c13d734fb31462adb92a7dd, type: 2}
+  - {fileID: 11400000, guid: a3c8bf096adf5924f9e9cef0e833e97d, type: 2}
+  - {fileID: 11400000, guid: 7134b1851d4045745adc8ffaaefe3414, type: 2}
+  - {fileID: 11400000, guid: e38706a865b332f479845e374ae89d20, type: 2}
+  - {fileID: 11400000, guid: ec769110f587c0d4483e57871a315d62, type: 2}
+  - {fileID: 11400000, guid: c1afe93610a2be84a8b5a75116e5a9c5, type: 2}
+  - {fileID: 11400000, guid: 5d93bb6f1ba7c5d4a87961d505da9269, type: 2}
+  - {fileID: 11400000, guid: a944e7d7d12a1444b930a6ee9616fa38, type: 2}
+  - {fileID: 11400000, guid: d5fe15a40fe2d6641bd7ff8e1ff1a2dd, type: 2}
+  - {fileID: 11400000, guid: f33b1405870d7f1428ed538e090961a4, type: 2}
+  - {fileID: 11400000, guid: f5c2111739518fa4abcd9c529eec60b6, type: 2}
+  - {fileID: 11400000, guid: 3989bfb595823d142be58f92c3e6aec8, type: 2}
+  - {fileID: 11400000, guid: 0d0750fca98fffd46a7dbb86b1d84af3, type: 2}
+  - {fileID: 11400000, guid: 2e37b5f95a3569a4aaa9ac8758854cee, type: 2}
+  - {fileID: 11400000, guid: b96d60ab23c761945a708d3ca376e905, type: 2}
+  - {fileID: 11400000, guid: 1d242ea3ddcefc74ba4fe9f4397ac528, type: 2}
+  - {fileID: 11400000, guid: c68ada0c8ffdf5548a769e83d93ec8ca, type: 2}
+  - {fileID: 11400000, guid: bdbafcaf75ee0a94b9908cdc10aadd95, type: 2}
+  - {fileID: 11400000, guid: acdf5a5ab82f65f4ba16ee454cb663d7, type: 2}
+  - {fileID: 11400000, guid: 23cf32b0a2b5b03458dbbaf6878bebee, type: 2}
+  - {fileID: 11400000, guid: 628ae24f6cb7f444f8a89f2ea27f258c, type: 2}
+  - {fileID: 11400000, guid: 0998755dbd9a3d741a29218d115ad5ab, type: 2}
+  - {fileID: 11400000, guid: 2a9973c38d775af4a93834b0009c93b0, type: 2}
+  - {fileID: 11400000, guid: b1817ba675efac6449b9d4c6ff4d5bf1, type: 2}
+  zones:
+  - {fileID: 11400000, guid: 160c2a78e0cc6c24bbff0dcb78c360eb, type: 2}
+  - {fileID: 11400000, guid: e55ef2578a4a1cc41befe945b6775c1c, type: 2}
+  - {fileID: 11400000, guid: 89cb135ce8658254088781ccf9da5184, type: 2}
+  - {fileID: 11400000, guid: eb51c826f0792ef429c6776ff61cb1f2, type: 2}
+  - {fileID: 11400000, guid: 4d006740ad435774ab5622323b4ba79e, type: 2}
+  - {fileID: 11400000, guid: 497c0388afd84ee40b59d4964f7798ab, type: 2}
+  - {fileID: 11400000, guid: 677448846b663e743a7d3a85e1ac6fcd, type: 2}
+  - {fileID: 11400000, guid: d7612f3c2b9f5bf4ba43133cbc9f0705, type: 2}
+  zoneRules:
+    centerRadius: 42
+    blendWidth: 38
+    borderWiggle: 26
+    zoneBossDistance: {x: 220, y: 300}
+    zoneBossBorderMargin: 18
+    borderBossDistance: {x: 110, y: 160}
+    borderBossReward: 3
+    primaryTraitRange: {x: 55, y: 230}
+    secondaryTraitRange: {x: 150, y: 360}
+    hpPerTier: 0.12
+    damagePerTier: 0.06
+    deepTierBonus: 5
+    deepBossDistance: {x: 150, y: 200}
+    armor: 0.05
+    shieldHits: 4
+    shieldRefill: 3
+    deflect: 0.55
+    thorns: 0.45
+    deathBurst: 1.2
+    deathBurstRadius: 1.9
+    swift: 1.45
+    skittishCooldown: 2.2
+    miasma: 0.3
+    miasmaRadius: 2.3
+    relentless: 0.6
+    barrageInterval: 3.2
+    barrageShots: 8
+    heavy: 1.5
+    horde: 2
+    hordeHp: 0.6
+    brood: 2
   progression:
     xpBase: 60
     xpGrowth: 1.32
@@ -47,6 +120,17 @@ MonoBehaviour:
     smithSkillLevels: 01000000020000000400000006000000
     warpStoneCost: 120
     warpRange: 6
+  feel:
+    maxHitstop: 0.05
+    minHitstopScale: 0.25
+    hitstopChain: 0.2
+    meleeFxOffset: 0.4
+    swingAngleJitter: 9
+    swingScaleJitter: 0.1
+    attackTwist: 110
+    comboHop: 1.6
+    finisherHop: 2.8
+    hurtVariance: 0.3
   abilityRules: {fileID: 11400000, guid: a63b7dc07767a1e408638a24ed2f955e, type: 2}
   playerPrefab: {fileID: 216423936105204445, guid: 6b1dc4411a619b74685505198ee66c58, type: 3}
   enemyPrefab: {fileID: 1860128500088664103, guid: ab4df4689c622db43befed524f0b0964, type: 3}

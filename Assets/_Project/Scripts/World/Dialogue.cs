@@ -63,8 +63,52 @@ namespace Diverse
                 case "tower_gate": Tower(g, it); break;
                 case "ferry": Ferry(g, it); break;
                 case "warpstone": WarpStoneTalk(g, it); break;
+                case "zone_gate": ZoneGate(g, it); break;
                 default: Show(new DialoguePage { speaker = it.label, text = "...", options = { Bye() } }); break;
             }
+        }
+
+        // ───────────── Zones (normal mode) ─────────────
+
+        /// <summary>A cleared zone boss's gate (down to its deep layer), or the deep layer's way back up.</summary>
+        static void ZoneGate(Game g, Interactable it)
+        {
+            if (it.data is StructureSpec s && s.zone != null)
+            {
+                var z = s.zone;
+                var page = new DialoguePage
+                {
+                    speaker = it.label, portrait = Art.Prop("gate"),
+                    text = $"{z.name} 깊은 곳으로 이어지는 문이 열려 있다.\n" +
+                           $"아래는 [{z.deepName}] — {ZoneMap.TraitName(z.primary)}, {ZoneMap.TraitName(z.secondary)}을(를) 지닌 강한 몬스터가 가득하다.\n" +
+                           $"그곳의 주인을 쓰러뜨리면 이번 삶의 여정이 끝난다. ({z.buildName} 빌드가 유리하다)",
+                };
+                page.options.Add(new DialogueOption("내려간다", () => { Close(); g.EnterDeepLayer(z); }));
+                page.options.Add(Bye());
+                Show(page);
+                return;
+            }
+            var back = new DialoguePage
+            {
+                speaker = it.label, portrait = Art.Prop("gate"),
+                text = "지상의 다섯 땅으로 돌아가는 문이다. 다시 내려오려면 지상의 문을 거쳐야 한다.",
+            };
+            back.options.Add(new DialogueOption("지상으로 돌아간다", () => { Close(); g.LeaveDeepLayer(); }));
+            back.options.Add(Bye());
+            Show(back);
+        }
+
+        /// <summary>The deep layer's master fell: the end of this life's journey.</summary>
+        public static void ShowJourneyEnd(Game g, ZoneDef z)
+        {
+            var page = new DialoguePage
+            {
+                speaker = "여정의 끝", portrait = Art.Prop("statue"),
+                text = $"{z.deepName}의 주인이 쓰러졌다.\n{g.HeroName}의 이름은 광장의 석상으로 남고, 세계는 이 승리를 기억할 것이다.\n" +
+                       $"(지금까지 정복한 심연: {g.World.conquered.Count}곳)",
+            };
+            page.options.Add(new DialogueOption("새로운 삶으로", () => { Current = null; g.EndJourney(z); }));
+            Show(page);
         }
 
         // ───────────── Town ─────────────
@@ -337,9 +381,10 @@ namespace Diverse
             it.sr.sprite = Art.Prop("chest_open");
             it.label = "빈 상자";
             Sfx.Play("chest");
-            int gold = 20 + s.tier * 12 + Random.Range(0, 20);
+            int gold = (20 + s.tier * 12 + Random.Range(0, 20)) * (s.kind == StructKind.BorderBoss ? 3 : 1);
             Pickup.Drop("gold", gold / 5f, it.Pos + Vector2.down * 0.3f, 5);
-            if (s.kind == StructKind.Lair || Random.value < 0.35f) Pickup.Drop("shard", 1, it.Pos + Vector2.down * 0.3f);
+            if (s.kind is StructKind.Lair or StructKind.BorderBoss || Random.value < 0.35f) Pickup.Drop("shard", s.kind == StructKind.BorderBoss ? 2 : 1, it.Pos + Vector2.down * 0.3f);
+            if (s.kind == StructKind.BorderBoss) g.Player.Potions = Mathf.Min(5, g.Player.Potions + 1);
             if (Random.value < 0.4f) g.Player.Potions = Mathf.Min(5, g.Player.Potions + 1);
             Fx.I?.Burst(it.Pos + Vector2.up * 0.4f, Pal.Gold, 16, 4, 0.6f, -3);
             GameEvents.World("explore", "chest");

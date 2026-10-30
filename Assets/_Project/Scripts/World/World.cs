@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Diverse
@@ -32,7 +33,11 @@ namespace Diverse
         {
             campAlive.Clear();
             builtGraves.Clear();
-            Streamer.Init(seed);
+            // Normal mode: the five-zone world (or the deep layer the hero is in). Custom mode keeps the classic noise biomes.
+            var zones = Save != null && Session.Mode == GameMode.Normal ? ZoneMap.ForWorld(Save) : null;
+            Streamer.Init(seed, zones);
+            // The pure zone bosses are the goals of the world: they are on the map from the start
+            if (zones != null) foreach (var b in zones.bosses) if (b.kind == StructKind.ZoneBoss) Discover(b.id);
         }
 
         public void ResetForRun()
@@ -53,6 +58,7 @@ namespace Diverse
             // Graves/statues in this chunk
             foreach (var g in Save.graves)
             {
+                if (g.layer != ZoneMap.LayerKey(Save)) continue;
                 var k = WorldStreamer.ChunkOf(new Vector2(g.x, g.y));
                 if (k != c.key) continue;
                 var pos = new Vector2(g.x, g.y);
@@ -111,7 +117,158 @@ namespace Diverse
                 case StructKind.Ferry: BuildFerry(c, s); break;
                 case StructKind.Obelisk: BuildObelisk(c, s); break;
                 case StructKind.Fortress: BuildFortress(c, s); break;
+                case StructKind.ZoneBoss: BuildZoneBoss(c, s); break;
+                case StructKind.BorderBoss: BuildBorderBoss(c, s); break;
+                case StructKind.Keep: BuildKeep(c, s); break;
+                case StructKind.Village: BuildVillage(c, s); break;
             }
+        }
+
+        // ───────────────────── Keeps and villages (Landforms sites) ─────────────────────
+        // The walls, yards and rubble are ground tiles laid by Landforms, so they span chunks freely. The chunk holding the
+        // centre spawns the garrison and the reward; every chunk places the props standing on its own tiles.
+
+        /// <summary>A ruined keep: its garrison in the yard, the captain in the inner keep; cleared → the keep's treasure.</summary>
+        void BuildKeep(ChunkView c, StructureSpec s)
+        {
+            var site = s.site;
+            var inner = s.center + new Vector2(-(site.hw * 45 / 100), site.hh * 40 / 100);
+            if (Save.clearedCamps.Contains(s.id))
+            {
+                bool opened = Save.Flag("chest:" + s.id);
+                var chest = Interactable.Create(c.transform, "chest", "chest:" + s.id, opened ? "빈 상자" : "성채의 보물", Streamer.NearestWalkable(inner, 0.5f), Art.Prop(opened ? "chest_open" : "chest"), c);
+                chest.data = s;
+                return;
+            }
+            SpawnGroup(c, s, s.enemy, s.enemyCount, site.hw * 0.6f, 0.3f);
+            SpawnBoss(c, s, s.boss, inner, 0.5f);
+        }
+
+        /// <summary>An abandoned village: a pack holds the square; cleared → a traveler settles in and leaves a chest.</summary>
+        void BuildVillage(ChunkView c, StructureSpec s)
+        {
+            if (Save.clearedCamps.Contains(s.id))
+            {
+                bool opened = Save.Flag("chest:" + s.id);
+                var chest = Interactable.Create(c.transform, "chest", "chest:" + s.id, opened ? "빈 상자" : "마을의 유물", s.center + new Vector2(2.5f, -1.5f), Art.Prop(opened ? "chest_open" : "chest"), c);
+                chest.data = s;
+                var v = Interactable.Create(c.transform, "npc_villager", "camp_traveler:" + s.id, "여행자", s.center + new Vector2(-2.2f, -1.2f), Art.Npc("villager7", 0), c);
+                v.idleFrames = new[] { Art.Npc("villager7", 0), Art.Npc("villager7", 1) };
+                v.data = 99;
+                return;
+            }
+            SpawnGroup(c, s, s.enemy, s.enemyCount, 13f, 0.15f);
+        }
+
+        /// <summary>
+        /// Props of a site on this chunk's tiles: gate banners, braziers, broken pillars and fallen blocks on rubble, the
+        /// village well and lamps. Deterministic per tile, so a chunk always shows the same props whatever was loaded first.
+        /// </summary>
+        public void BuildSiteProps(ChunkView c, SiteSpec site, Ground[,] tiles)
+        {
+            int N = WorldGen.Chunk;
+            int x0 = c.key.x * N, y0 = c.key.y * N;
+            bool InChunk(int tx, int ty) => tx >= x0 && ty >= y0 && tx < x0 + N && ty < y0 + N;
+            Vector2 At(int tx, int ty) => new Vector2(tx + 0.5f, ty + 0.5f);
+            int cx = site.center.x, cy = site.center.y;
+
+            if (site.kind == SiteKind.Keep)
+            {
+                // Banners flank the gates; braziers at the inner keep's door
+                foreach (var g in new[] { (cx - 3, cy - site.hh - 1), (cx + 3, cy - site.hh - 1), (cx - 3, cy + site.hh + 1), (cx + 3, cy + site.hh + 1) })
+                    if (InChunk(g.Item1, g.Item2)) c.AddDecor(Art.Prop("banner"), At(g.Item1, g.Item2), true, 0.4f, 0.3f);
+                if (site.onCross)
+                    foreach (var g in new[] { (cx - site.hw - 1, cy - 3), (cx - site.hw - 1, cy + 3), (cx + site.hw + 1, cy - 3), (cx + site.hw + 1, cy + 3) })
+                        if (InChunk(g.Item1, g.Item2)) c.AddDecor(Art.Prop("banner"), At(g.Item1, g.Item2), true, 0.4f, 0.3f);
+                int ix = cx - site.hw * 45 / 100, iy = cy + site.hh * 40 / 100 - Mathf.Min(4, site.hh / 2 - 3) - 1;
+                foreach (var g in new[] { (ix - 2, iy), (ix + 2, iy) })
+                    if (InChunk(g.Item1, g.Item2)) c.AddDecor(Art.Prop("campfire"), At(g.Item1, g.Item2), false, 0, 0);
+            }
+            else
+            {
+                if (InChunk(cx, cy + 1)) { c.AddDecor(Art.Prop("well"), At(cx, cy + 1), false, 0, 0); c.BlockArea(At(cx, cy + 1) + Vector2.up * 0.4f, 1.6f, 1.0f, Footprint.Ellipse); }
+                foreach (var g in new[] { (cx - 4, cy - 4), (cx + 4, cy + 4) })
+                    if (InChunk(g.Item1, g.Item2)) c.AddDecor(Art.Prop("lamp"), At(g.Item1, g.Item2), true, 0.6f, 0.4f);
+            }
+
+            // Per-tile debris, only on the site's own tiles inside this chunk
+            int tx0 = Mathf.Max(x0, cx - site.hw - 2), tx1 = Mathf.Min(x0 + N - 1, cx + site.hw + 2);
+            int ty0 = Mathf.Max(y0, cy - site.hh - 2), ty1 = Mathf.Min(y0 + N - 1, cy + site.hh + 2);
+            for (int ty = ty0; ty <= ty1; ty++)
+                for (int tx = tx0; tx <= tx1; tx++)
+                {
+                    var g = tiles[tx - x0 + 1, ty - y0 + 1];
+                    float r = Hash.F(tx, ty, Gen.seed + 909);
+                    var p = At(tx, ty);
+                    if (g == Ground.Rubble)
+                    {
+                        if (r > 0.93f) c.AddDecor(Art.Prop("pillar_broken"), p, true, 0.75f, 0.45f);
+                        else if (r > 0.84f) c.AddDecor(Art.Rock(Biome.Ashland, (int)(Hash.U(tx, ty, 6) % 3)), p, true, 0.85f, 0.55f);
+                    }
+                    else if (g == Ground.Plaza && site.kind == SiteKind.Keep)
+                    {
+                        if (r > 0.985f) c.AddDecor(Art.Prop("pillar_broken"), p, true, 0.75f, 0.45f);
+                        else if (r > 0.97f) c.AddDecor(Art.Prop("crate"), p, true, 0.75f, 0.45f, shape: Footprint.Rect);
+                    }
+                    else if (g == Ground.Plaza && r > 0.975f && Mathf.Abs(tx - cx) + Mathf.Abs(ty - cy) > 3)
+                        c.AddDecor(Art.Prop(r > 0.988f ? "barrel" : "crate"), p, true, 0.7f, 0.45f, shape: r > 0.988f ? Footprint.Ellipse : Footprint.Rect);
+                }
+        }
+
+        /// <summary>Scenery of a camp-like site: its own zone's look in a zone world, the classic biome otherwise.</summary>
+        Biome SiteBiome(StructureSpec s, Biome classic) => Gen.Zones != null && s.biome != Biome.Meadow ? s.biome : classic;
+
+        /// <summary>A pure zone boss's arena: standing stones in its zone's look. Cleared → the gate to the zone's deep layer.</summary>
+        void BuildZoneBoss(ChunkView c, StructureSpec s)
+        {
+            var rng = new Rng(Hash.Str(s.id));
+            for (int i = 0; i < 12; i++)
+            {
+                if (i % 4 == 1) continue;   // gaps to walk in
+                var p = s.center + MathX.Dir(i * 30 + rng.Range(-5f, 5f)) * (s.radius - 1.2f);
+                c.AddDecor(i % 2 == 0 ? Art.Prop("pillar") : Art.Rock(s.biome, i % 3), p, true, 0.8f, 0.5f);
+            }
+            var glow = new GameObject("zoneGlow");
+            glow.transform.SetParent(c.transform, false);
+            glow.transform.position = s.center + new Vector2(0, 2.5f);
+            var col = (Color)s.zone.color; col.a = 0.4f;
+            Art.MakeRenderer(glow, Art.Glow(22), 31000, true).color = col;
+            if (Save.clearedCamps.Contains(s.id)) { BuildZoneGate(s, c); return; }
+            SpawnGroup(c, s, s.enemy, s.enemyCount, s.radius * 0.6f, 0.35f);
+            SpawnBoss(c, s, s.boss, s.center + Vector2.up * 1.5f, 1f);
+        }
+
+        /// <summary>The gate to a zone's deep layer, on its cleared boss arena (surface only; also right after the kill).</summary>
+        public void BuildZoneGate(StructureSpec s, ChunkView c = null)
+        {
+            if (Gen.Deep || s.zone == null) return;
+            c ??= Streamer.ChunkAt(s.center);
+            if (c == null) return;
+            var gate = Interactable.Create(c.transform, "zone_gate", "zonegate:" + s.id, $"{s.zone.deepName}의 문", s.center, Art.Prop("gate"), c);
+            gate.data = s;
+            gate.range = 2f;
+            gate.sr.color = Color.Lerp(Color.white, s.zone.color, 0.5f);
+            Fx.I?.Burst(s.center + Vector2.up * 0.8f, s.zone.color, 24, 5, 0.7f, -3);
+        }
+
+        /// <summary>A border mid-boss: stones of both zones. Cleared → its treasure chest.</summary>
+        void BuildBorderBoss(ChunkView c, StructureSpec s)
+        {
+            var rng = new Rng(Hash.Str(s.id));
+            for (int i = 0; i < 8; i++)
+            {
+                var p = s.center + MathX.Dir(i * 45 + rng.Range(-10f, 10f)) * rng.Range(s.radius - 1.5f, s.radius);
+                c.AddDecor(Art.Rock(i % 2 == 0 ? s.zone.biome : s.zone2.biome, i % 3), p, true, 1.0f, 0.55f);
+            }
+            if (Save.clearedCamps.Contains(s.id))
+            {
+                bool opened = Save.Flag("chest:" + s.id);
+                var chest = Interactable.Create(c.transform, "chest", "chest:" + s.id, opened ? "빈 상자" : "수호자의 보물", s.center, Art.Prop(opened ? "chest_open" : "chest"), c);
+                chest.data = s;
+                return;
+            }
+            SpawnGroup(c, s, s.enemy, s.enemyCount, s.radius * 0.6f, 0.25f);
+            SpawnBoss(c, s, s.boss, s.center, 0.5f);
         }
 
         void BuildFerry(ChunkView c, StructureSpec s)
@@ -163,7 +320,30 @@ namespace Diverse
 
         void SpawnBoss(ChunkView c, StructureSpec s, string id, Vector2 at, float extraTier)
         {
-            var boss = Enemy.Spawn(DB.ScaledEnemy(id, s.tier + extraTier + Save.towerFloor * 0.5f), Streamer.NearestWalkable(at, 0.8f), s.id);
+            float tier = s.tier + extraTier + Save.towerFloor * 0.5f;
+            var def = DB.ScaledEnemy(id, tier);
+            var zones = Gen.Zones;
+            if (zones != null)
+            {
+                bool site = s.kind is StructKind.ZoneBoss or StructKind.BorderBoss;
+                zones.Apply(def, s.center, tier, site ? s : null);
+                if (s.kind == StructKind.BorderBoss)
+                {
+                    // A mid-boss: weaker than a zone's master, but worth a big step of growth
+                    float reward = DB.ZoneRules.borderBossReward;
+                    def.name = s.name; def.hp *= 0.75f; def.xp *= reward; def.gold *= reward;
+                }
+                else if (s.kind == StructKind.ZoneBoss && zones.deep)
+                {
+                    def.name = "심연의 " + def.name; def.hp *= 1.6f; def.xp *= 2; def.gold *= 2;
+                }
+                else if (!site && DB.Zones.Values.FirstOrDefault(z => z.boss == id) is { } home)
+                {
+                    // A lair / obelisk / fortress boss: a captain of the zone's master, not the master itself
+                    def.name = home.prefix + " 우두머리"; def.hp *= 0.55f; def.xp *= 0.7f; def.gold *= 0.7f;
+                }
+            }
+            var boss = Enemy.Spawn(def, Streamer.NearestWalkable(at, 0.8f), s.id);
             c.Register(boss);
             campAlive[s.id] = campAlive.TryGetValue(s.id, out var n) ? n + 1 : 1;
         }
@@ -240,6 +420,12 @@ namespace Diverse
             c.AddDecor(Art.Prop("barrel"), new Vector2(-6.2f, 3.2f), true, 0.6f, 0.4f);
             c.AddDecor(Art.Prop("crate"), new Vector2(-5.3f, 3.0f), true, 0.75f, 0.45f, shape: Footprint.Rect);
             c.AddDecor(Art.Prop("crate"), new Vector2(10.5f, 2.8f), true, 0.75f, 0.45f, shape: Footprint.Rect);
+            // Deep layer: the way back up to the five zones
+            if (Gen.Deep)
+            {
+                var back = Interactable.Create(c.transform, "zone_gate", "zonegate:return", "지상으로 가는 문", new Vector2(0, -10.5f), Art.Prop("gate"), c);
+                back.range = 2f;
+            }
             Discover("town");
         }
 
@@ -340,12 +526,12 @@ namespace Diverse
             for (int i = 0; i < 9; i++)
             {
                 var p = s.center + MathX.Dir(i * 40) * rng.Range(4f, 6.5f);
-                c.AddDecor(Art.Tree(Biome.Meadow, 2), p, true, 1.0f, 0.6f);
+                c.AddDecor(Art.Tree(SiteBiome(s, Biome.Meadow), 2), p, true, 1.0f, 0.6f);
             }
             for (int i = 0; i < 14; i++) c.AddDecor(Art.Flower(i), s.center + Random.insideUnitCircle * 3.5f, false, 0, 0, true);
             if (!Save.Flag("grove:" + s.id))
             {
-                var it = Interactable.Create(c.transform, "herb", "grove:" + s.id, "빛나는 약초", s.center, Art.Bush(Biome.Meadow, 0), c);
+                var it = Interactable.Create(c.transform, "herb", "grove:" + s.id, "빛나는 약초", s.center, Art.Bush(SiteBiome(s, Biome.Meadow), 0), c);
                 it.data = s;
                 var glow = new GameObject("glow");
                 glow.transform.SetParent(it.transform, false);
@@ -372,8 +558,8 @@ namespace Diverse
                 var p = s.center + new Vector2((i % 4 - 1.5f) * 2.2f, (i / 4 - 0.5f) * 2.6f) + new Vector2(rng.Range(-0.3f, 0.3f), 0);
                 c.AddDecor(Art.Prop("grave"), p, true, 0.7f, 0.35f, shape: Footprint.Rect);
             }
-            c.AddDecor(Art.Tree(Biome.Ashland, 0), s.center + new Vector2(-5, 3), true, 0.6f, 0.4f);
-            if (!Save.clearedCamps.Contains(s.id)) SpawnGroup(c, s, "wisp", s.enemyCount, s.radius * 0.7f);
+            c.AddDecor(Art.Tree(SiteBiome(s, Biome.Ashland), 0), s.center + new Vector2(-5, 3), true, 0.6f, 0.4f);
+            if (!Save.clearedCamps.Contains(s.id)) SpawnGroup(c, s, s.enemy ?? "wisp", s.enemyCount, s.radius * 0.7f);
         }
 
         void BuildLair(ChunkView c, StructureSpec s)
@@ -382,7 +568,7 @@ namespace Diverse
             for (int i = 0; i < 8; i++)
             {
                 var p = s.center + MathX.Dir(i * 45 + rng.Range(-10, 10)) * rng.Range(7f, 9f);
-                c.AddDecor(Art.Rock(Biome.Ashland, i % 3), p, true, 1.0f, 0.55f);
+                c.AddDecor(Art.Rock(SiteBiome(s, Biome.Ashland), i % 3), p, true, 1.0f, 0.55f);
             }
             if (Save.clearedCamps.Contains(s.id))
             {
@@ -398,6 +584,8 @@ namespace Diverse
         public void SpawnGroup(ChunkView c, StructureSpec s, string enemyId, int count, float spread, float eliteChance = 0)
         {
             if (count <= 0) return;
+            var zones = Gen.Zones;
+            if (zones != null) count = Mathf.RoundToInt(count * zones.GroupSizeMul(s.center));
             var rng = new Rng(Hash.Str(s.id + Save.lifeCount));
             int alive = 0;
             int ring = WorldGen.RingAt(s.center.magnitude);
@@ -406,10 +594,12 @@ namespace Diverse
             {
                 Vector2 p = s.center + MathX.Dir(rng.Range(0f, 360f)) * rng.Range(1.5f, spread + 1.5f);
                 p = Streamer.NearestWalkable(p, 0.4f);
-                // Mixed groups: occasionally a different species
-                string id = rng.Chance(0.2f) ? (s.biome == Biome.Forest ? "bat" : "jelly") : enemyId;
-                var def = DB.ScaledEnemy(id, s.tier + Save.towerFloor * 0.5f);
+                // Mixed groups: occasionally a different species (zone worlds: whatever the zone at this spot brings)
+                string id = rng.Chance(0.2f) ? (zones != null ? zones.PickEnemy(p, rng) : s.biome == Biome.Forest ? "bat" : "jelly") : enemyId;
+                float tier = s.tier + Save.towerFloor * 0.5f;
+                var def = DB.ScaledEnemy(id, tier);
                 if (ring > 0 && rng.Chance(eliteChance)) def = DB.Elite(def);
+                zones?.Apply(def, p, tier);
                 var e = Enemy.Spawn(def, p, s.id);
                 c.Register(e);
                 alive++;
@@ -426,6 +616,7 @@ namespace Diverse
         public void OnCampEnemyKilled(string campId, Enemy killed = null)
         {
             if (string.IsNullOrEmpty(campId) || Save.clearedCamps.Contains(campId)) return;
+            if (killed != null && killed.BroodPending) return;   // its young hatch next frame and carry on the camp
             foreach (var a in Actor.All)
                 if (a is Enemy e && e != killed && e.Alive && e.campId == campId) return;
             campAlive.Remove(campId);

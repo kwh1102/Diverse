@@ -1,0 +1,68 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7dc880171eb3a7343845fe03fe049b6d, type: 3}
+  m_Name: RangedBurst
+  m_EditorClassIdentifier: 
+  def:
+    style: 2
+    name: "\uBE59\uD558 \uC694\uC0C8"
+    prefix: "\uC11C\uB9AC"
+    buildName: "\uC6D0\uAC70\uB9AC \uD55C\uBC29 \uADF9\uB51C"
+    desc: "\uB450\uAEBC\uC6B4 \uC5BC\uC74C \uAC11\uD53C, \uC4F0\uB7EC\uC9C0\uBA74
+      \uD130\uC9C0\uB294 \uBAB8. \uBA40\uB9AC\uC11C \uD06C\uAC8C \uD55C \uBC29."
+    biome: 3
+    color:
+      serializedVersion: 2
+      rgba: 4294957199
+    enemies:
+    - glacier_spirit
+    - glacier_mammoth
+    - glacier_lantern
+    boss: boss_frostwarden
+    primary: 1
+    secondary: 5
+    deepName: "\uC5BC\uC5B4\uBD99\uC740 \uC655\uC88C"
+    art:
+      theme: a frozen glacier fortress of blue ice walls, snow drifts and frost crystals
+      ground: 17
+      groundAccent: 18
+      tilePrompts:
+      - packed white snow with soft blue shadows
+      - white snow with small footprint dents and sparkles
+      - pale blue cracked ice surface
+      - smooth pale blue frozen ice with white frost streaks
+      decorPrompts:
+      - a snow-covered pine tree
+      - a tall jagged blue ice crystal pillar
+      - a frozen dead tree with icicles
+      - a broken pillar of an ice fortress wall
+      - a snowy boulder
+      - a cluster of blue ice crystals
+      - a frozen rock with icicles
+      - a frosty shrub with snow on top
+      - a small bush of blue ice flowers
+      - a tiny snow mound
+      - small scattered ice shards
+      monsterPrompts:
+      - a floating jagged ice crystal spirit with a glowing pale blue core and tiny
+        eyes
+      - a small woolly white mammoth with frost-covered tusks and blue ice armor
+        plates
+      - a hovering ghost lantern carved of ice with a pale blue flame inside
+      bossPrompt: a huge armored glacier knight with an ice tower shield, a frost
+        crown and a cape of icicles
+      effectPrompts:
+      - a sharp glowing icicle shard, flying to the right
+      - a burst of ice shards and frost sparkles
+      - a big round frost explosion of ice crystals
+      - a single small snowflake
+      ambient: snow

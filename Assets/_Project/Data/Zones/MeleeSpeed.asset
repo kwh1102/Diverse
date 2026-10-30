@@ -1,0 +1,69 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7dc880171eb3a7343845fe03fe049b6d, type: 3}
+  m_Name: MeleeSpeed
+  m_EditorClassIdentifier: 
+  def:
+    style: 1
+    name: "\uD53C\uC758 \uC815\uAE00"
+    prefix: "\uD54F\uBE5B"
+    buildName: "\uADFC\uC811 \uACF5\uC18D"
+    desc: "\uACB9\uACB9\uC758 \uBCF4\uD638\uB9C9\uC740 \uD0C0\uACA9 \uD69F\uC218\uB85C\uB9CC
+      \uAE68\uC9C0\uACE0, \uBA40\uB9AC\uC11C \uC3D8\uBA74 \uD295\uACA8\uB0B8\uB2E4.
+      \uBD99\uC5B4\uC11C \uC274 \uC0C8 \uC5C6\uC774."
+    biome: 1
+    color:
+      serializedVersion: 2
+      rgba: 4284104928
+    enemies:
+    - jungle_panther
+    - jungle_hummer
+    - jungle_frog
+    boss: boss_bloodtail
+    primary: 2
+    secondary: 3
+    deepName: "\uD54F\uBE5B \uC2EC\uB9BC"
+    art:
+      theme: a dense crimson jungle of giant leaves, red flowers, vines and ancient
+        roots
+      ground: 15
+      groundAccent: 16
+      tilePrompts:
+      - bright leafy green jungle floor with fallen leaves and small roots
+      - bright leafy green jungle ground with scattered red petals
+      - vivid medium green moss with tiny red flowers
+      - vivid medium green moss with small clover leaves
+      decorPrompts:
+      - a huge jungle tree with broad leaves and hanging vines
+      - a giant tropical tree with crimson leaves
+      - a tall fern palm tree
+      - an ancient twisted tree with red flowers
+      - a mossy stone wrapped in vines
+      - an old carved jungle idol stone
+      - a fallen log covered in moss
+      - a big leafy green fern bush
+      - a bush of crimson jungle flowers
+      - tiny red mushrooms
+      - small jungle grass sprouts
+      monsterPrompts:
+      - a lean crimson panther warrior standing on two legs with bone daggers and
+        white tribal paint
+      - a tiny bright red hummingbird with a long needle-sharp beak
+      - a bright red and black poison dart frog hunter wearing leaf armor
+      bossPrompt: a giant crimson nine-tailed fox lord with tribal war paint, a bone
+        necklace and glowing yellow eyes
+      effectPrompts:
+      - a small spinning thorn dart, flying to the right
+      - a slash burst of red leaves and sparks
+      - a big round burst of crimson petals and leaves
+      - a single small falling red leaf
+      ambient: leaves

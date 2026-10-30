@@ -515,7 +515,8 @@ namespace Diverse
                 }
                 case 1:
                 {
-                    string[] pool = { "shroom", "jelly", "fox", "raccoon", "wisp", "bat", "frog" };
+                    // Zone worlds hunt the zones' own monsters (the classic species never spawn there)
+                    string[] pool = gen.Zones != null ? gen.Zones.zones.SelectMany(z => z.enemies).Distinct().ToArray() : new[] { "shroom", "jelly", "fox", "raccoon", "wisp", "bat", "frog" };
                     string e = r.Pick(pool);
                     int need = r.Range(6, 12);
                     return new QuestState { id = "q" + salt, kind = "hunt", enemy = e, need = need, title = $"{DB.Enemy(e).name} {need}마리 사냥", desc = "마을의 밭과 길이 위험해지고 있어요.", rewardGold = 25 + need * 3, status = 0 };

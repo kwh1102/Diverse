@@ -380,7 +380,7 @@ namespace Diverse
         Projectile Shoot(Vector2 dir, float speed, float mult)
         {
             var o = Pos + Vector2.up * 0.5f;
-            var pr = Projectile.Spawn(Art.EnemyShot(def.projectileColor), o, dir * speed, Team.Player, this,
+            var pr = Projectile.Spawn(ShotSprite, o, dir * speed, Team.Player, this,
                 new DamageInfo { amount = def.damage * mult, source = this, direction = dir, knockback = 3, element = def.element });
             pr.life = 1.6f; pr.color = def.projectileColor; pr.radius = 0.2f;
             Sfx.Play("shoot", 0.25f, 1.3f);
@@ -390,7 +390,7 @@ namespace Diverse
         // ───────────── Bosses: a signature move each ─────────────
 
         /// <summary>4 = fox: triple dash, 5 = shroom: spore field, 6 = knight: sword lines.</summary>
-        int BossSignature(float dist) => def.id switch
+        int BossSignature(float dist) => (string.IsNullOrEmpty(def.signature) ? def.sprite : def.signature) switch   // zone masters borrow one of these moves
         {
             "boss_fox" => 4,
             "boss_shroom" => 5,

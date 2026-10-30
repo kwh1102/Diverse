@@ -80,12 +80,12 @@ namespace Diverse
 #endif
 
         /// <summary>Start a world for this seed (also used by ResetWorld: drops every loaded chunk first).</summary>
-        public void Init(int seed)
+        public void Init(int seed, ZoneMap zones = null)
         {
             Clear();
             groundCache.Clear();
             DropBakedGround();
-            Gen = new WorldGen(seed);
+            Gen = new WorldGen(seed, zones);
         }
 
         public void Clear()
@@ -228,11 +228,7 @@ namespace Diverse
         public Ground[,] GroundOf(Vector2Int k)
         {
             if (groundCache.TryGetValue(k, out var g)) return g;
-            int N = WorldGen.Chunk;
-            g = new Ground[N + 2, N + 2];
-            for (int y = -1; y <= N; y++)
-                for (int x = -1; x <= N; x++)
-                    g[x + 1, y + 1] = Gen.GroundAt(k.x * N + x, k.y * N + y);
+            g = Gen.GroundOf(k);
             if (groundCache.Count > 400) groundCache.Clear();
             groundCache[k] = g;
             return g;
@@ -285,28 +281,35 @@ namespace Diverse
             return false;
         }
 
-        bool WaterAt(int tx, int ty)
+        /// <summary>Does the ground itself stop a body here? Water (unless it swims), and mountain rock / walls always.</summary>
+        bool GroundBlocks(int tx, int ty, bool swim)
         {
             if (!chunks.ContainsKey(new Vector2Int(MathX.FloorDiv(tx, WorldGen.Chunk), MathX.FloorDiv(ty, WorldGen.Chunk)))) return false;
-            return WorldGen.IsWater(GroundAtTile(tx, ty));
+            var g = GroundAtTile(tx, ty);
+            return WorldGen.IsSolid(g) || (!swim && WorldGen.IsWater(g));
         }
 
         /// <summary>Tile-level walkability (pathfinding grid).</summary>
         public bool Walkable(int tx, int ty, bool swim = false)
         {
             if (blocked.ContainsKey(new Vector2Int(tx, ty))) return false;
-            return swim || !WaterAt(tx, ty);
+            return !GroundBlocks(tx, ty, swim);
         }
 
-        /// <summary>Point-level walkability (movement): exact obstacle shapes + water tiles.</summary>
+        /// <summary>Point-level walkability (movement): exact obstacle shapes + water / rock tiles.</summary>
         public bool Walkable(Vector2 p, bool swim = false)
         {
             if (HitsSolid(p)) return false;
-            return swim || !WaterAt(Mathf.FloorToInt(p.x), Mathf.FloorToInt(p.y));
+            return !GroundBlocks(Mathf.FloorToInt(p.x), Mathf.FloorToInt(p.y), swim);
         }
 
-        /// <summary>나무·바위·벽처럼 투사체도 막는 장애물인지 (물은 제외).</summary>
-        public bool IsSolidObstacle(Vector2 p) => HitsSolid(p);
+        /// <summary>나무·바위·벽처럼 투사체도 막는 장애물인지 (물은 제외). 산맥·성벽 타일도 막는다.</summary>
+        public bool IsSolidObstacle(Vector2 p)
+        {
+            if (HitsSolid(p)) return true;
+            int tx = Mathf.FloorToInt(p.x), ty = Mathf.FloorToInt(p.y);
+            return chunks.ContainsKey(new Vector2Int(MathX.FloorDiv(tx, WorldGen.Chunk), MathX.FloorDiv(ty, WorldGen.Chunk))) && WorldGen.IsSolid(GroundAtTile(tx, ty));
+        }
 
         /// <summary>
         /// Collision-aware movement. Slides along walls (resolving X and Y separately).

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Diverse.EditorTools
@@ -194,6 +195,110 @@ namespace Diverse.EditorTools
                 xp = 200, gold = 90, sprite = "boss_knight", attackRange = 2.6f, attackWindup = 0.6f, attackCooldown = 1.2f, aggroRange = 10, projectileColor = Pal.ShadowEl, element = Element.Shadow,
                 lines = new[] { "이름 없는 자여, 탑은 너를 허락하지 않는다.", "기억은 무겁다. 내려놓아라.", "...그래, 너는 기억되겠지." },
             });
+
+            // Zone masters (normal mode): one per zone type. They reuse the three boss bodies (and their signature moves);
+            // the zone tints them and gives them its mechanics (ZoneMap.Apply).
+            EnemyDef ZoneBoss(string id, string name, string body, float hp, float dmg, float speed, float cooldown, Element el, string shot, params string[] lines) =>
+                new EnemyDef
+                {
+                    id = id, name = name, brain = EnemyBrain.Boss, boss = true, hp = hp, damage = dmg, speed = speed, sprite = body,
+                    radius = body == "boss_shroom" ? 1.1f : 0.9f, mass = body == "boss_shroom" ? 10 : 7, xp = 220, gold = 100,
+                    attackRange = body == "boss_shroom" ? 3f : 2.5f, attackWindup = body == "boss_shroom" ? 0.75f : 0.55f, attackCooldown = cooldown, aggroRange = 10,
+                    element = el, projectileColor = Pal.Hex(shot), lines = lines,
+                };
+            Add(ZoneBoss("boss_forge", "용광로의 파수꾼", "boss_knight", 980, 24, 1.9f, 1.4f, Element.Fire, "ff7a3d",
+                "쇠는 두드릴수록 단단해진다.", "불꽃이 너를 담금질하리라!", "...좋은 쇠였다."));
+            Add(ZoneBoss("boss_bloodtail", "핏빛 꼬리 군주", "boss_fox", 660, 15, 3.0f, 0.95f, Element.Blood, "e0405a",
+                "밀림은 느린 자를 먹는다.", "더 빨리, 더 많이!", "꼬리가... 무겁구나..."));
+            Add(ZoneBoss("boss_frostwarden", "빙하 성채의 기사", "boss_knight", 900, 22, 1.8f, 1.5f, Element.Frost, "9fe6ff",
+                "이 성벽은 천 년을 버텼다.", "얼어붙어라!", "...봄이 오는가."));
+            Add(ZoneBoss("boss_bogking", "독안개 포자왕", "boss_shroom", 760, 14, 1.6f, 1.3f, Element.Poison, "9ad04a",
+                "늪은 모든 것을 삼킨다.", "숨 쉬는 것조차 독이 되리라.", "흙으로... 늪으로..."));
+            Add(ZoneBoss("boss_dunefox", "모래폭풍 여우", "boss_fox", 620, 17, 3.5f, 1.1f, Element.Wind, "f0c060",
+                "잡을 수 있다면 잡아 봐.", "폭풍이 분다!", "...바람이 멎었네."));
+            Add(ZoneBoss("boss_gravekeeper", "역병 묘지기", "boss_shroom", 960, 16, 1.5f, 1.2f, Element.Shadow, "a080c0",
+                "여기 누운 자들은 쉬지 못한다.", "역병이 네 숨을 세고 있다.", "이제야... 쉴 수 있겠군."));
+            Add(ZoneBoss("boss_starknight", "별빛 수호 기사", "boss_knight", 780, 26, 2.2f, 1.25f, Element.Arcane, "c9b8ff",
+                "별의 궤도를 읽어라.", "하늘이 무너진다!", "...별은 다시 뜬다."));
+            Add(ZoneBoss("boss_hivequeen", "둥지 여왕", "boss_shroom", 860, 15, 1.7f, 1.3f, Element.Poison, "e8a83a",
+                "내 아이들이 너를 기억하리라.", "모두, 깨어나라!", "둥지는... 다시 차오른다..."));
+
+            // Zone masters wear their own picture (sprite = id) and keep the move of the body they borrowed (signature)
+            foreach (var kv in ZoneArtDefaults.BossSignature)
+            {
+                var b = Enemies[kv.Key];
+                b.signature = kv.Value; b.sprite = kv.Key;
+            }
+            // Zone monsters: a template species' behaviour and numbers, a new body
+            foreach (var m in ZoneArtDefaults.Monsters)
+            {
+                var d = Enemies[m.template].Copy();
+                d.id = m.id; d.name = m.name; d.sprite = m.id;
+                Add(d);
+            }
+            foreach (var z in BaseZones)
+            {
+                foreach (var id in ZoneArtDefaults.EnemiesOf(z.style).Append(z.boss))
+                {
+                    Enemies[id].shot = ZoneArtDef.FxKey(z.style, "shot");
+                    Enemies[id].hitFx = ZoneArtDef.FxKey(z.style, "hit");
+                }
+            }
         }
+
+        /// <summary>The 8 zone types (Data/Zones). A normal-mode world puts 5 different ones around the spawn.</summary>
+        public static List<ZoneDef> Zones => BaseZones.Select(z => { z.enemies = ZoneArtDefaults.EnemiesOf(z.style); z.art = ZoneArtDefaults.Art(z.style); return z; }).ToList();
+
+        static List<ZoneDef> BaseZones => new List<ZoneDef>
+        {
+            new ZoneDef
+            {
+                style = BuildStyle.MeleeBurst, name = "화산 대장간", prefix = "용암", buildName = "근접 한방 극딜", biome = Biome.Volcano, color = Pal.Hex("ff6a3d"),
+                desc = "갑피를 두른 괴물들이 원거리 공격을 튕겨낸다. 다가가 크게 한 방.", enemies = new[] { "boar", "shroom", "bat" }, boss = "boss_forge",
+                primary = ZoneTrait.Armor, secondary = ZoneTrait.Deflect, deepName = "용암의 심연",
+            },
+            new ZoneDef
+            {
+                style = BuildStyle.MeleeSpeed, name = "피의 정글", prefix = "핏빛", buildName = "근접 공속", biome = Biome.Forest, color = Pal.Hex("e0405a"),
+                desc = "겹겹의 보호막은 타격 횟수로만 깨지고, 멀리서 쏘면 튕겨낸다. 붙어서 쉴 새 없이.", enemies = new[] { "fox", "bat", "frog" }, boss = "boss_bloodtail",
+                primary = ZoneTrait.HitShield, secondary = ZoneTrait.Deflect, deepName = "핏빛 심림",
+            },
+            new ZoneDef
+            {
+                style = BuildStyle.RangedBurst, name = "빙하 요새", prefix = "서리", buildName = "원거리 한방 극딜", biome = Biome.Tundra, color = Pal.Hex("8fd8ff"),
+                desc = "두꺼운 얼음 갑피, 쓰러지면 터지는 몸. 멀리서 크게 한 방.", enemies = new[] { "frostling", "boar", "wisp" }, boss = "boss_frostwarden",
+                primary = ZoneTrait.Armor, secondary = ZoneTrait.DeathBurst, deepName = "얼어붙은 왕좌",
+            },
+            new ZoneDef
+            {
+                style = BuildStyle.RangedSpeed, name = "독 늪지", prefix = "독안개", buildName = "원거리 공속", biome = Biome.Marsh, color = Pal.Hex("9ad04a"),
+                desc = "보호막은 횟수로 깨지고, 가시 돋친 몸은 근접 타격을 되돌린다. 멀리서 빠르게.", enemies = new[] { "frog", "jelly", "shroom" }, boss = "boss_bogking",
+                primary = ZoneTrait.HitShield, secondary = ZoneTrait.Thorns, deepName = "썩은 늪의 밑바닥",
+            },
+            new ZoneDef
+            {
+                style = BuildStyle.Mobility, name = "폭풍 사막", prefix = "모래폭풍", buildName = "이동 속도", biome = Biome.Dunes, color = Pal.Hex("f0c060"),
+                desc = "재빠른 괴물들이 가까이 가면 도약해 달아난다. 더 빠른 쪽이 이긴다.", enemies = new[] { "raccoon", "fox", "boar" }, boss = "boss_dunefox",
+                primary = ZoneTrait.Swift, secondary = ZoneTrait.Skittish, deepName = "폭풍의 눈",
+            },
+            new ZoneDef
+            {
+                style = BuildStyle.Tank, name = "역병 묘지", prefix = "역병", buildName = "탱킹", biome = Biome.Ashland, color = Pal.Hex("a080c0"),
+                desc = "피할 수 없는 독기와 쉴 새 없는 공격. 맞으면서 버티는 몸이 필요하다.", enemies = new[] { "wisp", "bat", "shroom" }, boss = "boss_gravekeeper",
+                primary = ZoneTrait.Miasma, secondary = ZoneTrait.Relentless, deepName = "망자의 지하묘지",
+            },
+            new ZoneDef
+            {
+                style = BuildStyle.Evasion, name = "별빛 신전", prefix = "별빛", buildName = "회피", biome = Biome.Starlit, color = Pal.Hex("c9b8ff"),
+                desc = "예고된 탄막과 묵직한 일격. 모두 피할 수 있지만, 맞으면 크다.", enemies = new[] { "wisp", "frostling", "raccoon" }, boss = "boss_starknight",
+                primary = ZoneTrait.Barrage, secondary = ZoneTrait.Heavy, deepName = "별이 떨어진 성소",
+            },
+            new ZoneDef
+            {
+                style = BuildStyle.Area, name = "둥지 평원", prefix = "군체", buildName = "광역", biome = Biome.Hive, color = Pal.Hex("e8a83a"),
+                desc = "끝없이 몰려오는 무리, 쓰러지면 새끼가 기어 나온다. 한꺼번에 쓸어버려라.", enemies = new[] { "jelly", "bat", "shroom" }, boss = "boss_hivequeen",
+                primary = ZoneTrait.Horde, secondary = ZoneTrait.Brood, deepName = "여왕의 둥지",
+            },
+        };
     }
 }

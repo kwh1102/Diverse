@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b66f6304fb60134aa720186470999bd, type: 3}
+  m_Name: bog_toad
+  m_EditorClassIdentifier: 
+  def:
+    id: bog_toad
+    name: "\uAC00\uC2DC\uB4F1 \uB450\uAEBC\uBE44"
+    brain: 1
+    attack: 2
+    hp: 32
+    damage: 9
+    speed: 2.8
+    radius: 0.42
+    attackRange: 3.6
+    attackWindup: 0.5
+    attackCooldown: 1.9
+    aggroRange: 7.5
+    xp: 8
+    gold: 3
+    mass: 0.9
+    hopInterval: 0.5
+    strafe: 0
+    attackParam: 3.4
+    attackCount: 1
+    sprite: bog_toad
+    signature: 
+    shot: zfx_RangedSpeed_shot
+    hitFx: zfx_RangedSpeed_hit
+    projectileColor:
+      serializedVersion: 2
+      rgba: 4288324351
+    element: 0
+    boss: 0
+    lines: []

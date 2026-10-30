@@ -131,11 +131,22 @@ namespace Diverse
         [Tooltip("Number of hits/projectiles in the pattern (Volley shots, Lunge follow-ups, Orbit shots).")]
         public int attackCount = 1;
         public string sprite;
+        [Tooltip("Bosses: whose signature move it uses (boss_fox / boss_shroom / boss_knight). Empty = by sprite.")]
+        public string signature;
+        [Tooltip("Sprite key of its projectile (Resources/Sprites). Empty = a dot in projectileColor.")]
+        public string shot;
+        [Tooltip("Sprite key of the burst when it hits the hero. Empty = the default spark.")]
+        public string hitFx;
         public Color32 projectileColor = new Color32(0xff, 0x5a, 0x6e, 0xff);   // Pal.Blood
         public Element element;
         public bool boss;
         [NonSerialized] public bool elite;   // outer-ring variant (tinted, bigger); set at spawn time only
+        [NonSerialized] public ZoneMods mods;  // zone mechanics (ZoneMap.Apply); null outside zone worlds
+        [NonSerialized] public Color tint = Color.white;   // zone bosses wear their zone's color
         public string[] lines;           // lines the boss speaks
+
+        /// <summary>Shallow copy (zone brood: small copies of a monster).</summary>
+        public EnemyDef Copy() => (EnemyDef)MemberwiseClone();
     }
 
     /// <summary>
@@ -201,6 +212,7 @@ namespace Diverse
         public static readonly Dictionary<WeaponKind, WeaponDef> Weapons = new Dictionary<WeaponKind, WeaponDef>();
         public static readonly List<CostumeDef> Costumes = new List<CostumeDef>();
         public static readonly Dictionary<string, EnemyDef> Enemies = new Dictionary<string, EnemyDef>();
+        public static readonly Dictionary<BuildStyle, ZoneDef> Zones = new Dictionary<BuildStyle, ZoneDef>();
         public static GameDatabase Asset { get; private set; }
 
         static DB()
@@ -209,7 +221,11 @@ namespace Diverse
             foreach (var w in Asset.weapons) if (w != null) Weapons[w.def.kind] = w.def;
             foreach (var c in Asset.costumes) if (c != null) Costumes.Add(c.def);
             foreach (var e in Asset.enemies) if (e != null) Enemies[e.def.id] = e.def;
+            if (Asset.zones != null) foreach (var z in Asset.zones) if (z != null) Zones[z.def.style] = z.def;
         }
+
+        public static ZoneRulesDef ZoneRules => Asset.zoneRules ?? (Asset.zoneRules = new ZoneRulesDef());
+        public static ZoneDef Zone(BuildStyle s) => Zones.TryGetValue(s, out var z) ? z : null;
 
         public static ProgressionDef Progression => Asset.progression ?? (Asset.progression = new ProgressionDef());
         public static WeaponDef W(WeaponKind k) => Weapons[k];
@@ -225,6 +241,7 @@ namespace Diverse
                 id = b.id, name = DesignRuntime.EnemyName(b.id, b.name), brain = b.brain, attack = b.attack, hp = b.hp * hpMul, damage = b.damage * dmgMul, speed = b.speed * (1 + Mathf.Min(tier, 10) * 0.02f), radius = b.radius,
                 attackRange = b.attackRange, attackWindup = b.attackWindup, attackCooldown = b.attackCooldown, aggroRange = b.aggroRange,
                 xp = b.xp * (1 + tier * 0.25f), gold = b.gold * (1 + tier * 0.25f), mass = b.mass, sprite = b.sprite, projectileColor = b.projectileColor,
+                signature = b.signature, shot = b.shot, hitFx = b.hitFx,
                 hopInterval = b.hopInterval, strafe = b.strafe, attackParam = b.attackParam, attackCount = b.attackCount,
                 element = b.element, boss = b.boss, lines = b.lines,
             };

@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b66f6304fb60134aa720186470999bd, type: 3}
+  m_Name: dune_scarab
+  m_EditorClassIdentifier: 
+  def:
+    id: dune_scarab
+    name: "\uD669\uAE08 \uD48D\uB385\uC774"
+    brain: 3
+    attack: 7
+    hp: 70
+    damage: 14
+    speed: 1.8
+    radius: 0.6
+    attackRange: 6
+    attackWindup: 0.75
+    attackCooldown: 2.6
+    aggroRange: 7
+    xp: 16
+    gold: 6
+    mass: 2.5
+    hopInterval: 0
+    strafe: 0
+    attackParam: 11
+    attackCount: 1
+    sprite: dune_scarab
+    signature: 
+    shot: zfx_Mobility_shot
+    hitFx: zfx_Mobility_hit
+    projectileColor:
+      serializedVersion: 2
+      rgba: 4285422335
+    element: 0
+    boss: 0
+    lines: []

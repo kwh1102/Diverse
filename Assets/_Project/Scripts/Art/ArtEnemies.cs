@@ -13,11 +13,19 @@ namespace Diverse
         {
             if (!enemyFrames.TryGetValue(key, out var f)) enemyFrames[key] = f = new Sprite[8];
             if (frame < 0 || frame >= f.Length) return Get($"enemy_{key}_{frame}", () => DrawEnemy(key, frame));
-            return f[frame] != null ? f[frame] : f[frame] = Get($"enemy_{key}_{frame}", () => DrawEnemy(key, frame));
+            if (f[frame] != null) return f[frame];
+            var s = Get($"enemy_{key}_{frame}", () => DrawEnemy(key, frame));
+            // Safety net for drawn sheets: a pose far smaller or larger than the standing pose (a bad crop) shows the standing pose
+            if (frame != 0 && HandSprite($"enemy_{key}_0") is { } idle && s != null)
+            {
+                float k = s.rect.height / Mathf.Max(1f, idle.rect.height);
+                if (k < 0.6f || k > 1.6f) s = idle;
+            }
+            return f[frame] = s;
         }
 
         /// <summary>Height in pixels of the hand-made enemy sprite (redrawn enemies keep it, so hitboxes still match).</summary>
-        public static int EnemyHeight(string key) => Mathf.RoundToInt(DrawEnemy(key, 0).rect.height);
+        public static int EnemyHeight(string key) => HandSprite($"enemy_{key}_0") is { } h ? Mathf.RoundToInt(h.rect.height) : Mathf.RoundToInt(DrawEnemy(key, 0).rect.height);
 
         static Sprite DrawEnemy(string key, int f)
         {

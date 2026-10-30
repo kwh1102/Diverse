@@ -812,6 +812,29 @@ namespace Diverse
 
         // ───────────────────────── Damage / events ─────────────────────────
 
+        /// <summary>
+        /// Unavoidable chip damage (zone miasma, thorns). Armor and shields still help, but there is no hurt invulnerability,
+        /// so a constant trickle never shields the hero from the real hits around it.
+        /// </summary>
+        public float TakeChipDamage(float amount, Actor src, Color32 col)
+        {
+            if (!Alive || amount <= 0) return 0;
+            amount *= 1 - Stats[StatId.Armor];
+            if (Shield > 0)
+            {
+                float absorbed = Mathf.Min(Shield, amount);
+                Shield -= absorbed; amount -= absorbed;
+            }
+            if (amount <= 0) return 0;
+            float dealt = base.TakeDamage(new DamageInfo { amount = amount, source = src, noEvents = true, fxColor = col, tags = "ZONE" });
+            if (dealt > 0)
+            {
+                if (Game.Settings.damageNumbers) Fx.I?.Number(Pos + Vector2.up * 0.9f, Mathf.Max(1, Mathf.RoundToInt(dealt)).ToString(), (Color)col, 0.75f, 0.5f);
+                Game.I?.LastDamageSource(src);
+            }
+            return dealt;
+        }
+
         public override float TakeDamage(DamageInfo d)
         {
             if (!Alive || Time.time < invulnUntil || dashT > 0) return 0;

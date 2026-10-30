@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b66f6304fb60134aa720186470999bd, type: 3}
+  m_Name: hive_ant
+  m_EditorClassIdentifier: 
+  def:
+    id: hive_ant
+    name: "\uBCD1\uC815\uAC1C\uBBF8"
+    brain: 0
+    attack: 3
+    hp: 26
+    damage: 7
+    speed: 1.9
+    radius: 0.45
+    attackRange: 4.5
+    attackWindup: 0.6
+    attackCooldown: 2.6
+    aggroRange: 7
+    xp: 5
+    gold: 1
+    mass: 1
+    hopInterval: 0
+    strafe: 0
+    attackParam: 1
+    attackCount: 1
+    sprite: hive_ant
+    signature: 
+    shot: zfx_Area_shot
+    hitFx: zfx_Area_hit
+    projectileColor:
+      serializedVersion: 2
+      rgba: 4285422335
+    element: 0
+    boss: 0
+    lines: []
