@@ -20,9 +20,19 @@ namespace Diverse
         [SerializeField] GameObject keysPage;
         [SerializeField] Button keyTemplate;          // label child "Label", key text on the button
         [SerializeField] Button resetKeys;
+        [Header("Graphics")]
+        [SerializeField] GameObject graphicsPage;
+        [SerializeField] Button[] presetButtons = new Button[3];     // 낮음 / 보통 / 높음 (GraphicsQuality.Presets)
+        [SerializeField] Button[] fpsButtons = new Button[4];        // GraphicsQuality.FpsCaps: 30 / 60 / 120 / 모니터
+        [SerializeField] Button[] effectButtons = new Button[3];     // 효과 낮음 / 보통 / 높음
+        [SerializeField] Button[] postButtons = new Button[3];       // 후처리 끔 / 가볍게 / 전체
+        [SerializeField] Button showFps;
+        [SerializeField] Text graphicsHint;
         [Header("Page tabs (title screen only)")]
-        [SerializeField] Button settingsTab, keysTab, backButton;
+        [SerializeField] Button settingsTab, keysTab, graphicsTab, backButton;
         [SerializeField] Color selectedTint = new Color(1f, 0.95f, 0.7f);
+
+        public const int SettingsPage = 0, KeysPage = 1, GraphicsPage = 2;
 
         readonly List<Button> models = new List<Button>();
         readonly List<Button> keys = new List<Button>();
@@ -67,22 +77,45 @@ namespace Diverse
                 });
             }
             UIKit.Bind(resetKeys, () => { Controls.ResetAll(); Controls.Save(Session.Settings); });
-            UIKit.Bind(settingsTab, () => Page(false));
-            UIKit.Bind(keysTab, () => Page(true));
+
+            for (int i = 0; i < presetButtons.Length; i++) { int k = i; UIKit.Bind(presetButtons[i], () => { GraphicsQuality.ApplyPreset(s, k); Save(); }); }
+            for (int i = 0; i < fpsButtons.Length && i < GraphicsQuality.FpsCaps.Length; i++) { int k = i; UIKit.Bind(fpsButtons[i], () => { s.fpsCap = GraphicsQuality.FpsCaps[k]; ApplyGraphics(); }); }
+            for (int i = 0; i < effectButtons.Length; i++) { int k = i; UIKit.Bind(effectButtons[i], () => { s.effects = k; ApplyGraphics(); }); }
+            for (int i = 0; i < postButtons.Length; i++) { int k = i; UIKit.Bind(postButtons[i], () => { s.postFx = k; ApplyGraphics(); }); }
+            UIKit.Bind(showFps, () => { s.showFps = !s.showFps; ApplyGraphics(); });
+
+            UIKit.Bind(settingsTab, () => Page(SettingsPage));
+            UIKit.Bind(keysTab, () => Page(KeysPage));
+            UIKit.Bind(graphicsTab, () => Page(GraphicsPage));
             UIKit.Bind(backButton, () => { Controls.Save(Session.Settings); OnBack?.Invoke(); });
         }
 
         static void Save() => SaveSystem.SaveSettings(Session.Settings);
 
-        /// <summary>Show the settings page or the key bindings page.</summary>
-        public void Page(bool keysOn)
+        static void ApplyGraphics() { GraphicsQuality.Apply(Session.Settings); Save(); }
+
+        /// <summary>Show the settings, key bindings or graphics page.</summary>
+        public void Page(int page)
         {
             Build();
-            UIKit.Show(settingsPage, !keysOn);
-            UIKit.Show(keysPage, keysOn);
-            if (settingsTab != null) settingsTab.image.color = keysOn ? Color.white : selectedTint;
-            if (keysTab != null) keysTab.image.color = keysOn ? selectedTint : Color.white;
+            if (graphicsPage == null && page == GraphicsPage) page = SettingsPage;   // prefab without the graphics page yet
+            UIKit.Show(settingsPage, page == SettingsPage);
+            UIKit.Show(keysPage, page == KeysPage);
+            UIKit.Show(graphicsPage, page == GraphicsPage);
+            Tint(settingsTab, page == SettingsPage);
+            Tint(keysTab, page == KeysPage);
+            Tint(graphicsTab, page == GraphicsPage);
         }
+
+        void Tint(Button b, bool on) { if (b != null) b.image.color = on ? selectedTint : Color.white; }
+
+        static readonly string[] FpsHints =
+        {
+            "초당 30프레임으로 고정한다. 노트북 배터리·발열을 줄인다.",
+            "초당 60프레임으로 고정한다 (수직 동기화 끔). 끊김이 느껴질 때 먼저 시도해 볼 것.",
+            "초당 120프레임까지 그린다 (수직 동기화 끔). 고주사율 모니터용.",
+            "모니터 주사율에 맞춘다 (수직 동기화). 화면 찢어짐이 없다.",
+        };
 
         void OnEnable()
         {
@@ -94,6 +127,8 @@ namespace Diverse
             shake.SetValueWithoutNotify(s.shakeScale);
             rebinding = null;
         }
+
+        static RectTransform Rt(Button[] list, int i) => list != null && i < list.Length && list[i] != null ? (RectTransform)list[i].transform : null;
 
         void Update()
         {
@@ -115,6 +150,24 @@ namespace Diverse
                 }
                 UIKit.Set(modelHint, hint ?? "");
                 UIKit.Set(lastCall, string.IsNullOrEmpty(AiClient.LastStatus) ? "" : $"마지막 호출: {AiClient.LastStatus}");
+            }
+            if (graphicsPage != null && graphicsPage.activeSelf)
+            {
+                int preset = GraphicsQuality.PresetOf(s);
+                for (int i = 0; i < presetButtons.Length; i++) Tint(presetButtons[i], i == preset);
+                int fps = System.Array.IndexOf(GraphicsQuality.FpsCaps, s.fpsCap);
+                for (int i = 0; i < fpsButtons.Length; i++) Tint(fpsButtons[i], i == fps);
+                for (int i = 0; i < effectButtons.Length; i++) Tint(effectButtons[i], i == s.effects);
+                for (int i = 0; i < postButtons.Length; i++) Tint(postButtons[i], i == s.postFx);
+                UIKit.Label(showFps, "FPS 표시: " + (s.showFps ? "켜짐" : "꺼짐"));
+                // Hovered button explains itself; otherwise the general advice
+                string hint = "끊김이 느껴지면 프리셋을 '낮음'으로 바꾸거나 프레임 제한을 60으로 두세요. 게임 중 마우스 휠로 화면을 확대·축소할 수 있습니다.";
+                for (int i = 0; i < fpsButtons.Length && i < FpsHints.Length; i++) if (UIKit.Hovered((RectTransform)fpsButtons[i]?.transform)) hint = FpsHints[i];
+                if (UIKit.Hovered(Rt(effectButtons, 0)) || UIKit.Hovered(Rt(effectButtons, 1)) || UIKit.Hovered(Rt(effectButtons, 2)))
+                    hint = "파티클·잔상·날씨 입자의 양. 전투가 몰릴 때 끊기면 낮춘다.";
+                if (UIKit.Hovered(Rt(postButtons, 0)) || UIKit.Hovered(Rt(postButtons, 1)) || UIKit.Hovered(Rt(postButtons, 2)))
+                    hint = "빛 번짐(블룸)·색 보정. '가볍게'는 가장 무거운 빛 번짐만 끈다. 내장 그래픽이면 '끔'이 가장 가볍다.";
+                UIKit.Set(graphicsHint, hint);
             }
             if (keysPage != null && keysPage.activeSelf)
                 for (int i = 0; i < keys.Count; i++)

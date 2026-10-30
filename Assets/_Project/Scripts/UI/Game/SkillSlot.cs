@@ -8,6 +8,7 @@ namespace Diverse
     {
         [SerializeField] Text icon, cooldown, key;
         [SerializeField] Image cooldownShade;      // Filled image, vertical, shrinks as the skill recharges
+        int shownCd = -1;
 
         public void Tick(Player p, SkillState s, string keyName, TooltipView tooltip, string lockedHint = null)
         {
@@ -29,7 +30,9 @@ namespace Diverse
             if (cd)
             {
                 UIKit.Fill(cooldownShade, s.cd / (s.def.cooldown * (1 - p.Stats[StatId.CooldownReduction])));
-                UIKit.Set(cooldown, s.cd.ToString(s.cd < 1 ? "0.0" : "0"));
+                // Shown in tenths below 1 s, whole seconds above: only build a new string when that number changes
+                int shown = s.cd < 1 ? Mathf.RoundToInt(s.cd * 10) : 1000 + Mathf.RoundToInt(s.cd);
+                if (shown != shownCd) { shownCd = shown; UIKit.Set(cooldown, s.cd.ToString(s.cd < 1 ? "0.0" : "0")); }
             }
             if (tooltip != null && UIKit.Hovered((RectTransform)transform))
                 tooltip.Show($"<b>{s.def.name}</b> <color=#8c7aa8>({s.def.cooldown}초)</color>", s.def.desc);

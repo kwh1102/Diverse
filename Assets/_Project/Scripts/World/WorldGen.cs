@@ -140,6 +140,13 @@ namespace Diverse
                 return water > 0.78f ? Ground.DeepWater : Ground.Water;
             }
 
+            // A designed world can lay its own roads / lanes / paving over open land (never right next to the town)
+            var open = OpenGround(x, y, water);
+            return nearTown ? open : DesignLayout.Ground(tx, ty, open, seed);
+        }
+
+        Ground OpenGround(float x, float y, float water)
+        {
             var b = BiomeAt(x, y);
             float detail = Noise.Perlin(x, y, seed + 91, 0.12f);
             switch (b)

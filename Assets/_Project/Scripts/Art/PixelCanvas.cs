@@ -179,10 +179,16 @@ namespace Diverse
 
     public static class Pal
     {
+        // Called from hot paths (effects, enemy attacks): parse each hex string once (literals are interned, so no garbage)
+        static readonly System.Collections.Generic.Dictionary<string, Color32> hexCache = new System.Collections.Generic.Dictionary<string, Color32>();
+
         public static Color32 Hex(string hex)
         {
+            if (hexCache.TryGetValue(hex, out var cached)) return cached;
             ColorUtility.TryParseHtmlString(hex.StartsWith("#") ? hex : "#" + hex, out var c);
-            return c;
+            Color32 c32 = c;
+            if (hexCache.Count < 4096) hexCache[hex] = c32;
+            return c32;
         }
 
         public static Color32 Mul(Color32 c, float m) =>

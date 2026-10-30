@@ -43,7 +43,7 @@ namespace Diverse
                 UIKit.Label(weapons[i], DB.W((WeaponKind)i).name);
             }
             UIKit.Bind(startButton, Begin);
-            UIKit.Bind(backButton, () => menu.Show(MenuUI.Screen.Title));
+            UIKit.Bind(backButton, () => menu.Show(menu.NewLifeScreen == MenuUI.Screen.Design ? MenuUI.Screen.Design : MenuUI.Screen.Title));
         }
 
         void OnEnable()

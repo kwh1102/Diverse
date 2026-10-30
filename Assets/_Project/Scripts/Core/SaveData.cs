@@ -30,6 +30,9 @@ namespace Diverse
         public List<WarpStone> warpStones = new List<WarpStone>();                // placed warp stones (shared by every life)
         public string lastCostume = "white";
         public int lastWeapon;
+        public string designId;               // this world's look (designs/<id>.json); empty = the built-in art
+        public int designCalls;               // AI design generations in this world (shown in the studio)
+        public float designCostUsd;           // their estimated API cost
 
         public bool Flag(string key) => flags.Contains(key);
         public void SetFlag(string key) { if (!flags.Contains(key)) flags.Add(key); }
@@ -116,6 +119,17 @@ namespace Diverse
         public string enemy;
     }
 
+    /// <summary>Normal: the hand-made world and enemies, only the hero and weapon are designed. Custom: everything can be designed.</summary>
+    public enum GameMode { Normal, Custom }
+
+    /// <summary>A save slot as the slot screen sees it.</summary>
+    public class SlotInfo
+    {
+        public WorldSave world;
+        public bool hasRun;
+        public DateTime lastPlayed;
+    }
+
     [Serializable]
     public class Settings
     {
@@ -123,9 +137,18 @@ namespace Diverse
         public bool screenShake = true;
         public float shakeScale = 1f;
         public bool damageNumbers = true;
+        // Graphics (설정 → 그래픽, GraphicsQuality.Apply)
+        public int fpsCap;                  // 0 = follow the monitor (VSync), else a frame cap without VSync (30 / 60 / 120)
+        public int effects = 2;             // 0 low · 1 medium · 2 high: particles, afterimages, ambient specks
+        public int postFx = 2;              // 0 off · 1 light (no bloom) · 2 full
+        public bool showFps;
         public List<string> bindings = new List<string>();   // "action=path"
         public string aiEndpoint = "https://api.openai.com/v1/chat/completions";
-        public string aiModel = "gpt-4o-mini";
+        public string aiModel = "gpt-6-luna";
+        public string imageModel = "gpt-image-2.5-flare";   // design studio pictures (Images API)
+        public string imageQuality = "low";                 // low | medium: pictures are shrunk to a few dozen pixels, low is usually enough
+        public int modelsVersion;                           // settings migrations (2 = gpt-6-luna / gpt-image-2.5)
+        public int lastMode = (int)GameMode.Custom, lastSlot = 1;   // the save slot opened last (the Game scene opened from the editor uses it)
         public bool aiEnabled = true;
     }
 
@@ -133,9 +156,62 @@ namespace Diverse
     {
         /// <summary>Tests set DIVERSE_SAVE_DIR to a scratch folder so they never touch the player's saves.</summary>
         static string Dir => System.Environment.GetEnvironmentVariable("DIVERSE_SAVE_DIR") is { Length: > 0 } d ? d : Application.persistentDataPath;
-        static string WorldPath => Path.Combine(Dir, "world.json");
+        /// <summary>Design packs (DesignStore). Kept when a world is reset so graves of older worlds' heroes still draw.</summary>
+        public static string DesignDir => Path.Combine(Dir, "designs");
         static string SettingsPath => Path.Combine(Dir, "settings.json");
-        static string RunPath => Path.Combine(Dir, "run.json");
+
+        // ───────── Save slots: each mode keeps up to SlotCount worlds (slots/normal_1 … custom_3) ─────────
+        public const int SlotCount = 3;
+        /// <summary>The slot that LoadWorld / SaveRun… read and write (Session.OpenSlot sets it).</summary>
+        public static GameMode Mode = GameMode.Custom;
+        public static int Slot = 1;
+
+        static string SlotDir(GameMode m, int slot) => Path.Combine(Dir, "slots", (m == GameMode.Normal ? "normal_" : "custom_") + slot);
+        static string WorldPath => Path.Combine(SlotDir(Mode, Slot), "world.json");
+        static string RunPath => Path.Combine(SlotDir(Mode, Slot), "run.json");
+        static void EnsureSlotDir() { try { Directory.CreateDirectory(SlotDir(Mode, Slot)); } catch { } }
+
+        /// <summary>What the slot screen shows about a slot (null = empty).</summary>
+        public static SlotInfo Peek(GameMode m, int slot)
+        {
+            var path = Path.Combine(SlotDir(m, slot), "world.json");
+            try
+            {
+                if (!File.Exists(path)) return null;
+                var w = JsonUtility.FromJson<WorldSave>(File.ReadAllText(path));
+                if (w == null || w.seed == 0) return null;
+                return new SlotInfo
+                {
+                    world = w, hasRun = File.Exists(Path.Combine(SlotDir(m, slot), "run.json")),
+                    lastPlayed = File.GetLastWriteTime(path),
+                };
+            }
+            catch { return null; }
+        }
+
+        public static void DeleteSlot(GameMode m, int slot)
+        {
+            try { var d = SlotDir(m, slot); if (Directory.Exists(d)) Directory.Delete(d, true); }
+            catch (Exception e) { Debug.LogWarning("Slot delete failed: " + e.Message); }
+        }
+
+        /// <summary>Saves from before slots (world.json / run.json in the save root) become custom slot 1 — they could already use designs.</summary>
+        public static void MigrateLegacySaves()
+        {
+            try
+            {
+                var oldWorld = Path.Combine(Dir, "world.json");
+                if (!File.Exists(oldWorld)) return;
+                var target = SlotDir(GameMode.Custom, 1);
+                if (File.Exists(Path.Combine(target, "world.json"))) return;
+                Directory.CreateDirectory(target);
+                File.Move(oldWorld, Path.Combine(target, "world.json"));
+                var oldRun = Path.Combine(Dir, "run.json");
+                if (File.Exists(oldRun)) File.Move(oldRun, Path.Combine(target, "run.json"));
+                Debug.Log("[Save] moved the old world into custom slot 1");
+            }
+            catch (Exception e) { Debug.LogWarning("Save migration failed: " + e.Message); }
+        }
 
         public static WorldSave LoadWorld()
         {
@@ -160,6 +236,7 @@ namespace Diverse
 
         public static void SaveWorld(WorldSave w)
         {
+            EnsureSlotDir();
             try { File.WriteAllText(WorldPath, JsonUtility.ToJson(w, true)); }
             catch (Exception e) { Debug.LogWarning("World save failed: " + e.Message); }
         }
@@ -181,6 +258,7 @@ namespace Diverse
 
         public static void SaveRun(RunSave r)
         {
+            EnsureSlotDir();
             try { File.WriteAllText(RunPath, JsonUtility.ToJson(r, true)); }
             catch (Exception e) { Debug.LogWarning("Run save failed: " + e.Message); }
         }
@@ -199,6 +277,13 @@ namespace Diverse
             }
             catch { }
             s ??= new Settings();
+            // One-time move off the old defaults (gpt-image-1-mini is being retired; gpt-6-luna is cheaper and smarter)
+            if (s.modelsVersion < 2)
+            {
+                if (s.aiModel == "gpt-4o-mini") s.aiModel = "gpt-6-luna";
+                if (string.IsNullOrEmpty(s.imageModel) || s.imageModel == "gpt-image-1-mini") s.imageModel = "gpt-image-2.5-flare";
+                s.modelsVersion = 2;
+            }
             if (!AiClient.IsPresetModel(s.aiModel)) s.aiModel = AiClient.Models[0].id;   // only preset models can be selected
             return s;
         }

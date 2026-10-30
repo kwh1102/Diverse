@@ -18,7 +18,7 @@ namespace Diverse.EditorTools
     /// Layout units match the old IMGUI screens: a 640x360 reference canvas (CanvasScaler) where 1 unit = U(1).
     /// Never overwrites an existing prefab or scene: delete one to have it rebuilt.
     /// </summary>
-    public static class UIBuilder
+    public static partial class UIBuilder
     {
         internal const string UIDir = Root + "/UI";
         const string UIPrefabDir = PrefabDir + "/UI";
@@ -329,6 +329,12 @@ namespace Diverse.EditorTools
             var title = BuildTitle(root);
             var select = BuildSelect(root);
             var settings = BuildSettingsView(root, standalone: true);
+            var design = BuildDesignStudio(root, false);
+            UIKit.Show(design, false);
+            Wire(menu, "design", design);
+            var slots = BuildSaveSelect(root);
+            UIKit.Show(slots, false);
+            Wire(menu, "slots", slots);
             UIKit.Show(select, false);
             UIKit.Show(settings, false);
             Wire(menu, "title", title);
@@ -358,11 +364,9 @@ namespace Diverse.EditorTools
             var layout = col.gameObject.AddComponent<VerticalLayoutGroup>();
             layout.spacing = 6; layout.childControlHeight = false; layout.childControlWidth = true; layout.childForceExpandHeight = false;
             Button B(string n, string cap) { var b = Btn(col, n, cap, TL, Vector2.zero, new Vector2(140, 22)); return b; }
-            var cont = B("Continue", "이어하기 — 영웅 Lv.1");
-            var abandon = B("Abandon", "이 삶을 끝내고 새로 시작");
-            var start = B("Start", "새로운 삶 시작");
+            // Worlds are continued / started / ended / deleted on the slot screen (SaveSelectView); the title only leads there
+            var slotB = B("ChangeSlot", "모드·세계 선택");
             var settings = B("Settings", "설정");
-            var reset = B("ResetWorld", "새로운 세계 시작");
             var quit = B("Quit", "종료");
             var footer = Label(rt, "Footer", "AI 진화: 로컬 모드   ·   세계 시드 0", BL, new Vector2(8, -18), new Vector2(620, 14), 9);
             footer.rectTransform.pivot = new Vector2(0, 0);
@@ -370,8 +374,7 @@ namespace Diverse.EditorTools
 
             Wire(v, "logo", logo.rectTransform);
             WireArray(v, "rabbits", rabbits);
-            Wire(v, "continueButton", cont); Wire(v, "abandonButton", abandon); Wire(v, "startButton", start);
-            Wire(v, "settingsButton", settings); Wire(v, "resetButton", reset); Wire(v, "quitButton", quit);
+            Wire(v, "slotButton", slotB); Wire(v, "settingsButton", settings); Wire(v, "quitButton", quit);
             Wire(v, "footer", footer);
             return v;
         }
@@ -506,6 +509,7 @@ namespace Diverse.EditorTools
                 var back = Btn(panel, "Back", "뒤로", TL, new Vector2(12, 300 - 30), new Vector2(110, 20));
                 Wire(v, "settingsTab", t1); Wire(v, "keysTab", t2); Wire(v, "backButton", back);
             }
+            AddGraphicsPage(v);
             return v;
         }
 
@@ -525,8 +529,10 @@ namespace Diverse.EditorTools
             var death = BuildDeath(root);
             var evolve = BuildEvolve(root);
             var map = BuildMap(root);
+            var studio = BuildDesignStudio(root, true);
+            WireDesignButton(pause, studio);
             tooltip.transform.SetAsLastSibling();
-            foreach (var go in new Component[] { pause, dialogue, death, evolve, map }) UIKit.Show(go, false);
+            foreach (var go in new Component[] { pause, dialogue, death, evolve, map, studio }) UIKit.Show(go, false);
             UIKit.Show(dim.gameObject, false);
 
             Wire(ui, "hud", hud); Wire(ui, "pause", pause); Wire(ui, "dialogue", dialogue); Wire(ui, "death", death);
@@ -661,6 +667,7 @@ namespace Diverse.EditorTools
             Wire(v, "interactHint", ih); Wire(v, "interactText", ihText);
             Wire(v, "bossBar", bb); Wire(v, "bossName", bossName); Wire(v, "bossFill", bossFill);
             Wire(v, "generatingText", gen); Wire(v, "tooltip", tooltip);
+            AddFpsLabel(v);
             return v;
         }
 
@@ -690,7 +697,7 @@ namespace Diverse.EditorTools
             var tabsRt = Node(a, "Tabs", TL, new Vector2(12, 10), new Vector2(446, 20));
             var tl = tabsRt.gameObject.AddComponent<HorizontalLayoutGroup>();
             tl.spacing = 4; tl.childControlWidth = true; tl.childForceExpandWidth = true; tl.childControlHeight = true;
-            string[] names = { "능력", "능력치", "연대기", "설정", "키 설정" };
+            string[] names = { "능력", "능력치", "연대기", "설정", "키 설정", "그래픽" };
             var tabs = names.Select(n => (Object)Btn(tabsRt, "Tab " + n, n, TL, Vector2.zero, new Vector2(80, 20))).ToArray();
 
             var pageRect = new Vector2(446, 228);

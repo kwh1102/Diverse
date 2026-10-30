@@ -117,15 +117,38 @@ namespace Diverse.EditorTools
                 Shot("01_title");
                 Click(Find<TitleView>(), "Settings"); yield return F(3); Shot("02_settings");
                 Click(Find<SettingsView>(), "KeysTab"); yield return F(3); Shot("03_keys");
+                Click(Find<SettingsView>(), "GraphicsTab"); yield return F(3); Shot("03b_graphics");
                 Click(Find<SettingsView>(), "Back"); yield return F(2);
-                Click(Find<TitleView>(), "Start"); yield return F(3); Shot("04_select");
-                Click(Find<CharacterSelectView>(), "StartLife"); yield return F(60);
+                Click(Find<TitleView>(), "ChangeSlot"); yield return F(3); Shot("00_slots");
+                Click(Find<SaveSelectView>(), "CustomTab"); yield return F(1);
+                Click(Find<SaveSelectView>().transform.Find("Panel/Slots/Slot 0"), "Play"); yield return F(3); Shot("04_design");
+                var studio = Find<DesignStudioView>();
+                var promptField = studio.GetComponentInChildren<InputField>();
+                string[] prompts = { "민트색 털에 남색 망토, 마법사 모자를 쓴 토끼", "이쑤시개를 입에 물고 있다가 퉤 하고 발사, 공격력 10배", "가을 단풍 숲", "모든 적이 과자로 만들어진 세계" };
+                for (int i = 0; i < 4; i++) { Click(studio, "Tab " + i); promptField.text = prompts[i]; }
+                Click(studio, "Tab 1");
+                Click(studio, "Generate"); yield return F(3); Shot("04b_design_generated");
+                Click(studio, "StartLife"); yield return F(60);
                 var g = Game.I;
                 if (g != null)
                 {
                     g.Ui.Toast("우클릭 이동/공격 · 좌클릭 공격 · QWER 스킬 · Space 대시");
                     g.Player.UnspentAttr = 2;
                     yield return F(3); Shot("05_hud");
+                    // Damage numbers: a plain hit, a crit, an elemental hit and a hit taken, mid-flight
+                    var at = g.Player.Pos + new Vector2(2.5f, 0.6f);
+                    Fx.I.Number(at, "24", Color.white, 1f, 0.8f, 1);
+                    Fx.I.Number(at + new Vector2(1.6f, 0), "87!", new Color(1f, 0.82f, 0.25f), 1.45f, 0.8f, 1, true);
+                    Fx.I.Number(at + new Vector2(-4.5f, 0), "31", Color.Lerp(Color.white, (Color)Combat.ElementColor(Element.Fire), 0.7f), 1.1f, 0.8f, -1);
+                    Fx.I.Number(g.Player.Pos + new Vector2(0, 0.6f), "12", new Color(1f, 0.4f, 0.45f), 1f, 0.8f, -1);
+                    yield return F(9); Shot("05d_damage_numbers");
+                    // A basic attack mid-swing: the swing picture should sit in front of the hero, not on it
+                    var weaponBefore = g.Player.Weapon;
+                    g.Player.Weapon = DB.W(WeaponKind.Katana);
+                    typeof(Player).GetMethod("BasicAttack", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                        ?.Invoke(g.Player, new object[] { Vector2.right });
+                    for (int i = 0; i < 4; i++) { yield return F(2); Shot("05e_attack_swing_" + i); }
+                    g.Player.Weapon = weaponBefore;
                     var minimapEnemy = Enemy.Spawn(DB.ScaledEnemy("fox", 0), g.Player.Pos + Vector2.right * 8, null);
                     yield return F(12); Shot("05b_minimap_enemy");
                     Object.Destroy(minimapEnemy.gameObject);
@@ -134,7 +157,17 @@ namespace Diverse.EditorTools
                     g.Ui.OpenTab("attrs"); yield return F(3); Shot("07_pause_attrs");
                     g.Ui.OpenTab("chronicle"); yield return F(3); Shot("08_pause_chronicle");
                     g.Ui.OpenTab("settings"); yield return F(3); Shot("09_pause_settings");
-                    g.CloseOverlay(); yield return F(2);
+                    g.Ui.OpenTab("graphics"); yield return F(3); Shot("09b_pause_graphics");
+                    Click(Find<PauseView>(), "Design"); yield return F(3); Shot("09b_pause_design");
+                    g.CloseOverlay(); yield return F(30); Shot("09c_world_designed");
+                    // A pictured city (local stand-in pictures): street grid, buildings along the streets, two-variant ground
+                    var home = g.Player.Pos;
+                    g.ApplyDesign(DesignStore.Commit(DesignTestData.Pictured(g.Player)));
+                    var spot = WorldStreamer.I.NearestWalkable(new Vector2(42, -42), g.Player.radius, 8, false);
+                    g.Player.Pos = spot; WorldStreamer.I.Warm(spot); CameraRig.I.Snap(spot);
+                    yield return F(60); Shot("09d_city_layout");
+                    g.Player.Pos = home; WorldStreamer.I.Warm(home); CameraRig.I.Snap(home);
+                    yield return F(10);
                     var npc = Interactable.All.Where(i => i != null && i.kind == "npc_storyteller").FirstOrDefault()
                               ?? Interactable.All.FirstOrDefault(i => i != null && i.kind.StartsWith("npc_"));
                     if (npc != null) { Dialogue.Open(g, npc); yield return F(3); Shot("10_dialogue"); g.CloseOverlay(); yield return F(2); }

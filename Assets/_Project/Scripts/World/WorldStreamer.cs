@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace Diverse
@@ -58,6 +59,10 @@ namespace Diverse
 
         readonly Dictionary<Vector2Int, ChunkView> chunks = new Dictionary<Vector2Int, ChunkView>();
         readonly Dictionary<Vector2Int, Ground[,]> groundCache = new Dictionary<Vector2Int, Ground[,]>();
+        // Baked ground textures of chunks that were unloaded: walking back re-uses them instead of baking again (LRU)
+        readonly Dictionary<Vector2Int, Texture2D> bakedGround = new Dictionary<Vector2Int, Texture2D>();
+        readonly LinkedList<Vector2Int> bakedOrder = new LinkedList<Vector2Int>();
+        const int BakedGroundKept = 40;
         // Obstacle shapes, indexed by every tile their bounding box touches (point queries)
         readonly Dictionary<Vector2Int, List<Solid>> solidCells = new Dictionary<Vector2Int, List<Solid>>();
         // Tiles whose center is covered by an obstacle (pathfinding). Counted because shapes can overlap.
@@ -79,6 +84,7 @@ namespace Diverse
         {
             Clear();
             groundCache.Clear();
+            DropBakedGround();
             Gen = new WorldGen(seed);
         }
 
@@ -91,6 +97,21 @@ namespace Diverse
             buildQueue.Clear();
         }
 
+        /// <summary>Drop every loaded chunk properly (the design look changed); Warm/Tick builds them again with the new art.</summary>
+        public void UnloadAll()
+        {
+            groundCache.Clear();     // a designed layout may lay different roads
+            foreach (var view in chunks.Values)
+            {
+                if (view == null) continue;
+                view.Unload();
+                Destroy(view.gameObject);
+            }
+            chunks.Clear();
+            buildQueue.Clear();
+            DropBakedGround();       // … and paints the ground differently (after Unload handed the old textures back)
+        }
+
         public static Vector2Int ChunkOf(Vector2 p) =>
             new Vector2Int(Mathf.FloorToInt(p.x / WorldGen.Chunk), Mathf.FloorToInt(p.y / WorldGen.Chunk));
 
@@ -98,20 +119,40 @@ namespace Diverse
         public void Warm(Vector2 p)
         {
             var c = ChunkOf(p);
-            for (int y = -loadRadius; y <= loadRadius; y++)
-                for (int x = -loadRadius; x <= loadRadius; x++)
+            LoadRadii(out int rx, out int ry);
+            for (int y = -ry; y <= ry; y++)
+                for (int x = -rx; x <= rx; x++)
                     Ensure(new Vector2Int(c.x + x, c.y + y));
         }
 
+        /// <summary>
+        /// Chunks to keep loaded each way: at least the whole view plus a margin, so chunks never appear on screen (the
+        /// widest zoom shows ~40 tiles across, more than the old fixed 2-chunk radius covered). Wide screens load more
+        /// columns than rows.
+        /// </summary>
+        void LoadRadii(out int rx, out int ry)
+        {
+            rx = ry = loadRadius;
+            var cam = CameraRig.I != null ? CameraRig.I.Cam : null;
+            if (cam == null) return;
+            float halfH = cam.orthographicSize + 2, halfW = cam.orthographicSize * cam.aspect + 2;
+            rx = Mathf.Max(loadRadius, Mathf.CeilToInt(halfW / WorldGen.Chunk) + 1);
+            ry = Mathf.Max(loadRadius, Mathf.CeilToInt(halfH / WorldGen.Chunk) + 1);
+        }
+
+        static readonly ProfilerMarker ChunksMarker = new ProfilerMarker("Diverse.Chunks");   // read by DesignPerf / PerfProbe
+
         public void Tick(Vector2 focus)
         {
+            using var _perf = ChunksMarker.Auto();
             var c = ChunkOf(focus);
+            LoadRadii(out int rx, out int ry);
             // Queue chunks to load, nearest first
-            for (int r = 0; r <= loadRadius; r++)
+            for (int r = 0; r <= Mathf.Max(rx, ry); r++)
                 for (int y = -r; y <= r; y++)
                     for (int x = -r; x <= r; x++)
                     {
-                        if (Mathf.Max(Mathf.Abs(x), Mathf.Abs(y)) != r) continue;
+                        if (Mathf.Max(Mathf.Abs(x), Mathf.Abs(y)) != r || Mathf.Abs(x) > rx || Mathf.Abs(y) > ry) continue;
                         var k = new Vector2Int(c.x + x, c.y + y);
                         if (!chunks.ContainsKey(k) && !buildQueue.Contains(k)) buildQueue.Enqueue(k);
                     }
@@ -122,7 +163,7 @@ namespace Diverse
             List<Vector2Int> remove = null;
             foreach (var kv in chunks)
             {
-                if (Mathf.Abs(kv.Key.x - c.x) > unloadRadius || Mathf.Abs(kv.Key.y - c.y) > unloadRadius)
+                if (Mathf.Abs(kv.Key.x - c.x) > Mathf.Max(unloadRadius, rx + 1) || Mathf.Abs(kv.Key.y - c.y) > Mathf.Max(unloadRadius, ry + 1))
                     (remove ??= new List<Vector2Int>()).Add(kv.Key);
             }
             if (remove != null)
@@ -141,6 +182,7 @@ namespace Diverse
             var view = Instantiate(chunkPrefab, transform, false);
             view.name = $"Chunk {k.x},{k.y}";
             chunks[k] = view;
+            HitchLog.ChunksBuilt++;
             view.Build(this, k);
         }
 
@@ -151,6 +193,38 @@ namespace Diverse
         // ───────────── Terrain queries ─────────────
 
         /// <summary>Tile array for a chunk (+1 border). Cached once computed.</summary>
+        /// <summary>A chunk's ground texture baked earlier (null = bake it). The caller owns it again.</summary>
+        public Texture2D TakeBakedGround(Vector2Int k)
+        {
+            if (!bakedGround.TryGetValue(k, out var t)) return null;
+            bakedGround.Remove(k);
+            bakedOrder.Remove(k);
+            return t;
+        }
+
+        /// <summary>An unloading chunk hands its ground texture back; the oldest beyond the limit are destroyed.</summary>
+        public void KeepBakedGround(Vector2Int k, Texture2D t)
+        {
+            if (t == null) return;
+            if (bakedGround.TryGetValue(k, out var old) && old != t) Destroy(old);
+            bakedGround[k] = t;
+            bakedOrder.Remove(k);
+            bakedOrder.AddLast(k);
+            while (bakedOrder.Count > BakedGroundKept)
+            {
+                var oldest = bakedOrder.First.Value;
+                bakedOrder.RemoveFirst();
+                if (bakedGround.TryGetValue(oldest, out var o)) { Destroy(o); bakedGround.Remove(oldest); }
+            }
+        }
+
+        void DropBakedGround()
+        {
+            foreach (var t in bakedGround.Values) if (t != null) Destroy(t);
+            bakedGround.Clear();
+            bakedOrder.Clear();
+        }
+
         public Ground[,] GroundOf(Vector2Int k)
         {
             if (groundCache.TryGetValue(k, out var g)) return g;
@@ -323,27 +397,54 @@ namespace Diverse
     /// </summary>
     public static class PathFinder
     {
-        struct Node { public Vector2Int p; public float f; }
+        struct Node { public Vector2Int p; public float f, g; }
+        // open is a binary min-heap on f. The old linear scan made a long search O(n²): ~40 ms when the
+        // player held right-click towards a far or unreachable spot (it re-plans every 0.12 s).
         static readonly List<Node> open = new List<Node>();
-        static readonly Dictionary<Vector2Int, Vector2Int> came = new Dictionary<Vector2Int, Vector2Int>();
-        static readonly Dictionary<Vector2Int, float> g = new Dictionary<Vector2Int, float>();
+        // Per-search state lives in fixed grids around the start tile (Reach tiles each way) instead of dictionaries.
+        // Each tile's walkability is tested once per search: the test is ~6 point lookups, and A* used to repeat it for
+        // every neighbour and diagonal check (20–45 ms searches). A stamp per search replaces clearing the grids.
+        const int Reach = 96, Side = Reach * 2 + 1;
+        static readonly float[] gCost = new float[Side * Side];
+        static readonly int[] cameFrom = new int[Side * Side];
+        static readonly int[] gStamp = new int[Side * Side], okStamp = new int[Side * Side];
+        static readonly bool[] okValue = new bool[Side * Side];
+        static int stamp;
         static readonly Vector2Int[] dirs =
         {
             new Vector2Int(1,0), new Vector2Int(-1,0), new Vector2Int(0,1), new Vector2Int(0,-1),
             new Vector2Int(1,1), new Vector2Int(1,-1), new Vector2Int(-1,1), new Vector2Int(-1,-1),
         };
 
+        static readonly ProfilerMarker PathMarker = new ProfilerMarker("Diverse.Path");   // read by PerfProbe
+
         /// <param name="swim">water is walkable (raft)</param>
         /// <param name="bound">max distance from the origin (0 = unlimited)</param>
         public static List<Vector2> Find(WorldStreamer w, Vector2 from, Vector2 to, int maxNodes = 4000, bool swim = false, float bound = 0)
         {
+            using var _perf = PathMarker.Auto();
             var result = new List<Vector2>();
             if (bound > 0 && to.magnitude > bound - 0.5f && to.magnitude > from.magnitude) to = to.normalized * Mathf.Max(from.magnitude, bound - 0.5f);
             var s = new Vector2Int(Mathf.FloorToInt(from.x), Mathf.FloorToInt(from.y));
             var t = new Vector2Int(Mathf.FloorToInt(to.x), Mathf.FloorToInt(to.y));
             float boundSq = bound > 0 ? Mathf.Max(bound * bound, from.sqrMagnitude + 1) : float.MaxValue;
-            bool Ok(int x, int y) => w.Walkable(x, y, swim) && w.Free(new Vector2(x + 0.5f, y + 0.5f), 0.4f, swim)
-                && (x + 0.5f) * (x + 0.5f) + (y + 0.5f) * (y + 0.5f) <= boundSq;
+            if (++stamp == int.MaxValue) { stamp = 1; System.Array.Clear(gStamp, 0, gStamp.Length); System.Array.Clear(okStamp, 0, okStamp.Length); }
+            // Grid index of a tile, -1 outside the search window (treated as blocked; long trips re-plan as they go)
+            int Index(int x, int y)
+            {
+                int ix = x - s.x + Reach, iy = y - s.y + Reach;
+                return ix < 0 || iy < 0 || ix >= Side || iy >= Side ? -1 : iy * Side + ix;
+            }
+            bool Ok(int x, int y)
+            {
+                int i = Index(x, y);
+                if (i < 0) return false;
+                if (okStamp[i] == stamp) return okValue[i];
+                bool v = w.Walkable(x, y, swim) && w.Free(new Vector2(x + 0.5f, y + 0.5f), 0.4f, swim)
+                    && (x + 0.5f) * (x + 0.5f) + (y + 0.5f) * (y + 0.5f) <= boundSq;
+                okStamp[i] = stamp; okValue[i] = v;
+                return v;
+            }
 
             // If the destination is blocked, go to the nearest open tile
             if (!w.Walkable(t.x, t.y, swim))
@@ -354,17 +455,18 @@ namespace Diverse
             }
             if (w.PathClear(from, to, swim)) { result.Add(to); return result; }
 
-            open.Clear(); came.Clear(); g.Clear();
-            open.Add(new Node { p = s, f = H(s, t) });
-            g[s] = 0;
+            open.Clear();
+            int si = Index(s.x, s.y);
+            Push(new Node { p = s, f = H(s, t), g = 0 });
+            gCost[si] = 0; gStamp[si] = stamp; cameFrom[si] = -1;
             Vector2Int best = s; float bestH = H(s, t);
             int expanded = 0;
             while (open.Count > 0 && expanded < maxNodes)
             {
-                int bi = 0;
-                for (int i = 1; i < open.Count; i++) if (open[i].f < open[bi].f) bi = i;
-                var cur = open[bi].p;
-                open.RemoveAt(bi);
+                var top = Pop();
+                var cur = top.p;
+                int ci = Index(cur.x, cur.y);
+                if (top.g > gCost[ci]) continue;     // a shorter way to this tile was queued after this entry
                 expanded++;
                 if (cur == t) { best = t; break; }
                 float h = H(cur, t);
@@ -374,18 +476,18 @@ namespace Diverse
                     var n = cur + d;
                     if (!Ok(n.x, n.y)) continue;
                     if (d.x != 0 && d.y != 0 && (!Ok(cur.x + d.x, cur.y) || !Ok(cur.x, cur.y + d.y))) continue;
-                    float ng = g[cur] + (d.x != 0 && d.y != 0 ? 1.4142f : 1f);
-                    if (g.TryGetValue(n, out var old) && ng >= old) continue;
-                    g[n] = ng;
-                    came[n] = cur;
-                    open.Add(new Node { p = n, f = ng + H(n, t) });
+                    float ng = top.g + (d.x != 0 && d.y != 0 ? 1.4142f : 1f);
+                    int ni = Index(n.x, n.y);
+                    if (gStamp[ni] == stamp && ng >= gCost[ni]) continue;
+                    gCost[ni] = ng; gStamp[ni] = stamp; cameFrom[ni] = ci;
+                    Push(new Node { p = n, f = ng + H(n, t), g = ng });
                 }
             }
 
             // Reconstruct path (if unreachable, go to the closest reachable point)
             var path = new List<Vector2Int>();
-            var c = best;
-            while (c != s && came.ContainsKey(c)) { path.Add(c); c = came[c]; }
+            for (int i = Index(best.x, best.y); i >= 0 && i != si; i = cameFrom[i])
+                path.Add(new Vector2Int(i % Side - Reach + s.x, i / Side - Reach + s.y));
             path.Reverse();
             foreach (var p in path) result.Add(new Vector2(p.x + 0.5f, p.y + 0.5f));
             if (best == t && result.Count > 0) result[result.Count - 1] = to;
@@ -393,11 +495,47 @@ namespace Diverse
             return result;
         }
 
+        static void Push(Node n)
+        {
+            open.Add(n);
+            int i = open.Count - 1;
+            while (i > 0)
+            {
+                int up = (i - 1) / 2;
+                if (open[up].f <= n.f) break;
+                open[i] = open[up];
+                i = up;
+            }
+            open[i] = n;
+        }
+
+        static Node Pop()
+        {
+            var top = open[0];
+            var last = open[open.Count - 1];
+            open.RemoveAt(open.Count - 1);
+            int count = open.Count, i = 0;
+            if (count == 0) return top;
+            while (true)
+            {
+                int l = i * 2 + 1;
+                if (l >= count) break;
+                int c = l + 1 < count && open[l + 1].f < open[l].f ? l + 1 : l;
+                if (open[c].f >= last.f) break;
+                open[i] = open[c];
+                i = c;
+            }
+            open[i] = last;
+            return top;
+        }
+
         static float H(Vector2Int a, Vector2Int b)
         {
             int dx = Mathf.Abs(a.x - b.x), dy = Mathf.Abs(a.y - b.y);
             return (dx + dy) + (1.4142f - 2) * Mathf.Min(dx, dy);
         }
+
+        const int SmoothReach = 24;
 
         /// <summary>Remove unnecessary bends (string pulling).</summary>
         static void Smooth(WorldStreamer w, Vector2 from, List<Vector2> pts, bool swim)
@@ -409,7 +547,8 @@ namespace Diverse
             while (i < pts.Count)
             {
                 int far = i;
-                for (int j = pts.Count - 1; j > i; j--)
+                // Look a bounded way ahead: trying every later point made long paths cost O(n²) line checks
+                for (int j = Mathf.Min(pts.Count - 1, i + SmoothReach); j > i; j--)
                     if (w.PathClear(anchor, pts[j], swim)) { far = j; break; }
                 outList.Add(pts[far]);
                 anchor = pts[far];

@@ -64,15 +64,20 @@ namespace Diverse
         public static string KeyName(Act a)
         {
             if (map == null) return "?";
+            // The HUD asks every frame: reuse the name until the binding changes (the display string allocates)
+            string path = acts[a].bindings[0].effectivePath;
+            if (keyNames.TryGetValue(a, out var known) && known.path == path) return known.name;
             // Letter keys: name them by the physical key. The display string follows the OS keyboard layout, so with the
             // Korean input source on it reads "ㅂ" for Q (the bindings themselves are physical and still work).
-            string path = acts[a].bindings[0].effectivePath;
             const string kb = "<Keyboard>/";
-            if (path != null && path.StartsWith(kb) && path.Length == kb.Length + 1 && char.IsLetterOrDigit(path[kb.Length]))
-                return path.Substring(kb.Length).ToUpperInvariant();
-            var s = acts[a].GetBindingDisplayString(0, InputBinding.DisplayStringOptions.DontIncludeInteractions);
-            return Pretty(s);
+            string name = path != null && path.StartsWith(kb) && path.Length == kb.Length + 1 && char.IsLetterOrDigit(path[kb.Length])
+                ? path.Substring(kb.Length).ToUpperInvariant()
+                : Pretty(acts[a].GetBindingDisplayString(0, InputBinding.DisplayStringOptions.DontIncludeInteractions));
+            keyNames[a] = (path, name);
+            return name;
         }
+
+        static readonly Dictionary<Act, (string path, string name)> keyNames = new Dictionary<Act, (string, string)>();
 
         static string Pretty(string s) => s switch
         {

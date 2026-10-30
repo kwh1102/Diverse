@@ -11,6 +11,13 @@ namespace Diverse
     {
         static readonly List<Actor> buffer = new List<Actor>();
 
+        /// <summary>
+        /// Where a directional melee swing/thrust picture is centred: a little in front of the body (FeelDef.meleeFxOffset),
+        /// so the arc doesn't sit on the character. Looks only; hit areas use the real origin.
+        /// </summary>
+        public static Vector2 MeleeFxOrigin(Vector2 bodyCenter, Vector2 dir) =>
+            bodyCenter + dir.SafeNormal(Vector2.right) * (DB.Asset.feel?.meleeFxOffset ?? 0.4f);
+
         /// <summary>부채꼴 범위 판정. arc 360이면 원형.</summary>
         public static List<Actor> Arc(Vector2 origin, Vector2 dir, float range, float arcDeg, Team targetTeam)
         {
@@ -83,14 +90,20 @@ namespace Diverse
                     CameraRig.I.Kick(d.direction, kick * (d.crit ? 1.5f : 1f) * s);
                     if (d.crit) CameraRig.I.Punch(0.5f);
                 }
-                Fx.I?.HitSpark(at, d.direction.SafeNormal(Vector2.right), d.fxColor ?? fxColor, d.crit, d.crit ? 1.3f : 1f);
+                Fx.I?.HitSpark(at, d.direction.SafeNormal(Vector2.right), d.fxColor ?? fxColor, d.crit, d.crit ? 1.3f : 1f, Mathf.Clamp01(d.knockback / 5f));
                 Sfx.Play(d.crit ? "crit" : sfx, d.crit ? 0.9f : 0.7f);
             }
             if (Game.Settings.damageNumbers && Fx.I != null)
             {
-                var col = d.crit ? new Color(1f, 0.85f, 0.3f) : (target.team == Team.Player ? new Color(1f, 0.4f, 0.45f) : Color.white);
+                // Colour says what kind of hit it was; size says how big it was for this target (a chunk of a boss's bar stays readable)
+                var col = d.crit ? new Color(1f, 0.82f, 0.25f)
+                        : target.team == Team.Player ? new Color(1f, 0.4f, 0.45f)
+                        : d.element != Element.None ? Color.Lerp(Color.white, (Color)ElementColor(d.element), 0.7f)
+                        : Color.white;
                 if (d.noEvents && d.fxColor.HasValue) col = d.fxColor.Value;
-                Fx.I.Number(at + Vector2.up * 0.2f, Mathf.RoundToInt(dealt) + (d.crit ? "!" : ""), col, d.crit ? 1.35f : 1f);
+                float weight = Mathf.Clamp01(dealt / Mathf.Max(1f, target.maxHp * 0.25f));
+                float size = (d.noEvents ? 0.75f : 1f) * (1f + weight * 0.35f) * (d.crit ? 1.45f : 1f);
+                Fx.I.Number(at + Vector2.up * 0.2f, Mathf.RoundToInt(dealt) + (d.crit ? "!" : ""), col, size, 0.8f, d.direction.x, d.crit);
             }
 
             if (fromPlayerSide && !d.noEvents)

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace Diverse
@@ -21,6 +22,7 @@ namespace Diverse
         public string sfx = "hit";
         public float shake = 0.08f, kick = 1.5f;
         public bool trail = true;
+        public Sprite[] trailFx;        // designed weapons: generated trail effect instead of dot particles
         public bool spin;
         public System.Action<Projectile, Actor> onHit;
         public System.Action<Projectile, float> onUpdate;    // steering (curving shots); gets the age in seconds
@@ -51,8 +53,11 @@ namespace Diverse
             return p;
         }
 
+        static readonly ProfilerMarker ProjectileMarker = new ProfilerMarker("Diverse.Projectiles");   // read by DesignPerf / PerfProbe
+
         void Update()
         {
+            using var _perf = ProjectileMarker.Auto();
             float dt = Time.deltaTime;
             if (dt <= 0) return;
             t += dt;
@@ -84,7 +89,8 @@ namespace Diverse
             if (trail)
             {
                 trailT -= dt;
-                if (trailT <= 0) { trailT = 0.025f; Fx.I?.Burst(p, color, 1, 0.5f, 0.2f, 0, 1); }
+                if (trailT <= 0 && trailFx != null) { trailT = 0.06f; Fx.I?.Play(trailFx, p, vel.Angle(), 18, 1, null, true); }
+                else if (trailT <= 0) { trailT = 0.025f; Fx.I?.Burst(p, color, 1, 0.5f, 0.2f, 0, 1); }
             }
 
             foreach (var a in Actor.All)

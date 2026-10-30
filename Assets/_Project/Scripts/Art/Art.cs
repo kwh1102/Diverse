@@ -1,9 +1,10 @@
 using System.Collections.Generic;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace Diverse
 {
-    public enum Pose { Idle0, Idle1, Run0, Run1, Run2, Run3, Hurt, Cast }
+    public enum Pose { Idle0, Idle1, Run0, Run1, Run2, Run3, Hurt, Cast, AttackWind, AttackHit }
 
     /// <summary>
     /// 모든 도트 스프라이트를 코드로 생성·캐시한다. 외부 PNG를 넣고 싶으면
@@ -32,20 +33,55 @@ namespace Diverse
             }
         }
 
+        /// <summary>Sprites from the active design pack (DesignRuntime) that replace a key outright.</summary>
+        static readonly Dictionary<string, Sprite> overrides = new Dictionary<string, Sprite>();
+        static readonly ProfilerMarker SpriteMarker = new ProfilerMarker("Diverse.SpriteMake");   // first-time sprite drawing (read by PerfProbe)
+
         public static Sprite Get(string key, System.Func<Sprite> make)
         {
+            if (overrides.TryGetValue(key, out var o)) return o;
             if (cache.TryGetValue(key, out var s) && s != null) return s;
-            var custom = Resources.Load<Sprite>("Sprites/" + key);
-            s = custom != null ? custom : make();
+            Hand().TryGetValue(key, out var custom);
+            HitchLog.SpritesMade++;
+            using (SpriteMarker.Auto()) s = DesignRuntime.Restyle(key, custom != null ? custom : make());
             if (s != null) s.name = key;
             cache[key] = s;
             return s;
         }
 
+        /// <summary>
+        /// Hand-drawn sprites in Resources/Sprites (they win over the code-drawn ones), loaded together once. Looking each
+        /// one up with Resources.Load on first use read it from disk mid-fight (a 20+ ms hitch per new enemy or chunk).
+        /// </summary>
+        static Dictionary<string, Sprite> hand;
+        static Dictionary<string, Sprite> Hand()
+        {
+            if (hand != null) return hand;
+            hand = new Dictionary<string, Sprite>();
+            foreach (var sp in Resources.LoadAll<Sprite>("Sprites")) hand[sp.name] = sp;
+            return hand;
+        }
+
+        /// <summary>Load the hand-drawn sprites now (scene start) instead of on the first sprite that needs one.</summary>
+        public static void Preload() => Hand();
+
+        public static void Override(string key, Sprite s) { if (s == null) overrides.Remove(key); else overrides[key] = s; }
+
+        /// <summary>A new design pack was activated: drop every cached sprite and override so they are drawn again with its look.</summary>
+        public static void ResetLooks()
+        {
+            cache.Clear();
+            anims.Clear();
+            overrides.Clear();
+            enemyFrames.Clear();
+            rabbitPoses.Clear();
+        }
+
         public static Sprite[] GetAnim(string key, System.Func<Sprite[]> make)
         {
             if (anims.TryGetValue(key, out var s) && s != null) return s;
-            s = make();
+            HitchLog.SpritesMade++;
+            using (SpriteMarker.Auto()) s = make();
             anims[key] = s;
             return s;
         }
@@ -67,19 +103,29 @@ namespace Diverse
 
         // ───────────────────────────── 캐릭터 (토끼) ─────────────────────────────
 
-        public static Sprite Rabbit(CostumeDef c, Pose pose) =>
-            Get($"rabbit_{c.id}_{pose}", () => DrawRabbit(c.fur, c.furShade, c.outfit, c.outfitShade, c.accent, c.style, pose, false));
+        // Called every frame for the hero: a per-costume pose array so no lookup string is built per call
+        static readonly Dictionary<CostumeDef, Sprite[]> rabbitPoses = new Dictionary<CostumeDef, Sprite[]>();
+
+        public static Sprite Rabbit(CostumeDef c, Pose pose)
+        {
+            if (!rabbitPoses.TryGetValue(c, out var p)) rabbitPoses[c] = p = new Sprite[System.Enum.GetValues(typeof(Pose)).Length];
+            int i = (int)pose;
+            return p[i] != null ? p[i] : p[i] = Get($"rabbit_{c.id}_{pose}", () => c.frames != null ? DesignArt.HeroPose(c.frames, pose, false)
+                : DrawRabbit(c.fur, c.furShade, c.outfit, c.outfitShade, c.accent, c.style, pose, false, c.look));
+        }
 
         /// <summary>노쇠한 과거 영웅: 털이 바래고 지팡이를 짚는다.</summary>
         public static Sprite ElderRabbit(CostumeDef c) =>
             Get($"elder_{c.id}", () =>
             {
+                if (c.frames != null) return DesignArt.HeroPose(c.frames, Pose.Idle0, true);
                 var fur = Pal.Lerp(c.fur, Pal.Hex("cfc8c0"), 0.6f);
                 var shade = Pal.Lerp(c.furShade, Pal.Hex("9d948c"), 0.6f);
-                return DrawRabbit(fur, shade, Pal.Mul(c.outfit, 0.75f), Pal.Mul(c.outfitShade, 0.75f), c.accent, c.style, Pose.Idle0, true);
+                return DrawRabbit(fur, shade, Pal.Mul(c.outfit, 0.75f), Pal.Mul(c.outfitShade, 0.75f), c.accent, c.style, Pose.Idle0, true, c.look);
             });
 
-        static Sprite DrawRabbit(Color32 fur, Color32 furShade, Color32 outfit, Color32 outfitShade, Color32 accent, int style, Pose pose, bool elder)
+        /// <param name="look">Designed hero (null for the built-in costumes): adds its headwear/accessory.</param>
+        static Sprite DrawRabbit(Color32 fur, Color32 furShade, Color32 outfit, Color32 outfitShade, Color32 accent, int style, Pose pose, bool elder, HeroLook look = null)
         {
             var cv = new PixelCanvas(26, 30);
             int bob = 0, lf = 0, rf = 0, earSway = 0;
@@ -171,6 +217,8 @@ namespace Diverse
             cv.Set(cx + 4, ey - 1, Pal.Hex("e07a8a"));
             cv.Rect(cx - 1, ey - 2, 2, 1, Pal.A(Pal.Blush, 200));
             cv.Rect(cx + 6, ey - 2, 2, 1, Pal.A(Pal.Blush, 200));
+
+            DesignArt.Decorate(cv, look, cx, hy, ey, accent);
 
             // 스카프(목) — style 0,1
             if (style == 0 || style == 1) { cv.Rect(cx - 4, by + 7, 9, 2, accent); cv.Rect(cx - 5, by + 5, 2, 3, accent); }

@@ -59,7 +59,11 @@ namespace Diverse
         protected Vector2 knockVel;
         protected float flash;
         protected float squash;             // >0 = flatten vertically, <0 = stretch vertically
-        protected float hitShakeT;
+        float squashVel;                    // squash/stretch is a damped spring: hits and lunges bounce back instead of fading linearly
+        Vector2 recoil, recoilVel;          // visual push along the hit direction that springs back (replaces the old shudder)
+        protected float lean;               // body tilt (degrees) toward the movement direction, eased
+        float tilt, tiltVel;                // hit tilt (degrees): knocked away from the blow, springs back with a wobble
+        float hop, hopVel;                  // heavy hits pop the body off the ground (world units), it lands with a squash
         protected float lift;               // visual height offset (jumping/flying), world units
         protected float sink;               // 0~1: sinking into the ground (burrowing)
         MaterialPropertyBlock mpb;
@@ -102,8 +106,6 @@ namespace Diverse
 
             TickStatuses(dt);
             flash = Mathf.Max(0, flash - dt * 8f);
-            squash = Mathf.MoveTowards(squash, 0, dt * 4f);
-            hitShakeT = Mathf.Max(0, hitShakeT - Time.unscaledDeltaTime);
             Render();
         }
 
@@ -162,18 +164,27 @@ namespace Diverse
             mpb.SetColor("_FlashColor", Color.white);
             body.SetPropertyBlock(mpb);
 
+            // Springs run on unscaled time: during hitstop the body still reacts smoothly instead of freezing mid-motion
+            float udt = Mathf.Min(Time.unscaledDeltaTime, 0.05f);
+            squashVel += (-170f * squash - 13f * squashVel) * udt;
+            squash += squashVel * udt;
+            recoilVel += (-160f * recoil - 16f * recoilVel) * udt;
+            recoil += recoilVel * udt;
+            lean = Mathf.Lerp(lean, LeanTarget, 1 - Mathf.Exp(-12f * udt));
+            tiltVel += (-210f * tilt - 13f * tiltVel) * udt;
+            tilt += tiltVel * udt;
+            if (hop > 0 || hopVel > 0)
+            {
+                hopVel -= 28f * udt;
+                hop += hopVel * udt;
+                if (hop <= 0) { hop = 0; hopVel = 0; squash = Mathf.Max(squash, 0.35f); }   // landing
+            }
+
             // Squash/stretch
             float sx = 1 + squash * 0.25f, sy = (1 - squash * 0.25f) * (1 - Mathf.Clamp01(sink) * 0.85f);
             visual.localScale = new Vector3(sx, sy, 1);
-
-            // Shudder in place on hit (works even during hitstop)
-            if (hitShakeT > 0)
-            {
-                float k = hitShakeT * 10f;
-                visual.localPosition = new Vector3(Mathf.Sin(Time.unscaledTime * 90f) * 0.06f * k, 0, 0);
-            }
-            else visual.localPosition = Vector3.zero;
-            if (lift != 0) visual.localPosition += new Vector3(0, lift, 0);
+            visual.localRotation = Quaternion.Euler(0, 0, lean + tilt);
+            visual.localPosition = new Vector3(recoil.x, recoil.y + lift + Bob + hop, 0);
 
             // Status color
             Color tint = Color.white;
@@ -189,6 +200,11 @@ namespace Diverse
             body.color = tint * BaseTint;
         }
 
+        /// <summary>Tilt (degrees) the body eases toward — e.g. leaning into a run. 0 = upright.</summary>
+        protected virtual float LeanTarget => 0;
+        /// <summary>Continuous vertical offset (world units), e.g. a smooth walking bob between animation frames.</summary>
+        protected virtual float Bob => 0;
+
         protected virtual bool CanSwim => false;
         protected virtual float MoveBound => 0;
 
@@ -198,6 +214,17 @@ namespace Diverse
         public virtual void Knockback(Vector2 dir, float force)
         {
             knockVel += dir.normalized * force / Mathf.Max(0.3f, mass);
+        }
+
+        /// <summary>
+        /// Body motion for an action (attack poses): a twist of the body (degrees per second into the tilt spring, + = counter-
+        /// clockwise), an upward pop, and a squash (>0 flatten, &lt;0 stretch). Visual only, the springs bring it back.
+        /// </summary>
+        protected void Motion(float twist, float hopUp = 0, float squashTo = float.NaN)
+        {
+            tiltVel += twist;
+            if (hopUp > 0) hopVel = Mathf.Max(hopVel, hopUp);
+            if (!float.IsNaN(squashTo)) { squash = squashTo; squashVel = 0; }
         }
 
         /// <summary>Apply damage. Returns the final damage dealt.</summary>
@@ -210,8 +237,19 @@ namespace Diverse
             flash = 1f;
             if (!d.noEvents)
             {
-                squash = 0.6f;
-                hitShakeT = Mathf.Max(hitShakeT, d.hitstop + 0.06f);
+                // How hard the blow was: knockback and crits make the reaction bigger
+                float heavy = Mathf.Clamp01(d.knockback / 5f) + (d.crit ? 0.4f : 0f);
+                var dir = d.direction.SafeNormal(Vector2.zero);
+                float side = Mathf.Abs(dir.x) > 0.1f ? Mathf.Sign(dir.x) : (Random.value < 0.5f ? -1f : 1f);
+                // Each reaction varies a little (strength, push angle, now and then a small pop) so hits don't repeat exactly
+                float vary = 1f + Random.Range(-1f, 1f) * (DB.Asset.feel?.hurtVariance ?? 0.3f);
+                squash = (0.6f + 0.3f * heavy) * vary;
+                squashVel = 0;
+                recoil = dir.Rotate(Random.Range(-18f, 18f)) * (0.1f + 0.14f * heavy) * vary; recoilVel = Vector2.zero;
+                tiltVel = -side * (240f + 360f * heavy) * vary;   // the top of the body is knocked the way the blow went
+                if (heavy > 0.5f) hopVel = Mathf.Max(hopVel, (2.2f + 2.4f * heavy) * vary);
+                else if (heavy > 0.15f && Random.value < 0.25f) hopVel = Mathf.Max(hopVel, 1.2f);
+                if (heavy > 0.3f) Fx.I?.Burst(Pos, new Color32(0xcd, 0xbb, 0xa5, 0xff), 4, 3f, 0.35f, 0, 2, 70, (-dir).Angle(), true);
                 if (d.knockback > 0) Knockback(d.direction, d.knockback);
             }
             OnDamaged(d, amount);

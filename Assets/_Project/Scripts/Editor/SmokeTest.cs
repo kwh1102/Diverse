@@ -139,28 +139,120 @@ namespace Diverse.EditorTools
                 // 1) MainMenu: title, settings round trip, character select
                 step = "menu";
                 if (Find<MenuUI>() == null) { Fail("MenuUI missing (MainMenu scene)"); yield break; }
-                if (!Visible<TitleView>()) Fail("title not visible");
+
+                // 0) Title (모드·세계 선택 / 설정 / 종료) → slot screen. A normal-mode world designs only the hero and weapon;
+                //    worlds are created, continued and deleted per row
+                step = "title";
+                var titleView = Find<TitleView>();
+                if (!Visible<TitleView>()) { Fail("title not shown first"); yield break; }
+                if (titleView.GetComponentsInChildren<Button>().Any(b => b.name is "Continue" or "Abandon" or "Start" or "ResetWorld"))
+                    Fail("title still has world buttons (they belong on the slot screen)");
                 if (Session.World == null) Fail("session not loaded");
-                Click(Find<TitleView>(), "Settings");
+                Click(titleView, "Settings");
                 yield return Frames(2);
                 if (!Visible<SettingsView>()) Fail("settings not visible");
                 Click(Find<SettingsView>(), "KeysTab");
                 yield return Frames(2);
+                // Graphics page: presets set the frame cap / effect / post-processing options together
+                Click(Find<SettingsView>(), "GraphicsTab");
+                yield return Frames(2);
+                Click(Find<SettingsView>(), "낮음");
+                yield return Frames(1);
+                if (Session.Settings.effects != 0 || Session.Settings.postFx != 0 || QualitySettings.vSyncCount != 0 || Application.targetFrameRate != 60)
+                    Fail("graphics preset 낮음 did not apply");
+                Click(Find<SettingsView>(), "높음");
+                yield return Frames(1);
+                if (GraphicsQuality.Effects != 2 || QualitySettings.vSyncCount != 1) Fail("graphics preset 높음 did not apply");
                 Click(Find<SettingsView>(), "Back");
                 yield return Frames(2);
                 if (!Visible<TitleView>()) Fail("back from settings did not show the title");
-                Click(Find<TitleView>(), "Start");
+
+                step = "save slots";
+                Click(titleView, "ChangeSlot");
                 yield return Frames(2);
-                if (!Visible<CharacterSelectView>()) { Fail("character select not visible"); yield break; }
-                Click(Find<CharacterSelectView>(), "Weapon 2");     // crossbow
+                if (!Visible<SaveSelectView>()) { Fail("slot screen did not open from the title"); yield break; }
+                var slotsView = Find<SaveSelectView>();
+                Transform Row(int i) => slotsView.transform.Find("Panel/Slots/Slot " + i);
+                Click(slotsView, "NormalTab");
                 yield return Frames(1);
+                Click(Row(1), "Play");               // empty second slot → new world → design the first life
+                yield return Frames(2);
+                if (Session.Mode != GameMode.Normal || Session.Slot != 2) { Fail("creating a normal world failed"); yield break; }
+                var normalStudio = Find<DesignStudioView>();
+                if (!Visible<DesignStudioView>()) { Fail("a new world did not open the design studio"); yield break; }
+                if (normalStudio.GetComponentsInChildren<Button>().Any(b => b.name == "Tab 2" || b.name == "Tab 3")) Fail("normal mode still offers world/enemy design");
+                Click(normalStudio, "Back");
+                yield return Frames(2);
+                if (!Visible<SaveSelectView>()) { Fail("studio back did not return to the slot screen"); yield break; }
+                Click(slotsView, "NormalTab");
+                yield return Frames(2);
+                Click(Row(1), "Delete");
+                yield return Frames(1);
+                if (SaveSystem.Peek(GameMode.Normal, 2) == null) Fail("one press already deleted the world (no confirmation)");
+                Click(Row(1), "Delete");
+                yield return Frames(1);
+                if (SaveSystem.Peek(GameMode.Normal, 2) != null) Fail("deleting a world left it behind");
+                Click(slotsView, "CustomTab");
+                yield return Frames(1);
+                Click(Row(0), "Play");
+                yield return Frames(2);
+                if (Session.Mode != GameMode.Custom || Session.Slot != 1) { Fail("opening a custom world failed"); yield break; }
+
+                // Design pieces that the live AI path uses (no network here)
+                step = "design units";
+                var errUnits = DesignUnits();
+                if (errUnits != null) { Fail(errUnits); yield break; }
+
+                // Design studio (AI off → local reader); no preset pickers are offered
+                step = "design studio";
+                if (!Visible<DesignStudioView>()) { Fail("design studio not visible"); yield break; }
+                var studio = Find<DesignStudioView>();
+                if (studio.GetComponentsInChildren<Button>().Any(b => b.name is "Classic" or "WeaponBaseButton" or "PerkBaseButton"))
+                    Fail("preset character/weapon/perk pickers are still shown");
+                var promptField = studio.GetComponentInChildren<InputField>();
+                string[] prompts =
+                {
+                    "민트색 털에 남색 망토, 마법사 모자를 쓴 토끼",
+                    "이쑤시개를 입에 물고 있다가 퉤 하고 발사하고 싶어, 공격력 10배",
+                    "눈 내린 겨울 숲, 하늘색 호수",
+                    "모든 적이 과자로 만들어진 세계",
+                };
+                for (int i = 0; i < 4; i++)
+                {
+                    Click(studio, "Tab " + i);
+                    promptField.text = prompts[i];
+                }
+                Click(studio, "Generate");
+                yield return Frames(3);
+                var pack = DesignRuntime.Active;
+                if (pack.weapon.shape != "needle" || pack.weapon.hold != "Mouth" || pack.attack.origin != "Mouth" || pack.weapon.baseWeapon != "Crossbow")
+                    Fail($"toothpick prompt not understood ({pack.weapon.shape}/{pack.weapon.hold}/{pack.attack.origin}/{pack.weapon.baseWeapon})");
+                if (pack.ignored.Count == 0) Fail("power request was not reported as ignored");
+                if (pack.hero.hat != "wizard" || pack.world.IsDefault || pack.enemies.Identity) Fail("hero/world/enemy prompts not applied");
+                if (Art.Bolt() == null || Art.Weapon(WeaponKind.Crossbow) == null) Fail("designed sprites missing");
+                Click(studio, "Undo");
+                yield return Frames(1);
+                if (DesignRuntime.Active.weapon.shape == "needle") Fail("undo did not restore the previous look");
+                Click(studio, "Generate");          // nothing changed → redo the current tab
+                yield return Frames(1);
+                for (int i = 0; i < 4; i++) { Click(studio, "Tab " + i); promptField.text = prompts[i] + " 좋아"; }
+                Click(studio, "Generate");
+                yield return Frames(2);
 
                 // 2) Start a life → Game scene
                 step = "start life";
-                Click(Find<CharacterSelectView>(), "StartLife");
+                Click(studio, "StartLife");
                 yield return Frames(10);
                 if (Game.I == null) { Fail("Game scene did not load"); yield break; }
-                if (Game.I.Player == null || Game.I.Player.Weapon.kind != WeaponKind.Crossbow) Fail("player not spawned with the picked weapon");
+                if (Game.I.Player == null || Game.I.Player.Weapon.kind != WeaponKind.Crossbow) Fail("player not spawned with the designed chassis");
+                if (Game.I.Player != null && !Game.I.Player.Costume.id.StartsWith(DesignStore.CostumePrefix)) Fail("player not drawn from the design pack");
+                if (Game.I.Player != null && Game.I.Player.Weapon.name != "이쑤시개") Fail("weapon skin (name) not applied");
+                if (Game.I.Player != null && Mathf.Abs(DesignCombat.Power(Game.I.Player.Weapon) - DesignCombat.Budget) > DesignCombat.Budget * 0.01f)
+                    Fail($"designed weapon is off the power budget ({DesignCombat.Power(Game.I.Player.Weapon):0.0} vs {DesignCombat.Budget:0.0})");
+                if (Game.I.Player != null && Game.I.Player.Costume.mods != null) Fail("designed hero kept a preset stat perk");
+                yield return Frames(5);
+                if (Game.I.Player != null && Game.I.Player.Abilities.Owned.Count == 0) Fail("designed hero got no starting passive");
+                if (DesignStore.PackOfCostume(Game.I.Player.Costume.id)?.hero.perk == null) Fail("starting passive was not kept with the design");
                 var boot = CheckBoot();
                 if (boot != null) Fail(boot);
                 if (!Visible<HudView>()) Fail("HUD not visible");
@@ -547,7 +639,8 @@ namespace Diverse.EditorTools
                 if (g.Offer == null) Fail("no evolution offer (local composer)");
                 else
                 {
-                    for (int i = 0; i < 120 && g.OfferLocked; i++) yield return null;
+                    // The cards unlock after a moment of real time (not a number of frames: the frame rate depends on the settings)
+                    for (float t0 = Time.realtimeSinceStartup; g.OfferLocked && Time.realtimeSinceStartup - t0 < 5;) yield return null;
                     yield return Frames(2);
                     var card = Find<EvolveView>().GetComponentsInChildren<EvolveCard>().FirstOrDefault();
                     if (card == null) Fail("no card");
@@ -556,7 +649,49 @@ namespace Diverse.EditorTools
                     if (g.State == GameState.Evolving) Fail("picking a card did not close the evolution screen");
                 }
 
-                // 5) Death → MainMenu character select
+                // 4b) Mid-life design edit from the pause menu: look changes, chassis and numbers don't
+                step = "design in game";
+                var kindBefore = g.Player.Weapon.kind;
+                float damageBefore = g.Player.Weapon.baseDamage;
+                g.OpenOverlay(GameState.Paused);
+                yield return Frames(2);
+                Click(Find<PauseView>(), "Design");
+                yield return Frames(2);
+                if (!Visible<DesignStudioView>()) { Fail("design studio did not open from the pause menu"); yield break; }
+                var gameStudio = Find<DesignStudioView>();
+                Click(gameStudio, "Tab 2");
+                gameStudio.GetComponentInChildren<InputField>().text = "가을 단풍 숲";
+                Click(gameStudio, "Tab 1");
+                gameStudio.GetComponentInChildren<InputField>().text = "보라색 몽둥이, 묵직하게";
+                Click(gameStudio, "Generate");
+                yield return Frames(2);
+                Click(gameStudio, "StartLife");     // "적용하고 닫기"
+                yield return Frames(5);
+                if (Visible<DesignStudioView>()) Fail("design studio did not close after applying");
+                if (!g.Player.Costume.id.StartsWith(DesignStore.CostumePrefix)) Fail("in-game design did not redraw the hero");
+                if (g.Player.Weapon.kind != kindBefore || g.Player.Weapon.baseDamage != damageBefore) Fail("in-game design changed the weapon chassis/numbers");
+                if (DesignRuntime.Active.world.IsDefault) Fail("in-game world design not active");
+                g.CloseOverlay();
+                yield return Frames(30);
+
+                // 4c) A fully pictured design (synthetic pictures, no network): ground textures, scenery, town, effects, enemies, poses
+                step = "pictured design";
+                var pictured = DesignTestData.Pictured(g.Player);
+                g.ApplyDesign(DesignStore.Commit(pictured));
+                yield return Frames(40);
+                // City layout: a street grid on open land, buildings lining the streets
+                bool street = false;
+                for (int t = 24; t < 200 && !street; t += 12) street |= WorldStreamer.I.GroundAtTile(t, -40) == Ground.Path;
+                if (!street) Fail("city layout laid no streets");
+                if (!Object.FindObjectsByType<SpriteRenderer>(FindObjectsSortMode.None).Any(s => s.name == "building" || s.name == "decor" || s.name == "prop")) Fail("no designed scenery was placed");
+                if (Art.Enemy("shroom", 1).rect.height < 10) Fail("enemy moving pose missing");
+                var designed = DesignCombat.For(DesignRuntime.Active);
+                if (designed == null || Art.Slash(designed.slashColor, designed.slashCore, 20, 140, 1).Length != 5) Fail("designed swing effect not used");
+                if (!DesignRuntime.GroundTexel(Ground.Grass, 3, 5, out _)) Fail("ground texture not used");
+                if (g.Player.Weapon.kind != kindBefore) Fail("pictured design changed the weapon chassis");
+                yield return Frames(20);
+
+                // 5) Death → MainMenu design studio
                 step = "death";
                 g.Player.invulnUntil = 0;
                 g.Player.TakeDamage(new DamageInfo { amount = 999999, direction = Vector2.right, noEvents = true });
@@ -564,13 +699,14 @@ namespace Diverse.EditorTools
                 if (!Visible<DeathView>()) { Fail("death screen not visible"); yield break; }
                 Click(Find<DeathView>(), "NextLife");
                 yield return Frames(10);
-                if (Find<MenuUI>() == null || !Visible<CharacterSelectView>()) { Fail("did not return to character select"); yield break; }
+                if (Find<MenuUI>() == null || !Visible<DesignStudioView>()) { Fail("did not return to the design studio"); yield break; }
 
                 // 6) New life → pause → to title (saved) → continue
                 step = "continue";
-                Click(Find<CharacterSelectView>(), "StartLife");
+                Click(Find<DesignStudioView>(), "StartLife");
                 yield return Frames(10);
                 if (Game.I == null) { Fail("Game scene did not load the 2nd time"); yield break; }
+                string designedCostume = Game.I.Player.Costume.id;
                 Game.I.Player.Gold = 77;
                 Game.I.Player.WarpStones = 3;
                 Game.I.Player.LearnNextSkill();
@@ -583,13 +719,62 @@ namespace Diverse.EditorTools
                 Click(Find<PauseView>(), "ToTitle");
                 yield return Frames(10);
                 if (!Visible<TitleView>()) { Fail("to-title did not show the title"); yield break; }
-                Click(Find<TitleView>(), "Continue");
+                Click(Find<TitleView>(), "ChangeSlot");
+                yield return Frames(2);
+                var slotRow = Find<SaveSelectView>().transform.Find("Panel/Slots/Slot 0");
+                if (slotRow.Find("Abandon") == null || !slotRow.Find("Abandon").gameObject.activeInHierarchy) Fail("a world with a life in progress offers no 삶 끝내기");
+                Click(slotRow, "Play");              // 이어하기
                 yield return Frames(10);
                 if (Game.I == null || Game.I.Player == null) { Fail("continue did not load the life"); yield break; }
                 if (Game.I.Player.Gold != 77) Fail($"continued life lost its state (gold {Game.I.Player.Gold})");
+                if (Game.I.Player.Costume.id != designedCostume) Fail("continued life lost its designed hero");
                 if (Game.I.Player.WarpStones != 3) Fail("continued life lost carried warp stones");
                 if (Game.I.Player.LearnedSkills != 1) Fail("continued life lost learned skills");
                 if (!Game.I.Player.Abilities.Owned.Any(a => a.Signature() == savedSignature)) Fail("continued life lost RuleIR ability");
+            }
+
+            /// <summary>Offline checks of the picture → sprite pieces (frames, effects, prompt detection).</summary>
+            static string DesignUnits()
+            {
+                if (!DesignGuard.BareHanded("주먹으로 때리고 발차기") || DesignGuard.BareHanded("종으로 음파 공격")) return "bare-hand detection wrong";
+                if (!DesignGuard.IsTweak("조금 더 길게") || DesignGuard.IsTweak("종으로 무기를 바꿔줘")) return "tweak detection wrong";
+                // A fake 2x2 sheet: four blobs of different heights → shared scale, every pose drawable
+                var sheet = new Texture2D(64, 64, TextureFormat.RGBA32, false);
+                var px = new Color32[64 * 64];
+                for (int i = 0; i < 4; i++)
+                    for (int y = 4; y < 20 + i * 2; y++)
+                        for (int x = 8; x < 20; x++) px[((i / 2 == 0 ? 32 : 0) + y) * 64 + (i % 2) * 32 + x] = new Color32((byte)(60 * i), 120, 200, 255);
+                sheet.SetPixels32(px); sheet.Apply();
+                var cells = Pixelizer.ConvertSet(sheet, new[] { new RectInt(0, 32, 32, 32), new RectInt(32, 32, 32, 32), new RectInt(0, 0, 32, 32), new RectInt(32, 0, 32, 32) }, 28, true);
+                if (cells.Any(c => c == null)) return "pixelizer lost a pose";
+                if (cells[0].H != 30 || cells[3].H <= cells[0].H) return $"poses not on one scale ({cells[0].H}, {cells[3].H})";
+                var frames = cells.Select(c => c.ToTexture()).ToArray();
+                foreach (Pose pose in System.Enum.GetValues(typeof(Pose)))
+                    if (DesignArt.HeroPose(frames, pose, false) == null) return "hero pose missing: " + pose;
+                if (DesignArt.Effect(frames[0], DesignArt.EffectKind.Swing, 40).Length != 5) return "swing effect frames wrong";
+                if (DesignArt.EnemyFrame(frames[0], frames[1], frames[2], 2) == null || DesignArt.EnemyFrame(frames[0], null, null, 3) == null) return "enemy frame missing";
+                var mirrored = DesignStore.Image(DesignStore.Mirrored(DesignStore.SaveImage(cells[0])));
+                if (mirrored == null || mirrored.width != cells[0].W) return "mirroring a picture failed";
+                Object.DestroyImmediate(sheet);
+
+                // A neighbour's figure spilling over the grid line is cut away; a pose drawn facing the other way is turned back
+                var spill = new Texture2D(64, 32, TextureFormat.RGBA32, false);
+                var sp = new Color32[64 * 32];
+                for (int y = 4; y < 28; y++) for (int x = 10; x < 20; x++) sp[y * 64 + x] = new Color32(200, 80, 80, 255);    // subject, cell 0
+                for (int y = 4; y < 28; y++) sp[y * 64 + 8] = new Color32(200, 80, 80, 255);                                     // its arm (left)
+                for (int y = 2; y < 26; y++) for (int x = 26; x < 32; x++) sp[y * 64 + x] = new Color32(80, 80, 200, 255);    // neighbour spill at the edge
+                // cell 1: an L-shaped pose, mirrored relative to cell 0's arm side
+                for (int y = 4; y < 28; y++) for (int x = 44; x < 54; x++) sp[y * 64 + x] = new Color32(200, 80, 80, 255);
+                for (int y = 4; y < 28; y++) sp[y * 64 + 55] = new Color32(200, 80, 80, 255);                                    // arm on the right
+                spill.SetPixels32(sp); spill.Apply();
+                var two = Pixelizer.ConvertSet(spill, new[] { new RectInt(0, 0, 32, 32), new RectInt(32, 0, 32, 32) }, 24, true, alignFacing: true);
+                Object.DestroyImmediate(spill);
+                if (two[0] == null || two[1] == null) return "pixelizer lost a cell";
+                bool blue = false;
+                foreach (var c in two[0].Px) if (c.a > 0 && c.b > c.r + 40) blue = true;
+                if (blue) return "a neighbouring figure that spilled into the cell was kept";
+                if (Pixelizer.FacesOpposite(two[1], two[0])) return "a pose facing the other way was not turned around";
+                return null;
             }
 
             string CheckBoot()

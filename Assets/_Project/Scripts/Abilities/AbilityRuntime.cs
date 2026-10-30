@@ -923,7 +923,7 @@ namespace Diverse
                 case "Slash":
                 {
                     Vector2 aim = (p.AimPoint - p.Pos).SafeNormal(p.Facing);
-                    Fx.I?.Play(Art.Slash(col, Pal.White, Mathf.RoundToInt(rad * Art.PPU * 0.85f), 150, 1), p.Pos + Vector2.up * 0.45f, aim.Angle(), 30, 1, null, true);
+                    Fx.I?.Play(Art.Slash(col, Pal.White, Mathf.RoundToInt(rad * Art.PPU * 0.85f), 150, 1), Combat.MeleeFxOrigin(p.Pos + Vector2.up * 0.45f, aim), aim.Angle(), 30, 1, null, true);
                     foreach (var t in new List<Actor>(Combat.Arc(p.Pos + Vector2.up * 0.45f, aim, rad, 150, Team.Enemy)).Take(Cfg.maxTargetsPerProc)) { HitOne(t, magD); damaged.Add(t); }
                     break;
                 }

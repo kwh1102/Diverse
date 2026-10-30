@@ -63,7 +63,8 @@ namespace Diverse
             D("kt_flash", "천 번 베기", "순식간에 공간이 갈라진다. 범위 안의 모든 적을 찢는다.", 24, 0.9f, "e6f8ff", "✧");
         }
 
-        public static SkillDef Get(string id) => defs.TryGetValue(id, out var d) ? d : null;
+        /// <summary>A designed weapon may rename its skills (DesignRuntime); behaviour and numbers stay this table's.</summary>
+        public static SkillDef Get(string id) => DesignRuntime.RenameSkill(defs.TryGetValue(id, out var d) ? d : null);
 
         static DamageInfo Dmg(Player p, float mult, Vector2 dir, float kb, float hs, Element el = Element.None) => new DamageInfo
         {
@@ -221,7 +222,7 @@ namespace Diverse
                     for (float t = 0; t < 0.3f; t += Time.deltaTime) { p.Pos = Vector2.Lerp(start, dst, MathX.EaseOutCubic(t / 0.3f)); yield return null; }
                     Vector2 d2 = target != null ? (target.Pos - p.Pos).SafeNormal(dir) : dir;
                     p.SetSwing(d2.Angle() + 90, d2.Angle() - 70, 0.08f);
-                    Fx.I?.Play(Art.Slash(w.slashColor, Pal.White, 26, 160, 1), p.Pos + Vector2.up * 0.45f, d2.Angle(), 32, 1.2f, null, true);
+                    Fx.I?.Play(Art.Slash(w.slashColor, Pal.White, 26, 160, 1), Combat.MeleeFxOrigin(p.Pos + Vector2.up * 0.45f, d2), d2.Angle(), 32, 1.2f, null, true);
                     Slam(p, p.Pos + d2 * 0.8f, 1.8f, 1.6f, w.slashColor, 0.4f, 6, 0.1f);
                     break;
                 }
@@ -389,7 +390,7 @@ namespace Diverse
                     Vector2 d2 = (target.Pos - p.Pos).SafeNormal(dir);
                     p.Facing = d2;
                     yield return new WaitForSeconds(0.04f);
-                    Fx.I?.Play(Art.Slash(Pal.ShadowEl, Pal.White, 20, 200, 1), p.Pos + Vector2.up * 0.45f, d2.Angle(), 32, 1, null, true);
+                    Fx.I?.Play(Art.Slash(Pal.ShadowEl, Pal.White, 20, 200, 1), Combat.MeleeFxOrigin(p.Pos + Vector2.up * 0.45f, d2), d2.Angle(), 32, 1, null, true);
                     var d = Dmg(p, 2.2f, d2, 3, 0.1f);
                     d.canCrit = true;
                     target.AddStatus("mark", 4f, 0, 0, p, Pal.ShadowEl);
@@ -415,7 +416,7 @@ namespace Diverse
                         p.Pos = side;
                         Vector2 d2 = (t.Pos - p.Pos).SafeNormal(dir);
                         p.Facing = d2;
-                        Fx.I?.Play(Art.Slash(Pal.Hex("ffb3d1"), Pal.White, 18, 180, i % 2 == 0 ? 1 : -1), p.Pos + Vector2.up * 0.45f, d2.Angle(), 36, 1, null, true);
+                        Fx.I?.Play(Art.Slash(Pal.Hex("ffb3d1"), Pal.White, 18, 180, i % 2 == 0 ? 1 : -1), Combat.MeleeFxOrigin(p.Pos + Vector2.up * 0.45f, d2), d2.Angle(), 36, 1, null, true);
                         Combat.Hit(t, Dmg(p, 0.65f, d2, 0.8f, 0.03f), Pal.Hex("ffb3d1"), "hit_slice", 0.1f, 2);
                         yield return new WaitForSeconds(0.08f);
                     }

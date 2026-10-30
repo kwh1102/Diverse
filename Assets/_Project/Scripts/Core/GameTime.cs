@@ -22,10 +22,20 @@ namespace Diverse
         public static void Resume(string reason) => pauseReasons.Remove(reason);
         public static void ClearPauses() => pauseReasons.Clear();
 
+        static FeelDef Feel => DB.Asset.feel ??= new FeelDef();
+        static float MaxHitstop => Feel.maxHitstop;
+        static float MinHitstopScale => Feel.minHitstopScale;
+        static float HitstopChain => Feel.hitstopChain;
+
         /// <summary>타격 순간 화면을 아주 짧게 멈춘다. 더 긴 히트스톱이 이미 걸려 있으면 유지.</summary>
         public static void Hitstop(float seconds, float scale = 0.02f)
         {
             if (seconds <= 0) return;
+            // Feel over freeze: a short heavy slow-down (not a full stop), and back-to-back hits only get a fraction of it,
+            // so a flurry of hits reads as impact instead of the game stuttering
+            seconds = Mathf.Min(seconds, MaxHitstop);
+            scale = Mathf.Max(scale, MinHitstopScale);
+            if (Time.unscaledTime - hitstopUntil < HitstopChain) seconds *= 0.4f;
             float until = Time.unscaledTime + seconds;
             if (until > hitstopUntil) { hitstopUntil = until; hitstopScale = scale; }
         }

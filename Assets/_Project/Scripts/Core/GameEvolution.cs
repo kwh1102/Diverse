@@ -164,6 +164,38 @@ namespace Diverse
         }
 
 
+        // ───────────────────────── Designed hero: starting passive ─────────────────────────
+
+        /// <summary>
+        /// A designed hero has no stat perk; instead it starts with one passive that expresses the description
+        /// (Rule IR: AI or LocalComposer → validator/power budget → top pick). Made on the first life, then kept in the pack.
+        /// </summary>
+        IEnumerator StartingPerkRoutine(DesignPack pack)
+        {
+            var p = Player;
+            var stored = pack.hero.perk?.ToAbility();
+            if (stored != null) { p.Abilities.Add(stored); yield break; }
+
+            var ctx = GenerationContext.Build(p, p.Telemetry, rnd, 1);
+            string concept = string.IsNullOrWhiteSpace(pack.hero.perkConcept) ? (pack.hero.imagePrompt ?? pack.hero.name ?? pack.prompts[0]) : pack.hero.perkConcept;
+            List<AbilityDef> raw = null;
+            bool ai = AiClient.Enabled && !string.IsNullOrWhiteSpace(concept);
+            if (ai) yield return AiClient.Generate(ctx, 3, r => raw = r, concept);
+            if (Player != p) yield break;
+            var valid = AbilityPipeline.ValidateAll(raw, ctx.build, null, out _);
+            if (valid.Count == 0) valid = AbilityPipeline.ValidateAll(LocalComposer.Compose(ctx, 4, rnd), ctx.build, null, out _);
+            var pick = AbilityPipeline.PickTop(valid, ctx, p, 1);
+            if (pick.Count == 0) yield break;
+            LocalComposer.Name(pick[0]);
+            if (ai && pick[0].source == "ai") yield return AiClient.NameAll(pick, Diverse.World.I.Gen.RegionName(p.Pos), () => { });
+            if (Player != p) yield break;
+            p.Abilities.Add(pick[0]);
+            DesignStore.SavePerk(pack, AbilityRecord.From(pick[0]));
+            p.Costume = DesignStore.Costume(p.Costume.id) ?? p.Costume;
+            Ui.Toast($"시작 능력 [{pick[0].name}] — {pick[0].Explain().Split('\n')[0]}");
+            SaveRun();
+        }
+
         // ───────────────────────── Showing the offer ─────────────────────────
 
         public void BeginEvolution()

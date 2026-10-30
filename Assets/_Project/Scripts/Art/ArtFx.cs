@@ -10,9 +10,10 @@ namespace Diverse
     {
         public const int SlashFrames = 5;
 
+        // Slash / Thrust / HitSpark: a designed weapon's colour gets its generated effect pictures instead (DesignRuntime).
         /// <summary>베기 궤적. arc(도)·반경(px)·방향(1/-1)에 따라 프레임마다 쓸고 지나가며 사라진다.</summary>
         public static Sprite[] Slash(Color32 col, Color32 core, int radiusPx, float arc, float swingDir) =>
-            GetAnim($"slash_{col}_{core}_{radiusPx}_{(int)arc}_{swingDir}", () =>
+            DesignRuntime.SwingFx(col, radiusPx) ?? GetAnim($"slash_{col}_{core}_{radiusPx}_{(int)arc}_{swingDir}", () =>
             {
                 var frames = new Sprite[SlashFrames];
                 int S = radiusPx * 2 + 6;
@@ -64,7 +65,7 @@ namespace Diverse
 
         /// <summary>찌르기 궤적 (가로로 길게 뻗는 창 모양).</summary>
         public static Sprite[] Thrust(Color32 col, Color32 core, int lengthPx) =>
-            GetAnim($"thrust_{col}_{core}_{lengthPx}", () =>
+            DesignRuntime.ThrustFx(col, lengthPx) ?? GetAnim($"thrust_{col}_{core}_{lengthPx}", () =>
             {
                 var frames = new Sprite[SlashFrames];
                 int W = lengthPx + 8, H = 14;
@@ -91,7 +92,7 @@ namespace Diverse
 
         /// <summary>피격 스파크: 방사형 별 + 사라지는 십자.</summary>
         public static Sprite[] HitSpark(Color32 col, int sizePx) =>
-            GetAnim($"hit_{col}_{sizePx}", () =>
+            DesignRuntime.ImpactFx(col, sizePx) ?? GetAnim($"hit_{col}_{sizePx}", () =>
             {
                 var frames = new Sprite[4];
                 int S = sizePx * 2 + 2;

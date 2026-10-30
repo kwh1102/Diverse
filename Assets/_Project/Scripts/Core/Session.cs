@@ -26,25 +26,56 @@ namespace Diverse
         /// <summary>Game → menu: open the character select right away (after a death).</summary>
         public static bool OpenCharacterSelect;
 
+        /// <summary>The open save slot's mode. Normal keeps the hand-made world and enemies (DesignRuntime enforces it).</summary>
+        public static GameMode Mode => SaveSystem.Mode;
+        public static int Slot => SaveSystem.Slot;
+        /// <summary>A slot was picked on the slot screen in this play session (the menu opens on that screen until then).</summary>
+        public static bool SlotChosen { get; private set; }
+
         // Enter Play Mode without a domain reload keeps statics alive between plays: start clean every time.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics()
         {
-            World = null; PendingRun = null;
+            World = null; PendingRun = null; SlotChosen = false;
             Start = StartKind.None; StartCostume = null; OpenCharacterSelect = false;
         }
 
-        /// <summary>Load settings, controls and saves once per play session (whichever scene comes first).</summary>
+        /// <summary>
+        /// Load settings, controls and the last used save slot once per play session (whichever scene comes first).
+        /// The Game scene opened straight from the editor plays that slot; the menu asks for a slot first.
+        /// </summary>
         public static void EnsureLoaded()
         {
             if (World != null) return;
             Settings = SaveSystem.LoadSettings();
             Sfx.Volume = Settings.sfx;
             Sfx.MusicVolume = Settings.music;
+            GraphicsQuality.Apply(Settings);
             Controls.Init(Settings);
+            SaveSystem.MigrateLegacySaves();
+            LoadSlot((GameMode)Mathf.Clamp(Settings.lastMode, 0, 1), Mathf.Clamp(Settings.lastSlot, 1, SaveSystem.SlotCount));
+        }
+
+        static void LoadSlot(GameMode mode, int slot)
+        {
+            SaveSystem.Mode = mode;
+            SaveSystem.Slot = slot;
             World = SaveSystem.LoadWorld();
             PendingRun = SaveSystem.LoadRun();
             if (PendingRun != null && PendingRun.life != World.lifeCount) { PendingRun = null; SaveSystem.DeleteRun(); }
+        }
+
+        /// <summary>Slot screen: play this slot (an empty slot starts a new world there, saved right away).</summary>
+        public static void OpenSlot(GameMode mode, int slot)
+        {
+            bool empty = SaveSystem.Peek(mode, slot) == null;
+            LoadSlot(mode, slot);
+            if (empty) SaveSystem.SaveWorld(World);
+            Settings.lastMode = (int)mode;
+            Settings.lastSlot = slot;
+            SaveSystem.SaveSettings(Settings);
+            SlotChosen = true;
+            DesignRuntime.Activate(null);   // nothing of another slot's look stays on screen
         }
 
         public static bool HasRunToContinue => PendingRun != null && World != null && PendingRun.life == World.lifeCount;
