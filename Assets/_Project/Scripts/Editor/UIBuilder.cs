@@ -67,31 +67,35 @@ namespace Diverse.EditorTools
         // ───────────────────────── Frame sprites ─────────────────────────
 
         /// <summary>The pixel 9-slice frames of the old IMGUI skin, as editable PNGs (UI/Frames).</summary>
-        static void BuildFrames()
+        static void BuildFrames(bool redraw = false)
         {
-            panelSpr = Frame("panel", Pal.Hex("2b2238"), Pal.Hex("4a3d5c"), Pal.Hex("e8d8c0"), 240);
-            slotSpr = Frame("slot", Pal.Hex("1b1524"), Pal.Hex("2b2238"), Pal.Hex("6b5c8a"), 255);
-            buttonSpr = Frame("button", Pal.Hex("3d3150"), Pal.Hex("564670"), Pal.Hex("c9b8e8"), 255);
-            buttonHoverSpr = Frame("button_hover", Pal.Hex("5a4878"), Pal.Hex("7a649e"), Pal.Hex("fff2b3"), 255);
+            // Colours from the art rules' palette (Data/ArtStyle.asset): dark stone panels, grey buttons, a tan rim on hover
+            panelSpr = Frame("panel", Pal.Hex("21212c"), Pal.Hex("272834"), Pal.Hex("4a4b55"), 240, redraw: redraw);
+            slotSpr = Frame("slot", Pal.Hex("171a26"), Pal.Hex("21212c"), Pal.Hex("3a3e4c"), 255, redraw: redraw);
+            buttonSpr = Frame("button", Pal.Hex("3a3e4c"), Pal.Hex("4a4b55"), Pal.Hex("8a8a94"), 255, redraw: redraw);
+            buttonHoverSpr = Frame("button_hover", Pal.Hex("4a4b55"), Pal.Hex("5c5a61"), Pal.Hex("c1a572"), 255, redraw: redraw);
             whiteSpr = Frame("white", Color.white, Color.white, Color.white, 255, plain: true);
         }
 
-        static Sprite Frame(string name, Color32 fill, Color32 inner, Color32 edge, byte alpha, bool plain = false)
+        /// <summary>Redraw the frame PNGs in place (their .meta, so every prefab keeps them).</summary>
+        internal static void RedrawFrames() => BuildFrames(true);
+
+        static Sprite Frame(string name, Color32 fill, Color32 inner, Color32 edge, byte alpha, bool plain = false, bool redraw = false)
         {
             string path = $"{UIDir}/Frames/{name}.png";
-            if (!File.Exists(path))
+            if (!File.Exists(path) || redraw)
             {
                 EnsureDir(UIDir + "/Frames");
                 var cv = new PixelCanvas(12, 12);
                 if (plain) cv.Rect(0, 0, 12, 12, Color.white);
                 else
                 {
-                    var dark = Pal.Hex("120d18");
+                    var dark = Pal.Hex("171a26");
                     cv.Rect(1, 0, 10, 12, dark); cv.Rect(0, 1, 12, 10, dark);
                     cv.Rect(1, 1, 10, 10, edge);
                     cv.Rect(2, 2, 8, 8, inner);
                     cv.Rect(3, 3, 6, 6, Pal.A(fill, alpha));
-                    cv.Set(2, 9, Pal.White);
+                    cv.Set(2, 9, Pal.Hex("c9c6cc"));
                 }
                 var tex = cv.ToTexture();
                 File.WriteAllBytes(path, tex.EncodeToPNG());
@@ -110,7 +114,7 @@ namespace Diverse.EditorTools
             return AssetDatabase.LoadAssetAtPath<Sprite>(path);
         }
 
-        internal static void ImportPicture(string path, float ppu)
+        internal static void ImportPicture(string path, float ppu, bool smooth = false)
         {
             if (!File.Exists(path)) return;
             AssetDatabase.ImportAsset(path);
@@ -118,7 +122,7 @@ namespace Diverse.EditorTools
             imp.textureType = TextureImporterType.Sprite;
             imp.spriteImportMode = SpriteImportMode.Single;
             imp.spritePixelsPerUnit = ppu;
-            imp.filterMode = FilterMode.Point;
+            imp.filterMode = smooth ? FilterMode.Bilinear : FilterMode.Point;
             imp.mipmapEnabled = false;
             imp.npotScale = TextureImporterNPOTScale.None;
             imp.textureCompression = TextureImporterCompression.Uncompressed;

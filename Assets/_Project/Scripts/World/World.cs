@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 namespace Diverse
 {
@@ -46,6 +47,8 @@ namespace Diverse
             foreach (var pr in FindObjectsByType<Projectile>(FindObjectsSortMode.None)) Destroy(pr.gameObject);
             foreach (var pk in FindObjectsByType<Pickup>(FindObjectsSortMode.None)) Destroy(pk.gameObject);
             Interactable.All.Clear();
+            var spawner = GetComponent<EnemySpawner>();
+            if (spawner != null) spawner.Clear();
         }
 
         public void OnChunkBuilt(ChunkView c)
@@ -108,8 +111,8 @@ namespace Diverse
                 case StructKind.Graveyard: BuildGraveyard(c, s); break;
                 case StructKind.Lair: BuildLair(c, s); break;
                 case StructKind.Ferry: BuildFerry(c, s); break;
-                case StructKind.Obelisk: BuildObelisk(c, s); break;
-                case StructKind.Fortress: BuildFortress(c, s); break;
+                case StructKind.Landmark: BuildLandmark(c, s); break;
+                case StructKind.Border: BuildBorder(c, s); break;
             }
         }
 
@@ -122,42 +125,40 @@ namespace Diverse
             c.AddDecor(Art.Prop("barrel"), s.center + new Vector2(-1.4f, 0.4f), true, 0.6f, 0.4f);
         }
 
-        void BuildObelisk(ChunkView c, StructureSpec s)
+        /// <summary>A zone's landmark: its theme's great building at the back of an open arena, the zone's pure boss in front.</summary>
+        void BuildLandmark(ChunkView c, StructureSpec s)
         {
-            c.AddDecor(Art.Prop("obelisk"), s.center + new Vector2(0, 1.5f), true, 1.2f, 0.6f, shape: Footprint.Rect);
-            var glow = new GameObject("obeliskGlow");
-            glow.transform.SetParent(c.transform, false);
-            glow.transform.position = s.center + new Vector2(0, 4.4f);
-            var gsr = Art.MakeRenderer(glow, Art.Glow(16), 31000, true);
-            gsr.color = Save.clearedCamps.Contains(s.id) ? new Color(0.6f, 1f, 0.7f, 0.4f) : new Color(1f, 0.45f, 0.55f, 0.45f);
-            var rng = new Rng(Hash.Str(s.id));
-            for (int i = 0; i < 5; i++)
-                c.AddDecor(Art.Prop("pillar_broken"), s.center + MathX.Dir(i * 72 + rng.Range(-10, 10)) * 5.5f, true, 0.75f, 0.45f);
-            if (Save.clearedCamps.Contains(s.id)) return;
-            SpawnGroup(c, s, s.enemy, s.enemyCount, s.radius * 0.5f);
-            SpawnBoss(c, s, s.boss, s.center + Vector2.down * 1.5f, 0.5f);
+            var t = s.theme;
+            var at = s.center + new Vector2(0, 3.5f);
+            c.AddDecor(Art.Get(t.landmarkSprite, () => Art.Prop("obelisk")), at, true, t.landmarkFootprint.x, t.landmarkFootprint.y, name: "landmark");
+            if (Save.clearedCamps.Contains(s.id)) { Reward(c, s, $"{s.name}의 보물"); return; }
+            SpawnBoss(c, s, s.boss, s.center + Vector2.down * 2.5f, 1.5f);
         }
 
-        void BuildFortress(ChunkView c, StructureSpec s)
+        /// <summary>Where two zones meet: an old monolith dressed with both themes' scenery, a mixed elite boss guarding it.</summary>
+        void BuildBorder(ChunkView c, StructureSpec s)
         {
-            // A ring of walls with a gap facing the origin (the way the hero comes from)
-            float gate = (-s.center).Angle();
-            for (int a = 0; a < 360; a += 12)
+            var ta = s.theme; var tb = Gen.Zones.themes[s.zone2];
+            c.AddDecor(Art.Prop("obelisk"), s.center + new Vector2(0, 2.5f), true, 1.2f, 0.6f, shape: Footprint.Rect);
+            var rng = new Rng(Hash.Str(s.id));
+            for (int i = 0; i < 6; i++)
             {
-                if (Mathf.Abs(Mathf.DeltaAngle(a, gate)) < 20) continue;
-                var p = s.center + MathX.Dir(a) * (s.radius - 1.5f);
-                c.AddDecor(Art.Prop("wall"), p, true, 2.1f, 0.7f, shape: Footprint.Rect);
+                var t = i % 2 == 0 ? ta : tb;
+                var big = t.decor.Find(d => d.block && !d.flat && d.sprite.StartsWith("deco_")) ?? t.decor.Find(d => d.block);
+                if (big == null) continue;
+                var p = s.center + MathX.Dir(i * 60 + rng.Range(-12, 12)) * rng.Range(6.5f, 8.5f);
+                c.AddDecor(Art.Get(big.Key(Hash.U(i, 3, (int)s.center.x)), () => Art.Prop("pillar_broken")), p, true, big.width, big.depth);
             }
-            c.AddDecor(Art.Prop("banner"), s.center + new Vector2(-2.5f, 3), true, 0.4f, 0.3f);
-            c.AddDecor(Art.Prop("banner"), s.center + new Vector2(2.5f, 3), true, 0.4f, 0.3f);
-            if (Save.clearedCamps.Contains(s.id))
-            {
-                var chest = Interactable.Create(c.transform, "chest", "chest:" + s.id, Save.Flag("chest:" + s.id) ? "빈 상자" : "요새의 보물", s.center, Art.Prop(Save.Flag("chest:" + s.id) ? "chest_open" : "chest"), c);
-                chest.data = s;
-                return;
-            }
-            SpawnGroup(c, s, s.enemy, s.enemyCount, s.radius * 0.55f, 0.35f);
-            SpawnBoss(c, s, s.boss, s.center + Vector2.up * 1.5f, 1f);
+            if (Save.clearedCamps.Contains(s.id)) { Reward(c, s, $"{s.name}의 보물"); return; }
+            SpawnBoss(c, s, s.boss, s.center + Vector2.down * 1.5f, 0.75f);
+        }
+
+        /// <summary>A cleared boss site keeps a chest.</summary>
+        void Reward(ChunkView c, StructureSpec s, string label)
+        {
+            bool opened = Save.Flag("chest:" + s.id);
+            var chest = Interactable.Create(c.transform, "chest", "chest:" + s.id, opened ? "빈 상자" : label, s.center, Art.Prop(opened ? "chest_open" : "chest"), c);
+            chest.data = s;
         }
 
         void SpawnBoss(ChunkView c, StructureSpec s, string id, Vector2 at, float extraTier)
@@ -222,6 +223,12 @@ namespace Diverse
                 glow.transform.position = lp + new Vector2(0, 1.6f);
                 var gsr = Art.MakeRenderer(glow, Art.Glow(14), 31000, true);
                 gsr.color = new Color(1f, 0.85f, 0.5f, 0.35f);
+                var lamp = glow.AddComponent<Light2D>();   // procedural world: lamps light the painted ground around them
+                lamp.lightType = Light2D.LightType.Point;
+                lamp.color = new Color(1f, 0.82f, 0.55f);
+                lamp.intensity = 0.55f;
+                lamp.pointLightOuterRadius = 3.5f;
+                lamp.falloffIntensity = 0.6f;
             }
             for (int i = -13; i <= 13; i += 1)
             {
@@ -244,34 +251,27 @@ namespace Diverse
 
         void BuildCamp(ChunkView c, StructureSpec s)
         {
-            bool cleared = Save.clearedCamps.Contains(s.id);
             c.AddDecor(Art.Prop("tent"), s.center + new Vector2(-2.2f, 1.8f), true, 2.3f, 1.3f, shape: Footprint.Tent);
             c.AddDecor(Art.Prop("tent"), s.center + new Vector2(2.4f, 1.4f), true, 2.3f, 1.3f, shape: Footprint.Tent);
             c.AddDecor(Art.Prop("campfire"), s.center, false, 0, 0);
             c.AddDecor(Art.Prop("crate"), s.center + new Vector2(3.6f, -1.8f), true, 0.75f, 0.45f, shape: Footprint.Rect);
             c.AddDecor(Art.Prop("barrel"), s.center + new Vector2(-3.5f, -1.5f), true, 0.6f, 0.4f);
-            if (!cleared)
+            AddFire(c, s.center);
+            // Monsters roam the land (EnemySpawner), so a camp is a travellers' rest — sometimes with someone caught in a cage
+            if (Hash.F((int)s.center.x, (int)s.center.y, Gen.seed) > 0.55f && !Save.Flag("rescued:" + s.id))
             {
-                AddFire(c, s.center);
-                SpawnGroup(c, s, s.enemy, s.enemyCount, s.radius * 0.6f);
-                // Captured traveler (rescue)
-                if (Hash.F((int)s.center.x, (int)s.center.y, Gen.seed) > 0.55f && !Save.Flag("rescued:" + s.id))
-                {
-                    var cage = Interactable.Create(c.transform, "cage", "cage:" + s.id, "붙잡힌 여행자", s.center + new Vector2(0, -3f), Art.Prop("cage"), c);
-                    cage.data = s;
-                    var who = new GameObject("prisoner");
-                    who.transform.SetParent(cage.transform, false);
-                    who.transform.localPosition = new Vector3(0, 0.05f, 0);
-                    Art.MakeRenderer(who, Art.Npc("villager9", 0), Art.SortY(s.center.y - 3f) - 1);
-                }
+                var cage = Interactable.Create(c.transform, "cage", "cage:" + s.id, "붙잡힌 여행자", s.center + new Vector2(0, -3f), Art.Prop("cage"), c);
+                cage.data = s;
+                var who = new GameObject("prisoner");
+                who.transform.SetParent(cage.transform, false);
+                who.transform.localPosition = new Vector3(0, 0.05f, 0);
+                Art.MakeRenderer(who, Art.Npc("villager9", 0), Art.SortY(s.center.y - 3f) - 1);
             }
             else
             {
-                // A camp the wanderer cleared becomes a place where travelers rest
                 var v = Interactable.Create(c.transform, "npc_villager", "camp_traveler:" + s.id, "여행자", s.center + new Vector2(1, -1), Art.Npc("villager7", 0), c);
                 v.idleFrames = new[] { Art.Npc("villager7", 0), Art.Npc("villager7", 1) };
                 v.data = 99;
-                AddFire(c, s.center);
             }
         }
 
@@ -294,7 +294,6 @@ namespace Diverse
             var alt = Interactable.Create(c.transform, "ruin_altar", "ruin:" + s.id, read ? "빈 제단" : "고대 제단", s.center, Art.Prop(read ? "altar_empty" : "altar"), c);
             alt.data = s;
             c.BlockArea(s.center + Vector2.up * 0.3f, 1.6f, 0.6f);
-            if (!Save.clearedCamps.Contains(s.id)) SpawnGroup(c, s, s.enemy, s.enemyCount, s.radius * 0.7f);
         }
 
         void BuildShrine(ChunkView c, StructureSpec s)
@@ -312,7 +311,6 @@ namespace Diverse
             bool opened = Save.Flag("chest:" + s.id);
             var it = Interactable.Create(c.transform, "chest", "chest:" + s.id, opened ? "빈 상자" : "상자", s.center, Art.Prop(opened ? "chest_open" : "chest"), c);
             it.data = s;
-            if (!opened && s.enemyCount > 0 && !Save.clearedCamps.Contains(s.id)) SpawnGroup(c, s, s.enemy, s.enemyCount, 2.5f);
         }
 
         void BuildGrove(ChunkView c, StructureSpec s)
@@ -354,7 +352,6 @@ namespace Diverse
                 c.AddDecor(Art.Prop("grave"), p, true, 0.7f, 0.35f, shape: Footprint.Rect);
             }
             c.AddDecor(Art.Tree(Biome.Ashland, 0), s.center + new Vector2(-5, 3), true, 0.6f, 0.4f);
-            if (!Save.clearedCamps.Contains(s.id)) SpawnGroup(c, s, "wisp", s.enemyCount, s.radius * 0.7f);
         }
 
         void BuildLair(ChunkView c, StructureSpec s)
@@ -363,39 +360,10 @@ namespace Diverse
             for (int i = 0; i < 8; i++)
             {
                 var p = s.center + MathX.Dir(i * 45 + rng.Range(-10, 10)) * rng.Range(7f, 9f);
-                c.AddDecor(Art.Rock(Biome.Ashland, i % 3), p, true, 1.0f, 0.55f);
+                c.AddDecor(Art.Rock(s.biome, i % 3), p, true, 1.0f, 0.55f);
             }
-            if (Save.clearedCamps.Contains(s.id))
-            {
-                var chest = Interactable.Create(c.transform, "chest", "chest:" + s.id, Save.Flag("chest:" + s.id) ? "빈 상자" : "보스의 보물", s.center, Art.Prop(Save.Flag("chest:" + s.id) ? "chest_open" : "chest"), c);
-                chest.data = s;
-                return;
-            }
-            SpawnGroup(c, s, s.enemy, s.enemyCount, s.radius * 0.6f);
+            if (Save.clearedCamps.Contains(s.id)) { Reward(c, s, "보스의 보물"); return; }
             SpawnBoss(c, s, s.boss, s.center, 0);
-        }
-
-        /// <param name="eliteChance">extra chance of an elite; elites also appear more often the farther out the group is</param>
-        public void SpawnGroup(ChunkView c, StructureSpec s, string enemyId, int count, float spread, float eliteChance = 0)
-        {
-            if (count <= 0) return;
-            var rng = new Rng(Hash.Str(s.id + Save.lifeCount));
-            int alive = 0;
-            int ring = WorldGen.RingAt(s.center.magnitude);
-            eliteChance += ring * 0.08f;
-            for (int i = 0; i < count; i++)
-            {
-                Vector2 p = s.center + MathX.Dir(rng.Range(0f, 360f)) * rng.Range(1.5f, spread + 1.5f);
-                p = Streamer.NearestWalkable(p, 0.4f);
-                // Mixed groups: occasionally a different species
-                string id = rng.Chance(0.2f) ? (s.biome == Biome.Forest ? "bat" : "jelly") : enemyId;
-                var def = DB.ScaledEnemy(id, s.tier);
-                if (ring > 0 && rng.Chance(eliteChance)) def = DB.Elite(def);
-                var e = Enemy.Spawn(def, p, s.id);
-                c.Register(e);
-                alive++;
-            }
-            campAlive[s.id] = (campAlive.TryGetValue(s.id, out var n) ? n : 0) + alive;
         }
 
         /// <summary>

@@ -1,0 +1,113 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4daca7ae967f1b344872deceda26c0b3, type: 3}
+  m_Name: swamp
+  m_EditorClassIdentifier: 
+  def:
+    id: swamp
+    displayName: "\uAD70\uCCB4\uC758 \uB2AA"
+    prefix: "\uB2AA"
+    biome: 4
+    mapColor: {r: 0.37254903, g: 0.47843137, b: 0.17254902, a: 1}
+    ground: 5
+    groundAlt: 1
+    altShare: 0.35
+    liquid: 14
+    road: 2
+    mountainBias: -0.15
+    waterBias: 0.15
+    mesas: 0
+    density: 1.1
+    decor:
+    - sprite: deco_swamp_0
+      variants: 1
+      chance: 0.004
+      block: 1
+      width: 0.8
+      depth: 0.5
+      flat: 0
+      clustered: 0
+      onCliffs: 0
+    - sprite: deco_swamp_1
+      variants: 1
+      chance: 0.003
+      block: 1
+      width: 1.8
+      depth: 0.6
+      flat: 0
+      clustered: 0
+      onCliffs: 0
+    - sprite: deco_swamp_2
+      variants: 1
+      chance: 0.003
+      block: 1
+      width: 0.8
+      depth: 0.5
+      flat: 0
+      clustered: 0
+      onCliffs: 0
+    - sprite: deco_swamp_3
+      variants: 1
+      chance: 0.004
+      block: 0
+      width: 0.8
+      depth: 0.5
+      flat: 1
+      clustered: 0
+      onCliffs: 0
+    - sprite: tree_Marsh_{v}
+      variants: 4
+      chance: 0.04
+      block: 1
+      width: 1
+      depth: 0.6
+      flat: 0
+      clustered: 1
+      onCliffs: 0
+    - sprite: rock_Marsh_{v}
+      variants: 3
+      chance: 0.004
+      block: 1
+      width: 0.85
+      depth: 0.55
+      flat: 0
+      clustered: 0
+      onCliffs: 1
+    - sprite: bush_Marsh_{v}
+      variants: 2
+      chance: 0.03
+      block: 0
+      width: 0.8
+      depth: 0.5
+      flat: 0
+      clustered: 0
+      onCliffs: 1
+    - sprite: tuft_Marsh_{v}
+      variants: 2
+      chance: 0.07
+      block: 0
+      width: 0.8
+      depth: 0.5
+      flat: 1
+      clustered: 0
+      onCliffs: 1
+    landmarkName: "\uAD70\uCCB4\uC758 \uC2E0\uC804"
+    landmarkSprite: landmark_swamp
+    landmarkFootprint: {x: 8, y: 3.5}
+    arenaRadius: 18
+    arenaGround: 5
+    enemies:
+    - frog
+    - jelly
+    - shroom
+    - wisp
+    boss: boss_shroom

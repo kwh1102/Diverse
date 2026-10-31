@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f39103b0be9a89741938779a4b55645e, type: 3}
+  m_Name: MeleeRapid
+  m_EditorClassIdentifier: 
+  def:
+    type: 0
+    displayName: "\uADFC\uAC70\uB9AC \uACF5\uC18D"
+    theme: {fileID: 11400000, guid: 210ffa956e5c206489f1660d6e5158ff, type: 2}
+    summary: "\uB04A\uC784\uC5C6\uC774 \uBD99\uC5B4\uC11C \uBAB0\uC544\uCE58\uBA70
+      \uC801\uC758 \uC7AC\uC0DD\uC744 \uC555\uB3C4\uD55C\uB2E4"

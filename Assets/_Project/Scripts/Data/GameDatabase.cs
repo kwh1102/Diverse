@@ -22,6 +22,16 @@ namespace Diverse
         [Header("Ability rules (Rule IR limits, power budget, tier unlocks)")]
         public AbilityRulesData abilityRules;
 
+        [Header("Art rules: the palette and tile looks every picture follows")]
+        public ArtStyleData artStyle;
+
+        [Header("World: zones, themes, terrain, monster spawning")]
+        public WorldRulesData worldRules;
+        [Tooltip("The 8 build types; each names its default theme")]
+        public List<CombatTypeData> combatTypes = new List<CombatTypeData>();
+        [Tooltip("Every theme. The first one is the spawn's neutral land")]
+        public List<ThemeData> themes = new List<ThemeData>();
+
         [Header("Prefabs")]
         public Player playerPrefab;
         public Enemy enemyPrefab;

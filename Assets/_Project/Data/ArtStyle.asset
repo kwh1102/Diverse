@@ -1,0 +1,347 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d751805f62278f946b4348ec76391105, type: 3}
+  m_Name: ArtStyle
+  m_EditorClassIdentifier: 
+  def:
+    palette:
+    - serializedVersion: 2
+      rgba: 4280687127
+    - serializedVersion: 2
+      rgba: 4281082145
+    - serializedVersion: 2
+      rgba: 4281608231
+    - serializedVersion: 2
+      rgba: 4281937455
+    - serializedVersion: 2
+      rgba: 4282464830
+    - serializedVersion: 2
+      rgba: 4283186746
+    - serializedVersion: 2
+      rgba: 4283779914
+    - serializedVersion: 2
+      rgba: 4284570204
+    - serializedVersion: 2
+      rgba: 4287924874
+    - serializedVersion: 2
+      rgba: 4291610313
+    - serializedVersion: 2
+      rgba: 4293324786
+    - serializedVersion: 2
+      rgba: 4282469913
+    - serializedVersion: 2
+      rgba: 4282415160
+    - serializedVersion: 2
+      rgba: 4282619224
+    - serializedVersion: 2
+      rgba: 4282689392
+    - serializedVersion: 2
+      rgba: 4283018372
+    - serializedVersion: 2
+      rgba: 4283155624
+    - serializedVersion: 2
+      rgba: 4282401876
+    - serializedVersion: 2
+      rgba: 4283917434
+    - serializedVersion: 2
+      rgba: 4283860644
+    - serializedVersion: 2
+      rgba: 4285703617
+    - serializedVersion: 2
+      rgba: 4283024865
+    - serializedVersion: 2
+      rgba: 4280690007
+    - serializedVersion: 2
+      rgba: 4279645387
+    - serializedVersion: 2
+      rgba: 4279658228
+    - serializedVersion: 2
+      rgba: 4286205727
+    - serializedVersion: 2
+      rgba: 4290283049
+    - serializedVersion: 2
+      rgba: 4292657260
+    - serializedVersion: 2
+      rgba: 4293913800
+    - serializedVersion: 2
+      rgba: 4284888395
+    - serializedVersion: 2
+      rgba: 4289224586
+    - serializedVersion: 2
+      rgba: 4292254663
+    - serializedVersion: 2
+      rgba: 4287415257
+    - serializedVersion: 2
+      rgba: 4282332985
+    - serializedVersion: 2
+      rgba: 4291799527
+    - serializedVersion: 2
+      rgba: 4288442296
+    paletteNames:
+    - outline
+    - stone deep
+    - stone darker
+    - stone dark
+    - ash
+    - stone
+    - stone light
+    - stone pale
+    - grey
+    - grey pale
+    - white
+    - green deep
+    - green dark
+    - green shade
+    - grass
+    - grass light
+    - lime
+    - earth dark
+    - earth
+    - tan dark
+    - tan
+    - yellow
+    - red deep
+    - red
+    - orange
+    - blue deep
+    - blue
+    - blue light
+    - ice
+    - purple deep
+    - purple
+    - lilac
+    - sand
+    - ash line
+    - pink
+    - pink dark
+    outline: 0
+    shadow: 1
+    shadowAlpha: 0.45
+    grounds:
+    - ground: 0
+      pattern: 1
+      ramp: 0c0000000e0000000f00000010000000
+      accent: 21
+      petal: 20
+      shade: 13
+      edge: -1
+      bank: 
+    - ground: 1
+      pattern: 1
+      ramp: 0b0000000d0000000e000000
+      accent: -1
+      petal: -1
+      shade: 12
+      edge: -1
+      bank: 
+    - ground: 2
+      pattern: 2
+      ramp: 130000001400000020000000
+      accent: -1
+      petal: -1
+      shade: 19
+      edge: -1
+      bank: 
+    - ground: 3
+      pattern: 3
+      ramp: 13000000200000000a000000
+      accent: -1
+      petal: -1
+      shade: 19
+      edge: -1
+      bank: 
+    - ground: 4
+      pattern: 4
+      ramp: 08000000090000000a000000
+      accent: -1
+      petal: -1
+      shade: 8
+      edge: -1
+      bank: 
+    - ground: 5
+      pattern: 9
+      ramp: 0b0000000c00000011000000
+      accent: -1
+      petal: -1
+      shade: 11
+      edge: -1
+      bank: 
+    - ground: 6
+      pattern: 13
+      ramp: 210000000400000006000000
+      accent: 24
+      petal: -1
+      shade: 3
+      edge: -1
+      bank: 
+    - ground: 7
+      pattern: 5
+      ramp: 05000000060000000700000008000000
+      accent: -1
+      petal: -1
+      shade: 5
+      edge: -1
+      bank: 
+    - ground: 8
+      pattern: 3
+      ramp: 190000001a0000001b0000001c000000
+      accent: 21
+      petal: -1
+      shade: 25
+      edge: 27
+      bank: 110000001200000012000000ffffffff
+    - ground: 9
+      pattern: 3
+      ramp: 00000000190000001a0000001b000000
+      accent: -1
+      petal: -1
+      shade: 0
+      edge: 27
+      bank: 110000001200000012000000ffffffff
+    - ground: 10
+      pattern: 7
+      ramp: 110000001200000013000000
+      accent: -1
+      petal: -1
+      shade: 17
+      edge: -1
+      bank: 
+    - ground: 11
+      pattern: 4
+      ramp: 050000000600000007000000
+      accent: -1
+      petal: -1
+      shade: 5
+      edge: -1
+      bank: 
+    - ground: 12
+      pattern: 4
+      ramp: 060000000700000008000000
+      accent: -1
+      petal: -1
+      shade: 6
+      edge: -1
+      bank: 
+    - ground: 13
+      pattern: 10
+      ramp: 16000000170000001800000015000000
+      accent: -1
+      petal: -1
+      shade: 22
+      edge: 22
+      bank: 0000000002000000
+    - ground: 14
+      pattern: 9
+      ramp: 0d0000000f000000100000000a000000
+      accent: -1
+      petal: -1
+      shade: 13
+      edge: 16
+      bank: 000000000b000000ffffffff
+    - ground: 15
+      pattern: 8
+      ramp: 1b0000001c0000000a000000
+      accent: -1
+      petal: -1
+      shade: 27
+      edge: -1
+      bank: 
+    - ground: 16
+      pattern: 12
+      ramp: 08000000090000001f0000000a000000
+      accent: -1
+      petal: -1
+      shade: 8
+      edge: -1
+      bank: 
+    - ground: 17
+      pattern: 6
+      ramp: 050000000600000007000000
+      accent: 13
+      petal: -1
+      shade: 5
+      edge: -1
+      bank: 
+    - ground: 18
+      pattern: 8
+      ramp: 000000001d0000001e000000
+      accent: -1
+      petal: -1
+      shade: 0
+      edge: -1
+      bank: 
+    - ground: 19
+      pattern: 11
+      ramp: 110000001200000013000000
+      accent: -1
+      petal: -1
+      shade: 17
+      edge: -1
+      bank: 
+    edgeNoise: 0.28
+    edgeRim: 0.07
+    cliffs:
+    - theme: meadow
+      wall: 3
+      ramp: 02000000050000000600000007000000
+      accent: 17
+      lip: -1
+    - theme: overgrowth
+      wall: 3
+      ramp: 02000000050000000600000007000000
+      accent: 12
+      lip: -1
+    - theme: volcano
+      wall: 3
+      ramp: 00000000010000000200000003000000
+      accent: -1
+      lip: 18
+    - theme: crystal
+      wall: 2
+      ramp: 000000001d0000001e0000001f000000
+      accent: 31
+      lip: 9
+    - theme: glacier
+      wall: 0
+      ramp: 190000001a0000001b0000001c000000
+      accent: -1
+      lip: 28
+    - theme: canyon
+      wall: 2
+      ramp: 11000000120000001300000014000000
+      accent: -1
+      lip: 20
+    - theme: fortress
+      wall: 1
+      ramp: 02000000050000000600000007000000
+      accent: -1
+      lip: 7
+    - theme: mirror
+      wall: 3
+      ramp: 000000001d0000001e000000
+      accent: 27
+      lip: 30
+    - theme: swamp
+      wall: 3
+      ramp: 01000000030000001100000012000000
+      accent: 17
+      lip: -1
+    cornerRadius: 5
+    footShade: 2
+    characterHeight: {x: 16, y: 20}
+    prompt: 'Clean low-resolution pixel art for a top-down action roguelike: tiles
+      are 16 x 16 pixels, characters 16 to 20 pixels tall, every pixel a big visible
+      square. One limited palette for everything (soft greens, warm tans, cool dark
+      grey stone, a dark navy outline), each material shaded with 2 to 4 flat tones,
+      simple bold readable shapes, clean 1-pixel dark outlines, light from the top-left,
+      no gradients, no noise, no dithering texture, no fine detail. Straight top-down
+      3/4 view with the grid aligned to the screen (never isometric).'

@@ -1,0 +1,112 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4daca7ae967f1b344872deceda26c0b3, type: 3}
+  m_Name: fortress
+  m_EditorClassIdentifier: 
+  def:
+    id: fortress
+    displayName: "\uBD88\uAD74\uC758 \uC694\uC0C8"
+    prefix: "\uC694\uC0C8"
+    biome: 7
+    mapColor: {r: 0.5529412, g: 0.5411765, b: 0.5019608, a: 1}
+    ground: 0
+    groundAlt: 17
+    altShare: 0.35
+    liquid: 8
+    road: 17
+    mountainBias: 0.05
+    waterBias: 0
+    mesas: 0
+    density: 0.8
+    decor:
+    - sprite: deco_fortress_0
+      variants: 1
+      chance: 0.003
+      block: 1
+      width: 2
+      depth: 0.6
+      flat: 0
+      clustered: 0
+      onCliffs: 0
+    - sprite: deco_fortress_1
+      variants: 1
+      chance: 0.003
+      block: 1
+      width: 1.2
+      depth: 0.5
+      flat: 0
+      clustered: 0
+      onCliffs: 0
+    - sprite: deco_fortress_2
+      variants: 1
+      chance: 0.002
+      block: 1
+      width: 1.6
+      depth: 0.6
+      flat: 0
+      clustered: 0
+      onCliffs: 0
+    - sprite: deco_fortress_3
+      variants: 1
+      chance: 0.002
+      block: 1
+      width: 1
+      depth: 0.4
+      flat: 0
+      clustered: 0
+      onCliffs: 0
+    - sprite: tree_Fortress_{v}
+      variants: 4
+      chance: 0.03
+      block: 1
+      width: 1
+      depth: 0.6
+      flat: 0
+      clustered: 1
+      onCliffs: 0
+    - sprite: rock_Fortress_{v}
+      variants: 3
+      chance: 0.004
+      block: 1
+      width: 0.85
+      depth: 0.55
+      flat: 0
+      clustered: 0
+      onCliffs: 1
+    - sprite: bush_Fortress_{v}
+      variants: 2
+      chance: 0.03
+      block: 0
+      width: 0.8
+      depth: 0.5
+      flat: 0
+      clustered: 0
+      onCliffs: 1
+    - sprite: tuft_Fortress_{v}
+      variants: 2
+      chance: 0.07
+      block: 0
+      width: 0.8
+      depth: 0.5
+      flat: 1
+      clustered: 0
+      onCliffs: 1
+    landmarkName: "\uBD88\uAD74\uC758 \uC131\uCC44"
+    landmarkSprite: landmark_fortress
+    landmarkFootprint: {x: 9, y: 4}
+    arenaRadius: 20
+    arenaGround: 17
+    enemies:
+    - boar
+    - fox
+    - raccoon
+    boss: boss_knight

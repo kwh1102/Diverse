@@ -17,6 +17,8 @@ namespace Diverse
         public int lifeCount;                 // which life this is
         public int gold;                      // shared coffer (inherited through the town bank)
         public int bossKills;                 // bosses defeated across all lives (opens farther exploration rings)
+        public List<string> zones = new List<string>();        // normal mode: the 5 zones' build types (CombatType names), counter-clockwise; chosen once per world
+        public List<string> zoneThemes = new List<string>();   // optional theme id per zone (empty = the build type's default theme)
         public List<string> flags = new List<string>();          // per-structure state ("chest:12:-3:0")
         public List<string> clearedCamps = new List<string>();
         public List<string> discovered = new List<string>();     // discovered structure ids (shown on the map)

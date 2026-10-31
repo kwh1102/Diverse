@@ -128,37 +128,37 @@ namespace Diverse.EditorTools
             Costumes.Add(new CostumeDef
             {
                 id = "white", name = "흰 토끼", perk = "경험치 +30%",
-                fur = Pal.Hex("fbf6f0"), furShade = Pal.Hex("d9cfc8"), outfit = Pal.Hex("6aa3e8"), outfitShade = Pal.Hex("4a76b8"), accent = Pal.Hex("f26d6d"), style = 0,
+                fur = Pal.Hex("f2efe6"), furShade = Pal.Hex("c9c6cc"), outfit = Pal.Hex("2986b8"), outfitShade = Pal.Hex("1f4f7a"), accent = Pal.Hex("cb3416"), style = 0,
                 mods = new[] { new StatMod(StatId.XpGain, 0.30f, true) }, tags = "GROWTH",
             });
             Costumes.Add(new CostumeDef
             {
                 id = "brown", name = "갈색 토끼", perk = "치명타 확률 +12%, 치명타 피해 +25%",
-                fur = Pal.Hex("b98258"), furShade = Pal.Hex("8a5c3d"), outfit = Pal.Hex("4f8a5b"), outfitShade = Pal.Hex("356141"), accent = Pal.Hex("e9c46a"), style = 1,
+                fur = Pal.Hex("c1a572"), furShade = Pal.Hex("a48656"), outfit = Pal.Hex("70a744"), outfitShade = Pal.Hex("387840"), accent = Pal.Hex("e1c549"), style = 1,
                 mods = new[] { new StatMod(StatId.CritChance, 0.12f, false), new StatMod(StatId.CritDamage, 0.25f, false) }, tags = "CRIT",
             });
             Costumes.Add(new CostumeDef
             {
                 id = "black", name = "검은 토끼", perk = "재사용 대기시간 -15%, 대시 재사용 -20%",
-                fur = Pal.Hex("4a4458"), furShade = Pal.Hex("2f2a3a"), outfit = Pal.Hex("8c5bd6"), outfitShade = Pal.Hex("61409a"), accent = Pal.Hex("c9b8ff"), style = 2,
+                fur = Pal.Hex("4a4b55"), furShade = Pal.Hex("3a3e4c"), outfit = Pal.Hex("8a5fa8"), outfitShade = Pal.Hex("4b3566"), accent = Pal.Hex("c79bd6"), style = 2,
                 mods = new[] { new StatMod(StatId.CooldownReduction, 0.15f, false), new StatMod(StatId.DashCooldown, -0.2f, true) }, tags = "SHADOW",
             });
             Costumes.Add(new CostumeDef
             {
                 id = "gray", name = "회색 토끼", perk = "최대 체력 +30, 받는 피해 -10%",
-                fur = Pal.Hex("a9a6b3"), furShade = Pal.Hex("7c7987"), outfit = Pal.Hex("b0603e"), outfitShade = Pal.Hex("7e4129"), accent = Pal.Hex("d9e1ea"), style = 3,
+                fur = Pal.Hex("8a8a94"), furShade = Pal.Hex("5c5a61"), outfit = Pal.Hex("7a6457"), outfitShade = Pal.Hex("544440"), accent = Pal.Hex("c9c6cc"), style = 3,
                 mods = new[] { new StatMod(StatId.MaxHp, 30, false), new StatMod(StatId.Armor, 0.10f, false) }, tags = "GUARD",
             });
             Costumes.Add(new CostumeDef
             {
                 id = "pink", name = "분홍 토끼", perk = "초당 체력 회복 +0.8, 원소 위력 +20%",
-                fur = Pal.Hex("ffd6e0"), furShade = Pal.Hex("e6a8b9"), outfit = Pal.Hex("fff1c9"), outfitShade = Pal.Hex("d9c48f"), accent = Pal.Hex("ff7fa8"), style = 4,
+                fur = Pal.Hex("e7a9cf"), furShade = Pal.Hex("b86f9c"), outfit = Pal.Hex("e1c549"), outfitShade = Pal.Hex("a48656"), accent = Pal.Hex("f2efe6"), style = 4,
                 mods = new[] { new StatMod(StatId.Regen, 0.8f, false), new StatMod(StatId.ElementPower, 0.2f, false) }, tags = "NATURE",
             });
             Costumes.Add(new CostumeDef
             {
                 id = "gold", name = "금빛 토끼", perk = "골드 획득 +50%, 이동 속도 +8%",
-                fur = Pal.Hex("f7d98b"), furShade = Pal.Hex("d1a95a"), outfit = Pal.Hex("c23b4e"), outfitShade = Pal.Hex("8a2536"), accent = Pal.Hex("fff2b3"), style = 5,
+                fur = Pal.Hex("e1c549"), furShade = Pal.Hex("a48656"), outfit = Pal.Hex("cb3416"), outfitShade = Pal.Hex("572526"), accent = Pal.Hex("f2efe6"), style = 5,
                 mods = new[] { new StatMod(StatId.GoldGain, 0.5f, true), new StatMod(StatId.MoveSpeed, 0.08f, true) }, tags = "FORTUNE",
             });
         }

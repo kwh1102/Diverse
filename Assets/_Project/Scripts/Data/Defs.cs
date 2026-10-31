@@ -209,9 +209,27 @@ namespace Diverse
             foreach (var w in Asset.weapons) if (w != null) Weapons[w.def.kind] = w.def;
             foreach (var c in Asset.costumes) if (c != null) Costumes.Add(c.def);
             foreach (var e in Asset.enemies) if (e != null) Enemies[e.def.id] = e.def;
+            foreach (var t in Asset.themes) if (t != null) { t.def.index = Themes.Count; Themes.Add(t.def); }
+            if (Themes.Count == 0) Themes.Add(new ThemeDef());
+            foreach (var c in Asset.combatTypes) if (c != null) CombatTypes[c.def.type] = c.def;
         }
 
         public static ProgressionDef Progression => Asset.progression ?? (Asset.progression = new ProgressionDef());
+
+        // ───────────── World ─────────────
+        /// <summary>Every theme; [0] is the spawn's neutral land.</summary>
+        public static readonly List<ThemeDef> Themes = new List<ThemeDef>();
+        public static readonly Dictionary<CombatType, CombatTypeDef> CombatTypes = new Dictionary<CombatType, CombatTypeDef>();
+        static WorldRulesDef fallbackRules;
+        public static WorldRulesDef WorldRules => Asset.worldRules != null ? Asset.worldRules.def : fallbackRules ??= new WorldRulesDef();
+        static ArtStyleDef fallbackStyle;
+        public static ArtStyleDef ArtStyle => Asset.artStyle != null ? Asset.artStyle.def : fallbackStyle ??= new ArtStyleDef();
+        public static ThemeDef SpawnTheme => Themes[0];
+        public static ThemeDef Theme(string id) => Themes.Find(t => t.id == id);
+        /// <summary>The theme a build type uses by default (the spawn theme if none is set).</summary>
+        public static ThemeDef ThemeOf(CombatType c) => CombatTypes.TryGetValue(c, out var d) && d.theme != null ? d.theme.def : SpawnTheme;
+        /// <summary>The theme drawn with a biome's art (custom-mode worlds pick biomes by noise).</summary>
+        public static ThemeDef ThemeForBiome(Biome b) => Themes.Find(t => t.biome == b) ?? SpawnTheme;
         public static WeaponDef W(WeaponKind k) => Weapons[k];
         public static CostumeDef Costume(string id) => DesignStore.Costume(id) ?? Costumes.Find(c => c.id == id) ?? Costumes[0];
         public static EnemyDef Enemy(string id) => Enemies.TryGetValue(id, out var e) ? e : Enemies["shroom"];

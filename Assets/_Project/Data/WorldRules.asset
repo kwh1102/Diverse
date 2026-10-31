@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5590f34f59ef0e747a55d1feb23ea8bf, type: 3}
+  m_Name: WorldRules
+  m_EditorClassIdentifier: 
+  def:
+    centerRadius: 46
+    blendWidth: 40
+    borderWiggle: 30
+    landmarkDistance: {x: 250, y: 360}
+    borderSiteDistance: {x: 140, y: 210}
+    rangeFrequency: 0.0055
+    rangeWarp: 32
+    rangeMaskFrequency: 0.003
+    rangeMaskThreshold: 0.46
+    cliffLevel: 0.88
+    peakLevel: 0.95
+    passSpacing: 80
+    passRadius: 7
+    clearance: 12
+    riverFrequency: 0.006
+    riverWidth: 0.012
+    lakeFrequency: 0.018
+    lakeLevel: 0.73
+    roadWidth: 1.6
+    roadWander: 12
+    maxAlive: 12
+    maxAlivePerRing: 2
+    spawnRadius: {x: 15, y: 24}
+    despawnRadius: 38
+    spawnInterval: 0.9
+    packSize: {x: 1, y: 3}
+    eliteChancePerRing: 0.07
+    safeRadius: 26

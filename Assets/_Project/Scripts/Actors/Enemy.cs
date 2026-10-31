@@ -23,6 +23,7 @@ namespace Diverse
         Vector2 wanderTo, strikeDir, strikeTarget;
         [SerializeField] SpriteRenderer warn;   // attack telegraph (prefab child, hidden until windup)
         bool aggro;
+        public bool Aggro => aggro;
         int bossPhase;
         int bossAttack, lastBossAttack;
         float spawnT = 0.35f;

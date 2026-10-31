@@ -15,6 +15,7 @@ namespace Diverse
         public static Sprite[] Slash(Color32 col, Color32 core, int radiusPx, float arc, float swingDir) =>
             DesignRuntime.SwingFx(col, radiusPx) ?? GetAnim($"slash_{col}_{core}_{radiusPx}_{(int)arc}_{swingDir}", () =>
             {
+                col = Pa(col); core = Pa(core);     // effects take their colours from the palette too
                 var frames = new Sprite[SlashFrames];
                 int S = radiusPx * 2 + 6;
                 float c = S / 2f;
@@ -67,6 +68,7 @@ namespace Diverse
         public static Sprite[] Thrust(Color32 col, Color32 core, int lengthPx) =>
             DesignRuntime.ThrustFx(col, lengthPx) ?? GetAnim($"thrust_{col}_{core}_{lengthPx}", () =>
             {
+                col = Pa(col); core = Pa(core);     // effects take their colours from the palette too
                 var frames = new Sprite[SlashFrames];
                 int W = lengthPx + 8, H = 14;
                 for (int f = 0; f < SlashFrames; f++)
@@ -94,6 +96,7 @@ namespace Diverse
         public static Sprite[] HitSpark(Color32 col, int sizePx) =>
             DesignRuntime.ImpactFx(col, sizePx) ?? GetAnim($"hit_{col}_{sizePx}", () =>
             {
+                col = Pa(col);     // effects take their colours from the palette too
                 var frames = new Sprite[4];
                 int S = sizePx * 2 + 2;
                 float c = S / 2f;
@@ -122,6 +125,7 @@ namespace Diverse
         public static Sprite[] Shockwave(Color32 col, int radiusPx) =>
             GetAnim($"shock_{col}_{radiusPx}", () =>
             {
+                col = Pa(col);     // effects take their colours from the palette too
                 var frames = new Sprite[5];
                 int S = radiusPx * 2 + 4;
                 float c = S / 2f;

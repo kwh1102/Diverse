@@ -284,15 +284,15 @@ namespace Diverse.EditorTools
             // Components must be sub-assets of the profile so they serialize
             var bloom = profile.Add<Bloom>(true);
             bloom.intensity.Override(0.75f);
-            bloom.threshold.Override(0.82f);
+            bloom.threshold.Override(1f);
             bloom.scatter.Override(0.55f);
             var vig = profile.Add<Vignette>(true);
-            vig.intensity.Override(0.28f);
+            vig.intensity.Override(0.12f);
             vig.smoothness.Override(0.45f);
             vig.color.Override(Color.black);
             var ca = profile.Add<ColorAdjustments>(true);
-            ca.saturation.Override(8f);
-            ca.contrast.Override(6f);
+            ca.saturation.Override(0f);
+            ca.contrast.Override(0f);
             foreach (var c in profile.components) { c.hideFlags = HideFlags.HideInInspector | HideFlags.HideInHierarchy; AssetDatabase.AddObjectToAsset(c, profile); }
             EditorUtility.SetDirty(profile);
             return profile;
@@ -306,7 +306,7 @@ namespace Diverse.EditorTools
         /// Art.Get loads these first, so an artist can repaint any of them. Colors-in-key sprites (orbs, tinted shots) and
         /// animation strips stay procedural.
         /// </summary>
-        public static void BakeSprites()
+        public static void BakeSprites(params string[] redraw)
         {
             EnsureDir(SpriteDir);
             var jobs = new List<(string key, System.Func<Sprite> make)>();
@@ -322,7 +322,7 @@ namespace Diverse.EditorTools
             Add("bolt", Art.Bolt);
             Add("knife", Art.Knife);
             foreach (var key in DefaultData.Enemies.Values.Select(e => e.sprite).Distinct())
-                for (int f = 0; f < 3; f++) { var ff = f; var kk = key; Add($"enemy_{kk}_{ff}", () => Art.Enemy(kk, ff)); }
+                for (int f = 0; f < 5; f++) { var ff = f; var kk = key; Add($"enemy_{kk}_{ff}", () => Art.Enemy(kk, ff)); }
             foreach (Biome b in System.Enum.GetValues(typeof(Biome)))
             {
                 var bb = b;
@@ -333,26 +333,37 @@ namespace Diverse.EditorTools
             for (int v = 0; v < 5; v++) { var vv = v; Add($"flower_{vv}", () => Art.Flower(vv)); }
             Add("shadow_14", () => Art.Shadow(14));        // prefab preview size (other sizes stay procedural)
             foreach (var id in new[] { "board", "well", "lamp", "fence", "tent", "raft", "obelisk", "wall", "banner", "campfire", "chest", "chest_open", "grave", "statue",
-                                       "shrine", "pillar", "pillar_broken", "crate", "barrel", "altar", "anvil", "stall", "gate", "cage" })
+                                       "shrine", "pillar", "pillar_broken", "crate", "barrel", "altar", "altar_empty", "anvil", "stall", "gate", "cage", "warpstone" })
             { var ii = id; Add($"prop_{ii}", () => Art.Prop(ii)); }
+            foreach (var (v, roof) in new[] { (0, "c2603e"), (0, "8c5bd6"), (1, "4f7bd9"), (1, "6aa36a") })
+            { var vv = v; var rr = roof; Add($"house_{vv}_{rr}", () => Art.House(vv, Pal.Hex(rr))); }
+            foreach (var theme in new[] { "canyon", "crystal", "fortress", "glacier", "mirror", "overgrowth", "swamp", "volcano" })
+            {
+                var tt = theme;
+                Add($"landmark_{tt}", () => Art.Decor($"landmark_{tt}"));
+                for (int i = 0; i < 4; i++) { var ii = i; Add($"deco_{tt}_{ii}", () => Art.Decor($"deco_{tt}_{ii}")); }
+            }
             foreach (var kind in new[] { "owl", "cat", "bear", "otter" })
                 for (int f = 0; f < 2; f++) { var kk = kind; var ff = f; Add($"npc_{kk}_{ff}", () => Art.Npc(kk, ff)); }
-            foreach (var id in new[] { "gold", "xp", "heart" }) { var ii = id; Add($"item_{ii}", () => Art.Item(ii)); }
+            foreach (var id in new[] { "gold", "xp", "heart", "warpstone" }) { var ii = id; Add($"item_{ii}", () => Art.Item(ii)); }
 
             int written = 0;
             var pivots = new Dictionary<string, Vector2>();
             foreach (var (key, make) in jobs)
             {
                 string path = $"{SpriteDir}/{key}.png";
-                if (File.Exists(path)) continue;
-                var s = make();
+                bool again = redraw.Any(p => key.StartsWith(p));
+                if (File.Exists(path) && !again) continue;
+                Art.DrawOnly = again;
+                Sprite s;
+                try { s = make(); } finally { Art.DrawOnly = false; }
                 if (s == null) continue;
                 var r = s.rect;
                 var src = s.texture;
                 var tex = new Texture2D((int)r.width, (int)r.height, TextureFormat.RGBA32, false);
                 tex.SetPixels(src.GetPixels((int)r.x, (int)r.y, (int)r.width, (int)r.height));
                 tex.Apply();
-                File.WriteAllBytes(path, tex.EncodeToPNG());
+                WritePng(path, tex.EncodeToPNG());
                 Object.DestroyImmediate(tex);
                 pivots[path] = new Vector2(s.pivot.x / r.width, s.pivot.y / r.height);
                 written++;
@@ -380,6 +391,21 @@ namespace Diverse.EditorTools
                 imp.SaveAndReimport();
             }
             Debug.Log($"[Diverse] 스프라이트 {written}개를 {SpriteDir}에 구웠다 (기존 {jobs.Count - written}개는 유지)");
+        }
+
+        /// <summary>Write a PNG, retrying while Unity still maps the old file (Win32 1224).</summary>
+        static void WritePng(string path, byte[] png)
+        {
+            for (int i = 0; ; i++)
+            {
+                try { File.WriteAllBytes(path, png); return; }
+                catch (IOException) when (i < 6)
+                {
+                    Resources.UnloadUnusedAssets();
+                    System.GC.Collect();
+                    System.Threading.Thread.Sleep(100);
+                }
+            }
         }
 
         internal static void EnsureDir(string path)

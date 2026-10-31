@@ -508,15 +508,13 @@ namespace Diverse
             switch (kind)
             {
                 case 0:
-                {
-                    var s = gen.FindNearest(Vector2.zero, StructKind.Camp, min, max, x => !World.clearedCamps.Contains(x.id) && Hash.F((int)x.center.x, (int)x.center.y, salt) > 0.3f);
-                    if (s == null) return null;
-                    return new QuestState { id = "q" + salt, kind = "clear", targetId = s.id, tx = s.center.x, ty = s.center.y, title = $"{s.name} 소탕", desc = $"여행자: \"{DB.Enemy(s.enemy).name} 무리 때문에 교역로가 막혔어요.\"", rewardGold = 40 + s.tier * 15, status = 0 };
-                }
                 case 1:
                 {
-                    string[] pool = { "shroom", "jelly", "fox", "raccoon", "wisp", "bat", "frog" };
-                    string e = r.Pick(pool);
+                    // Monsters roam everywhere (EnemySpawner): hunt a species that lives in this world's themes
+                    var pool = new List<string>(DB.SpawnTheme.enemies);
+                    if (gen.Zones != null) foreach (var t in gen.Zones.themes) pool.AddRange(t.enemies);
+                    if (pool.Count == 0) pool.Add("shroom");
+                    string e = pool[r.Range(0, pool.Count)];
                     int need = r.Range(6, 12);
                     return new QuestState { id = "q" + salt, kind = "hunt", enemy = e, need = need, title = $"{DB.Enemy(e).name} {need}마리 사냥", desc = "마을의 밭과 길이 위험해지고 있어요.", rewardGold = 25 + need * 3, status = 0 };
                 }

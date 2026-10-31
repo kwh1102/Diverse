@@ -337,6 +337,26 @@ namespace Diverse.EditorTools
                     g.World.quests.Remove(q);
                 }
 
+                // 3f) Monsters roam the land: away from the town, packs appear around the hero (out of sight), by theme
+                step = "roaming monsters";
+                {
+                    var home = g.Player.Pos;
+                    var away = WorldStreamer.I.NearestWalkable(new Vector2(48, 30), 0.5f, 12);
+                    g.Player.Pos = away;
+                    WorldStreamer.I.Warm(away);
+                    int roaming = 0;
+                    for (int i = 0; i < 400 && roaming == 0; i++)
+                    {
+                        yield return null;
+                        foreach (var a in Actor.All) if (a is Enemy e && e.Alive && e.campId == null && Vector2.Distance(e.Pos, away) < DB.WorldRules.despawnRadius) roaming++;
+                    }
+                    if (roaming == 0) Fail("no roaming monsters appeared around the hero");
+                    foreach (var a in Actor.All.ToArray()) if (a is Enemy e && e.campId == null) e.Despawn();
+                    g.Player.Pos = home;
+                    WorldStreamer.I.Warm(home);
+                    yield return Frames(2);
+                }
+
                 // 3f) Warp stones: buy → place in the field → map click travels back to town
                 step = "warp";
                 {

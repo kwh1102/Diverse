@@ -18,19 +18,19 @@ MonoBehaviour:
     perk: "\uCD5C\uB300 \uCCB4\uB825 +30, \uBC1B\uB294 \uD53C\uD574 -10%"
     fur:
       serializedVersion: 2
-      rgba: 4289963689
+      rgba: 4287924874
     furShade:
       serializedVersion: 2
-      rgba: 4287068540
+      rgba: 4284570204
     outfit:
       serializedVersion: 2
-      rgba: 4282278064
+      rgba: 4283917434
     outfitShade:
       serializedVersion: 2
-      rgba: 4280893822
+      rgba: 4282401876
     accent:
       serializedVersion: 2
-      rgba: 4293583321
+      rgba: 4291610313
     style: 3
     mods:
     - stat: 0
