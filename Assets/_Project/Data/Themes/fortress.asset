@@ -18,8 +18,8 @@ MonoBehaviour:
     prefix: "\uC694\uC0C8"
     biome: 7
     mapColor: {r: 0.5529412, g: 0.5411765, b: 0.5019608, a: 1}
-    ground: 0
-    groundAlt: 17
+    ground: 17
+    groundAlt: 0
     altShare: 0.35
     liquid: 8
     road: 17

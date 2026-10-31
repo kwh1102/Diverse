@@ -19,7 +19,7 @@ MonoBehaviour:
     biome: 5
     mapColor: {r: 0.65882355, g: 0.21960784, b: 0.16470589, a: 1}
     ground: 6
-    groundAlt: 19
+    groundAlt: 6
     altShare: 0.25
     liquid: 13
     road: 2

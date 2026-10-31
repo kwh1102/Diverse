@@ -61,7 +61,7 @@ namespace Diverse.EditorTools
             bool Walk(int x, int y)
             {
                 if (WorldGen.Impassable(tiles[x, y])) return false;
-                for (int m = 1; m <= hide && y - m >= 0; m++) if (WorldGen.Level(tiles[x, y - m]) * WorldGen.FaceHeight >= m) return false;
+                for (int m = 1; m <= hide && y - m >= 0; m++) if (Mathf.CeilToInt(WorldGen.Level(tiles[x, y - m]) * WorldGen.FaceHeight) >= m) return false;
                 return true;
             }
             var reach = new bool[n, n];

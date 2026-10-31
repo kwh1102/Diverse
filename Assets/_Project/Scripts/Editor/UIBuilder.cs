@@ -70,10 +70,10 @@ namespace Diverse.EditorTools
         static void BuildFrames(bool redraw = false)
         {
             // Colours from the art rules' palette (Data/ArtStyle.asset): dark stone panels, grey buttons, a tan rim on hover
-            panelSpr = Frame("panel", Pal.Hex("21212c"), Pal.Hex("272834"), Pal.Hex("4a4b55"), 240, redraw: redraw);
-            slotSpr = Frame("slot", Pal.Hex("171a26"), Pal.Hex("21212c"), Pal.Hex("3a3e4c"), 255, redraw: redraw);
-            buttonSpr = Frame("button", Pal.Hex("3a3e4c"), Pal.Hex("4a4b55"), Pal.Hex("8a8a94"), 255, redraw: redraw);
-            buttonHoverSpr = Frame("button_hover", Pal.Hex("4a4b55"), Pal.Hex("5c5a61"), Pal.Hex("c1a572"), 255, redraw: redraw);
+            panelSpr = Frame("panel", Pal.Hex("34343f"), Pal.Hex("4b4b55"), Pal.Hex("a58b58"), 248, redraw: redraw);
+            slotSpr = Frame("slot", Pal.Hex("242633"), Pal.Hex("34343f"), Pal.Hex("7c6658"), 255, redraw: redraw);
+            buttonSpr = Frame("button", Pal.Hex("564640"), Pal.Hex("7c6658"), Pal.Hex("c2a571"), 255, redraw: redraw);
+            buttonHoverSpr = Frame("button_hover", Pal.Hex("7c6658"), Pal.Hex("a58b58"), Pal.Hex("ecd05e"), 255, redraw: redraw);
             whiteSpr = Frame("white", Color.white, Color.white, Color.white, 255, plain: true);
         }
 

@@ -92,6 +92,15 @@ namespace Diverse
         /// <summary>The theme at a point: the zones' (normal mode) or the noise biome's (custom mode).</summary>
         public ThemeDef ThemeAt(float x, float y) => Zones != null ? Zones.ThemeAt(x, y) : DB.ThemeForBiome(NoiseBiome(x, y));
 
+        // Soil and scenery can mix in small patches at zone borders. Rivers cannot: noise-sized water/ice islands
+        // inside lava look like missing terrain. Use the warped zone boundary, keeping the neutral spawn's water.
+        ThemeDef LiquidThemeAt(Vector2 p)
+        {
+            if (Zones == null) return ThemeAt(p.x, p.y);
+            if (ZoneMap.SpawnShare(p) > .5f) return DB.SpawnTheme;
+            return Zones.themes[Zones.At(p).a];
+        }
+
         public Biome BiomeAt(float x, float y) => ThemeAt(x, y).biome;
 
         /// <summary>Custom-mode biomes: temperature / moisture noise (harsh biomes farther out).</summary>
@@ -144,7 +153,14 @@ namespace Diverse
                     case StructKind.Ruins: if (Hash.F(tx, ty, seed + 3) > 0.35f && d < s.radius * 0.85f) return Ground.Plaza; break;
                     case StructKind.Shrine: if (d < 3.2f) return Ground.Plaza; break;
                     case StructKind.Graveyard: if (d < s.radius * 0.9f) return Ground.DarkGrass; break;
-                    case StructKind.Pond: if (d < s.radius * 0.7f) return d < s.radius * 0.4f ? Ground.DeepWater : Ground.Water; break;
+                    case StructKind.Pond:
+                        if (d < s.radius * 0.7f)
+                        {
+                            // Pools inherit the region's liquid: a volcanic pool cannot cut a blue patch into lava.
+                            var liquid = LiquidThemeAt(pos).liquid;
+                            return liquid == Ground.Water && d < s.radius * 0.4f ? Ground.DeepWater : liquid;
+                        }
+                        break;
                     case StructKind.Lair: if (d < s.radius * 0.9f) return Ground.Ash; break;
                     case StructKind.Ferry: if (d < 2.2f) return Ground.Path; break;
                 }
@@ -162,10 +178,11 @@ namespace Diverse
             bool road = Terrain.OnRoad(pos);
             if (water > 0)
             {
-                if (!IsLiquid(theme.liquid)) return theme.liquid;      // frozen: walk across, no bridge
+                var liquid = LiquidThemeAt(pos).liquid;
+                if (!IsLiquid(liquid)) return liquid;      // frozen: walk across, no bridge
                 if (road || OnTrail(tx, ty)) return Ground.Wood;
-                if (theme.liquid == Ground.Water) return water == 2 ? Ground.DeepWater : Ground.Water;
-                return theme.liquid;
+                if (liquid == Ground.Water) return water == 2 ? Ground.DeepWater : Ground.Water;
+                return liquid;
             }
             if (road) return theme.road;
 
@@ -188,7 +205,8 @@ namespace Diverse
         public static int Level(Ground g) => g == Ground.Peak ? 2 : g == Ground.Cliff ? 1 : 0;
         public static bool Impassable(Ground g) => IsLiquid(g) || Level(g) > 0;
         /// <summary>Height of one cliff level on screen, in tiles (the 3/4 view).</summary>
-        public const float FaceHeight = 1f;          // one level = one tile (16 dots, TileBaker)
+        public static float FaceHeight => Mathf.Clamp(DB.ArtStyle.cliffRise, 16, 32) / (float)Art.PPU;
+        public static float FaceSkew => Mathf.Clamp(DB.ArtStyle.cliffSkew, 0, 8) / (float)Art.PPU;
 
         /// <summary>
         /// Invisible north-south / east-west trails, one every TrailSpacing tiles (offset per line).

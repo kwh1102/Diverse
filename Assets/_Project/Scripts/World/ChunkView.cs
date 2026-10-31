@@ -76,7 +76,7 @@ namespace Diverse
                         if (big && (nearTown || tx % 2 != 0 || ty % 2 != 1)) break;      // big things on a sparse grid, none in town
                         var sp = Art.Decor(d.Key(Hash.U(wx, wy, 5)));
                         var at = p + (d.flat ? new Vector2(rng.Range(-0.4f, 0.4f), rng.Range(-0.4f, 0.4f)) : big ? Vector2.zero : new Vector2(rng.Range(-0.3f, 0.3f), 0));
-                        if (level > 0) AddDecor(sp, at + Vector2.up * (level * WorldGen.FaceHeight), false, 0, 0, d.flat);   // on the raised top
+                        if (level > 0) AddDecor(sp, at + new Vector2(level * WorldGen.FaceSkew, level * WorldGen.FaceHeight), false, 0, 0, d.flat);
                         else AddDecor(sp, at, d.block, d.width, d.depth, d.flat);
                         break;
                     }

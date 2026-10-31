@@ -5,10 +5,10 @@ using UnityEngine;
 namespace Diverse
 {
     /// <summary>How a ground's 16×16 tiles are patterned (drawn by TileBaker from the ground's palette ramp).</summary>
-    public enum TilePattern { Plain, Tufts, Pebbles, Ripples, Speckles, Cobbles, Slabs, Planks, Cracks, Puddles, Crust, Strata, Sparkles, Tiles }
+    public enum TilePattern { Plain, Tufts, Pebbles, Ripples, Speckles, Cobbles, Slabs, Planks, Cracks, Puddles, Crust, Strata, Sparkles, Tiles, Moss, Snowdrifts, CrystalBed, MirrorPaving, Sandstone }
 
     /// <summary>How a cliff wall is built (16 dots per level).</summary>
-    public enum WallPattern { Blocks, Bricks, Strata, Columns }
+    public enum WallPattern { Blocks, Bricks, Strata, Columns, Facets, Roots }
 
     /// <summary>A ground's look: pattern + palette ramp (palette indices, dark → light; ramp[1] is the base colour).</summary>
     [Serializable]
@@ -65,10 +65,14 @@ namespace Diverse
         [Tooltip("Width of the darker rim inside a ground where it meets a lower one (0 = none)")]
         [Range(0, 0.3f)] public float edgeRim = 0.07f;
 
-        [Header("Cliffs (16 dots per level)")]
+        [Header("Cliff projection")]
         public List<CliffLook> cliffs = new List<CliffLook>();
+        [Tooltip("Vertical pixels per cliff level; navigation and raised decorations use the same value")]
+        [Range(16, 32)] public int cliffRise = 24;
+        [Tooltip("Horizontal pixels of projection per level, revealing the lit side face")]
+        [Range(0, 8)] public int cliffSkew = 4;
         [Tooltip("Radius in dots of the rounded outer corners of cliff tops")]
-        public int cornerRadius = 5;
+        public int cornerRadius = 8;
         [Tooltip("Rows of shade on the ground at the foot of a cliff")]
         public int footShade = 2;
 

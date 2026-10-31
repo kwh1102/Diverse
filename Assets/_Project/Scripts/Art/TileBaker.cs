@@ -11,16 +11,14 @@ namespace Diverse
     ///   the four nearest tile centres (blended), nudged by smooth noise. The higher ground gets a darker rim along the
     ///   border. Liquids are bordered the same way; land just north of a liquid shows a short bank, the liquid a foam
     ///   (or glowing crust) line where it meets land.
-    /// - The 3/4 view: cliffs stand one or two levels (16 dots each) high. Every dot shows the frontmost (southernmost)
-    ///   column that reaches it: its top (rounded outer corners, an outline where it drops away, a fringe along its south
-    ///   lip) or its south wall (the theme's wall pattern, a dark foot line). The ground at a cliff's foot is shaded.
+    /// - TileBakerContour projects connected, rounded tier footprints obliquely using ArtStyle.cliffRise/cliffSkew.
+    ///   Each dot shows the nearest top or side surface, with a joined cap, directional rock shading and contact line.
     /// Custom-mode worlds: a designed ground texture replaces the pattern, snapped to the palette.
     /// </summary>
-    public static class TileBaker
+    public static partial class TileBaker
     {
         public const int T = 16;            // dots per tile
-        const int B = 3;                    // tiles of the neighbours read around the chunk
-        const int Half = 8;                 // dots per half level (a cliff level is two)
+        const int B = 5;                    // two 32px levels + one tile of contour sampling across chunk seams
 
         static ArtStyleDef S => DB.ArtStyle;
         static Color32[] pal;
@@ -52,10 +50,14 @@ namespace Diverse
         public static void Reset() { pal = null; }
 
         public static Texture2D Bake(WorldStreamer w, Vector2Int k, Texture2D into = null)
+            => BakeRegion(w, k * WorldGen.Chunk, WorldGen.Chunk, into);
+
+        /// <summary>Same world-coordinate renderer for one chunk or a contiguous square review region.</summary>
+        public static Texture2D BakeRegion(WorldStreamer w, Vector2Int tileOrigin, int tiles, Texture2D into = null)
         {
             Prepare();
-            int N = WorldGen.Chunk;
-            n = N + 2 * B; ox = k.x * N - B; oy = k.y * N - B;
+            int N = tiles;
+            n = N + 2 * B; ox = tileOrigin.x - B; oy = tileOrigin.y - B;
             if (g == null || g.Length != n * n) { g = new Ground[n * n]; th = new byte[n * n]; }
             for (int y = 0; y < n; y++)
                 for (int x = 0; x < n; x++)
@@ -63,12 +65,13 @@ namespace Diverse
                     g[y * n + x] = w.GroundAtTile(ox + x, oy + y);
                     th[y * n + x] = (byte)w.Gen.ThemeAt(ox + x + 0.5f, oy + y + 0.5f).index;
                 }
+            PrepareContours();
             int W = N * T;
             var px = new Color32[W * W];
-            int wx0 = k.x * N * T, wy0 = k.y * N * T;
+            int wx0 = tileOrigin.x * T, wy0 = tileOrigin.y * T;
             for (int y = 0; y < W; y++)
                 for (int x = 0; x < W; x++)
-                    px[y * W + x] = pal[Mathf.Clamp(Dot(wx0 + x, wy0 + y), 0, pal.Length - 1)];
+                    px[y * W + x] = pal[Mathf.Clamp(ContourDot(wx0 + x, wy0 + y), 0, pal.Length - 1)];
             var tex = into != null && into.width == W ? into : new Texture2D(W, W, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };
             tex.SetPixels32(px);
             tex.Apply(false, false);
@@ -107,94 +110,6 @@ namespace Diverse
         static float Hf(int a, int b, int salt) => (Hs(a, b, salt) & 0xFFFF) / 65536f;
         static int Mod(int a, int m) => a - MathX.FloorDiv(a, m) * m;
 
-        // ───────────── One dot ─────────────
-
-        static int Dot(int wx, int wy)
-        {
-            int tx = MathX.FloorDiv(wx, T), lx = wx - tx * T;
-            // The frontmost raised column reaching this dot: column j spans dots [j*T, j*T + T + h*Half)
-            int jFrom = MathX.FloorDiv(wy - T - 4 * Half, T), jTo = MathX.FloorDiv(wy, T);
-            for (int j = jFrom; j <= jTo; j++)
-            {
-                var t = G(tx, j);
-                int h = H(t);
-                if (h <= 0 || wy < j * T || wy >= j * T + T + h * Half) continue;
-                int top = j * T + h * Half;
-                if (wy >= top)
-                {
-                    int ly = wy - top;
-                    if (Cut(tx, j, h, lx, ly)) continue;
-                    return Raised(tx, j, h, wx, wy - h * Half, lx, ly);
-                }
-                if (Cut(tx, j, h, lx, 0)) continue;
-                return Face(tx, j, h, wx, top - 1 - wy);
-            }
-            return Flat(wx, wy);
-        }
-
-        // ───────────── Cliffs ─────────────
-
-        /// <summary>Is top dot (lx, ly) of raised tile (tx, ty) outside its rounded outer corners?</summary>
-        static bool Cut(int tx, int ty, int h, int lx, int ly)
-        {
-            int r = S.cornerRadius;
-            if (r <= 0) return false;
-            bool w = lx < r && H(G(tx - 1, ty)) < h, e = lx > T - 1 - r && H(G(tx + 1, ty)) < h;
-            if (!w && !e) return false;
-            bool s = ly < r && H(G(tx, ty - 1)) < h, nn = ly > T - 1 - r && H(G(tx, ty + 1)) < h;
-            if (!s && !nn) return false;
-            float x = w ? r - 0.5f - lx : lx - (T - 1 - r) + 0.5f;
-            float y = s ? r - 0.5f - ly : ly - (T - 1 - r) + 0.5f;
-            return x * x + y * y > r * r;
-        }
-
-        /// <summary>Is top dot (lx, ly) of tile (tx, ty), possibly over the tile's edge, part of a top at least h high?</summary>
-        static bool Inside(int tx, int ty, int h, int lx, int ly)
-        {
-            if (lx < 0) { tx--; lx += T; } else if (lx >= T) { tx++; lx -= T; }
-            if (ly < 0) { ty--; ly += T; } else if (ly >= T) { ty++; ly -= T; }
-            int ht = H(G(tx, ty));
-            return ht >= h && !Cut(tx, ty, ht, lx, ly);
-        }
-
-        /// <summary>The top of raised tile (tx, ty) at ground dot (gx, gy), local (lx, ly) with ly 0 = its south edge.</summary>
-        static int Raised(int tx, int ty, int h, int gx, int gy, int lx, int ly)
-        {
-            var tg = ThemeGround(tx, ty);
-            var look = Look(tg);
-            var cl = Cliff(tx, ty);
-            bool grassy = cl.lip < 0;
-            int lip = grassy ? R(look.ramp, look.ramp.Length - 1) : cl.lip;
-            // An outline where the land drops away to the west, east and north
-            if (!Inside(tx, ty, h, lx - 1, ly) || !Inside(tx, ty, h, lx + 1, ly) || !Inside(tx, ty, h, lx, ly + 1)) return S.outline;
-            // The south lip: a jagged fringe two dots deep
-            if (!Inside(tx, ty, h, lx, ly - 1)) return lip;
-            if (!Inside(tx, ty, h, lx, ly - 2)) return Hs(MathX.FloorDiv(gx, 2), ty, 7711) % 3 != 0 ? lip : Pattern(look, tg, gx, gy);
-            // The other edges: a one-dot rim inside the outline (rock rims only)
-            if (!grassy && (!Inside(tx, ty, h, lx - 2, ly) || !Inside(tx, ty, h, lx + 2, ly) || !Inside(tx, ty, h, lx, ly + 2))) return lip;
-            return Pattern(look, tg, gx, gy);
-        }
-
-        /// <summary>The south wall of column (tx, ty), d dots below its top edge.</summary>
-        static int Face(int tx, int ty, int h, int gx, int d)
-        {
-            int visible = (h - H(G(tx, ty - 1))) * Half;      // dots of wall shown above the ground in front
-            var cl = Cliff(tx, ty);
-            if (cl.lip < 0)
-            {
-                // Grass hangs over the edge in short strands
-                uint hs = Hs(gx, ty, 7721) % 5;
-                if (d < (hs == 0 ? 2 : hs == 1 ? 1 : 0)) return Shade(Look(ThemeGround(tx, ty)));
-            }
-            if (d >= visible - 1) return S.outline;                              // the foot line
-            int col = Wall(cl, gx, d);
-            if (d >= visible - 4) col = Darker(cl.ramp, col);                     // shaded foot
-            var front = FG(tx, ty - 1);
-            var fl = Look(front);
-            if (WorldGen.IsLiquid(front) && fl.edge >= 0 && d >= visible - 2) col = fl.edge;   // where it stands in a liquid
-            return col;
-        }
-
         static int Darker(int[] r, int c)
         {
             for (int i = 1; i < r.Length; i++) if (r[i] == c) return r[i - 1];
@@ -204,6 +119,8 @@ namespace Diverse
         /// <summary>A wall pattern at wall dot (u along the wall, v down from the top edge).</summary>
         static int Wall(CliffLook cl, int u, int v)
         {
+            int regional = RegionalWall(cl, u, v);
+            if (regional >= 0) return regional;
             var r = cl.ramp;
             switch (cl.wall)
             {
@@ -231,11 +148,11 @@ namespace Diverse
                     int seam = (int)(Hs(cell, 0, 7431) % 3);
                     if (lx == seam) return R(r, 0);
                     int id = lx > seam ? cell : cell - 1;
-                    int brk = 5 + (int)(Hs(id, 1, 7432) % 7);
-                    if (v == brk && Hf(u, id, 7433) > 0.25f) return R(r, 0);
+                    int brk = 7 + (int)(Hs(id, 1, 7432) % 8);
+                    if (v == brk && Hf(u, id, 7433) > 0.65f) return R(r, 0);
                     int c = Hf(id, v > brk ? 1 : 0, 7434) > 0.5f ? R(r, 1) : R(r, 2);
                     if (lx == seam + 1 && v < brk) c = R(r, 3);
-                    if (cl.accent >= 0 && Hf(MathX.FloorDiv(u, 3), MathX.FloorDiv(v, 3), 7441) > 0.9f) c = cl.accent;
+                    if (cl.accent >= 0 && Hf(MathX.FloorDiv(u, 3), MathX.FloorDiv(v, 4), 7441) > 0.86f) c = cl.accent;
                     return c;
                 }
                 default:     // Blocks: two rows of big stones per level, staggered
@@ -282,6 +199,16 @@ namespace Diverse
                 for (int i = 0; i < 4; i++) { int q = Pri(cand[i]); if (q < done && q > p) { p = q; c = cand[i]; } }
                 if (p == int.MinValue) break;
                 done = p;
+                // Equal priority is not equal material. Choose the dominant material at this dot; taking the first
+                // candidate made a neighbouring water texel cover lava in a tile-shaped blue patch.
+                float dominant = -1;
+                for (int i = 0; i < 4; i++)
+                {
+                    if (Pri(cand[i]) != p) continue;
+                    float share = 0;
+                    for (int j = 0; j < 4; j++) if (cand[j] == cand[i]) share += wt[j];
+                    if (share > dominant) { dominant = share; c = cand[i]; }
+                }
                 float m = 0;
                 for (int i = 0; i < 4; i++) if (Pri(cand[i]) >= p) m += wt[i];
                 float v = m + nudge - 0.5f;
@@ -327,9 +254,6 @@ namespace Diverse
                     return bank[k - 1] >= 0 ? bank[k - 1] : Shade(look);
                 }
             int c = rim ? Shade(look) : Pattern(look, m, gx, gy);
-            // Shade at the foot of a cliff
-            int hn = H(G(tx, ty + 1));
-            if (hn > 0 && gy - ty * T >= T - S.footShade && !Cut(tx, ty + 1, hn, gx - tx * T, 0)) c = Shade(look);
             return c;
         }
 
@@ -352,6 +276,8 @@ namespace Diverse
         {
             // A designed ground (custom mode) wins, snapped to the palette
             if (DesignRuntime.GroundTexel(t, gx, gy, out var texel)) return Snap(texel);
+            int regional = RegionalPattern(look, t, gx, gy);
+            if (regional >= 0) return regional;
             var r = look.ramp;
             int b = R(r, 1), sh = Shade(look);
             switch (look.pattern)
@@ -411,12 +337,21 @@ namespace Diverse
                 }
                 case TilePattern.Tiles:
                 {
-                    // Worn floor: faint tile lines, sparse dry tufts, rare embers
-                    if (Mod(gx, T) == 0 || Mod(gy, T) == 0) return R(r, 0);
-                    int tf = Tuft(gx, gy, 55, R(r, 2), sh, 7535);
+                    // Broad weathered basalt, with sparse interrupted seams and angular chips. The floor is
+                    // primarily one quiet mass; it must not read as a regular indoor paving grid.
+                    int row = MathX.FloorDiv(gy, 21), v = Mod(gy, 21);
+                    int warp = (int)(Hs(row, 0, 7533) % 13);
+                    int column = MathX.FloorDiv(gx + warp, 31), u = Mod(gx + warp, 31);
+                    uint slab = Hs(column, row, 7534);
+                    int joint = 2 + (int)((slab >> 8) % 7);
+                    bool seam = (v == joint && u > 4 && u < 25 && (slab & 3) != 3) ||
+                        (u == 3 + v / 4 && v > 10 && v < 18 && (slab & 3) == 2);
+                    if (seam) return R(r, 0);
+                    int tf = Tuft(gx, gy, 30, R(r, 2), sh, 7535);
                     if (tf >= 0) return tf;
                     float f = Hf(gx, gy, 7536);
-                    if (f < 0.01f) return sh;
+                    if (f < 0.005f) return sh;
+                    if ((slab & 7) == 5 && u > 5 + v / 5 && u < 24 - v / 7 && v > 4 && v < 16) return R(r, 2);
                     if (look.accent >= 0 && f > 0.9994f) return look.accent;
                     return b;
                 }
@@ -471,7 +406,9 @@ namespace Diverse
                 case TilePattern.Crust:
                 {
                     // Molten: the bright base with darker streaks drifting sideways, rare glints
-                    float p = Noise.Perlin(gx * 0.55f, gy, 7581, 0.16f) * 0.65f + Noise.Perlin(gx, gy, 7583, 0.3f) * 0.35f;
+                    // Sample in two-pixel clusters: flowing dark-orange islands, not single-pixel noise.
+                    int qx = MathX.FloorDiv(gx, 2) * 2, qy = MathX.FloorDiv(gy, 2) * 2;
+                    float p = Noise.Perlin(qx * 0.65f, qy, 7581, 0.12f) * 0.75f + Noise.Perlin(qx, qy, 7583, 0.24f) * 0.25f;
                     if (p > 0.56f) return R(r, 1);
                     if (Hf(gx, gy, 7582) > 0.996f) return R(r, 3);
                     return R(r, 2);

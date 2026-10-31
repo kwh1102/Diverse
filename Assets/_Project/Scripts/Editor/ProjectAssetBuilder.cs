@@ -353,6 +353,8 @@ namespace Diverse.EditorTools
             {
                 string path = $"{SpriteDir}/{key}.png";
                 bool again = redraw.Any(p => key.StartsWith(p));
+                // Reviewed reference sprites have their own source sheets and importer. Generic redraws must keep them.
+                if (ReferenceArtImport.IsManaged(key)) continue;
                 if (File.Exists(path) && !again) continue;
                 Art.DrawOnly = again;
                 Sprite s;

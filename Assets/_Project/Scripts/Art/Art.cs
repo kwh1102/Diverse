@@ -79,6 +79,7 @@ namespace Diverse
         /// <summary>A new design pack was activated: drop every cached sprite and override so they are drawn again with its look.</summary>
         public static void ResetLooks()
         {
+            groundTableFor = -1;
             cache.Clear();
             anims.Clear();
             overrides.Clear();
@@ -144,8 +145,32 @@ namespace Diverse
         {
             if (!rabbitPoses.TryGetValue(c, out var p)) rabbitPoses[c] = p = new Sprite[System.Enum.GetValues(typeof(Pose)).Length];
             int i = (int)pose;
-            return p[i] != null ? p[i] : p[i] = Get($"rabbit_{c.id}_{pose}", () => c.frames != null ? DesignArt.HeroPose(c.frames, pose, false)
-                : DrawRabbit(c.fur, c.furShade, c.outfit, c.outfitShade, c.accent, c.style, pose, false, c.look));
+            return p[i] != null ? p[i] : p[i] = Get($"rabbit_{c.id}_{pose}", () => DrawCostumePose(c, pose));
+        }
+
+        static Sprite DrawCostumePose(CostumeDef c, Pose pose)
+        {
+            if (c.frames != null) return DesignArt.HeroPose(c.frames, pose, false);
+            // A saved custom life has a unique d:<pack> ID even when its hero has no visual customization.
+            // Resolve that default appearance through the same imported base sprites as a new classic life.
+            var h = c.look;
+            bool baseLook = h != null && string.IsNullOrEmpty(h.image)
+                && string.IsNullOrEmpty(h.fur) && string.IsNullOrEmpty(h.furShade)
+                && string.IsNullOrEmpty(h.outfit) && string.IsNullOrEmpty(h.outfitShade) && string.IsNullOrEmpty(h.accent)
+                && h.style < 0 && (string.IsNullOrEmpty(h.hat) || h.hat == "none")
+                && (string.IsNullOrEmpty(h.species) || h.species == "토끼" || h.species == "rabbit");
+            if (!DrawOnly && baseLook)
+            {
+                string baseId = DB.Costumes.Find(x => x.id == h.basePerk)?.id ?? DB.Costumes[0].id;
+                if (Hand().TryGetValue($"rabbit_{baseId}_{pose}", out var basis))
+                {
+                    // Art.Get names its result after the custom key. Clone the sprite wrapper so the imported
+                    // base asset keeps its name; texture, exact pixels, pivot and PPU remain shared and unchanged.
+                    var rect = basis.rect;
+                    return Sprite.Create(basis.texture, rect, new Vector2(basis.pivot.x / rect.width, basis.pivot.y / rect.height), basis.pixelsPerUnit, 0, SpriteMeshType.FullRect);
+                }
+            }
+            return DrawRabbit(c.fur, c.furShade, c.outfit, c.outfitShade, c.accent, c.style, pose, false, c.look);
         }
 
         /// <summary>노쇠한 과거 영웅: 털이 바래고 지팡이를 짚는다.</summary>

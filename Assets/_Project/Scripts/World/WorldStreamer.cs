@@ -307,7 +307,7 @@ namespace Diverse
                     // A cliff m tiles to the south draws its top over this tile when it stands high enough: you can't walk
                     // there (you would seem to walk on the cliff)
                     for (int m = 1; m <= hide && v == Open; m++)
-                        if (WorldGen.Level(GroundAtTile(tx, ty - m)) * WorldGen.FaceHeight >= m) v = Rock;
+                        if (Mathf.CeilToInt(WorldGen.Level(GroundAtTile(tx, ty - m)) * WorldGen.FaceHeight) >= m) v = Rock;
                     b[y * N + x] = v;
                 }
             if (blockCache.Count > 400) blockCache.Clear();
