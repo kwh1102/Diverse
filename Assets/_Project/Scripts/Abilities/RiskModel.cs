@@ -86,7 +86,7 @@ namespace Diverse
             {
                 if (o.scale is "run.level" or "run.kills" or "run.bossKills" or "build.abilities") perm += 0.35f;
                 if (o.op == "UpgradeRandom") perm += 0.5f;
-                if (o.op is "GainPotion" or "GainXp" && a.rules.Any(r => r.trigger is "Hit" or "Attack")) perm += 0.3f;
+                if (o.op is "GainXp" && a.rules.Any(r => r.trigger is "Hit" or "Attack")) perm += 0.3f;
             }
             rv.axes[4] = Mathf.Clamp01(perm);
 

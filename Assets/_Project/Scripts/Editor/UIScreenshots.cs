@@ -174,7 +174,7 @@ namespace Diverse.EditorTools
                     var merchant = Interactable.All.FirstOrDefault(i => i != null && i.kind == "npc_merchant");
                     if (merchant != null)
                     {
-                        g.Player.Gold = 1000; g.Player.DashChargesMax = 4; g.Player.Potions = 5;
+                        g.Player.Gold = 1000; g.Player.DashChargesMax = 4;
                         Dialogue.Open(g, merchant); yield return F(5); Shot("10b_merchant_disabled");
                         Shot("10d_merchant_narrow", 640, 720);
                         var optionsScroll = Find<DialogueView>().GetComponentsInChildren<ScrollRect>().FirstOrDefault(s => s.name == "OptionsScroll");

@@ -331,14 +331,13 @@ namespace Diverse.EditorTools
                 for (int v = 0; v < 2; v++) { var vv = v; Add($"bush_{bb}_{vv}", () => Art.Bush(bb, vv)); Add($"tuft_{bb}_{vv}", () => Art.Tuft(bb, vv)); }
             }
             for (int v = 0; v < 5; v++) { var vv = v; Add($"flower_{vv}", () => Art.Flower(vv)); }
-            Add("tower", Art.Tower);
             Add("shadow_14", () => Art.Shadow(14));        // prefab preview size (other sizes stay procedural)
             foreach (var id in new[] { "board", "well", "lamp", "fence", "tent", "raft", "obelisk", "wall", "banner", "campfire", "chest", "chest_open", "grave", "statue",
                                        "shrine", "pillar", "pillar_broken", "crate", "barrel", "altar", "anvil", "stall", "gate", "cage" })
             { var ii = id; Add($"prop_{ii}", () => Art.Prop(ii)); }
             foreach (var kind in new[] { "owl", "cat", "bear", "otter" })
                 for (int f = 0; f < 2; f++) { var kk = kind; var ff = f; Add($"npc_{kk}_{ff}", () => Art.Npc(kk, ff)); }
-            foreach (var id in new[] { "gold", "xp", "heart", "shard", "potion", "raft" }) { var ii = id; Add($"item_{ii}", () => Art.Item(ii)); }
+            foreach (var id in new[] { "gold", "xp", "heart" }) { var ii = id; Add($"item_{ii}", () => Art.Item(ii)); }
 
             int written = 0;
             var pivots = new Dictionary<string, Vector2>();

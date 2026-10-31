@@ -98,7 +98,6 @@ namespace Diverse
             switch (s.kind)
             {
                 case StructKind.Town: BuildTown(c); break;
-                case StructKind.Tower: BuildTower(c, s); break;
                 case StructKind.Camp: BuildCamp(c, s); break;
                 case StructKind.Ruins: BuildRuins(c, s); break;
                 case StructKind.Shrine: BuildShrine(c, s); break;
@@ -163,7 +162,7 @@ namespace Diverse
 
         void SpawnBoss(ChunkView c, StructureSpec s, string id, Vector2 at, float extraTier)
         {
-            var boss = Enemy.Spawn(DB.ScaledEnemy(id, s.tier + extraTier + Save.towerFloor * 0.5f), Streamer.NearestWalkable(at, 0.8f), s.id);
+            var boss = Enemy.Spawn(DB.ScaledEnemy(id, s.tier + extraTier), Streamer.NearestWalkable(at, 0.8f), s.id);
             c.Register(boss);
             campAlive[s.id] = campAlive.TryGetValue(s.id, out var n) ? n + 1 : 1;
         }
@@ -241,24 +240,6 @@ namespace Diverse
             c.AddDecor(Art.Prop("crate"), new Vector2(-5.3f, 3.0f), true, 0.75f, 0.45f, shape: Footprint.Rect);
             c.AddDecor(Art.Prop("crate"), new Vector2(10.5f, 2.8f), true, 0.75f, 0.45f, shape: Footprint.Rect);
             Discover("town");
-        }
-
-        void BuildTower(ChunkView c, StructureSpec s)
-        {
-            c.AddDecor(Art.Tower(), s.center, false, 0, 0, false, "tower");
-            c.BlockArea(s.center + new Vector2(0, 2.4f), 3.6f, 3.2f);
-            var gate = Interactable.Create(c.transform, "tower_gate", "tower", "기억의 탑", s.center + new Vector2(0, -0.6f), Art.Prop("gate"), c);
-            gate.range = 2f;
-            for (int i = 0; i < 6; i++)
-            {
-                var p = s.center + MathX.Dir(i * 60 + 30) * 6;
-                c.AddDecor(Art.Prop(i % 2 == 0 ? "pillar" : "pillar_broken"), p, true, 0.75f, 0.45f);
-            }
-            var glow = new GameObject("towerGlow");
-            glow.transform.SetParent(c.transform, false);
-            glow.transform.position = s.center + new Vector2(0, 11.6f);
-            var gsr = Art.MakeRenderer(glow, Art.Glow(30), 31000, true);
-            gsr.color = new Color(0.8f, 0.7f, 1f, 0.5f);
         }
 
         void BuildCamp(ChunkView c, StructureSpec s)
@@ -408,7 +389,7 @@ namespace Diverse
                 p = Streamer.NearestWalkable(p, 0.4f);
                 // Mixed groups: occasionally a different species
                 string id = rng.Chance(0.2f) ? (s.biome == Biome.Forest ? "bat" : "jelly") : enemyId;
-                var def = DB.ScaledEnemy(id, s.tier + Save.towerFloor * 0.5f);
+                var def = DB.ScaledEnemy(id, s.tier);
                 if (ring > 0 && rng.Chance(eliteChance)) def = DB.Elite(def);
                 var e = Enemy.Spawn(def, p, s.id);
                 c.Register(e);

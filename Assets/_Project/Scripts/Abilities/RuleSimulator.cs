@@ -276,7 +276,6 @@ namespace Diverse
                         case "DropPickup": if (op.mode == "heart") o.sustain += m / 100f * 0.08f * 8; else o.utility += m * 0.8f / 60f / 100f; break;
                         case "GainGold": o.utility += m * 0.8f / 100f; break;
                         case "GainXp": o.utility += m * 1.2f / 100f; break;
-                        case "GainPotion": o.sustain += 900f / 250f * Mathf.Max(1, op.count); break;
                     }
                 }
             }

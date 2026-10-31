@@ -101,7 +101,7 @@ namespace Diverse
                 bool run = info != null && info.hasRun;
                 string text = info == null
                     ? $"<b>세계 {n}</b>   <color=#8c7aa8>비어 있음</color>"
-                    : $"<b>세계 {n}</b>   {(info.world.lifeCount == 0 ? "아직 시작 전" : info.world.lifeCount + "번째 삶")} · 금고 {info.world.gold}G · 탑 {info.world.towerFloor}층"
+                    : $"<b>세계 {n}</b>   {(info.world.lifeCount == 0 ? "아직 시작 전" : info.world.lifeCount + "번째 삶")} · 금고 {info.world.gold}G"
                       + $"\n<color=#8c7aa8>{(run ? "이어할 삶 있음 · " : "")}마지막 플레이 {info.lastPlayed:yyyy-MM-dd HH:mm}</color>";
                 UIKit.Label(slots[i], text);
                 UIKit.Label(Child(slots[i], "Play"), info == null ? "새 세계 만들기" : run ? "이어하기" : "새 삶 시작");

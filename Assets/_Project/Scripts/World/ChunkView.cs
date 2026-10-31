@@ -51,7 +51,6 @@ namespace Diverse
                     if (WorldGen.IsWater(g) || g == Ground.Path || g == Ground.Plaza || g == Ground.Wood) continue;
                     var p = new Vector2(wx + 0.5f, wy + 0.5f);
                     if (InStructure(structs, p, 1.5f)) continue;
-                    if (p.y > 0 && p.y < WorldGen.TowerPos.y && Mathf.Abs(p.x - Mathf.Sin(p.y * 0.08f) * 3f) < 3f) continue;
                     // A designed world arranges its own scenery by layout (streets, groves, rows…) instead of the biome rules
                     if (DesignLayout.Active)
                     {
@@ -94,7 +93,6 @@ namespace Diverse
         static bool InStructure(List<StructureSpec> list, Vector2 p, float pad)
         {
             foreach (var s in list) if (Vector2.Distance(s.center, p) < s.radius + pad) return true;
-            if (Vector2.Distance(p, WorldGen.TowerPos) < 12) return true;
             return false;
         }
 

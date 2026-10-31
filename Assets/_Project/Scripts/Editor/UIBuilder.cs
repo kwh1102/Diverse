@@ -569,15 +569,10 @@ namespace Diverse.EditorTools
             Box(tr, slotSpr).raycastTarget = true;
             var goldIcon = Pic(tr, "GoldIcon", TL, new Vector2(4, 4), new Vector2(10, 10), Baked("item_gold"));
             var goldText = Label(tr, "Gold", "0", TL, new Vector2(16, 3), new Vector2(42, 12), 9);
-            var shardIcon = Pic(tr, "ShardIcon", TL, new Vector2(60, 4), new Vector2(10, 10), Baked("item_shard"));
-            var shardText = Label(tr, "Shards", "0", TL, new Vector2(72, 3), new Vector2(30, 12), 9);
-            var potionIcon = Pic(tr, "PotionIcon", TL, new Vector2(104, 4), new Vector2(10, 10), Baked("item_potion"));
-            var potionText = Label(tr, "Potions", "2 [1]", TL, new Vector2(116, 3), new Vector2(46, 12), 9);
             var region = Label(tr, "Region", "기억의 광장", TL, new Vector2(4, 17), new Vector2(156, 12), 9, color: UIKit.Highlight);
             var coord = Label(tr, "Coords", "(0, 0)  Tab 지도", TL, new Vector2(4, 30), new Vector2(140, 12), 9, color: UIKit.Muted);
-            var raftIcon = Pic(tr, "RaftIcon", TL, new Vector2(148, 30), new Vector2(10, 10), Baked("item_raft"), raycast: true);
             Image Hover(string n, float x, float w) { var h = Box(Node(tr, n, TL, new Vector2(x, 0), new Vector2(w, 15)), whiteSpr, new Color(0, 0, 0, 0)); h.raycastTarget = true; return h; }
-            var goldHover = Hover("GoldHover", 0, 56); var shardHover = Hover("ShardHover", 58, 44); var potionHover = Hover("PotionHover", 102, 60);
+            var goldHover = Hover("GoldHover", 0, 56);
 
             // Minimap under it
             var mm = Node(rt, "Minimap", TR, Vector2.zero, new Vector2(70, 70));
@@ -656,10 +651,10 @@ namespace Diverse.EditorTools
             Wire(v, "portrait", portrait); Wire(v, "heroLine", hero);
             Wire(v, "hpFill", hpFill); Wire(v, "shieldFill", shieldFill); Wire(v, "xpFill", xpFill); Wire(v, "hpText", hpText);
             Wire(v, "dashTemplate", dash);
-            Wire(v, "goldIcon", goldIcon); Wire(v, "shardIcon", shardIcon); Wire(v, "potionIcon", potionIcon); Wire(v, "raftIcon", raftIcon);
-            Wire(v, "goldText", goldText); Wire(v, "shardText", shardText); Wire(v, "potionText", potionText);
+            Wire(v, "goldIcon", goldIcon);
+            Wire(v, "goldText", goldText);
             Wire(v, "regionText", region); Wire(v, "coordText", coord);
-            Wire(v, "goldHover", goldHover.rectTransform); Wire(v, "shardHover", shardHover.rectTransform); Wire(v, "potionHover", potionHover.rectTransform);
+            Wire(v, "goldHover", goldHover.rectTransform);
             Wire(v, "minimap", minimap); Wire(v, "questsText", quests);
             WireArray(v, "skills", slots);
             Wire(v, "moveHint", moveHint); Wire(v, "dashHint", dashHint);

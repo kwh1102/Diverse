@@ -318,40 +318,6 @@ namespace Diverse
             return cv.ToSprite(new Vector2(32, 1));
         });
 
-        public static Sprite Tower() => Get("tower", () =>
-        {
-            int W = 72, H = 200;
-            var cv = new PixelCanvas(W, H);
-            var stone = Pal.Hex("b3acc9"); var stoneS = Pal.Hex("7f789a"); var glow = Pal.Hex("c9b8ff");
-            for (int y = 0; y < 170; y++)
-            {
-                int half = 30 - y / 9;
-                cv.Rect(36 - half, y, half * 2, 1, stone);
-                if (y % 12 == 0) cv.Rect(36 - half, y, half * 2, 1, stoneS);
-            }
-            for (int y = 6; y < 160; y += 12)
-                for (int x = 0; x < W; x += 9)
-                    cv.SetIfSolid(x + (y / 12 % 2) * 4, y + 5, stoneS);
-            // 창 (층마다 빛)
-            for (int f = 0; f < 6; f++)
-            {
-                int y = 24 + f * 24;
-                cv.Rect(33, y, 6, 10, Pal.Hex("2a1d3f"));
-                cv.Rect(34, y + 1, 4, 8, glow);
-            }
-            // 문
-            cv.Rect(28, 0, 16, 22, Pal.Hex("2a1d3f"));
-            cv.Ellipse(36, 22, 8, 5, Pal.Hex("2a1d3f"));
-            cv.Rect(30, 0, 12, 20, Pal.Hex("4a3a6a"));
-            // 꼭대기
-            cv.Ellipse(36, 176, 14, 8, stoneS);
-            cv.Circle(36, 186, 8, glow);
-            cv.Circle(36, 186, 4, Pal.White);
-            cv.InnerShade(stone, stoneS, 1, -1);
-            cv.Outline(Pal.Outline);
-            return cv.ToSprite(new Vector2(36, 1));
-        });
-
         public static Sprite Prop(string id) => Get($"prop_{id}", () => DrawProp(id));
 
         static Sprite DrawProp(string id)
@@ -698,14 +664,6 @@ namespace Diverse
                     cv.Circle(3.5f, 6, 2.5f, Pal.Blood); cv.Circle(6.5f, 6, 2.5f, Pal.Blood);
                     for (int y = 1; y <= 5; y++) { int half = y; cv.Rect(5 - half, y, half * 2, 1, Pal.Blood); }
                     cv.Set(3, 7, Pal.White); break;
-                case "shard":
-                    cv.Line(5, 9, 2, 4, Pal.ShadowEl); cv.Line(5, 9, 8, 4, Pal.ShadowEl); cv.Line(2, 4, 5, 0, Pal.ShadowEl); cv.Line(8, 4, 5, 0, Pal.ShadowEl);
-                    cv.Rect(4, 2, 3, 6, Pal.Hex("e6dcff")); cv.Rect(3, 4, 5, 2, Pal.Hex("c9b8ff")); break;
-                case "potion":
-                    cv.Rect(4, 7, 2, 2, Pal.Wood); cv.Circle(5, 4, 3.4f, Pal.Blood); cv.Set(4, 5, Pal.White); break;
-                case "raft":
-                    for (int i = 0; i < 4; i++) cv.Rect(1 + i * 2, 2, 2, 6, i % 2 == 0 ? Pal.Wood : Pal.WoodDark);
-                    cv.Rect(1, 4, 8, 1, Pal.WoodDark); break;
                 case "warpstone":
                     cv.Rect(3, 1, 4, 8, Pal.Hex("6a6488")); cv.Rect(4, 9, 2, 1, Pal.Hex("6a6488"));
                     cv.Rect(4, 3, 2, 4, Pal.Hex("8fe3ff")); break;

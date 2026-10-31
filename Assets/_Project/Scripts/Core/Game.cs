@@ -251,9 +251,9 @@ namespace Diverse
             var r = new RunSave
             {
                 life = World.lifeCount, heroName = HeroName, costume = p.Costume.id, weapon = (int)p.Weapon.kind, weaponDamage = p.Weapon.baseDamage,
-                level = p.Level, xp = p.Xp, xpToNext = p.XpToNext, gold = p.Gold, kills = p.Kills, potions = p.Potions,
+                level = p.Level, xp = p.Xp, xpToNext = p.XpToNext, gold = p.Gold, kills = p.Kills,
                 attrs = (int[])p.Attrs.Clone(), unspentAttr = p.UnspentAttr, pendingEvolutions = p.PendingEvolutions,
-                hp = p.hp, dashMax = p.DashChargesMax, x = p.Pos.x, y = p.Pos.y, raft = p.HasRaft,
+                hp = p.hp, dashMax = p.DashChargesMax, x = p.Pos.x, y = p.Pos.y,
                 warpStones = p.WarpStones, skillsLearned = p.LearnedSkills,
             };
             foreach (var a in p.Abilities.Owned) r.abilities.Add(AbilityRecord.From(a));
@@ -284,18 +284,17 @@ namespace Diverse
             var p = Player;
             p.HeroName = HeroName;
             p.Level = r.level; p.Xp = r.xp; p.XpToNext = r.xpToNext;
-            p.Gold = r.gold; p.Kills = r.kills; p.Potions = r.potions;
+            p.Gold = r.gold; p.Kills = r.kills;
             if (r.attrs != null && r.attrs.Length == 4) p.Attrs = (int[])r.attrs.Clone();
             p.UnspentAttr = r.unspentAttr; p.PendingEvolutions = r.pendingEvolutions;
             p.DashChargesMax = p.DashCharges = Mathf.Max(2, r.dashMax);
-            p.HasRaft = r.raft;
             p.WarpStones = r.warpStones;
             p.RestoreSkills(r.skillsLearned < 0 ? p.Skills.Length : r.skillsLearned);   // saves from before skill learning keep all 4
             foreach (var rec in r.abilities) { var g = rec.ToAbility(); if (g != null) p.Abilities.Restore(g); }
             foreach (var s in r.intent) { var kv = s.Split('='); if (kv.Length == 2 && int.TryParse(kv[1], out var n)) p.Telemetry.intent[kv[0]] = n; }
             p.RecalcStats();
             p.hp = Mathf.Clamp(r.hp, 1, p.maxHp);
-            p.Pos = WorldStreamer.I.NearestWalkable(pos, p.radius, 8, p.HasRaft);
+            p.Pos = WorldStreamer.I.NearestWalkable(pos, p.radius, 8);
             CameraRig.I.target = p.transform;
             CameraRig.I.Snap(p.Pos);
             PrewarmRun();
@@ -322,7 +321,6 @@ namespace Diverse
         {
             int statues = World.graves.Count(g => g.statue);
             if (statues > 0) s.Mul(StatId.Attack, 0.03f * statues);
-            s.Add(StatId.MaxHp, World.towerFloor * 10);
         }
 
         // ───────────────────────── Events ─────────────────────────
@@ -342,7 +340,6 @@ namespace Diverse
             Pickup.Drop("xp", d.xp / Mathf.Max(1, Mathf.CeilToInt(d.xp / 8f)), e.Pos, Mathf.CeilToInt(d.xp / 8f));
             Pickup.Drop("gold", d.gold, e.Pos, Random.value < 0.6f ? 1 : 2);
             if (Random.value < 0.05f || d.boss) Pickup.Drop("heart", 20, e.Pos);
-            if (d.boss) Pickup.Drop("shard", 1, e.Pos, 3);
             Diverse.World.I.OnCampEnemyKilled(e.campId, e);
             foreach (var q in World.quests)
                 if (q.status == 1 && q.kind == "hunt" && q.enemy == d.id) { q.have++; if (q.have >= q.need) { q.status = 2; Ui.Toast($"의뢰 완료: {q.title} — 게시판에 보고하세요"); } }
@@ -363,7 +360,6 @@ namespace Diverse
         {
             foreach (var q in World.quests)
                 if (q.status == 1 && q.targetId == id) { q.status = 2; Ui.Toast($"의뢰 완료: {q.title}"); }
-            if (spec != null && spec.kind == StructKind.Lair) Pickup.Drop("shard", 2, Player.Pos);
             Player?.Abilities?.Raise("CampCleared");
         }
 
@@ -389,7 +385,7 @@ namespace Diverse
             // Abilities carved on the grave (the 2 strongest) → the next life can visit the grave and recover them
             foreach (var g in p.Abilities.Owned.Where(a => a.tier >= 1).OrderByDescending(a => a.power).Take(2)) grave.abilities.Add(AbilityRecord.From(g));
             // Heroes who achieved great deeds get a statue
-            grave.statue = p.Level >= 12 || World.towerFloor >= 2 && p.Kills > 80;
+            grave.statue = p.Level >= 12;
             grave.epitaph = $"{HeroName} — {Ko.Ro(cause)} 인해 잠들다. 레벨 {p.Level}, 처치한 몬스터 {p.Kills}마리.";
             World.graves.Add(grave);
             Session.PendingRun = null;

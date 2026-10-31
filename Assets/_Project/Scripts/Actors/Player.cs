@@ -22,12 +22,11 @@ namespace Diverse
         [System.NonSerialized] public Telemetry Telemetry = new Telemetry();
         public int Level = 1;
         public float Xp, XpToNext = 60;
-        public int Gold, Kills, Potions = 2;
+        public int Gold, Kills;
         public int[] Attrs = new int[4];
         public int UnspentAttr;
         public int PendingEvolutions;
         public string HeroName;
-        public bool HasRaft;                       // can paddle across water (bought from a ferryman)
         public int WarpStones;                     // carried warp stones, placed with the interact key away from town
         public bool Ferrying;                      // riding the ferryman's raft right now
         public bool OnWater { get; private set; }
@@ -392,7 +391,6 @@ namespace Diverse
             if (Controls.Down(Act.SkillW)) CastSkill(1);
             if (Controls.Down(Act.SkillE)) CastSkill(2);
             if (Controls.Down(Act.SkillR)) CastSkill(3);
-            if (Controls.Down(Act.Potion)) UsePotion();
 
             TryQueuedAttack();
         }
@@ -437,7 +435,7 @@ namespace Diverse
         public void SetDestination(Vector2 target, bool showMarker, int maxNodes = 4000)
         {
             path.Clear();
-            path.AddRange(PathFinder.Find(WorldStreamer.I, Pos, target, maxNodes, HasRaft, Bound));
+            path.AddRange(PathFinder.Find(WorldStreamer.I, Pos, target, maxNodes, false, Bound));
             if (showMarker) Fx.I?.Play(Art.ClickMarker(), path.Count > 0 ? path[path.Count - 1] : target, 0, 14);
         }
 
@@ -456,7 +454,7 @@ namespace Diverse
             attackTarget = null;
             if (Bound > 0 && target.magnitude > Bound - 0.5f)
                 target = target.normalized * Mathf.Max(Pos.magnitude, Bound - 0.5f);
-            TravelTarget = WorldStreamer.I.NearestWalkable(target, radius, 4, HasRaft);
+            TravelTarget = WorldStreamer.I.NearestWalkable(target, radius, 4);
             travelStuck = 0;
             travelProgress = Pos;
             travelRepathT = 0;
@@ -469,7 +467,7 @@ namespace Diverse
             if (!TravelTarget.HasValue) return;
             var t = TravelTarget.Value;
             path.Clear();
-            path.AddRange(PathFinder.Find(WorldStreamer.I, Pos, t, 6000, HasRaft, Bound));
+            path.AddRange(PathFinder.Find(WorldStreamer.I, Pos, t, 6000, false, Bound));
             travelRepathT = 1.5f;
         }
 
@@ -498,7 +496,7 @@ namespace Diverse
             if (dashT > 0)
             {
                 dashT -= dt;
-                Pos = WorldStreamer.I.Move(Pos, dashVel * dt, radius, HasRaft, Bound);
+                Pos = WorldStreamer.I.Move(Pos, dashVel * dt, radius, false, Bound);
                 ghostT -= dt;
                 if (ghostT <= 0) { ghostT = 0.03f; Fx.I?.Afterimage(body, new Color(0.7f, 0.85f, 1f, 0.7f), 0.22f); }
                 if (dashT <= 0) { RepathMovement(); GameEvents.Raise(new CombatEvent { type = Trig.DashEnd, source = this, position = Pos }); Telemetry.Record("DashEnd"); }
@@ -507,7 +505,7 @@ namespace Diverse
             if (lungeT > 0)
             {
                 lungeT -= dt;
-                Pos = WorldStreamer.I.Move(Pos, lungeVel * dt, radius, HasRaft, Bound);
+                Pos = WorldStreamer.I.Move(Pos, lungeVel * dt, radius, false, Bound);
                 lungeVel *= Mathf.Exp(-14 * dt);
             }
             if (actionLock > 0) return;
@@ -525,7 +523,7 @@ namespace Diverse
                     return;
                 }
                 repathT -= dt;
-                if (repathT <= 0 || path.Count == 0) { repathT = 0.25f; path.Clear(); path.AddRange(PathFinder.Find(WorldStreamer.I, Pos, attackTarget.Pos, 1500, HasRaft, Bound)); }
+                if (repathT <= 0 || path.Count == 0) { repathT = 0.25f; path.Clear(); path.AddRange(PathFinder.Find(WorldStreamer.I, Pos, attackTarget.Pos, 1500, false, Bound)); }
             }
 
             if (path.Count > 0)
@@ -550,7 +548,7 @@ namespace Diverse
                     Abilities?.Moved(Mathf.Min(left, d));
                     if (d <= left + 0.02f)
                     {
-                        Pos = WorldStreamer.I.Move(Pos, to, radius, HasRaft, Bound);
+                        Pos = WorldStreamer.I.Move(Pos, to, radius, false, Bound);
                         if (Vector2.Distance(Pos, next) >= 0.02f) { path.Clear(); break; }   // blocked short of the corner
                         path.RemoveAt(0);
                         left -= d;
@@ -558,7 +556,7 @@ namespace Diverse
                     else
                     {
                         var before = Pos;
-                        Pos = WorldStreamer.I.Move(Pos, to / d * left, radius, HasRaft, Bound);
+                        Pos = WorldStreamer.I.Move(Pos, to / d * left, radius, false, Bound);
                         if ((Pos - before).sqrMagnitude < left * left * 0.04f) path.Clear();   // stuck → stop
                         break;
                     }
@@ -755,7 +753,7 @@ namespace Diverse
 
         public void BlinkTo(Vector2 dst)
         {
-            dst = WorldStreamer.I.NearestWalkable(dst, radius, 6, HasRaft);
+            dst = WorldStreamer.I.NearestWalkable(dst, radius, 6);
             if (Bound > 0 && dst.magnitude > Bound && dst.magnitude > Pos.magnitude) return;
             Fx.I?.Afterimage(body, new Color(0.7f, 0.6f, 1f, 0.8f), 0.3f);
             Fx.I?.Burst(Pos + Vector2.up * 0.5f, Pal.ShadowEl, 10, 4, 0.3f);
@@ -796,19 +794,6 @@ namespace Diverse
             if (invuln) invulnUntil = Time.time + time + 0.05f;
         }
         public void SetSwing(float from, float to, float dur) { weaponFrom = from; weaponTo = to; weaponSwingT = 0; weaponSwingDur = dur; }
-
-        void UsePotion()
-        {
-            if (Potions <= 0) return;
-            // Constraint rules can forbid potions; replacement rules can turn them into something else
-            if (Abilities != null && Abilities.Forbids("Potion")) { Fx.I?.Number(Pos + Vector2.up * 1.1f, "봉인됨", new Color(0.7f, 0.6f, 0.9f), 0.8f); return; }
-            if (Abilities != null && Abilities.ReplacePotion()) { Potions--; return; }
-            if (hp >= maxHp) return;
-            Potions--;
-            Heal(maxHp * 0.4f);
-            Fx.I?.Burst(Pos + Vector2.up * 0.5f, Pal.Blood, 14, 3, 0.7f, -4);
-            Sfx.Play("pickup");
-        }
 
         // ───────────────────────── Damage / events ─────────────────────────
 
@@ -945,7 +930,7 @@ namespace Diverse
         void UpdateRaft()
         {
             var w = WorldStreamer.I;
-            OnWater = (HasRaft || Ferrying) && w != null && w.IsLoaded(Pos) && WorldGen.IsWater(w.GroundAtTile(Mathf.FloorToInt(Pos.x), Mathf.FloorToInt(Pos.y)));
+            OnWater = Ferrying && w != null && w.IsLoaded(Pos) && WorldGen.IsWater(w.GroundAtTile(Mathf.FloorToInt(Pos.x), Mathf.FloorToInt(Pos.y)));
             if (OnWater && raftSr.sprite == null) raftSr.sprite = Art.Prop("raft");
             raftSr.enabled = OnWater;
             raftSr.sortingOrder = body.sortingOrder - 1;
@@ -953,7 +938,7 @@ namespace Diverse
             if (OnWater) visual.localPosition += new Vector3(0, 0.12f + Mathf.Sin(animT * 2.5f) * 0.03f, 0);
         }
 
-        protected override bool CanSwim => HasRaft || Ferrying;
+        protected override bool CanSwim => Ferrying;
         protected override float MoveBound => Bound;
 
         public bool IsDashing => dashT > 0;
@@ -988,7 +973,7 @@ namespace Diverse
         {
             StopMoving();
             dashT = lungeT = actionLock = 0; queuedAttack = false;
-            Pos = WorldStreamer.I.NearestWalkable(target, radius, 12, HasRaft);
+            Pos = WorldStreamer.I.NearestWalkable(target, radius, 12);
         }
     }
 }

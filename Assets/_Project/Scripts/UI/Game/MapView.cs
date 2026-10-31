@@ -149,7 +149,6 @@ namespace Diverse
                 }
             }
 
-            map.Marker(WorldGen.TowerPos, "▲", Pal.Hex("c9b8ff"), "기억의 탑", true);
 
             var view = map.Rect.rect;
             var a = map.LocalToWorld(view.min); var b = map.LocalToWorld(view.max);

@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Diverse
 {
-    public enum StructKind { Town, Tower, Camp, Ruins, Shrine, Grove, Graveyard, Lair, Chest, Pond, Wanderer, Ferry, Obelisk, Fortress }
+    public enum StructKind { Town, Camp, Ruins, Shrine, Grove, Graveyard, Lair, Chest, Pond, Wanderer, Ferry, Obelisk, Fortress }
 
     /// <summary>
     /// A structure spec produced by the generator. Being pure data (no Unity objects),
@@ -28,14 +28,13 @@ namespace Diverse
     /// Seed-based infinite world generator.
     /// - Terrain: tile type decided per tile from noise (biome, water, paths)
     /// - Structures: one candidate per region (Region = 3x3 chunks) → deterministic, never overlapping
-    /// - The town (origin) and the Tower of Memory (fixed position) are always fixed structures
+    /// - The town (origin) is always a fixed structure
     /// </summary>
     public class WorldGen
     {
         public const int Chunk = 16;            // tiles per chunk
         public const int RegionChunks = 3;      // one structure candidate per region
         public const float TownRadius = 15f;
-        public static readonly Vector2 TowerPos = new Vector2(0, 92);
         const int TrailSpacing = 96;            // bridges sit where a (hidden) trail line crosses a river
 
         // ───────────── Frontier rings ─────────────
@@ -106,9 +105,6 @@ namespace Diverse
                 if (dTown < 5.5f) return Ground.Plaza;
                 return Ground.Grass;
             }
-            // Road from the town to the tower
-            if (y > 0 && y < TowerPos.y && Mathf.Abs(x - Mathf.Sin(y * 0.08f) * 3f) < 1.6f) return Ground.Path;
-            if (Vector2.Distance(pos, TowerPos) < 8) return Ground.Plaza;
 
             // Ground around structures
             foreach (var s in StructuresNear(pos, 20))
@@ -205,8 +201,6 @@ namespace Diverse
             // Fixed structures
             if (InRegion(Vector2.zero, regionMin, regionSize))
                 list.Add(new StructureSpec { id = "town", kind = StructKind.Town, center = Vector2.zero, radius = TownRadius, name = "기억의 광장", landmark = true });
-            if (InRegion(TowerPos, regionMin, regionSize))
-                list.Add(new StructureSpec { id = "tower", kind = StructKind.Tower, center = TowerPos, radius = 8, name = "기억의 탑", landmark = true, boss = "boss_knight", tier = 3 });
 
             var rng = new Rng(Hash.U(rx, ry, seed + 1009));
             // 1–2 candidates per region
@@ -215,8 +209,6 @@ namespace Diverse
             {
                 var c = regionMin + new Vector2(rng.Range(8f, regionSize - 8f), rng.Range(8f, regionSize - 8f));
                 if (c.magnitude < TownRadius + 14) continue;
-                if (Vector2.Distance(c, TowerPos) < 18) continue;
-                if (c.y > 0 && c.y < TowerPos.y && Mathf.Abs(c.x) < 8) continue;   // keep the road clear
                 bool overlaps = false;
                 foreach (var o in list) if (Vector2.Distance(o.center, c) < o.radius + 12) overlaps = true;
                 if (overlaps) continue;
@@ -347,7 +339,6 @@ namespace Diverse
         public string RegionName(Vector2 p)
         {
             if (p.magnitude < TownRadius + 4) return "기억의 광장";
-            if (Vector2.Distance(p, TowerPos) < 14) return "기억의 탑";
             var b = BiomeAt(p.x, p.y);
             return b switch
             {

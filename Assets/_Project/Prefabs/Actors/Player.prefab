@@ -389,12 +389,11 @@ MonoBehaviour:
   XpToNext: 30
   Gold: 0
   Kills: 0
-  Potions: 2
   Attrs: 00000000000000000000000000000000
   UnspentAttr: 0
   PendingEvolutions: 0
   HeroName: 
-  HasRaft: 0
+  WarpStones: 0
   Ferrying: 0
   Shield: 0
   AimPoint: {x: 0, y: 0}

@@ -60,7 +60,6 @@ namespace Diverse
                 case "cage": Cage(g, it); break;
                 case "herb": Herb(g, it); break;
                 case "wanderer": Wanderer(g, it); break;
-                case "tower_gate": Tower(g, it); break;
                 case "ferry": Ferry(g, it); break;
                 case "warpstone": WarpStoneTalk(g, it); break;
                 default: Show(new DialoguePage { speaker = it.label, text = "...", options = { Bye() } }); break;
@@ -75,7 +74,7 @@ namespace Diverse
             var lastGrave = w.graves.LastOrDefault();
             string text;
             if (w.lifeCount <= 1)
-                text = "오, 처음 보는 얼굴이구나. 난 이 세계의 기록을 지키는 올리란다.\n저 멀리 북쪽에 빛나는 탑이 보이니? 기억의 탑이야. 세계가 기억하는 삶에게만 문을 열지.\n나가서 살아 보렴. 네가 한 일은 내가 적어 두마.";
+                text = "오, 처음 보는 얼굴이구나. 난 이 세계의 기록을 지키는 올리란다.\n나가서 살아 보렴. 네가 한 일은 내가 적어 두마.";
             else if (lastGrave != null)
                 text = $"...돌아왔구나. 예전의 그 토끼는 아니지만.\n지난번엔 {Ko.I(lastGrave.heroName)} {Ko.Ro(lastGrave.cause)} 인해 쓰러졌지. 그 자리에 무덤이 있단다.\n찾아가면 남겨진 기술을 되찾을 수 있을지도 몰라.";
             else text = "어서 오렴. 세계가 너의 다음 이야기를 기다리고 있어.";
@@ -84,15 +83,6 @@ namespace Diverse
             page.options.Add(new DialogueOption("지난 기록 듣기", () => { Game.I.Ui.OpenTab("chronicle"); Close(); Game.I.OpenOverlay(GameState.Paused, "chronicle"); }));
             if (w.graves.Count > 0)
                 page.options.Add(new DialogueOption("지난 영웅을 기록하거나 잊기", () => Remember(g)));
-            page.options.Add(new DialogueOption($"기억의 조각 바치기 (보유 {w.memoryShards})", () =>
-            {
-                Show(new DialoguePage
-                {
-                    speaker = "이야기꾼 올리", portrait = Art.Npc("owl", 0),
-                    text = $"기억의 조각은 탑의 열쇠란다. 탑 {w.towerFloor + 1}층에는 {TowerCost(w.towerFloor)}개가 필요해.\n지금 {w.memoryShards}개 가지고 있구나. 제단, 유적, 보스의 둥지에서 모아 오렴.",
-                    options = { Bye("알겠어요") },
-                });
-            }));
             page.options.Add(Bye());
             Show(page);
         }
@@ -100,7 +90,7 @@ namespace Diverse
         static void Remember(Game g)
         {
             var w = g.World;
-            var page = new DialoguePage { speaker = "이야기꾼 올리", portrait = Art.Npc("owl", 0), text = "기록된 영웅은 광장에 석상이 세워지지만, 잊힌 영웅의 무덤은 기억의 조각이 되어 세계로 돌아간단다.\n누구 이야기를 할까?" };
+            var page = new DialoguePage { speaker = "이야기꾼 올리", portrait = Art.Npc("owl", 0), text = "기록된 영웅은 광장에 석상이 세워지지만, 잊힌 영웅은 조용히 세계로 돌아간단다.\n누구 이야기를 할까?" };
             foreach (var gr in w.graves.Where(x => string.IsNullOrEmpty(x.forgottenBy)).Take(4))
             {
                 var grave = gr;
@@ -121,11 +111,10 @@ namespace Diverse
                                 Game.I.Ui.Toast($"광장에 {grave.heroName}의 석상이 세워집니다. (마을을 나갔다 오면 보여요)");
                                 Close();
                             }),
-                            new DialogueOption("보내 주기 (기억의 조각 +2)", () =>
+                            new DialogueOption("보내 주기", () =>
                             {
-                                grave.forgottenBy = "forgotten"; w.memoryShards += 2;
-                                w.Log($"{grave.heroName}의 이름이 잊혔다. 그 기억은 조각이 되어 세계로 돌아갔다.", "legacy");
-                                Game.I.Ui.Toast("기억의 조각 +2");
+                                grave.forgottenBy = "forgotten";
+                                w.Log($"{grave.heroName}의 이름이 잊혔다.", "legacy");
                                 Close();
                             }),
                             Bye("나중에"),
@@ -136,8 +125,6 @@ namespace Diverse
             page.options.Add(Bye("나중에"));
             Show(page);
         }
-
-        public static int TowerCost(int floor) => 3 + floor * 3;
 
         static void Board(Game g)
         {
@@ -155,7 +142,7 @@ namespace Diverse
                         Show(new DialoguePage
                         {
                             speaker = quest.title, portrait = Art.Prop("board"),
-                            text = quest.desc + $"\n\n보상: 골드 {quest.rewardGold}" + (quest.rewardShards > 0 ? $", 기억의 조각 {quest.rewardShards}개" : "") + (quest.kind != "hunt" ? "\n(수락하면 지도에 위치가 표시됩니다.)" : ""),
+                            text = quest.desc + $"\n\n보상: 골드 {quest.rewardGold}" +(quest.kind != "hunt" ? "\n(수락하면 지도에 위치가 표시됩니다.)" : ""),
                             options = { new DialogueOption("수락", () => { quest.status = 1; Game.I.Ui.Toast($"의뢰 수락: {quest.title}"); Close(); }), Bye("돌아가기") },
                         });
                     }
@@ -171,21 +158,11 @@ namespace Diverse
         {
             var p = g.Player;
             var page = new DialoguePage { speaker = "상인 냥냥", portrait = Art.Npc("cat", 0), text = $"어서 오라냥! 골드는 있냥? 지금 {p.Gold} 골드 있다냥." };
-            page.options.Add(new DialogueOption($"회복약 (30 골드) — 보유 {p.Potions}/5", () =>
-            {
-                if (p.Gold >= 30 && p.Potions < 5) { p.Gold -= 30; p.Potions++; Sfx.Play("coin"); }
-                Merchant(g);
-            }, p.Gold >= 30 && p.Potions < 5));
             page.options.Add(new DialogueOption("대시 신발 (80 골드) — 대시 횟수 +1", () =>
             {
                 if (p.Gold >= 80 && p.DashChargesMax < 4) { p.Gold -= 80; p.DashChargesMax++; p.DashCharges++; Sfx.Play("coin"); }
                 Merchant(g);
             }, p.Gold >= 80 && p.DashChargesMax < 4));
-            page.options.Add(new DialogueOption(p.HasRaft ? "접이식 뗏목 — 이미 가지고 있다" : $"접이식 뗏목 ({RaftCost} 골드) — 강과 호수를 건널 수 있다", () =>
-            {
-                if (BuyRaft(p)) Game.I.Ui.Toast("뗏목을 샀다! 이제 물 위로도 이동할 수 있다.");
-                Merchant(g);
-            }, !p.HasRaft && p.Gold >= RaftCost));
             int warpCost = DB.Progression.warpStoneCost;
             page.options.Add(new DialogueOption($"워프 스톤 ({warpCost} 골드) — 들판에 세우면 지도에서 순간이동 (보유 {p.WarpStones})", () =>
             {
@@ -240,18 +217,6 @@ namespace Diverse
                     Bye(),
                 },
             });
-        }
-
-        public const int RaftCost = 150;
-
-        static bool BuyRaft(Player p, int cost = RaftCost)
-        {
-            if (p.HasRaft || p.Gold < cost) return false;
-            p.Gold -= cost;
-            p.HasRaft = true;
-            Sfx.Play("coin");
-            Game.I.World.Log($"{Ko.I(p.HeroName)} 뗏목을 손에 넣었다.", "event");
-            return true;
         }
 
         static void Smith(Game g)
@@ -339,8 +304,6 @@ namespace Diverse
             Sfx.Play("chest");
             int gold = 20 + s.tier * 12 + Random.Range(0, 20);
             Pickup.Drop("gold", gold / 5f, it.Pos + Vector2.down * 0.3f, 5);
-            if (s.kind == StructKind.Lair || Random.value < 0.35f) Pickup.Drop("shard", 1, it.Pos + Vector2.down * 0.3f);
-            if (Random.value < 0.4f) g.Player.Potions = Mathf.Min(5, g.Player.Potions + 1);
             Fx.I?.Burst(it.Pos + Vector2.up * 0.4f, Pal.Gold, 16, 4, 0.6f, -3);
             GameEvents.World("explore", "chest");
             Game.I.Ui.Toast("상자를 열었다!");
@@ -395,7 +358,7 @@ namespace Diverse
                         });
                     }));
                 }
-                page.options.Add(new DialogueOption("편히 잠들게 두기 (기억의 조각 +1)", () => { gr.recovered = true; g.World.memoryShards++; Close(); }));
+                page.options.Add(new DialogueOption("편히 잠들게 두기", () => { gr.recovered = true; Close(); }));
             }
             page.options.Add(Bye("고개 숙여 인사하고 떠나기"));
             Show(page);
@@ -426,23 +389,14 @@ namespace Diverse
                 Close();
                 g.BeginEvolution();
             }));
-            page.options.Add(new DialogueOption("조각으로 바꾸기 (기억의 조각 +2)", () =>
-            {
-                g.World.SetFlag(key); it.sr.color = new Color(0.7f, 0.7f, 0.75f);
-                g.World.memoryShards += 2;
-                Game.I.Ui.Toast("기억의 조각 +2");
-                GameEvents.World("investigate", "shrine");
-                Close();
-            }));
             page.options.Add(Bye());
             Show(page);
         }
 
         static readonly string[] RuinLore =
         {
-            "\"탑은 잊지 않기 위해 세워졌다. 그러나 아무것도 잊지 못하는 자는 탑을 오를 수도 없다.\"",
             "\"토끼들은 몇 번이고 다시 태어난다. 그들이 한 일은 세계만이 기억한다.\"",
-            "\"꼭대기의 기사도 한때는 영웅이었다. 모든 것을 기억하기를 택한 자였다.\"",
+            "\"쓰러진 자의 무덤에는 그가 남긴 기술이 잠들어 있다.\"",
         };
 
         static void RuinAltar(Game g, Interactable it)
@@ -450,10 +404,10 @@ namespace Diverse
             var s = it.data as StructureSpec;
             // Stable lore line per ruin (string.GetHashCode is randomized per process)
             string lore = RuinLore[(int)(Hash.Str(s.id) % (uint)RuinLore.Length)];
-            // Already read: the shard is gone. Before, the flag was set but the altar kept its shard and paid out again.
+            // Already read: the inscription has faded
             if (g.World.Flag("ruin:" + s.id))
             {
-                Show(new DialoguePage { speaker = s.name, portrait = Art.Prop("altar_empty"), text = lore + "\n\n<color=#8c7aa8>제단 위의 조각은 이미 거두었다.</color>", options = { Bye() } });
+                Show(new DialoguePage { speaker = s.name, portrait = Art.Prop("altar_empty"), text = lore + "\n\n<color=#8c7aa8>비문은 이미 해독했다.</color>", options = { Bye() } });
                 return;
             }
             if (!g.World.clearedCamps.Contains(s.id) && Actor.Nearest(it.Pos, 9, Team.Enemy) != null)
@@ -462,14 +416,13 @@ namespace Diverse
                 return;
             }
             g.World.SetFlag("ruin:" + s.id);
-            g.World.memoryShards += 1;
             it.sr.sprite = Art.Prop("altar_empty");
             it.label = "빈 제단";
             Fx.I?.Burst(it.Pos + Vector2.up * 0.6f, Pal.ShadowEl, 14, 4, 0.6f, -3);
             Sfx.Play("pickup");
             GameEvents.World("investigate", "ruins");
             g.World.Log($"{Ko.I(g.HeroName)} {s.name}에서 비문을 해독했다.", "lore");
-            Show(new DialoguePage { speaker = s.name, portrait = Art.Prop("altar"), text = lore + "\n\n(기억의 조각 +1 — 제단 위의 조각이 흩어졌다)", options = { Bye() } });
+            Show(new DialoguePage { speaker = s.name, portrait = Art.Prop("altar"), text = lore, options = { Bye() } });
         }
 
         static void Cage(Game g, Interactable it)
@@ -524,39 +477,16 @@ namespace Diverse
         }
 
         /// <summary>
-        /// Ferryman by the river: a one-off ride across to the far bank (cheap), or sells a raft (cheaper than in town).
-        /// Helping them once (first visit) gives the raft for free — another way to earn it.
+        /// Ferryman by the river: a one-off ride across to the far bank.
         /// </summary>
         static void Ferry(Game g, Interactable it)
         {
             var p = g.Player;
-            var s = it.data as StructureSpec;
-            string key = "ferry:" + s.id;
-            int raftCost = RaftCost * 2 / 3;
             int rideCost = 15;
             var page = new DialoguePage { speaker = "뱃사공 수달", portrait = Art.Npc("otter", 0) };
-            if (!g.World.Flag(key) && !p.HasRaft && Actor.Nearest(it.Pos, 14, Team.Enemy) == null && g.World.clearedCamps.Count >= 2)
-            {
-                // A wanderer who clears camps is known along the rivers
-                page.text = "오, 야영지를 몰아낸 그 토끼구나! 덕분에 강에 다시 배를 띄울 수 있게 됐어.\n이 뗏목, 받아 줘. 고마움의 표시야.";
-                page.options.Add(new DialogueOption("고맙게 받기 (뗏목 획득)", () =>
-                {
-                    g.World.SetFlag(key);
-                    p.HasRaft = true;
-                    g.World.Log($"{Ko.I(p.HeroName)} 뱃사공에게서 뗏목을 선물받았다.", "deed");
-                    Sfx.Play("levelup", 0.6f);
-                    Game.I.Ui.Toast("뗏목을 얻었다! 이제 물 위로도 이동할 수 있다.");
-                    Close();
-                }));
-                page.options.Add(Bye());
-                Show(page);
-                return;
-            }
             var far = FarBank(it.Pos);
-            page.text = p.HasRaft
-                ? "뗏목은 잘 쓰고 있어? 물살이 센 곳은 조심하고."
-                : $"강 건너편에 가고 싶어? 태워 줄 수 있어. 아예 뗏목을 사 가도 되고.\n(야영지를 2곳 이상 소탕하면 뱃사공들이 고마워할지도…)";
-            if (far.HasValue && !p.HasRaft)
+            page.text = "강 건너편에 가고 싶어? 태워 줄 수 있어.";
+            if (far.HasValue)
                 page.options.Add(new DialogueOption($"건너편까지 태워 주세요 ({rideCost} 골드)", () =>
                 {
                     if (p.Gold < rideCost) return;
@@ -564,12 +494,6 @@ namespace Diverse
                     Close();
                     Game.I.StartCoroutine(FerryRide(p, far.Value));
                 }, p.Gold >= rideCost));
-            if (!p.HasRaft)
-                page.options.Add(new DialogueOption($"뗏목 사기 ({raftCost} 골드)", () =>
-                {
-                    if (BuyRaft(p, raftCost)) { g.World.SetFlag(key); Game.I.Ui.Toast("뗏목을 샀다! 이제 물 위로도 이동할 수 있다."); }
-                    Close();
-                }, p.Gold >= raftCost));
             page.options.Add(Bye());
             Show(page);
         }
@@ -631,38 +555,6 @@ namespace Diverse
             if (a > -112.5f && a <= -67.5f) return "남";
             if (a > -157.5f && a <= -112.5f) return "남서";
             return "서";
-        }
-
-        static void Tower(Game g, Interactable it)
-        {
-            var w = g.World;
-            int cost = TowerCost(w.towerFloor);
-            var page = new DialoguePage
-            {
-                speaker = "기억의 탑", portrait = Art.Tower(),
-                text = w.towerFloor == 0
-                    ? $"거대한 문이 닫혀 있다. 머릿속에 목소리가 울린다.\n\"쌓아 온 것을 증명하라. 기억의 조각 {cost}개.\""
-                    : $"{w.towerFloor}층이 열렸다. 다음 층의 문에는 기억의 조각 {cost}개가 필요하다.\n(층을 열 때마다 세계의 몬스터가 강해지고, 모든 삶의 최대 체력이 +10)",
-            };
-            page.options.Add(new DialogueOption($"조각 바치기 ({w.memoryShards}/{cost})", () =>
-            {
-                w.memoryShards -= cost;
-                w.towerFloor++;
-                w.Log($"{Ko.I(g.HeroName)} 기억의 탑 {w.towerFloor}층을 열었다.", "tower");
-                Sfx.Play("boss_roar");
-                CameraRig.I.Shake(0.6f);
-                g.Player.RecalcStats();
-                Close();
-                if (w.towerFloor >= 3)
-                {
-                    // Top floor: the Knight of Oblivion
-                    var e = Enemy.Spawn(DB.ScaledEnemy("boss_knight", w.towerFloor), it.Pos + Vector2.down * 4f, "tower");
-                    Game.I.Ui.Toast("탑 꼭대기에서 무언가가 내려온다...");
-                }
-                else Game.I.Ui.Toast($"탑 {w.towerFloor}층이 열렸다. 세계가 변하고 있다.");
-            }, w.memoryShards >= cost));
-            page.options.Add(Bye());
-            Show(page);
         }
     }
 }

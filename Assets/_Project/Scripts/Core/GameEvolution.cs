@@ -499,7 +499,7 @@ namespace Diverse
         QuestState MakeQuest(WorldGen gen, int salt)
         {
             var r = new Rng((uint)(World.seed + salt * 31337));
-            float min = 25 + World.towerFloor * 20, max = 110 + World.towerFloor * 40;
+            float min = 25, max = 110;
             // Keep quest targets inside the area the hero can currently reach
             float bound = Player != null ? Player.Bound : 0;
             if (bound > 0) { max = Mathf.Min(max, bound - 10); min = Mathf.Min(min, max * 0.5f); }
@@ -511,7 +511,7 @@ namespace Diverse
                 {
                     var s = gen.FindNearest(Vector2.zero, StructKind.Camp, min, max, x => !World.clearedCamps.Contains(x.id) && Hash.F((int)x.center.x, (int)x.center.y, salt) > 0.3f);
                     if (s == null) return null;
-                    return new QuestState { id = "q" + salt, kind = "clear", targetId = s.id, tx = s.center.x, ty = s.center.y, title = $"{s.name} 소탕", desc = $"여행자: \"{DB.Enemy(s.enemy).name} 무리 때문에 교역로가 막혔어요.\"", rewardGold = 40 + s.tier * 15, rewardShards = 1, status = 0 };
+                    return new QuestState { id = "q" + salt, kind = "clear", targetId = s.id, tx = s.center.x, ty = s.center.y, title = $"{s.name} 소탕", desc = $"여행자: \"{DB.Enemy(s.enemy).name} 무리 때문에 교역로가 막혔어요.\"", rewardGold = 40 + s.tier * 15, status = 0 };
                 }
                 case 1:
                 {
@@ -524,13 +524,13 @@ namespace Diverse
                 {
                     var s = gen.FindNearest(Vector2.zero, StructKind.Ruins, min, Cap(max * 1.3f), x => !World.Flag("ruin:" + x.id));
                     if (s == null) return null;
-                    return new QuestState { id = "q" + salt, kind = "investigate", targetId = s.id, tx = s.center.x, ty = s.center.y, title = $"{s.name} 조사", desc = "이야기꾼이 오래된 제단의 비문을 궁금해해요.", rewardGold = 30, rewardShards = 2, status = 0 };
+                    return new QuestState { id = "q" + salt, kind = "investigate", targetId = s.id, tx = s.center.x, ty = s.center.y, title = $"{s.name} 조사", desc = "이야기꾼이 오래된 제단의 비문을 궁금해해요.", rewardGold = 30, status = 0 };
                 }
                 default:
                 {
                     var s = gen.FindNearest(Vector2.zero, StructKind.Lair, min * 1.5f, Cap(max * 2f), x => !World.clearedCamps.Contains(x.id));
                     if (s == null) return null;
-                    return new QuestState { id = "q" + salt, kind = "clear", targetId = s.id, tx = s.center.x, ty = s.center.y, title = $"{DB.Enemy(s.boss).name} 토벌", desc = $"{s.name} 깊은 곳에 무언가가 산다.", rewardGold = 120, rewardShards = 3, status = 0 };
+                    return new QuestState { id = "q" + salt, kind = "clear", targetId = s.id, tx = s.center.x, ty = s.center.y, title = $"{DB.Enemy(s.boss).name} 토벌", desc = $"{s.name} 깊은 곳에 무언가가 산다.", rewardGold = 120, status = 0 };
                 }
             }
         }
@@ -552,11 +552,10 @@ namespace Diverse
             if (q.status != 2) return;
             q.status = 3;
             Player.GainGold(q.rewardGold);
-            World.memoryShards += q.rewardShards;
             Player.GainXp(20 + q.rewardGold * 0.5f);
             World.Log($"{Ko.I(HeroName)} 의뢰를 완수했다: [{q.title}]", "quest");
             Sfx.Play("levelup", 0.7f);
-            Ui.Toast($"보상: 골드 {q.rewardGold}" + (q.rewardShards > 0 ? $", 기억의 조각 {q.rewardShards}개" : ""));
+            Ui.Toast($"보상: 골드 {q.rewardGold}");
             EnsureQuests();
         }
     }

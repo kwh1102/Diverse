@@ -100,10 +100,10 @@ namespace Diverse
             else if (tab == "chronicle")
             {
                 var w = g.World;
-                UIKit.Set(chronicleHeader, $"<b>연대기</b> — 삶 {w.lifeCount} · 무덤 {w.graves.Count} · 소탕한 야영지 {w.clearedCamps.Count} · 탑 {w.towerFloor}층");
+                UIKit.Set(chronicleHeader, $"<b>연대기</b> — 삶 {w.lifeCount} · 무덤 {w.graves.Count} · 소탕한 야영지 {w.clearedCamps.Count}");
                 UIKit.Set(chronicleList, string.Join("\n", w.chronicle.AsEnumerable().Reverse().Take(200).Select(e =>
                 {
-                    string col = e.kind switch { "death" => "#ff8a8a", "life" => "#8bff9a", "evolve" => "#c9b8ff", "legacy" => "#fff2b3", "tower" => "#e6dcff", _ => "#c9bcd8" };
+                    string col = e.kind switch { "death" => "#ff8a8a", "life" => "#8bff9a", "evolve" => "#c9b8ff", "legacy" => "#fff2b3", _ => "#c9bcd8" };
                     return $"<color=#6b5c8a>[{e.life}번째 삶]</color> <color={col}>{e.text}</color>";
                 })));
             }
