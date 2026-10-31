@@ -44,7 +44,7 @@ namespace Diverse
 
         static string Action(string a) => a switch
         {
-            "Dash" => "대시", "Potion" => "물약", "ComboFinisher" => "콤보 마무리에 더해", "Regen" => "자연 회복", "Skill" => "스킬", _ => a,
+            "Dash" => "대시", "ComboFinisher" => "콤보 마무리에 더해", "Regen" => "자연 회복", "Skill" => "스킬", _ => a,
         };
 
         static string Selection(RuleDef r, OpDef o)
@@ -207,7 +207,6 @@ namespace Diverse
                 "StoreTarget" => $"{Target(o.target).Replace("에게 ", "")}{(string.IsNullOrEmpty(o.target) || o.target == "EventTarget" ? "그 적" : "")}을 [{StateName(a, o.state)}]으로 기억",
                 "GainGold" => $"골드 +{o.amount:0}",
                 "GainXp" => $"경험치 +{o.amount:0}",
-                "GainPotion" => $"물약 +{o.count}",
                 "DropPickup" => $"{At(o.at)}{(o.mode == "gold" ? "골드" : o.mode == "xp" ? "경험치" : "하트")} 떨굼",
                 "ModifyStat" => StatText(a, o),
                 "AmplifyDamage" => $"주는 피해 +{Mag(a, o, Pct)}",

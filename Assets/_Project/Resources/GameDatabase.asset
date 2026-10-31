@@ -47,7 +47,39 @@ MonoBehaviour:
     smithSkillLevels: 01000000020000000400000006000000
     warpStoneCost: 120
     warpRange: 6
+  feel:
+    maxHitstop: 0.05
+    minHitstopScale: 0.25
+    hitstopChain: 0.2
+    meleeFxOffset: 0.4
+    swingAngleJitter: 9
+    swingScaleJitter: 0.1
+    attackTwist: 110
+    comboHop: 1.6
+    finisherHop: 2.8
+    hurtVariance: 0.3
   abilityRules: {fileID: 11400000, guid: a63b7dc07767a1e408638a24ed2f955e, type: 2}
+  artStyle: {fileID: 11400000, guid: bfcb811d2f58dcf47b0ed4839094f288, type: 2}
+  worldRules: {fileID: 11400000, guid: d30cb4636babe2249ad545c5f7872959, type: 2}
+  combatTypes:
+  - {fileID: 11400000, guid: e656a536210a4b54f81137eb3bf2b4f5, type: 2}
+  - {fileID: 11400000, guid: f8b7bfd2ab02e7742bc17380d98b8ec3, type: 2}
+  - {fileID: 11400000, guid: bb81c1e08f7d526449d82b82723002d9, type: 2}
+  - {fileID: 11400000, guid: 303c581064efb6a40aece8572c362981, type: 2}
+  - {fileID: 11400000, guid: 81093802c9bb1d040ade014495d5451c, type: 2}
+  - {fileID: 11400000, guid: f19443f634330f04886cfd910d91b678, type: 2}
+  - {fileID: 11400000, guid: cd5578cb16223474983a584a1dbcb9ae, type: 2}
+  - {fileID: 11400000, guid: cc57f2cebf1466a4d820ed5a0f1fc356, type: 2}
+  themes:
+  - {fileID: 11400000, guid: 8032f966d8fedc7458610bce3f8d5605, type: 2}
+  - {fileID: 11400000, guid: 210ffa956e5c206489f1660d6e5158ff, type: 2}
+  - {fileID: 11400000, guid: 3eac43d4ce9aa8d489e71391154250d1, type: 2}
+  - {fileID: 11400000, guid: 08febd4101de2c8439c06f5af09520ba, type: 2}
+  - {fileID: 11400000, guid: a6c7dfc7fb6d70f45b59cba93775e064, type: 2}
+  - {fileID: 11400000, guid: b80382f8034157a4abc1cfed5b58f5bb, type: 2}
+  - {fileID: 11400000, guid: bebd77bad53608b4384ba7898b14c0db, type: 2}
+  - {fileID: 11400000, guid: 75b3cc1a090da9c42806b0605e50a7ea, type: 2}
+  - {fileID: 11400000, guid: 2adb6cd08baf2f142ae2c05cb2877346, type: 2}
   playerPrefab: {fileID: 216423936105204445, guid: 6b1dc4411a619b74685505198ee66c58, type: 3}
   enemyPrefab: {fileID: 1860128500088664103, guid: ab4df4689c622db43befed524f0b0964, type: 3}
   clonePrefab: {fileID: 327556377014560540, guid: d3de4f8d0c87c6643b0ab0ff9238523d, type: 3}

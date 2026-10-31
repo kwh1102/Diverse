@@ -17,8 +17,9 @@ Unity 6 (6000.0.62f1) · URP · Input System · 2D 도트 로그라이트. 사�
 ## 새 기능을 추가할 때
 
 - 새 화면/패널: `GameCanvas.prefab`(또는 `MenuCanvas.prefab`)에 자식으로 추가 → View 스크립트 작성 → `GameUI`/`MenuUI`에 표시 조건 추가. 에디터에서 직접 편집할 수 없는 상황(배치 모드)이라면 `Editor/UIBuilder.cs`에 같은 구성을 추가하되, **기존 프리팹을 지우고 재생성하지 말 것** — 사용자가 에디터에서 고친 내용이 사라진다. 기존 프리팹에 자식을 더하려면 `PrefabUtility.LoadPrefabContents`로 열어 추가하는 에디터 스크립트를 쓴다.
-- 새 적: `Data/Enemies`에 EnemyData 에셋 + `GameDatabase.enemies`에 등록 + 그림(`Art/ArtEnemies.cs` 또는 `Resources/Sprites/enemy_<sprite>_0~2.png`)
+- 새 적: `Data/Enemies`에 EnemyData 에셋 + `GameDatabase.enemies`에 등록 + 그림(`Art/ArtEnemies.cs` 도트 템플릿, 프레임 0 대기·1·4 걸음·2 공격 준비·3 피격 → 메뉴 `Diverse/Art/Redraw Enemies`로 `Resources/Sprites/enemy_<sprite>_0~4.png` 굽기) + 나올 테마의 `Data/Themes/*.asset` → `enemies`에 추가(월드 전역 스폰은 테마 목록에서 뽑음, Docs/World.md)
 - 새 무기·코스튬: 데이터 에셋 추가 후 `GameDatabase`에 등록
+- 그림 규칙(팔레트·지면 무늬·절벽 벽 무늬·테두리)은 `Data/ArtStyle.asset` 하나에 있다. 바닥은 이미지가 아니라 `Art/TileBaker.cs`가 이 규칙으로 청크마다 도트를 찍는다(예시 그림 `Logs/World/tiles_vs_example.png` 기준). 나무·바위·소품·집·테마 장식·랜드마크는 `Art/ArtObjects.cs`·`Art/ArtScenery.cs`의 도형 키트(팔레트 3톤 + 외곽선)로 그리고 메뉴 `Diverse/Art/Redraw Objects`로 PNG를 굽는다. 예전 `Diverse/Art/Import Painted Art`(이미지 모델 그림)는 스타일이 달라 쓰지 않는다. 커스텀 모드 그림도 `Art.KeepPalette`로 팔레트에 맞춘다. 무기·방패·투사체·아이템은 `Art/ArtGear.cs`, UI 프레임은 `UIBuilder.BuildFrames` → 메뉴 `Diverse/Art/Redraw Gear and UI Frames`. 이펙트 색도 팔레트로 스냅된다. 조명은 낮 기준 중립(Global Light 2D), 빛은 가로등·모닥불만, 후처리는 `Data/PostFx.asset`(색을 바꾸지 않게 대비·채도 0). 주인공·노인·마을 사람은 `Art/ArtHero.cs`의 도트 템플릿(색은 코스튬 에셋, 팔레트로 스냅) → 메뉴 `Diverse/Art/Redraw Characters`로 `Resources/Sprites`의 PNG를 다시 굽는다(.meta 유지)
 - 작업 후 사용자에게 "에디터에서 어디를 열면 보이는지"를 함께 알려 준다.
 
 ## 검증 (Unity 에디터가 닫혀 있을 때 배치 모드로)

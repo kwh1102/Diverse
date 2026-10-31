@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f39103b0be9a89741938779a4b55645e, type: 3}
+  m_Name: MeleeBurst
+  m_EditorClassIdentifier: 
+  def:
+    type: 1
+    displayName: "\uADFC\uAC70\uB9AC \uADF9\uB51C"
+    theme: {fileID: 11400000, guid: 3eac43d4ce9aa8d489e71391154250d1, type: 2}
+    summary: "\uC704\uD5D8\uD55C \uC21C\uAC04\uC5D0 \uD30C\uACE0\uB4E4\uC5B4 \uACB0\uC815\uC801\uC778
+      \uD55C \uBC29"

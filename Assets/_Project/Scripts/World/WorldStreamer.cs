@@ -84,8 +84,10 @@ namespace Diverse
         {
             Clear();
             groundCache.Clear();
+            blockCache.Clear();
             DropBakedGround();
-            Gen = new WorldGen(seed);
+            // Normal mode: the five zones (build type + theme each); custom mode keeps its noise biomes
+            Gen = new WorldGen(seed, Session.Mode == GameMode.Normal ? ZoneMap.ForWorld(Session.World, seed) : null);
         }
 
         public void Clear()
@@ -101,6 +103,7 @@ namespace Diverse
         public void UnloadAll()
         {
             groundCache.Clear();     // a designed layout may lay different roads
+            blockCache.Clear();
             foreach (var view in chunks.Values)
             {
                 if (view == null) continue;
@@ -285,28 +288,70 @@ namespace Diverse
             return false;
         }
 
-        bool WaterAt(int tx, int ty)
+        // What a tile blocks: 0 nothing, 1 liquid (a raft crosses it), 2 a cliff, or ground the 3/4 view hides behind one
+        const byte Open = 0, Liquid = 1, Rock = 2;
+        readonly Dictionary<Vector2Int, byte[]> blockCache = new Dictionary<Vector2Int, byte[]>();
+
+        byte[] BlocksOf(Vector2Int k)
         {
-            if (!chunks.ContainsKey(new Vector2Int(MathX.FloorDiv(tx, WorldGen.Chunk), MathX.FloorDiv(ty, WorldGen.Chunk)))) return false;
-            return WorldGen.IsWater(GroundAtTile(tx, ty));
+            if (blockCache.TryGetValue(k, out var b)) return b;
+            int N = WorldGen.Chunk;
+            int hide = Mathf.CeilToInt(2 * WorldGen.FaceHeight);
+            b = new byte[N * N];
+            for (int y = 0; y < N; y++)
+                for (int x = 0; x < N; x++)
+                {
+                    int tx = k.x * N + x, ty = k.y * N + y;
+                    var g = GroundAtTile(tx, ty);
+                    byte v = WorldGen.Level(g) > 0 ? Rock : WorldGen.IsLiquid(g) ? Liquid : Open;
+                    // A cliff m tiles to the south draws its top over this tile when it stands high enough: you can't walk
+                    // there (you would seem to walk on the cliff)
+                    for (int m = 1; m <= hide && v == Open; m++)
+                        if (Mathf.CeilToInt(WorldGen.Level(GroundAtTile(tx, ty - m)) * WorldGen.FaceHeight) >= m) v = Rock;
+                    b[y * N + x] = v;
+                }
+            if (blockCache.Count > 400) blockCache.Clear();
+            blockCache[k] = b;
+            return b;
+        }
+
+        /// <summary>Block kind of a loaded tile (unloaded tiles are open, as before).</summary>
+        byte BlockAt(int tx, int ty)
+        {
+            var k = new Vector2Int(MathX.FloorDiv(tx, WorldGen.Chunk), MathX.FloorDiv(ty, WorldGen.Chunk));
+            if (!chunks.ContainsKey(k)) return Open;
+            return BlocksOf(k)[(ty - k.y * WorldGen.Chunk) * WorldGen.Chunk + tx - k.x * WorldGen.Chunk];
+        }
+
+        /// <summary>Open ground (no liquid, cliff, or ground hidden behind a cliff), whether or not its chunk is loaded.</summary>
+        public bool OpenTile(int tx, int ty)
+        {
+            var k = new Vector2Int(MathX.FloorDiv(tx, WorldGen.Chunk), MathX.FloorDiv(ty, WorldGen.Chunk));
+            return BlocksOf(k)[(ty - k.y * WorldGen.Chunk) * WorldGen.Chunk + tx - k.x * WorldGen.Chunk] == Open;
+        }
+
+        bool TileBlocked(int tx, int ty, bool swim)
+        {
+            byte b = BlockAt(tx, ty);
+            return b == Rock || (b == Liquid && !swim);
         }
 
         /// <summary>Tile-level walkability (pathfinding grid).</summary>
         public bool Walkable(int tx, int ty, bool swim = false)
         {
             if (blocked.ContainsKey(new Vector2Int(tx, ty))) return false;
-            return swim || !WaterAt(tx, ty);
+            return !TileBlocked(tx, ty, swim);
         }
 
-        /// <summary>Point-level walkability (movement): exact obstacle shapes + water tiles.</summary>
+        /// <summary>Point-level walkability (movement): exact obstacle shapes + water and cliff tiles.</summary>
         public bool Walkable(Vector2 p, bool swim = false)
         {
             if (HitsSolid(p)) return false;
-            return swim || !WaterAt(Mathf.FloorToInt(p.x), Mathf.FloorToInt(p.y));
+            return !TileBlocked(Mathf.FloorToInt(p.x), Mathf.FloorToInt(p.y), swim);
         }
 
-        /// <summary>나무·바위·벽처럼 투사체도 막는 장애물인지 (물은 제외).</summary>
-        public bool IsSolidObstacle(Vector2 p) => HitsSolid(p);
+        /// <summary>Obstacles that also stop shots: trees, rocks, walls, cliffs (not water).</summary>
+        public bool IsSolidObstacle(Vector2 p) => HitsSolid(p) || BlockAt(Mathf.FloorToInt(p.x), Mathf.FloorToInt(p.y)) == Rock;
 
         /// <summary>
         /// Collision-aware movement. Slides along walls (resolving X and Y separately).

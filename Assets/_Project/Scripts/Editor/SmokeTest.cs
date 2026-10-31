@@ -308,17 +308,16 @@ namespace Diverse.EditorTools
                 g.Player.PendingEvolutions = 0;
                 yield return Frames(2);
 
-                // 3d) Ruin altar pays its shard once
+                // 3d) Ruin altar is read once (the flag sticks, the second visit shows the faded inscription)
                 step = "ruin altar";
                 {
                     var spec = new StructureSpec { id = "smoke_ruin", name = "시험 유적", kind = StructKind.Ruins, center = g.Player.Pos + Vector2.right * 6 };
                     var chunk = WorldStreamer.I.ChunkAt(g.Player.Pos);
                     var alt = Interactable.Create(chunk.transform, "ruin_altar", "ruin:" + spec.id, "고대 제단", spec.center, Art.Prop("altar"), chunk);
                     alt.data = spec;
-                    int shards = g.World.memoryShards;
                     Dialogue.Open(g, alt); yield return Frames(2); g.CloseOverlay(); yield return Frames(1);
                     Dialogue.Open(g, alt); yield return Frames(2); g.CloseOverlay(); yield return Frames(1);
-                    if (g.World.memoryShards != shards + 1) Fail($"altar paid {g.World.memoryShards - shards} shards (expected 1)");
+                    if (!g.World.Flag("ruin:" + spec.id)) Fail("altar was not marked as read");
                     Object.Destroy(alt.gameObject);
                 }
 
@@ -336,6 +335,26 @@ namespace Diverse.EditorTools
                     if (!g.World.clearedCamps.Contains("smoke_camp")) Fail("camp not cleared after its last member died");
                     if (q.status != 2) Fail($"clear quest not completed (status {q.status})");
                     g.World.quests.Remove(q);
+                }
+
+                // 3f) Monsters roam the land: away from the town, packs appear around the hero (out of sight), by theme
+                step = "roaming monsters";
+                {
+                    var home = g.Player.Pos;
+                    var away = WorldStreamer.I.NearestWalkable(new Vector2(48, 30), 0.5f, 12);
+                    g.Player.Pos = away;
+                    WorldStreamer.I.Warm(away);
+                    int roaming = 0;
+                    for (int i = 0; i < 400 && roaming == 0; i++)
+                    {
+                        yield return null;
+                        foreach (var a in Actor.All) if (a is Enemy e && e.Alive && e.campId == null && Vector2.Distance(e.Pos, away) < DB.WorldRules.despawnRadius) roaming++;
+                    }
+                    if (roaming == 0) Fail("no roaming monsters appeared around the hero");
+                    foreach (var a in Actor.All.ToArray()) if (a is Enemy e && e.campId == null) e.Despawn();
+                    g.Player.Pos = home;
+                    WorldStreamer.I.Warm(home);
+                    yield return Frames(2);
                 }
 
                 // 3f) Warp stones: buy → place in the field → map click travels back to town
@@ -414,14 +433,14 @@ namespace Diverse.EditorTools
                     int gold = g.Player.Gold, dashMax = g.Player.DashChargesMax, dash = g.Player.DashCharges;
                     g.Player.Gold = 1000; g.Player.DashChargesMax = 2; g.Player.DashCharges = 2;
                     Dialogue.Open(g, merchant);
-                    Dialogue.Current.options[1].act(); Dialogue.Current.options[1].act();
+                    Dialogue.Current.options[0].act(); Dialogue.Current.options[0].act();
                     yield return Frames(3);
-                    if (g.Player.DashChargesMax != 4 || Dialogue.Current.options[1].enabled) Fail("dash purchase limit not enforced");
+                    if (g.Player.DashChargesMax != 4 || Dialogue.Current.options[0].enabled) Fail("dash purchase limit not enforced");
                     var buttons = Find<DialogueView>().GetComponentsInChildren<Button>(true);
                     var shoe = buttons.FirstOrDefault(b => b.gameObject.activeInHierarchy && b.GetComponentInChildren<Text>().text.Contains("대시 신발"));
                     if (shoe == null || shoe.interactable || shoe.colors.disabledColor == shoe.colors.normalColor) Fail("disabled purchase has no distinct appearance");
                     int paid = g.Player.Gold;
-                    Dialogue.Current.options[1].act();
+                    Dialogue.Current.options[0].act();
                     if (g.Player.Gold != paid || g.Player.DashChargesMax != 4) Fail("disabled purchase callback charged gold");
                     g.CloseOverlay(); g.Player.Gold = gold; g.Player.DashChargesMax = dashMax; g.Player.DashCharges = dash;
                 }

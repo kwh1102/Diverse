@@ -149,7 +149,6 @@ namespace Diverse
                 }
             }
 
-            map.Marker(WorldGen.TowerPos, "▲", Pal.Hex("c9b8ff"), "기억의 탑", true);
 
             var view = map.Rect.rect;
             var a = map.LocalToWorld(view.min); var b = map.LocalToWorld(view.max);
@@ -159,18 +158,19 @@ namespace Diverse
                 for (int rx = MathX.FloorDiv(Mathf.FloorToInt(a.x / N), R); rx <= MathX.FloorDiv(Mathf.FloorToInt(b.x / N), R); rx++)
                     foreach (var s in World.I.Gen.StructuresInRegion(rx, ry))
                     {
-                        if (!disc.Contains(s.id)) continue;
+                        // The zones' landmarks and border sites are the world's goals: always on the map
+                        if (!disc.Contains(s.id) && s.kind != StructKind.Landmark && s.kind != StructKind.Border) continue;
                         bool cleared = w.clearedCamps.Contains(s.id);
                         // Only glyphs that exist in Galmuri: a missing glyph falls back to an OS font with other metrics
                         // and is drawn off-center from its spot
                         string icon = s.kind switch
                         {
-                            StructKind.Town => "◘", StructKind.Camp => cleared ? "○" : "×", StructKind.Ruins => "▥", StructKind.Shrine => "◇", StructKind.Lair => cleared ? "○" : "♠",
+                            StructKind.Town => "◘", StructKind.Camp => "○", StructKind.Ruins => "▥", StructKind.Shrine => "◇", StructKind.Lair => cleared ? "○" : "♠",
                             StructKind.Graveyard => "†", StructKind.Chest => "▣", StructKind.Wanderer => "?",
-                            StructKind.Ferry => "≈", StructKind.Obelisk => cleared ? "○" : "◆", StructKind.Fortress => cleared ? "○" : "▦", _ => "•",
+                            StructKind.Ferry => "≈", StructKind.Landmark => cleared ? "○" : "▲", StructKind.Border => cleared ? "○" : "◆", _ => "•",
                         };
-                        Color32 col = cleared ? Pal.Hex("8bff9a") : s.kind is StructKind.Camp or StructKind.Lair or StructKind.Graveyard or StructKind.Obelisk or StructKind.Fortress ? Pal.Hex("ff8a8a") : Pal.Hex("fff2b3");
-                        map.Marker(s.center, icon, col, zoom > 2.5f ? s.name : null, false);
+                        Color32 col = cleared ? Pal.Hex("8bff9a") : s.kind is StructKind.Lair or StructKind.Landmark or StructKind.Border ? Pal.Hex("ff8a8a") : Pal.Hex("fff2b3");
+                        map.Marker(s.center, icon, col, zoom > 2.5f || s.kind is StructKind.Landmark ? s.name : null, false);
                     }
             foreach (var gr in w.graves)
                 map.Marker(new Vector2(gr.x, gr.y), gr.statue ? "Ω" : "†", gr.recovered ? Pal.Hex("8c7aa8") : Pal.Hex("e6dcff"), zoom > 4 ? gr.heroName : null, false);

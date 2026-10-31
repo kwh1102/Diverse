@@ -1,0 +1,436 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d751805f62278f946b4348ec76391105, type: 3}
+  m_Name: ArtStyle
+  m_EditorClassIdentifier: 
+  def:
+    palette:
+    - serializedVersion: 2
+      rgba: 4281542180
+    - serializedVersion: 2
+      rgba: 4281740074
+    - serializedVersion: 2
+      rgba: 4282332212
+    - serializedVersion: 2
+      rgba: 4282793021
+    - serializedVersion: 2
+      rgba: 4282793536
+    - serializedVersion: 2
+      rgba: 4283451464
+    - serializedVersion: 2
+      rgba: 4284570203
+    - serializedVersion: 2
+      rgba: 4284638316
+    - serializedVersion: 2
+      rgba: 4286350996
+    - serializedVersion: 2
+      rgba: 4287870918
+    - serializedVersion: 2
+      rgba: 4288269537
+    - serializedVersion: 2
+      rgba: 4282469913
+    - serializedVersion: 2
+      rgba: 4282479668
+    - serializedVersion: 2
+      rgba: 4282420825
+    - serializedVersion: 2
+      rgba: 4282623349
+    - serializedVersion: 2
+      rgba: 4282887813
+    - serializedVersion: 2
+      rgba: 4283286700
+    - serializedVersion: 2
+      rgba: 4282402390
+    - serializedVersion: 2
+      rgba: 4283983484
+    - serializedVersion: 2
+      rgba: 4283992997
+    - serializedVersion: 2
+      rgba: 4285638082
+    - serializedVersion: 2
+      rgba: 4284403948
+    - serializedVersion: 2
+      rgba: 4280429696
+    - serializedVersion: 2
+      rgba: 4279647436
+    - serializedVersion: 2
+      rgba: 4279727359
+    - serializedVersion: 2
+      rgba: 4286208035
+    - serializedVersion: 2
+      rgba: 4290020908
+    - serializedVersion: 2
+      rgba: 4291539819
+    - serializedVersion: 2
+      rgba: 4292601032
+    - serializedVersion: 2
+      rgba: 4284496971
+    - serializedVersion: 2
+      rgba: 4287849606
+    - serializedVersion: 2
+      rgba: 4291142078
+    - serializedVersion: 2
+      rgba: 4287349210
+    - serializedVersion: 2
+      rgba: 4282858814
+    - serializedVersion: 2
+      rgba: 4290619869
+    - serializedVersion: 2
+      rgba: 4287000751
+    - serializedVersion: 2
+      rgba: 4282266676
+    - serializedVersion: 2
+      rgba: 4283319623
+    - serializedVersion: 2
+      rgba: 4282736433
+    - serializedVersion: 2
+      rgba: 4282272293
+    - serializedVersion: 2
+      rgba: 4283465807
+    - serializedVersion: 2
+      rgba: 4282864710
+    - serializedVersion: 2
+      rgba: 4282468667
+    - serializedVersion: 2
+      rgba: 4283464296
+    - serializedVersion: 2
+      rgba: 4291215274
+    - serializedVersion: 2
+      rgba: 4292272600
+    - serializedVersion: 2
+      rgba: 4292407533
+    - serializedVersion: 2
+      rgba: 4286409542
+    - serializedVersion: 2
+      rgba: 4289634160
+    - serializedVersion: 2
+      rgba: 4291744429
+    - serializedVersion: 2
+      rgba: 4283131275
+    - serializedVersion: 2
+      rgba: 4284781756
+    - serializedVersion: 2
+      rgba: 4286035925
+    - serializedVersion: 2
+      rgba: 4284500809
+    - serializedVersion: 2
+      rgba: 4287395699
+    - serializedVersion: 2
+      rgba: 4289570716
+    - serializedVersion: 2
+      rgba: 4282856496
+    - serializedVersion: 2
+      rgba: 4284960585
+    - serializedVersion: 2
+      rgba: 4287855469
+    - serializedVersion: 2
+      rgba: 4282925374
+    - serializedVersion: 2
+      rgba: 4285428083
+    - serializedVersion: 2
+      rgba: 4286483345
+    - serializedVersion: 2
+      rgba: 4282551412
+    - serializedVersion: 2
+      rgba: 4284071346
+    - serializedVersion: 2
+      rgba: 4286474597
+    - serializedVersion: 2
+      rgba: 4288252545
+    paletteNames:
+    - outline
+    - stone deep
+    - stone darker
+    - stone dark
+    - ash
+    - stone
+    - stone light
+    - stone pale
+    - grey
+    - grey pale
+    - white
+    - green deep
+    - green dark
+    - green shade
+    - grass
+    - grass light
+    - lime
+    - earth dark
+    - earth
+    - tan dark
+    - tan
+    - yellow
+    - red deep
+    - red
+    - orange
+    - blue deep
+    - blue
+    - blue light
+    - ice
+    - purple deep
+    - purple
+    - lilac
+    - sand
+    - ash line
+    - pink
+    - pink dark
+    - basalt fissure
+    - basalt worn face
+    - forest floor
+    - forest deep moss
+    - forest lit moss
+    - bog silt
+    - bog wet silt
+    - bog lichen
+    - snow shade
+    - snow
+    - snow crest
+    - ice deep
+    - ice
+    - ice face
+    - sandstone shade
+    - sandstone
+    - sandstone crest
+    - mineral shade
+    - mineral bed
+    - mineral crest
+    - mirror shade
+    - mirror stone
+    - mirror reflection
+    - ruin mortar
+    - ruin flagstone
+    - ruin worn edge
+    - bog liquid
+    - bog liquid glint
+    - mineral floor shade
+    - mineral floor light
+    outline: 0
+    shadow: 1
+    shadowAlpha: 0.32
+    grounds:
+    - ground: 0
+      pattern: 1
+      ramp: 0d0000000e0000000f00000010000000
+      accent: 21
+      petal: 20
+      shade: 13
+      edge: -1
+      bank: 
+    - ground: 1
+      pattern: 14
+      ramp: 2700000026000000280000000d000000
+      accent: 19
+      petal: -1
+      shade: 39
+      edge: -1
+      bank: 
+    - ground: 2
+      pattern: 2
+      ramp: 130000001400000020000000
+      accent: -1
+      petal: -1
+      shade: 19
+      edge: -1
+      bank: 
+    - ground: 3
+      pattern: 3
+      ramp: 1300000020000000340000000a000000
+      accent: -1
+      petal: -1
+      shade: 19
+      edge: -1
+      bank: 
+    - ground: 4
+      pattern: 15
+      ramp: 2c0000002d0000002e00000031000000
+      accent: -1
+      petal: -1
+      shade: 44
+      edge: -1
+      bank: 
+    - ground: 5
+      pattern: 9
+      ramp: 2a000000290000002b00000026000000
+      accent: 43
+      petal: -1
+      shade: 42
+      edge: -1
+      bank: 
+    - ground: 6
+      pattern: 13
+      ramp: 240000000400000025000000
+      accent: -1
+      petal: -1
+      shade: 36
+      edge: -1
+      bank: 
+    - ground: 7
+      pattern: 5
+      ramp: 3b0000003c0000003d00000014000000
+      accent: -1
+      petal: -1
+      shade: 59
+      edge: -1
+      bank: 
+    - ground: 8
+      pattern: 3
+      ramp: 190000001a0000001b0000001c000000
+      accent: -1
+      petal: -1
+      shade: 25
+      edge: 25
+      bank: 110000001200000013000000
+    - ground: 9
+      pattern: 3
+      ramp: 19000000190000001a0000001b000000
+      accent: -1
+      petal: -1
+      shade: 25
+      edge: 25
+      bank: 110000001200000013000000
+    - ground: 10
+      pattern: 7
+      ramp: 110000001200000013000000
+      accent: -1
+      petal: -1
+      shade: 17
+      edge: -1
+      bank: 
+    - ground: 11
+      pattern: 4
+      ramp: 050000000600000007000000
+      accent: -1
+      petal: -1
+      shade: 5
+      edge: -1
+      bank: 
+    - ground: 12
+      pattern: 4
+      ramp: 060000000700000008000000
+      accent: -1
+      petal: -1
+      shade: 6
+      edge: -1
+      bank: 
+    - ground: 13
+      pattern: 10
+      ramp: 16000000170000001800000015000000
+      accent: -1
+      petal: -1
+      shade: 22
+      edge: 23
+      bank: 0000000002000000
+    - ground: 14
+      pattern: 9
+      ramp: 270000003e0000002b0000003f000000
+      accent: 63
+      petal: -1
+      shade: 39
+      edge: 43
+      bank: 2a00000011000000
+    - ground: 15
+      pattern: 8
+      ramp: 2f00000030000000310000002e000000
+      accent: -1
+      petal: -1
+      shade: 47
+      edge: -1
+      bank: 
+    - ground: 16
+      pattern: 16
+      ramp: 4000000036000000410000001f000000
+      accent: 49
+      petal: -1
+      shade: 64
+      edge: -1
+      bank: 
+    - ground: 17
+      pattern: 6
+      ramp: 3b0000003c0000003d00000007000000
+      accent: 40
+      petal: -1
+      shade: 59
+      edge: -1
+      bank: 
+    - ground: 18
+      pattern: 17
+      ramp: 38000000390000003a00000037000000
+      accent: 49
+      petal: -1
+      shade: 56
+      edge: -1
+      bank: 
+    - ground: 19
+      pattern: 18
+      ramp: 32000000330000003400000020000000
+      accent: 19
+      petal: -1
+      shade: 50
+      edge: -1
+      bank: 
+    edgeNoise: 0.13
+    edgeRim: 0.045
+    cliffs:
+    - theme: meadow
+      wall: 3
+      ramp: 02000000050000000600000007000000
+      accent: 18
+      lip: -1
+    - theme: overgrowth
+      wall: 5
+      ramp: 27000000020000000500000012000000
+      accent: 40
+      lip: -1
+    - theme: volcano
+      wall: 3
+      ramp: 00000000010000000200000003000000
+      accent: -1
+      lip: 19
+    - theme: crystal
+      wall: 4
+      ramp: 1d000000350000003600000037000000
+      accent: 49
+      lip: 55
+    - theme: glacier
+      wall: 4
+      ramp: 2f00000030000000310000002d000000
+      accent: 46
+      lip: 46
+    - theme: canyon
+      wall: 2
+      ramp: 11000000320000003300000034000000
+      accent: 19
+      lip: 52
+    - theme: fortress
+      wall: 1
+      ramp: 020000003b0000003c0000003d000000
+      accent: 40
+      lip: 61
+    - theme: mirror
+      wall: 4
+      ramp: 0000000038000000390000003a000000
+      accent: 49
+      lip: 58
+    - theme: swamp
+      wall: 5
+      ramp: 270000002a0000001100000029000000
+      accent: 43
+      lip: 43
+    cliffRise: 24
+    cliffSkew: 4
+    cornerRadius: 8
+    footShade: 3
+    characterHeight: {x: 16, y: 20}
+    prompt: 'Match ArtSource/ReferenceRedesign/reference.png: chunky low-resolution
+      top-down pixel art, compact beige rabbit with red scarf, round layered green
+      trees, warm tan paths, vertical charcoal stone cliffs, flat olive grass, orange
+      lava. Dark closed outlines, 2-4 flat tones, no gradients or painted microtexture.'

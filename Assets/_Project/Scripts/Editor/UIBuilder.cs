@@ -67,31 +67,35 @@ namespace Diverse.EditorTools
         // ───────────────────────── Frame sprites ─────────────────────────
 
         /// <summary>The pixel 9-slice frames of the old IMGUI skin, as editable PNGs (UI/Frames).</summary>
-        static void BuildFrames()
+        static void BuildFrames(bool redraw = false)
         {
-            panelSpr = Frame("panel", Pal.Hex("2b2238"), Pal.Hex("4a3d5c"), Pal.Hex("e8d8c0"), 240);
-            slotSpr = Frame("slot", Pal.Hex("1b1524"), Pal.Hex("2b2238"), Pal.Hex("6b5c8a"), 255);
-            buttonSpr = Frame("button", Pal.Hex("3d3150"), Pal.Hex("564670"), Pal.Hex("c9b8e8"), 255);
-            buttonHoverSpr = Frame("button_hover", Pal.Hex("5a4878"), Pal.Hex("7a649e"), Pal.Hex("fff2b3"), 255);
+            // Colours from the art rules' palette (Data/ArtStyle.asset): dark stone panels, grey buttons, a tan rim on hover
+            panelSpr = Frame("panel", Pal.Hex("34343f"), Pal.Hex("4b4b55"), Pal.Hex("a58b58"), 248, redraw: redraw);
+            slotSpr = Frame("slot", Pal.Hex("242633"), Pal.Hex("34343f"), Pal.Hex("7c6658"), 255, redraw: redraw);
+            buttonSpr = Frame("button", Pal.Hex("564640"), Pal.Hex("7c6658"), Pal.Hex("c2a571"), 255, redraw: redraw);
+            buttonHoverSpr = Frame("button_hover", Pal.Hex("7c6658"), Pal.Hex("a58b58"), Pal.Hex("ecd05e"), 255, redraw: redraw);
             whiteSpr = Frame("white", Color.white, Color.white, Color.white, 255, plain: true);
         }
 
-        static Sprite Frame(string name, Color32 fill, Color32 inner, Color32 edge, byte alpha, bool plain = false)
+        /// <summary>Redraw the frame PNGs in place (their .meta, so every prefab keeps them).</summary>
+        internal static void RedrawFrames() => BuildFrames(true);
+
+        static Sprite Frame(string name, Color32 fill, Color32 inner, Color32 edge, byte alpha, bool plain = false, bool redraw = false)
         {
             string path = $"{UIDir}/Frames/{name}.png";
-            if (!File.Exists(path))
+            if (!File.Exists(path) || redraw)
             {
                 EnsureDir(UIDir + "/Frames");
                 var cv = new PixelCanvas(12, 12);
                 if (plain) cv.Rect(0, 0, 12, 12, Color.white);
                 else
                 {
-                    var dark = Pal.Hex("120d18");
+                    var dark = Pal.Hex("171a26");
                     cv.Rect(1, 0, 10, 12, dark); cv.Rect(0, 1, 12, 10, dark);
                     cv.Rect(1, 1, 10, 10, edge);
                     cv.Rect(2, 2, 8, 8, inner);
                     cv.Rect(3, 3, 6, 6, Pal.A(fill, alpha));
-                    cv.Set(2, 9, Pal.White);
+                    cv.Set(2, 9, Pal.Hex("c9c6cc"));
                 }
                 var tex = cv.ToTexture();
                 File.WriteAllBytes(path, tex.EncodeToPNG());
@@ -110,7 +114,7 @@ namespace Diverse.EditorTools
             return AssetDatabase.LoadAssetAtPath<Sprite>(path);
         }
 
-        internal static void ImportPicture(string path, float ppu)
+        internal static void ImportPicture(string path, float ppu, bool smooth = false)
         {
             if (!File.Exists(path)) return;
             AssetDatabase.ImportAsset(path);
@@ -118,7 +122,7 @@ namespace Diverse.EditorTools
             imp.textureType = TextureImporterType.Sprite;
             imp.spriteImportMode = SpriteImportMode.Single;
             imp.spritePixelsPerUnit = ppu;
-            imp.filterMode = FilterMode.Point;
+            imp.filterMode = smooth ? FilterMode.Bilinear : FilterMode.Point;
             imp.mipmapEnabled = false;
             imp.npotScale = TextureImporterNPOTScale.None;
             imp.textureCompression = TextureImporterCompression.Uncompressed;
@@ -569,15 +573,10 @@ namespace Diverse.EditorTools
             Box(tr, slotSpr).raycastTarget = true;
             var goldIcon = Pic(tr, "GoldIcon", TL, new Vector2(4, 4), new Vector2(10, 10), Baked("item_gold"));
             var goldText = Label(tr, "Gold", "0", TL, new Vector2(16, 3), new Vector2(42, 12), 9);
-            var shardIcon = Pic(tr, "ShardIcon", TL, new Vector2(60, 4), new Vector2(10, 10), Baked("item_shard"));
-            var shardText = Label(tr, "Shards", "0", TL, new Vector2(72, 3), new Vector2(30, 12), 9);
-            var potionIcon = Pic(tr, "PotionIcon", TL, new Vector2(104, 4), new Vector2(10, 10), Baked("item_potion"));
-            var potionText = Label(tr, "Potions", "2 [1]", TL, new Vector2(116, 3), new Vector2(46, 12), 9);
             var region = Label(tr, "Region", "기억의 광장", TL, new Vector2(4, 17), new Vector2(156, 12), 9, color: UIKit.Highlight);
             var coord = Label(tr, "Coords", "(0, 0)  Tab 지도", TL, new Vector2(4, 30), new Vector2(140, 12), 9, color: UIKit.Muted);
-            var raftIcon = Pic(tr, "RaftIcon", TL, new Vector2(148, 30), new Vector2(10, 10), Baked("item_raft"), raycast: true);
             Image Hover(string n, float x, float w) { var h = Box(Node(tr, n, TL, new Vector2(x, 0), new Vector2(w, 15)), whiteSpr, new Color(0, 0, 0, 0)); h.raycastTarget = true; return h; }
-            var goldHover = Hover("GoldHover", 0, 56); var shardHover = Hover("ShardHover", 58, 44); var potionHover = Hover("PotionHover", 102, 60);
+            var goldHover = Hover("GoldHover", 0, 56);
 
             // Minimap under it
             var mm = Node(rt, "Minimap", TR, Vector2.zero, new Vector2(70, 70));
@@ -656,10 +655,10 @@ namespace Diverse.EditorTools
             Wire(v, "portrait", portrait); Wire(v, "heroLine", hero);
             Wire(v, "hpFill", hpFill); Wire(v, "shieldFill", shieldFill); Wire(v, "xpFill", xpFill); Wire(v, "hpText", hpText);
             Wire(v, "dashTemplate", dash);
-            Wire(v, "goldIcon", goldIcon); Wire(v, "shardIcon", shardIcon); Wire(v, "potionIcon", potionIcon); Wire(v, "raftIcon", raftIcon);
-            Wire(v, "goldText", goldText); Wire(v, "shardText", shardText); Wire(v, "potionText", potionText);
+            Wire(v, "goldIcon", goldIcon);
+            Wire(v, "goldText", goldText);
             Wire(v, "regionText", region); Wire(v, "coordText", coord);
-            Wire(v, "goldHover", goldHover.rectTransform); Wire(v, "shardHover", shardHover.rectTransform); Wire(v, "potionHover", potionHover.rectTransform);
+            Wire(v, "goldHover", goldHover.rectTransform);
             Wire(v, "minimap", minimap); Wire(v, "questsText", quests);
             WireArray(v, "skills", slots);
             Wire(v, "moveHint", moveHint); Wire(v, "dashHint", dashHint);

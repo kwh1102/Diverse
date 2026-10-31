@@ -358,11 +358,6 @@ MonoBehaviour:
       min: 1
       max: 20
       freq: 0
-    - id: GainPotion
-      def: 1
-      min: 1
-      max: 2
-      freq: 0
     - id: DropPickup
       def: 8
       min: 2

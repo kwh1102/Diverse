@@ -103,7 +103,7 @@ namespace Diverse
                 }
                 else if (!string.IsNullOrEmpty(rule.trigger)) { rule.trigger = null; fix("TRIGGER_IGNORED", w, $"{rule.kind} rules have no trigger"); }
                 if (RuleKind.Static(rule.kind) && rule.when.Count > 0) { rule.when.Clear(); fix("CONDITIONS_IGNORED", w, $"{rule.kind} rules are unconditional"); }
-                if (rule.kind == RuleKind.Replace && !(rule.replaces is "Dash" or "Potion" or "ComboFinisher")) fail("REPLACE_ACTION", w + ":" + rule.replaces, "replaces must be Dash|Potion|ComboFinisher");
+                if (rule.kind == RuleKind.Replace && !(rule.replaces is "Dash" or "ComboFinisher")) fail("REPLACE_ACTION", w + ":" + rule.replaces, "replaces must be Dash|ComboFinisher");
                 if (rule.kind == RuleKind.Meta)
                 {
                     if (string.IsNullOrEmpty(rule.select)) rule.select = "ByTag";
@@ -247,8 +247,8 @@ namespace Diverse
                     fail("UNKNOWN_STATUS", w + ":" + rule.param, string.Join("|", RuleLanguage.Statuses));
                 if (rule.trigger == "EntityExpired" && !string.IsNullOrEmpty(rule.param) && !RuleLanguage.Entities.Contains(rule.param))
                     fail("UNKNOWN_ENTITY", w + ":" + rule.param, string.Join("|", RuleLanguage.Entities));
-                if (rule.trigger == "Pickup" && !string.IsNullOrEmpty(rule.param) && !(rule.param is "gold" or "xp" or "heart" or "shard"))
-                    fail("UNKNOWN_PICKUP", w + ":" + rule.param, "gold|xp|heart|shard");
+                if (rule.trigger == "Pickup" && !string.IsNullOrEmpty(rule.param) && !(rule.param is "gold" or "xp" or "heart"))
+                    fail("UNKNOWN_PICKUP", w + ":" + rule.param, "gold|xp|heart");
                 if (rule.trigger == "Every" && rule.period <= 0) { rule.period = 4; fix("PERIOD_DEFAULT", w, "period → 4s"); }
                 if (rule.kind == RuleKind.Meta && rule.select is "ByTag" or "ByElement" or "ByTrigger")
                 {
@@ -312,7 +312,7 @@ namespace Diverse
                     if (o.op == "Convert" && !RuleLanguage.ConvertPairs.ContainsKey(o.from + ">" + o.to)) fail("CONVERT_PAIR", ow + $":{o.from}>{o.to}", "allowed: " + string.Join(", ", RuleLanguage.ConvertPairs.Keys));
                     if (o.op == "RetriggerTagged" && !RuleLanguage.RetriggerPairs.Contains(o.from + ">" + o.to)) fail("RETRIGGER_PAIR", ow + $":{o.from}>{o.to}", "allowed: " + string.Join(", ", RuleLanguage.RetriggerPairs));
                     if (o.op == "InfuseTagged" && rule.selectArg == RuleLanguage.ParseElement(o.element).ToString().ToUpper()) fail("INFUSE_SELF", ow, "infusing an element into itself does nothing");
-                    if (o.op == "Forbid" && !(o.mode is "Dash" or "Potion" or "Regen" or "Skill")) fail("FORBID_ACTION", ow + ":" + o.mode, "Dash|Potion|Regen|Skill");
+                    if (o.op == "Forbid" && !(o.mode is "Dash" or "Regen" or "Skill")) fail("FORBID_ACTION", ow + ":" + o.mode, "Dash|Regen|Skill");
                     if (o.op == "ReplaceWith" && !(o.mode is "Blink" or "Nova" or "Shield" or "Spawn" or "Projectile")) fail("REPLACE_WITH", ow + ":" + o.mode, "Blink|Nova|Shield|Spawn|Projectile");
                     if (o.op == "ReplaceWith" && o.mode == "Spawn" && !RuleLanguage.Entities.Contains(o.entity)) fail("UNKNOWN_ENTITY", ow + ":" + o.entity, string.Join("|", RuleLanguage.Entities));
                     if (o.op == "DropPickup" && !(o.mode is "heart" or "gold" or "xp")) { o.mode = "heart"; fix("PICKUP_KIND", ow, "mode → heart"); }

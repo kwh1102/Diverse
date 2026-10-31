@@ -76,7 +76,7 @@ namespace Diverse
         public static readonly string[] Entities = { "Clone", "PhantomWeapon", "Turret", "Orb", "Zone", "Mine", "Totem", "Barrier", "Decoy" };
         public static readonly string[] BuffStats = { "Attack", "AttackSpeed", "MoveSpeed", "CritChance", "Armor" };
         public static readonly string[] StateTypes = { "Counter", "StoredValue", "Charge", "Flag", "Timer", "Position", "Target" };
-        public static readonly string[] Actions = { "Dash", "Potion", "ComboFinisher", "Regen", "Skill" };
+        public static readonly string[] Actions = { "Dash", "ComboFinisher", "Regen", "Skill" };
         public static readonly string[] StatModes = { "Add", "Mul", "Min", "Max", "Override" };
 
         /// <summary>Capabilities per entity. World rule "Grip": a clone has 0 grip → it can Copy an attack but never Equip a weapon.</summary>
@@ -252,7 +252,7 @@ namespace Diverse
             Trig("StatusApplied", "상태이상을 걸 때", "A status is applied to an enemy (param: status id or empty = any)", 0.4f, T, "STATUS").param = "status";
             Trig("StatusExpired", "상태이상이 끝날 때", "A status you applied runs out on a living enemy (param: status)", 0.3f, T, "STATUS").param = "status";
             Trig("ProjectileEnd", "투사체가 사라질 때", "Your projectile hits, hits a wall or runs out (position = where)", 0.5f, Ctx.None, "PROJECTILE");
-            Trig("Pickup", "무언가를 주울 때", "Picks up gold/xp/heart/shard (param: kind or empty)", 0.5f, Ctx.None, "ECONOMY").param = "pickup";
+            Trig("Pickup", "무언가를 주울 때", "Picks up gold/xp/heart (param: kind or empty)", 0.5f, Ctx.None, "ECONOMY").param = "pickup";
             Trig("Every", "주기적으로", "Every N seconds (rule.period)", 0, Ctx.None, "PASSIVE");
             Trig("StateFull", "상태가 가득 찰 때", "One of this ability's states reaches its max (param: state name)", 0, Ctx.None, "CHARGE").param = "state";
             Trig("StateEmpty", "상태가 바닥날 때", "One of this ability's states drops to 0 (param: state name) — Timer states fire this when they run out", 0, Ctx.None, "CHARGE").param = "state";
@@ -324,7 +324,6 @@ namespace Diverse
             Val("self.moveDistance", "최근 이동 거리", "Meters moved in the last 3 seconds", Ctx.None, 6, 20);
             Val("self.dashCharges", "대시 충전", "Dash charges left", Ctx.None, 1.2f, 3);
             Val("self.gold", "보유 골드 (100 단위)", "Gold ÷ 100", Ctx.None, 1, 10);
-            Val("self.potions", "남은 물약", "Potions left", Ctx.None, 1.5f, 5);
             Val("self.comboStep", "콤보 단계", "Current basic-attack combo step (0 = none)", Ctx.None, 1, 3);
             Val("enemies.near", "주변 적 수", "Enemies within 4m", Ctx.None, 2, 8);
             Val("enemies.far", "멀리 있는 적 수", "Enemies 4~9m away", Ctx.None, 2, 8);
@@ -390,7 +389,6 @@ namespace Diverse
             // economy / growth
             Op("GainGold", "골드 획득", "Gain amount gold", "T", "", 1, 3, 1, 30, cost: 1, tags: "ECONOMY");
             Op("GainXp", "경험치 획득", "Gain amount experience", "T", "", 1, 2, 1, 20, cost: 1, tags: "GROWTH");
-            Op("GainPotion", "물약 획득", "Gain count potions (max 5)", "T", "", 2, 1, 1, 2, scalable: "count", cost: 1, tags: "HEAL");
             Op("DropPickup", "보상 떨구기", "Drop a pickup (op.mode: heart|gold|xp) worth amount at the position", "T", "at", 1, 8, 2, 40, cost: 1, tags: "ECONOMY");
             // continuous: modifiers / scaling / conversion
             Op("ModifyStat", "능력치 변경", "Passive: stat +amount (+ per × scale). mode Add (default) | Mul | Min (floor) | Max (cap) | Override (tier 4). Negative = a price", "C", "stat", 0, 0.1f, 0, 0, cost: 0);
@@ -402,7 +400,7 @@ namespace Diverse
             // replacement (TFT-style "the rules of your kit change")
             Op("ReplaceWith", "대체", "Replace rule: the player action (rule.replaces) does op.mode instead: Blink | Nova | Shield | Spawn (+entity) | Projectile", "R", "", 3, 0.5f, 0.1f, 2f, cost: 2, risk: "REDEFINE", tags: "MOBILITY");
             // constraints (prices)
-            Op("Forbid", "봉인", "Constrain rule: the player can no longer use op.mode (Dash | Potion | Regen | Skill). Always a price", "K", "", 2, 0, 0, 0, scalable: "none", cost: 0, risk: "REDEFINE");
+            Op("Forbid", "봉인", "Constrain rule: the player can no longer use op.mode (Dash | Regen | Skill). Always a price", "K", "", 2, 0, 0, 0, scalable: "none", cost: 0, risk: "REDEFINE");
             Op("CapStat", "상한", "Constrain rule: stat can never exceed amount (e.g. MaxHp 1 = glass cannon). A price", "K", "stat", 3, 0.5f, 0, 0, scalable: "none", cost: 0, risk: "REDEFINE");
             // meta (other abilities / rules)
             Op("AmplifyTagged", "태그 증폭", "Meta: effects of selected abilities (and weapon attacks with the tag) ×(1+amount)", "M", "", 1, 0.2f, 0.05f, 0.5f, cost: 0, risk: "MULTIPLICATIVE");
@@ -541,7 +539,7 @@ namespace Diverse
             sb.Append("[Statuses] ").Append(string.Join(" ", Statuses)).Append("  [Elements] ").Append(string.Join(" ", Elements)).Append('\n');
             sb.Append("[Convert pairs] ").Append(string.Join(", ", ConvertPairs.Keys)).Append('\n');
             sb.Append("[Meta selectors] rule.select = ").Append(string.Join("|", AbilitySelectors)).Append(" + rule.selectArg   [Retrigger pairs] ").Append(string.Join(", ", RetriggerPairs)).Append('\n');
-            sb.Append("[Replaceable actions] rule.replaces = Dash|Potion|ComboFinisher   [Forbid] Dash|Potion|Regen|Skill   [Stat modes] ").Append(string.Join("|", StatModes)).Append('\n');
+            sb.Append("[Replaceable actions] rule.replaces = Dash|ComboFinisher   [Forbid] Dash|Regen|Skill   [Stat modes] ").Append(string.Join("|", StatModes)).Append('\n');
             sb.Append("[State types] ").Append(string.Join(" ", StateTypes)).Append(" (Charge regenerates; Timer counts down and fires StateEmpty)\n");
             return sb.ToString();
         }

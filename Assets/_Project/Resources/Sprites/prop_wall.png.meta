@@ -5,7 +5,7 @@ TextureImporter:
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
-    mipMapMode: 0
+    mipMapMode: 1
     enableMipMap: 0
     sRGBTexture: 1
     linearTexture: 0
@@ -47,7 +47,7 @@ TextureImporter:
   spriteExtrude: 1
   spriteMeshType: 0
   alignment: 9
-  spritePivot: {x: 0.5, y: 0.033333335}
+  spritePivot: {x: 0.5, y: 0.035714287}
   spritePixelsToUnits: 16
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
@@ -69,7 +69,7 @@ TextureImporter:
   platformSettings:
   - serializedVersion: 4
     buildTarget: DefaultTexturePlatform
-    maxTextureSize: 2048
+    maxTextureSize: 1024
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 0

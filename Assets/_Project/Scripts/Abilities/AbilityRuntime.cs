@@ -9,7 +9,7 @@ namespace Diverse
     /// Rule IR executor. Every primitive in RuleLanguage has a handler here and nothing else can run — the runtime is closed.
     ///   Trigger    : subscribe to GameEvents, check conditions, run ops (proc depth / proc budget / cooldown)
     ///   Continuous : re-evaluated every 0.25s into stat modifiers; per-hit ones (AmplifyDamage/Resist) are checked per hit
-    ///   Replace    : intercepts player actions (Dash / Potion / combo finisher)
+    ///   Replace    : intercepts player actions (Dash / combo finisher)
     ///   Constrain  : forbids actions / caps stats (the price side of an ability)
     ///   Meta       : resolved per ability from selectors (tag / element / trigger / strongest / newest / all)
     ///   System     : read by the evolution pipeline; one-shot system ops run when the ability is acquired
@@ -189,13 +189,11 @@ namespace Diverse
 
         IEnumerable<(AbilityDef a, RuleDef r)> RulesOf(string kind) => Owned.SelectMany(a => a.rules.Where(r => r.kind == kind).Select(r => (a, r)));
 
-        /// <summary>Constraint: is this action forbidden ("Dash" | "Potion" | "Regen" | "Skill")?</summary>
+        /// <summary>Constraint: is this action forbidden ("Dash" | "Regen" | "Skill")?</summary>
         public bool Forbids(string action) => RulesOf(RuleKind.Constrain).Any(x => x.r.ops.Any(o => o.op == "Forbid" && o.mode == action));
 
         /// <summary>Replacement of the dash. Returns true when the input was consumed.</summary>
         public bool ReplaceDash(Vector2 dir) => Replace("Dash", new CombatEvent { type = Trig.Dash, source = p, position = p.Pos, direction = dir });
-
-        public bool ReplacePotion() => Replace("Potion", new CombatEvent { source = p, position = p.Pos });
 
         bool Replace(string action, CombatEvent ev)
         {
@@ -688,7 +686,6 @@ namespace Diverse
                 case "self.moveDistance": return trail.Count < 2 ? 0 : Mathf.Min(20, PathLength());
                 case "self.dashCharges": return p.DashCharges;
                 case "self.gold": return p.Gold / 100f;
-                case "self.potions": return p.Potions;
                 case "self.comboStep": return p.InCombo ? 1 : 0;
                 case "enemies.near": return Actor.InRadius(p.Pos, 4, Team.Enemy).Count();
                 case "enemies.far": return Actor.InRadius(p.Pos, 9, Team.Enemy).Count(x => (x.Pos - p.Pos).sqrMagnitude > 16);
@@ -1135,7 +1132,6 @@ namespace Diverse
                 }
                 case "GainGold": p.GainGold(Mathf.RoundToInt(mag)); break;
                 case "GainXp": p.GainXp(mag); break;
-                case "GainPotion": p.Potions = Mathf.Min(5, p.Potions + cnt); break;
                 case "DropPickup": Pickup.Drop(o.mode is "gold" or "xp" ? o.mode : "heart", mag, at); break;
             }
 

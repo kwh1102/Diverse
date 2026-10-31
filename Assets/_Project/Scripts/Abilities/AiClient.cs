@@ -98,10 +98,10 @@ Charge Window Anchor Scaling Tradeoff Constrain Convert Replace Meta System. For
 - Window:     on, effect|stat, window — after X, for a few seconds a passive bonus is active
 - Anchor:     on, release, effect, target(StoredTarget for an enemy) — remember a place/enemy at X, act on it at Y
 - Scaling:    effect|stat, scale — a stat that grows with a value (missing hp, enemies near, build.tag:FIRE…)
-- Tradeoff:   price (a stat to lower, or an action to give up: Dash|Potion|Regen|Skill), effect|stat (+scale) — a real cost for a gain
+- Tradeoff:   price (a stat to lower, or an action to give up: Dash|Regen|Skill), effect|stat (+scale) — a real cost for a gain
 - Constrain:  price — the player can no longer do something (only as part of a bigger ability)
 - Convert:    from, to (whitelisted pairs), scale+chance (optional hp condition) — redefine a game rule
-- Replace:    on (Dash|Potion|ComboFinisher), effect (Blink|Nova|Shield|Spawn|Projectile), entity/element — the action does something else
+- Replace:    on (Dash|ComboFinisher), effect (Blink|Nova|Shield|Spawn|Projectile), entity/element — the action does something else
 - Meta:       select (ByTag|ByElement|ByTrigger|Strongest|Newest|All), tag/element/on, effect (AmplifyTagged|RepeatTagged|HasteTagged|
               InfuseTagged|ExtendTagged|EnlargeTagged|MultiplyTagged|RetagAbilities|GateTagged|UnchainTagged|RetriggerTagged), element, from/to
 - System:     effect (OfferCount|TierBias|BudgetBias|RerollDiscount|TagBias|ExtraEvolution|UpgradeRandom|DelayedReward), tag, count

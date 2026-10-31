@@ -16,9 +16,9 @@ namespace Diverse
         public int seed;
         public int lifeCount;                 // which life this is
         public int gold;                      // shared coffer (inherited through the town bank)
-        public int memoryShards;              // tower-opening currency
-        public int towerFloor;                // highest tower floor reached
         public int bossKills;                 // bosses defeated across all lives (opens farther exploration rings)
+        public List<string> zones = new List<string>();        // normal mode: the 5 zones' build types (CombatType names), counter-clockwise; chosen once per world
+        public List<string> zoneThemes = new List<string>();   // optional theme id per zone (empty = the build type's default theme)
         public List<string> flags = new List<string>();          // per-structure state ("chest:12:-3:0")
         public List<string> clearedCamps = new List<string>();
         public List<string> discovered = new List<string>();     // discovered structure ids (shown on the map)
@@ -57,13 +57,12 @@ namespace Diverse
         public float weaponDamage;
         public int level = 1;
         public float xp, xpToNext = 60;
-        public int gold, kills, potions;
+        public int gold, kills;
         public int[] attrs = new int[4];
         public int unspentAttr, pendingEvolutions;
         public float hp;
         public int dashMax = 2;
         public float x, y;
-        public bool raft;
         public int warpStones;                                // warp stones carried (not yet placed)
         public int skillsLearned = -1;                        // QWER slots learned, in order (-1 = old save: all 4)
         public List<AbilityRecord> abilities = new List<AbilityRecord>();
@@ -115,7 +114,7 @@ namespace Diverse
         public float tx, ty;          // target coordinates
         public int need, have;
         public int status;            // 0 offered, 1 in progress, 2 done (ready to report), 3 complete
-        public int rewardGold, rewardShards;
+        public int rewardGold;
         public string enemy;
     }
 
@@ -230,7 +229,7 @@ namespace Diverse
         public static WorldSave NewWorld()
         {
             var w = new WorldSave { seed = UnityEngine.Random.Range(1000, int.MaxValue / 4) };
-            w.Log("세계가 깨어났다. 멀리 기억의 탑이 희미하게 빛난다.", "world");
+            w.Log("세계가 깨어났다.", "world");
             return w;
         }
 

@@ -4,14 +4,14 @@ using UnityEngine;
 namespace Diverse
 {
     /// <summary>
-    /// Interactable objects in the world (NPCs, chests, graves, statues, shrines, cages, the tower door...).
+    /// Interactable objects in the world (NPCs, chests, graves, statues, shrines, cages...).
     /// Interact by right-clicking or with the F key when close.
     /// </summary>
     public class Interactable : MonoBehaviour
     {
         public static readonly List<Interactable> All = new List<Interactable>();
         public string id;
-        public string kind;              // npc_storyteller, npc_merchant, npc_smith, npc_villager, chest, grave, statue, shrine, cage, tower, board, wanderer, well, bank
+        public string kind;              // npc_storyteller, npc_merchant, npc_smith, npc_villager, chest, grave, statue, shrine, cage, board, wanderer, well, bank
         public string label;
         public float range = 1.4f;
         public SpriteRenderer sr;
@@ -44,7 +44,7 @@ namespace Diverse
                 animT += Time.deltaTime;
                 sr.sprite = idleFrames[(int)(animT * 2) % idleFrames.Length];
             }
-            if (kind == "shrine" || kind == "tower_gate")
+            if (kind == "shrine")
                 transform.position = basePos + Vector2.up * Mathf.Sin(Time.time * 2) * 0.03f;
         }
 

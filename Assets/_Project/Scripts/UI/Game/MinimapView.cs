@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace Diverse
 {
-    /// <summary>HUD minimap: 48 world units around the player, enemies as dots, quest targets and the tower on the edge.</summary>
+    /// <summary>HUD minimap: 48 world units around the player, enemies as dots, quest targets on the edge.</summary>
     public class MinimapView : MonoBehaviour
     {
         [SerializeField] MapCanvas map;
@@ -35,7 +35,6 @@ namespace Diverse
                 map.Marker(a.Pos, "■", boss ? Color.magenta : new Color(1, 0.3f, 0.3f), null, false, boss ? bossMarkerSize : enemyMarkerSize);
             }
             foreach (var q in g.World.quests.Where(x => x.status == 1 && x.kind != "hunt")) map.Marker(new Vector2(q.tx, q.ty), "!", Pal.Gold, null, true);
-            map.Marker(WorldGen.TowerPos, "▲", Pal.Hex("c9b8ff"), null, true);
             map.Marker(p, "●", Color.white, null, false);
             map.EndMarkers();
         }
