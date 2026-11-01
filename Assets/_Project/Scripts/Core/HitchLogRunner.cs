@@ -47,7 +47,7 @@ namespace Diverse
                 if (Session.HasRunToContinue) Session.ContinueLife();
                 else
                 {
-                    Session.OpenSlot(GameMode.Normal, 1);
+                    Session.OpenSlot(1);
                     Session.NewLife(DB.Costumes[0], (WeaponKind)0);
                 }
             }

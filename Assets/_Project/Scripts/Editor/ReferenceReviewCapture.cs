@@ -19,7 +19,7 @@ namespace Diverse.EditorTools
             string dir = Path.GetFullPath("Logs/ReferenceReviewSave");
             Directory.CreateDirectory(dir);
             Directory.CreateDirectory(Path.Combine(dir, "slots/normal_1"));
-            File.WriteAllText(Path.Combine(dir, "settings.json"), JsonUtility.ToJson(new Settings { aiEnabled = false, sfx = 0, music = 0, lastMode = 0, lastSlot = 1 }));
+            File.WriteAllText(Path.Combine(dir, "settings.json"), JsonUtility.ToJson(new Settings { aiEnabled = false, sfx = 0, music = 0, lastSlot = 1 }));
             var world = new WorldSave { seed = 12345 };
             world.zoneThemes.AddRange(new[] { "meadow", "volcano", "overgrowth", "crystal", "glacier" });
             File.WriteAllText(Path.Combine(dir, "slots/normal_1/world.json"), JsonUtility.ToJson(world));

@@ -35,7 +35,7 @@ namespace Diverse
             Sfx.PlayMusic(true);
             bool toSelect = Session.OpenCharacterSelect && !Session.HasRunToContinue;
             Session.OpenCharacterSelect = false;
-            // The title first (모드·세계 선택 / 설정 / 종료); after a death, straight to designing the next life of that world
+            // The title first (세계 선택 / 설정 / 종료); after a death, straight to designing the next life of that world
             Show(toSelect ? NewLifeScreen : Screen.Title);
         }
 

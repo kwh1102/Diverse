@@ -35,8 +35,8 @@ namespace Diverse
         public static bool Activate(DesignPack p)
         {
             p ??= DesignPack.Default();
-            // Normal mode keeps the hand-made world and enemies whatever a pack says: only the hero and weapon are designed
-            if (Session.Mode == GameMode.Normal && (!p.world.IsDefault || !p.enemies.Identity || p.enemies.art.Count > 0 || p.enemies.names.Count > 0))
+            // Keep the built-in world and enemies even when loading an older design pack.
+            if (!p.world.IsDefault || !p.enemies.Identity || p.enemies.art.Count > 0 || p.enemies.names.Count > 0)
             {
                 p = p.Clone();
                 p.world = new WorldLook();

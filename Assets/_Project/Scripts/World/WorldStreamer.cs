@@ -86,8 +86,8 @@ namespace Diverse
             groundCache.Clear();
             blockCache.Clear();
             DropBakedGround();
-            // Normal mode: the five zones (build type + theme each); custom mode keeps its noise biomes
-            Gen = new WorldGen(seed, Session.Mode == GameMode.Normal ? ZoneMap.ForWorld(Session.World, seed) : null);
+            // Every world uses the five built-in zones (build type + theme each).
+            Gen = new WorldGen(seed, ZoneMap.ForWorld(Session.World, seed));
         }
 
         public void Clear()

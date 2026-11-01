@@ -118,9 +118,6 @@ namespace Diverse
         public string enemy;
     }
 
-    /// <summary>Normal: the hand-made world and enemies, only the hero and weapon are designed. Custom: everything can be designed.</summary>
-    public enum GameMode { Normal, Custom }
-
     /// <summary>A save slot as the slot screen sees it.</summary>
     public class SlotInfo
     {
@@ -147,7 +144,7 @@ namespace Diverse
         public string imageModel = "gpt-image-2.5-flare";   // design studio pictures (Images API)
         public string imageQuality = "low";                 // low | medium: pictures are shrunk to a few dozen pixels, low is usually enough
         public int modelsVersion;                           // settings migrations (2 = gpt-6-luna / gpt-image-2.5)
-        public int lastMode = (int)GameMode.Custom, lastSlot = 1;   // the save slot opened last (the Game scene opened from the editor uses it)
+        public int lastSlot = 1;   // the save slot opened last (the Game scene opened from the editor uses it)
         public bool aiEnabled = true;
     }
 
@@ -159,21 +156,21 @@ namespace Diverse
         public static string DesignDir => Path.Combine(Dir, "designs");
         static string SettingsPath => Path.Combine(Dir, "settings.json");
 
-        // ───────── Save slots: each mode keeps up to SlotCount worlds (slots/normal_1 … custom_3) ─────────
+        // Keep the existing normal_* paths so established worlds remain available.
+        // Former custom_* saves are left on disk, outside the active slot list.
         public const int SlotCount = 3;
         /// <summary>The slot that LoadWorld / SaveRun… read and write (Session.OpenSlot sets it).</summary>
-        public static GameMode Mode = GameMode.Custom;
         public static int Slot = 1;
 
-        static string SlotDir(GameMode m, int slot) => Path.Combine(Dir, "slots", (m == GameMode.Normal ? "normal_" : "custom_") + slot);
-        static string WorldPath => Path.Combine(SlotDir(Mode, Slot), "world.json");
-        static string RunPath => Path.Combine(SlotDir(Mode, Slot), "run.json");
-        static void EnsureSlotDir() { try { Directory.CreateDirectory(SlotDir(Mode, Slot)); } catch { } }
+        static string SlotDir(int slot) => Path.Combine(Dir, "slots", "normal_" + slot);
+        static string WorldPath => Path.Combine(SlotDir(Slot), "world.json");
+        static string RunPath => Path.Combine(SlotDir(Slot), "run.json");
+        static void EnsureSlotDir() { try { Directory.CreateDirectory(SlotDir(Slot)); } catch { } }
 
         /// <summary>What the slot screen shows about a slot (null = empty).</summary>
-        public static SlotInfo Peek(GameMode m, int slot)
+        public static SlotInfo Peek(int slot)
         {
-            var path = Path.Combine(SlotDir(m, slot), "world.json");
+            var path = Path.Combine(SlotDir(slot), "world.json");
             try
             {
                 if (!File.Exists(path)) return null;
@@ -181,33 +178,33 @@ namespace Diverse
                 if (w == null || w.seed == 0) return null;
                 return new SlotInfo
                 {
-                    world = w, hasRun = File.Exists(Path.Combine(SlotDir(m, slot), "run.json")),
+                    world = w, hasRun = File.Exists(Path.Combine(SlotDir(slot), "run.json")),
                     lastPlayed = File.GetLastWriteTime(path),
                 };
             }
             catch { return null; }
         }
 
-        public static void DeleteSlot(GameMode m, int slot)
+        public static void DeleteSlot(int slot)
         {
-            try { var d = SlotDir(m, slot); if (Directory.Exists(d)) Directory.Delete(d, true); }
+            try { var d = SlotDir(slot); if (Directory.Exists(d)) Directory.Delete(d, true); }
             catch (Exception e) { Debug.LogWarning("Slot delete failed: " + e.Message); }
         }
 
-        /// <summary>Saves from before slots (world.json / run.json in the save root) become custom slot 1 — they could already use designs.</summary>
+        /// <summary>Saves from before slots (world.json / run.json in the save root) become slot 1.</summary>
         public static void MigrateLegacySaves()
         {
             try
             {
                 var oldWorld = Path.Combine(Dir, "world.json");
                 if (!File.Exists(oldWorld)) return;
-                var target = SlotDir(GameMode.Custom, 1);
+                var target = SlotDir(1);
                 if (File.Exists(Path.Combine(target, "world.json"))) return;
                 Directory.CreateDirectory(target);
                 File.Move(oldWorld, Path.Combine(target, "world.json"));
                 var oldRun = Path.Combine(Dir, "run.json");
                 if (File.Exists(oldRun)) File.Move(oldRun, Path.Combine(target, "run.json"));
-                Debug.Log("[Save] moved the old world into custom slot 1");
+                Debug.Log("[Save] moved the old world into slot 1");
             }
             catch (Exception e) { Debug.LogWarning("Save migration failed: " + e.Message); }
         }

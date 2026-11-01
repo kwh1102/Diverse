@@ -68,7 +68,7 @@ namespace Diverse.EditorTools
                 yield return null;
                 var studio = Object.FindFirstObjectByType<DesignStudioView>(FindObjectsInactive.Include);
                 Button B(string n) => studio.GetComponentsInChildren<Button>(true).First(b => b.name == n);
-                for (int i = 0; i < 4; i++) { B("Tab " + i).onClick.Invoke(); studio.GetComponentInChildren<InputField>().text = Prompts[i]; }
+                for (int i = 0; i < 2; i++) { B("Tab " + i).onClick.Invoke(); studio.GetComponentInChildren<InputField>().text = Prompts[i]; }
                 var gen = B("Generate");
                 float t0 = Time.realtimeSinceStartup;
                 gen.onClick.Invoke();

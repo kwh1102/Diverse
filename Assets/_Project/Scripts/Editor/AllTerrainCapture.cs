@@ -15,7 +15,7 @@ namespace Diverse.EditorTools
         {
             string dir = Path.GetFullPath("Logs/AllTerrainScratch");
             Directory.CreateDirectory(dir); Directory.CreateDirectory(Path.Combine(dir, "slots/normal_1"));
-            File.WriteAllText(Path.Combine(dir, "settings.json"), JsonUtility.ToJson(new Settings { aiEnabled = false, sfx = 0, music = 0, lastMode = 0, lastSlot = 1 }));
+            File.WriteAllText(Path.Combine(dir, "settings.json"), JsonUtility.ToJson(new Settings { aiEnabled = false, sfx = 0, music = 0, lastSlot = 1 }));
             File.WriteAllText(Path.Combine(dir, "slots/normal_1/world.json"), JsonUtility.ToJson(new WorldSave { seed = 12345 }));
             Directory.CreateDirectory("Logs/AllTerrain"); File.WriteAllText("Logs/AllTerrain/terrain_checks.txt", "");
             SessionState.SetBool(Key, true); SessionState.SetBool(Key + ".OK", false); SessionState.SetString(Key + ".Save", dir);

@@ -140,7 +140,7 @@ namespace Diverse.EditorTools
                 step = "menu";
                 if (Find<MenuUI>() == null) { Fail("MenuUI missing (MainMenu scene)"); yield break; }
 
-                // 0) Title (모드·세계 선택 / 설정 / 종료) → slot screen. A normal-mode world designs only the hero and weapon;
+                // 0) Title (세계 선택 / 설정 / 종료) → slot screen. Design only the hero and weapon;
                 //    worlds are created, continued and deleted per row
                 step = "title";
                 var titleView = Find<TitleView>();
@@ -173,30 +173,26 @@ namespace Diverse.EditorTools
                 if (!Visible<SaveSelectView>()) { Fail("slot screen did not open from the title"); yield break; }
                 var slotsView = Find<SaveSelectView>();
                 Transform Row(int i) => slotsView.transform.Find("Panel/Slots/Slot " + i);
-                Click(slotsView, "NormalTab");
-                yield return Frames(1);
+                if (slotsView.transform.Find("Panel/NormalTab") != null || slotsView.transform.Find("Panel/CustomTab") != null)
+                    Fail("obsolete mode tabs remain on the slot screen");
                 Click(Row(1), "Play");               // empty second slot → new world → design the first life
                 yield return Frames(2);
-                if (Session.Mode != GameMode.Normal || Session.Slot != 2) { Fail("creating a normal world failed"); yield break; }
+                if (Session.Slot != 2) { Fail("creating a world failed"); yield break; }
                 var normalStudio = Find<DesignStudioView>();
                 if (!Visible<DesignStudioView>()) { Fail("a new world did not open the design studio"); yield break; }
                 if (normalStudio.GetComponentsInChildren<Button>().Any(b => b.name == "Tab 2" || b.name == "Tab 3")) Fail("normal mode still offers world/enemy design");
                 Click(normalStudio, "Back");
                 yield return Frames(2);
                 if (!Visible<SaveSelectView>()) { Fail("studio back did not return to the slot screen"); yield break; }
-                Click(slotsView, "NormalTab");
-                yield return Frames(2);
                 Click(Row(1), "Delete");
                 yield return Frames(1);
-                if (SaveSystem.Peek(GameMode.Normal, 2) == null) Fail("one press already deleted the world (no confirmation)");
+                if (SaveSystem.Peek(2) == null) Fail("one press already deleted the world (no confirmation)");
                 Click(Row(1), "Delete");
                 yield return Frames(1);
-                if (SaveSystem.Peek(GameMode.Normal, 2) != null) Fail("deleting a world left it behind");
-                Click(slotsView, "CustomTab");
-                yield return Frames(1);
+                if (SaveSystem.Peek(2) != null) Fail("deleting a world left it behind");
                 Click(Row(0), "Play");
                 yield return Frames(2);
-                if (Session.Mode != GameMode.Custom || Session.Slot != 1) { Fail("opening a custom world failed"); yield break; }
+                if (Session.Slot != 1) { Fail("opening a world failed"); yield break; }
 
                 // Design pieces that the live AI path uses (no network here)
                 step = "design units";
@@ -217,7 +213,7 @@ namespace Diverse.EditorTools
                     "눈 내린 겨울 숲, 하늘색 호수",
                     "모든 적이 과자로 만들어진 세계",
                 };
-                for (int i = 0; i < 4; i++)
+                for (int i = 0; i < 2; i++)
                 {
                     Click(studio, "Tab " + i);
                     promptField.text = prompts[i];
@@ -228,14 +224,15 @@ namespace Diverse.EditorTools
                 if (pack.weapon.shape != "needle" || pack.weapon.hold != "Mouth" || pack.attack.origin != "Mouth" || pack.weapon.baseWeapon != "Crossbow")
                     Fail($"toothpick prompt not understood ({pack.weapon.shape}/{pack.weapon.hold}/{pack.attack.origin}/{pack.weapon.baseWeapon})");
                 if (pack.ignored.Count == 0) Fail("power request was not reported as ignored");
-                if (pack.hero.hat != "wizard" || pack.world.IsDefault || pack.enemies.Identity) Fail("hero/world/enemy prompts not applied");
+                if (pack.hero.hat != "wizard") Fail("hero prompt not applied");
+                if (!pack.world.IsDefault || !pack.enemies.Identity) Fail("design changed the built-in world or enemies");
                 if (Art.Bolt() == null || Art.Weapon(WeaponKind.Crossbow) == null) Fail("designed sprites missing");
                 Click(studio, "Undo");
                 yield return Frames(1);
                 if (DesignRuntime.Active.weapon.shape == "needle") Fail("undo did not restore the previous look");
                 Click(studio, "Generate");          // nothing changed → redo the current tab
                 yield return Frames(1);
-                for (int i = 0; i < 4; i++) { Click(studio, "Tab " + i); promptField.text = prompts[i] + " 좋아"; }
+                for (int i = 0; i < 2; i++) { Click(studio, "Tab " + i); promptField.text = prompts[i] + " 좋아"; }
                 Click(studio, "Generate");
                 yield return Frames(2);
 
@@ -678,8 +675,8 @@ namespace Diverse.EditorTools
                 yield return Frames(2);
                 if (!Visible<DesignStudioView>()) { Fail("design studio did not open from the pause menu"); yield break; }
                 var gameStudio = Find<DesignStudioView>();
-                Click(gameStudio, "Tab 2");
-                gameStudio.GetComponentInChildren<InputField>().text = "가을 단풍 숲";
+                if (gameStudio.GetComponentsInChildren<Button>().Any(b => b.name is "Tab 2" or "Tab 3"))
+                    Fail("in-game studio still offers world/enemy design");
                 Click(gameStudio, "Tab 1");
                 gameStudio.GetComponentInChildren<InputField>().text = "보라색 몽둥이, 묵직하게";
                 Click(gameStudio, "Generate");
@@ -689,24 +686,22 @@ namespace Diverse.EditorTools
                 if (Visible<DesignStudioView>()) Fail("design studio did not close after applying");
                 if (!g.Player.Costume.id.StartsWith(DesignStore.CostumePrefix)) Fail("in-game design did not redraw the hero");
                 if (g.Player.Weapon.kind != kindBefore || g.Player.Weapon.baseDamage != damageBefore) Fail("in-game design changed the weapon chassis/numbers");
-                if (DesignRuntime.Active.world.IsDefault) Fail("in-game world design not active");
+                if (!DesignRuntime.Active.world.IsDefault || !DesignRuntime.Active.enemies.Identity) Fail("in-game design changed the world or enemies");
                 g.CloseOverlay();
                 yield return Frames(30);
 
-                // 4c) A fully pictured design (synthetic pictures, no network): ground textures, scenery, town, effects, enemies, poses
+                // 4c) An older fully pictured pack keeps hero/weapon effects while world/enemy overrides are ignored.
                 step = "pictured design";
                 var pictured = DesignTestData.Pictured(g.Player);
                 g.ApplyDesign(DesignStore.Commit(pictured));
                 yield return Frames(40);
-                // City layout: a street grid on open land, buildings lining the streets
-                bool street = false;
-                for (int t = 24; t < 200 && !street; t += 12) street |= WorldStreamer.I.GroundAtTile(t, -40) == Ground.Path;
-                if (!street) Fail("city layout laid no streets");
-                if (!Object.FindObjectsByType<SpriteRenderer>(FindObjectsSortMode.None).Any(s => s.name == "building" || s.name == "decor" || s.name == "prop")) Fail("no designed scenery was placed");
+                if (!DesignRuntime.Active.world.IsDefault || !DesignRuntime.Active.enemies.Identity
+                    || DesignRuntime.Active.enemies.art.Count > 0 || DesignRuntime.Active.enemies.names.Count > 0)
+                    Fail("an older pack replaced the built-in world or enemies");
                 if (Art.Enemy("shroom", 1).rect.height < 10) Fail("enemy moving pose missing");
                 var designed = DesignCombat.For(DesignRuntime.Active);
                 if (designed == null || Art.Slash(designed.slashColor, designed.slashCore, 20, 140, 1).Length != 5) Fail("designed swing effect not used");
-                if (!DesignRuntime.GroundTexel(Ground.Grass, 3, 5, out _)) Fail("ground texture not used");
+                if (DesignRuntime.GroundTexel(Ground.Grass, 3, 5, out _)) Fail("an older pack replaced the ground texture");
                 if (g.Player.Weapon.kind != kindBefore) Fail("pictured design changed the weapon chassis");
                 yield return Frames(20);
 

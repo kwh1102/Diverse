@@ -369,7 +369,7 @@ namespace Diverse.EditorTools
             layout.spacing = 6; layout.childControlHeight = false; layout.childControlWidth = true; layout.childForceExpandHeight = false;
             Button B(string n, string cap) { var b = Btn(col, n, cap, TL, Vector2.zero, new Vector2(140, 22)); return b; }
             // Worlds are continued / started / ended / deleted on the slot screen (SaveSelectView); the title only leads there
-            var slotB = B("ChangeSlot", "모드·세계 선택");
+            var slotB = B("ChangeSlot", "세계 선택");
             var settings = B("Settings", "설정");
             var quit = B("Quit", "종료");
             var footer = Label(rt, "Footer", "AI 진화: 로컬 모드   ·   세계 시드 0", BL, new Vector2(8, -18), new Vector2(620, 14), 9);

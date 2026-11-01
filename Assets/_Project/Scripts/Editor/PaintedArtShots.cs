@@ -29,7 +29,7 @@ namespace Diverse.EditorTools
             if (Directory.Exists(dir)) Directory.Delete(dir, true);
             Directory.CreateDirectory(dir);
             // Normal mode (the five zones), slot 1, fixed seed
-            File.WriteAllText(Path.Combine(dir, "settings.json"), JsonUtility.ToJson(new Settings { aiEnabled = false, sfx = 0, music = 0, lastMode = (int)GameMode.Normal, lastSlot = 1 }));
+            File.WriteAllText(Path.Combine(dir, "settings.json"), JsonUtility.ToJson(new Settings { aiEnabled = false, sfx = 0, music = 0, lastSlot = 1 }));
             Directory.CreateDirectory(Path.Combine(dir, "slots", "normal_1"));
             File.WriteAllText(Path.Combine(dir, "slots", "normal_1", "world.json"), JsonUtility.ToJson(new WorldSave { seed = 12345 }));
             System.Environment.SetEnvironmentVariable("DIVERSE_SAVE_DIR", dir);
