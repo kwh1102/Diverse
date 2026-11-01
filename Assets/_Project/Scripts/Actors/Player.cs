@@ -862,6 +862,13 @@ namespace Diverse
 
         // ───────────────────────── Animation ─────────────────────────
 
+        public static Pose IdlePose(float time)
+        {
+            var art = DB.ArtStyle;
+            return Mathf.Repeat(time, Mathf.Max(1, art.heroBlinkInterval)) < Mathf.Clamp(art.heroBlinkDuration, 0, .15f)
+                ? Pose.Idle1 : Pose.Idle0;
+        }
+
         void Animate(float dt)
         {
             animT += dt;
@@ -872,7 +879,7 @@ namespace Diverse
             else if (Costume.frames != null && weaponSwingT < weaponSwingDur) pose = weaponSwingT < weaponSwingDur * 0.45f ? Pose.AttackWind : Pose.AttackHit;
             else if (dashT > 0) pose = Pose.Run1;
             else if (Moving) pose = (Pose)((int)Pose.Run0 + (int)(walkStride / (Mathf.PI * 0.5f)) % 4);   // 4 frames per two steps, in step with the stride
-            else pose = (int)(animT * 2.2f) % 2 == 0 ? Pose.Idle0 : Pose.Idle1;
+            else pose = IdlePose(animT);
             body.sprite = Art.Rabbit(Costume, pose);
             UpdateRaft();
             bool left = Facing.x < -0.05f;

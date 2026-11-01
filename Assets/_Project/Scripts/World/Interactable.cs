@@ -42,7 +42,8 @@ namespace Diverse
             if (idleFrames != null && idleFrames.Length > 1)
             {
                 animT += Time.deltaTime;
-                sr.sprite = idleFrames[(int)(animT * 2) % idleFrames.Length];
+                int frame = kind == "npc_villager" ? (int)Player.IdlePose(animT) : (int)(animT * 2) % idleFrames.Length;
+                sr.sprite = idleFrames[frame % idleFrames.Length];
             }
             if (kind == "shrine")
                 transform.position = basePos + Vector2.up * Mathf.Sin(Time.time * 2) * 0.03f;

@@ -78,6 +78,9 @@ namespace Diverse
         [Range(16, 80)] public int surfacePatchSize = 38;
         [Tooltip("Seconds between subtle frontier mist specks; independent of frame rate")]
         public float frontierSpeckInterval = .14f;
+        [Header("Hero idle")]
+        public float heroBlinkInterval = 4.8f;
+        public float heroBlinkDuration = .08f;
 
         [Header("Cliff projection")]
         public List<CliffLook> cliffs = new List<CliffLook>();

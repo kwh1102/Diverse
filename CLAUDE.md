@@ -21,6 +21,7 @@ Unity 6 (6000.0.62f1) · URP · Input System · 2D 도트 로그라이트. 사�
 - 새 무기·코스튬: 데이터 에셋 추가 후 `GameDatabase`에 등록
 - 현재 월드 아트·배치 규칙은 `Docs/WorldArt.md`, 생성 원본과 프롬프트는 `ArtSource/WorldOverhaul/README.md`를 우선한다. 세피리아처럼 귀여운 큰 픽셀 덩어리, 3~4톤, 정면 축 탑다운(절벽 16px 높이, 가로 비틀림 0)을 사용한다. `Data/ArtStyle.asset`이 팔레트·무늬·높이를, `WorldRules.asset`이 지형·간격을 정한다. `TileBaker`와 `TileBakeOperation`은 같은 지면을 동기/시간 분할로 그린다. 장식은 `SceneryLayout`의 위치·크기·길·구조물 검사를 거친다. `WorldArtOverhaul` 메뉴가 원본 시트를 네이티브 PNG로 가져오며 `.meta` GUID를 유지한다. `ArtSource/WorldOverhaul/managed.txt`의 PNG를 일반 다시 그리기에서 덮어쓰지 않는다. 기존 `Art/ArtObjects.cs`·`ArtScenery.cs`·`ArtHero.cs`·`ArtEnemies.cs`는 없는 에셋의 코드 기반 대체 그림이다. 무기/이펙트도 같은 팔레트를 쓴다. 옛 원본은 `ArtSource/ReferenceRedesign`에 기록으로만 남고 복원 메뉴는 Art/Legacy 아래에 있다.
 - 작업 후 사용자에게 "에디터에서 어디를 열면 보이는지"를 함께 알려 준다.
+- 탐험 장소는 `Docs/Exploration.md`와 `Data/WorldRules.asset`의 `exploration` 데이터를 따른다. `ExplorationLayout`이 시드·셀로 위치와 지형 레이어를 고르고 `ExplorationBuilder`가 소품과 상호작용을 배치한다. 위치·충돌·지형 모양은 데이터에서 편집한다. `ArtSource/Exploration` 원본은 `WorldExplorationArt`로 가져오며 상자 쌍의 폭/밑면과 대기 프레임을 함께 유지한다. 새 지역을 추가할 때 기존 8개 중 5개 구역 선택을 임의로 바꾸지 않는다.
 
 ## 검증 (Unity 에디터가 닫혀 있을 때 배치 모드로)
 

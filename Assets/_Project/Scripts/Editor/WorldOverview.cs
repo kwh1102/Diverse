@@ -89,7 +89,9 @@ namespace Diverse.EditorTools
 
             // Every landmark / border site reachable (any walkable tile within its arena)
             var lost = new List<string>();
-            foreach (var s in zones.sites)
+            var targets = new List<StructureSpec>(zones.sites);
+            targets.AddRange(gen.Exploration.Near(Vector2.zero, Half * 1.5f).Where(s => Mathf.Abs(s.center.x) < Half - 24 && Mathf.Abs(s.center.y) < Half - 24));
+            foreach (var s in targets)
             {
                 int cx = Mathf.FloorToInt(s.center.x) + Half, cy = Mathf.FloorToInt(s.center.y) + Half;
                 bool any = false;
@@ -112,7 +114,7 @@ namespace Diverse.EditorTools
             bool ok = lost.Count == 0 && mismatch == 0 && reached > walk * 0.9f;
             report.AppendLine($"seed {seed}  zones: {string.Join(", ", Enumerable.Range(0, ZoneMap.Count).Select(z => $"{zones.CombatName(z)}={zones.themes[z].displayName}"))}");
             report.AppendLine($"  mountains {100f * rock / (n * n):0.0}%  liquids {100f * liquid / (n * n):0.0}%  open ground reachable from spawn {100f * reached / Mathf.Max(1, walk):0.0}%");
-            report.AppendLine($"  sites unreachable: {(lost.Count == 0 ? "none" : string.Join(", ", lost))}");
+            report.AppendLine($"  sites unreachable ({targets.Count} boss/exploration targets): {(lost.Count == 0 ? "none" : string.Join(", ", lost))}");
             report.AppendLine($"  determinism: {mismatch} / 4000 tiles differ   ground {msPerChunk:0.00} ms per chunk   {(ok ? "OK" : "FAIL")}");
 
             Pictures(seed, gen, zones, tiles, reach);

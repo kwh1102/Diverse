@@ -11,6 +11,7 @@ namespace Diverse
         [SerializeField] float viewUnits = 48;
         [SerializeField] float refreshInterval = 0.1f;
         [SerializeField, Min(1)] int enemyMarkerSize = 3, bossMarkerSize = 6;
+        [SerializeField, Min(1)] int placeMarkerSize = 9;
         float t;
 
         static readonly ProfilerMarker MinimapMarker = new ProfilerMarker("Diverse.Minimap");   // read by DesignPerf / PerfProbe
@@ -26,6 +27,13 @@ namespace Diverse
             map.PixelsPerUnit = map.Rect.rect.width / viewUnits;
             map.Paint((cx, cy) => true);
             map.DrawRoute(g.Player);
+            foreach (var site in World.I.Gen.StructuresNear(p, viewUnits))
+            {
+                if (!site.landmark || (!g.World.discovered.Contains(site.id) && Vector2.Distance(p, site.center) > site.radius + 6)) continue;
+                bool village = site.kind == StructKind.Town || site.kind == StructKind.Exploration &&
+                    World.I.Gen.Exploration.Definition(site)?.kind == ExplorationKind.Hamlet;
+                map.Marker(site.center, village ? "◘" : "◇", Pal.Gold, null, village, placeMarkerSize);
+            }
             if (g.Player.TravelTarget.HasValue)
                 map.Marker(g.Player.TravelTarget.Value, "×", Pal.Gold, null, true, 13);
             foreach (var a in Actor.All)

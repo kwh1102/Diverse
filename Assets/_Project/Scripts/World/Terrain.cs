@@ -20,6 +20,7 @@ namespace Diverse
         readonly int seed;
         readonly ZoneMap zones;
         readonly List<Road> roads = new List<Road>();
+        public ExplorationLayout Exploration;
         static WorldRulesDef R => DB.WorldRules;
 
         class Road
@@ -94,7 +95,8 @@ namespace Diverse
                     float ds = Vector2.Distance(p, s.center) - s.radius;
                     if (ds < d) d = ds;
                 }
-            return Mathf.Clamp01(d / Mathf.Max(1, R.clearance));
+            float openness = Mathf.Clamp01(d / Mathf.Max(1, R.clearance));
+            return Exploration != null ? Mathf.Min(openness, Exploration.TerrainOpenness(p)) : openness;
         }
 
         // ───────────── Mountains ─────────────

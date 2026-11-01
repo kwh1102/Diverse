@@ -150,7 +150,34 @@ namespace Diverse
         {
             if (!rabbitPoses.TryGetValue(c, out var p)) rabbitPoses[c] = p = new Sprite[System.Enum.GetValues(typeof(Pose)).Length];
             int i = (int)pose;
-            return p[i] != null ? p[i] : p[i] = Get($"rabbit_{c.id}_{pose}", () => DrawCostumePose(c, pose));
+            if (p[i] != null) return p[i];
+            var sprite = Get($"rabbit_{c.id}_{pose}", () => DrawCostumePose(c, pose));
+            return p[i] = (pose is Pose.Idle0 or Pose.Idle1) ? CleanIdleEyes(sprite, pose) : sprite;
+        }
+
+        static Sprite CleanIdleEyes(Sprite sprite, Pose pose)
+        {
+            // The imported 36x34 idle frame has an L-shaped right eye after downsampling.
+            // Finish the native pixel face once per cached pose; other sizes/custom pictures are untouched.
+            if (sprite == null || sprite.rect.width != 36 || sprite.rect.height != 34 || !sprite.texture.isReadable) return sprite;
+            int width = 36, height = 34; var cv = new PixelCanvas(width, height);
+            var source = sprite.texture.GetPixels32(); int sx = (int)sprite.rect.x, sy = (int)sprite.rect.y;
+            for (int y = 0; y < height; y++) for (int x = 0; x < width; x++)
+                cv.Px[y * width + x] = source[(sy + y) * sprite.texture.width + sx + x];
+            var leftEye = cv.Px[13 * width + 19]; var rightEye = cv.Px[13 * width + 24]; var face = cv.Px[13 * width + 22];
+            if (leftEye.a == 0 || rightEye.a == 0 || leftEye.r > 90 || leftEye.g > 90 || leftEye.b > 100 ||
+                rightEye.r > 90 || rightEye.g > 90 || rightEye.b > 100 ||
+                face.r + face.g + face.b < leftEye.r + leftEye.g + leftEye.b + 24) return sprite;
+            for (int y = 12; y <= 13; y++)
+            {
+                var fur = cv.Px[y * width + 22];
+                cv.Rect(19, y, 2, 1, fur); cv.Rect(24, y, 2, 1, fur);
+            }
+            if (pose == Pose.Idle0)
+            { cv.Rect(20, 12, 1, 2, OutlineColor); cv.Rect(25, 12, 1, 2, OutlineColor); }
+            else
+            { cv.Rect(19, 12, 2, 1, OutlineColor); cv.Rect(24, 12, 2, 1, OutlineColor); }
+            var result = cv.ToSprite(sprite.pivot); result.name = sprite.name; return result;
         }
 
         static Sprite DrawCostumePose(CostumeDef c, Pose pose)

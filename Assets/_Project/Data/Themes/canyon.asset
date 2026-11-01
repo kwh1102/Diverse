@@ -29,6 +29,42 @@ MonoBehaviour:
     mesas: 0.7
     density: 0.6
     decor:
+    - sprite: explore_canyon_0
+      variants: 1
+      chance: 0.012
+      block: 1
+      width: 0.8
+      depth: 0.5
+      flat: 0
+      clustered: 1
+      onCliffs: 1
+    - sprite: explore_canyon_1
+      variants: 1
+      chance: 0.012
+      block: 1
+      width: 0.8
+      depth: 0.5
+      flat: 0
+      clustered: 0
+      onCliffs: 1
+    - sprite: explore_canyon_2
+      variants: 1
+      chance: 0.012
+      block: 1
+      width: 1.2
+      depth: 0.5
+      flat: 0
+      clustered: 0
+      onCliffs: 0
+    - sprite: explore_canyon_3
+      variants: 1
+      chance: 0.012
+      block: 1
+      width: 0.8
+      depth: 0.5
+      flat: 0
+      clustered: 0
+      onCliffs: 0
     - sprite: deco_canyon_0
       variants: 1
       chance: 0.004

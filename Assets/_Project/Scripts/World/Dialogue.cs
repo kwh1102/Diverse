@@ -62,6 +62,7 @@ namespace Diverse
                 case "wanderer": Wanderer(g, it); break;
                 case "ferry": Ferry(g, it); break;
                 case "warpstone": WarpStoneTalk(g, it); break;
+                case "exploration_record": ExplorationRecord(g, it); break;
                 default: Show(new DialoguePage { speaker = it.label, text = "...", options = { Bye() } }); break;
             }
         }
@@ -307,6 +308,29 @@ namespace Diverse
             Fx.I?.Burst(it.Pos + Vector2.up * 0.4f, Pal.Gold, 16, 4, 0.6f, -3);
             GameEvents.World("explore", "chest");
             Game.I.Ui.Toast("상자를 열었다!");
+        }
+
+        static void ExplorationRecord(Game g, Interactable it)
+        {
+            var site = it.data as StructureSpec;
+            if (site == null) return;
+            var def = Diverse.World.I.Gen.Exploration.Definition(site);
+            if (def == null) return;
+            bool read = g.World.Flag("investigate:" + site.id);
+            var page = new DialoguePage
+            {
+                speaker = site.name, portrait = it.sr.sprite,
+                text = def.story + (read ? "\n\n이미 조사한 장소다. 기록은 세계의 연대기에 남아 있다." : "\n\n주변의 갈림길과 구석을 살펴보자. 누군가 남긴 물건이 있을지도 모른다."),
+            };
+            if (!read) page.options.Add(new DialogueOption("장소를 조사하고 기록하기", () =>
+            {
+                g.World.SetFlag("investigate:" + site.id);
+                g.World.Log($"{Ko.I(g.HeroName)} {site.name}의 흔적을 조사했다.", "lore");
+                GameEvents.World("investigate", "exploration");
+                GameEvents.World("explore", "place");
+                ExplorationRecord(g, it);
+            }));
+            page.options.Add(Bye()); Show(page);
         }
 
         static void Grave(Game g, Interactable it)

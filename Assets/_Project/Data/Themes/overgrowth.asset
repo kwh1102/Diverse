@@ -29,6 +29,42 @@ MonoBehaviour:
     mesas: 0
     density: 1.6
     decor:
+    - sprite: explore_overgrowth_0
+      variants: 1
+      chance: 0.012
+      block: 1
+      width: 0.8
+      depth: 0.5
+      flat: 0
+      clustered: 1
+      onCliffs: 1
+    - sprite: explore_overgrowth_1
+      variants: 1
+      chance: 0.012
+      block: 1
+      width: 0.8
+      depth: 0.5
+      flat: 0
+      clustered: 0
+      onCliffs: 1
+    - sprite: explore_overgrowth_2
+      variants: 1
+      chance: 0.012
+      block: 1
+      width: 1.2
+      depth: 0.5
+      flat: 0
+      clustered: 0
+      onCliffs: 0
+    - sprite: explore_overgrowth_3
+      variants: 1
+      chance: 0.012
+      block: 1
+      width: 0.8
+      depth: 0.5
+      flat: 0
+      clustered: 0
+      onCliffs: 0
     - sprite: deco_overgrowth_0
       variants: 1
       chance: 0.004

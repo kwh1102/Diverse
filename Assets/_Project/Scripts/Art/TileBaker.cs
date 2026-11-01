@@ -60,7 +60,7 @@ namespace Diverse
                 for (int x = 0; x < n; x++)
                 {
                     g[y * n + x] = w.GroundAtTile(ox + x, oy + y);
-                    th[y * n + x] = (byte)w.Gen.CliffThemeAt(ox + x + 0.5f, oy + y + 0.5f).index;
+                    th[y * n + x] = (byte)w.Gen.CliffThemeAt(ox + x + 0.5f, oy + y + 0.5f, WorldGen.Level(g[y * n + x]) > 0).index;
                     flatGround[y * n + x] = WorldGen.Level(g[y * n + x]) > 0 ? ThemeGround(ox + x, oy + y) : g[y * n + x];
                 }
             for (int y = 0; y < n; y++) for (int x = 0; x < n; x++)

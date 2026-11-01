@@ -125,6 +125,22 @@ namespace Diverse
         public float clearance = 12;
         [Tooltip("Terrain footprints advance in this many tiles; removes thin fingers and single-tile holes")]
         [Range(1, 3)] public int terrainStep = 2;
+        [Tooltip("Maximum connected cliff tiles examined before using a shared neutral rock material")]
+        public int cliffMaterialSearchLimit = 2048;
+        public int cliffMaterialCacheLimit = 32768;
+        [Header("Exploration places")]
+        [Tooltip("One large place candidate per cell; its full layout is reserved from random scenery")]
+        public int explorationCell = 56;
+        public float explorationJitter = 5;
+        public float explorationClearance = 5;
+        public float explorationTrailLength = 18;
+        public float explorationTrailWidth = 1.1f;
+        public Ground settlementGround = Ground.Path;
+        public Ground settlementRoad = Ground.Flagstone;
+        [Tooltip("Material macro cells; isolated small islands merge with surrounding ground")]
+        public int materialCell = 4;
+        public int materialMinNeighbours = 3;
+        public List<ExplorationSiteDef> exploration = new List<ExplorationSiteDef>();
         [Header("Scenery composition")]
         [Range(2, 5)] public int sceneryCell = 3;
         [Tooltip("Empty space between sprite silhouettes (tiles)")]

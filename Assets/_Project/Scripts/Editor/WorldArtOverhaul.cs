@@ -8,7 +8,7 @@ using UnityEngine;
 namespace Diverse.EditorTools
 {
     /// <summary>Reproducible production import. Source sheets stay outside Resources; existing GUIDs are retained.</summary>
-    public static class WorldArtOverhaul
+    public static partial class WorldArtOverhaul
     {
         public const string Source = "ArtSource/WorldOverhaul/";
         const string Output = "Assets/_Project/Resources/Sprites/";
@@ -34,6 +34,7 @@ namespace Diverse.EditorTools
             Configure();
             imports.Clear(); rowBands.Clear(); columnBands.Clear();
             ImportScenery(); ImportActors(); ImportHero(); ImportProps(); ImportLandmarks();
+            if (File.Exists("ArtSource/Exploration/props.png")) ImportExploration();
             File.WriteAllLines(Source + "managed.txt", managed.OrderBy(x => x));
             AssetDatabase.Refresh();
             foreach (var item in imports)
@@ -85,8 +86,8 @@ namespace Diverse.EditorTools
             nearest.Clear();
 
             var rules = AssetDatabase.LoadAssetAtPath<WorldRulesData>("Assets/_Project/Data/WorldRules.asset");
-            rules.def.terrainStep = 2; rules.def.cliffLevel = .855f; rules.def.peakLevel = .955f;
-            rules.def.rangeMaskThreshold = .42f; rules.def.rangeFrequency = .008f;
+            rules.def.terrainStep = 2; rules.def.cliffLevel = .845f; rules.def.peakLevel = .95f;
+            rules.def.rangeMaskThreshold = .405f; rules.def.rangeFrequency = .008f;
             rules.def.roadWidth = 2.0f; rules.def.sceneryCell = 3; rules.def.sceneryGap = .35f; rules.def.sceneryRoadMargin = 1.2f;
             EditorUtility.SetDirty(rules);
             foreach (string pathName in AssetDatabase.FindAssets("t:ThemeData", new[] { "Assets/_Project/Data/Themes" }))
@@ -254,7 +255,7 @@ namespace Diverse.EditorTools
 
         // Source rectangles use top-left coordinates. Import collapses a magnified sheet into an actual native pixel
         // asset by area-majority voting in palette space, with binary alpha; there is no bilinear filtering or dithering.
-        static void Export(Texture2D source, Rect cell, string key, int height, Vector2Int canvas = default, int frame = 0, int variant = 0, string tint = null, CostumeDef costume = null)
+        static void Export(Texture2D source, Rect cell, string key, int height, Vector2Int canvas = default, int frame = 0, int variant = 0, string tint = null, CostumeDef costume = null, int nativeWidth = 0)
         {
             if (sampledSource != source) { sampledSource = source; sourcePixels = source.GetPixels32(); }
             var px = sourcePixels;
@@ -266,6 +267,7 @@ namespace Diverse.EditorTools
             if (right <= left || top <= bottom) throw new InvalidDataException("Empty source cell: " + key);
             int sw = right - left + 1, sh = top - bottom + 1;
             int dh = height, dw = Mathf.RoundToInt(sw * height / (float)sh);
+            if (nativeWidth > 0) { dw = nativeWidth; dh = Mathf.RoundToInt(sh * dw / (float)sw); height = dh; }
             if (frame == 2) { dh = Mathf.RoundToInt(dh * .88f); dw = Mathf.RoundToInt(dw * 1.08f); }
             int w = canvas.x > 0 ? canvas.x : dw + 4, h = canvas.y > 0 ? canvas.y : height + 4;
             if (dw > w - 4) { dh = Mathf.RoundToInt(dh * (w - 4f) / dw); dw = w - 4; }

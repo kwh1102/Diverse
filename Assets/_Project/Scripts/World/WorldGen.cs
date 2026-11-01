@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Diverse
 {
-    public enum StructKind { Town, Camp, Ruins, Shrine, Grove, Graveyard, Lair, Chest, Pond, Wanderer, Ferry, Landmark, Border }
+    public enum StructKind { Town, Camp, Ruins, Shrine, Grove, Graveyard, Lair, Chest, Pond, Wanderer, Ferry, Landmark, Border, Exploration }
 
     /// <summary>
     /// A structure spec produced by the generator. Being pure data (no Unity objects),
@@ -19,6 +19,7 @@ namespace Diverse
         public int tier;               // difficulty
         public string name;
         public string boss;
+        public string exploration;
         public bool landmark;          // whether it shows on the map
         public ThemeDef theme;         // look of the place (zone landmarks: their zone's theme)
         public int zone = -1, zone2 = -1;   // Landmark: its zone; Border: the two zones it joins
@@ -78,13 +79,19 @@ namespace Diverse
         /// <summary>The five zones (normal mode); null in a custom-mode world, where biomes come from noise.</summary>
         public readonly ZoneMap Zones;
         public readonly Terrain Terrain;
+        public readonly ExplorationLayout Exploration;
         readonly Dictionary<Vector2Int, List<StructureSpec>> regionCache = new Dictionary<Vector2Int, List<StructureSpec>>();
+        readonly Dictionary<Vector3Int, bool> alternateCells = new Dictionary<Vector3Int, bool>();
+        readonly Dictionary<Vector2Int, ThemeDef> cliffThemes = new Dictionary<Vector2Int, ThemeDef>();
+        static readonly Vector2Int[] cliffNeighbours = { Vector2Int.left, Vector2Int.right, Vector2Int.up, Vector2Int.down };
 
         public WorldGen(int seed, ZoneMap zones = null)
         {
             this.seed = seed;
             Zones = zones;
             Terrain = new Terrain(seed, zones);
+            Exploration = new ExplorationLayout(this);
+            Terrain.Exploration = Exploration;
         }
 
         // ───────────── Themes ─────────────
@@ -101,8 +108,58 @@ namespace Diverse
             return Zones.themes[Zones.At(p).a];
         }
 
-        /// <summary>Coherent rock/cap material, rather than the tile-wise biome scatter used for foliage.</summary>
-        public ThemeDef CliffThemeAt(float x, float y) => LiquidThemeAt(new Vector2(x, y));
+        /// <summary>One material for an entire connected cliff, including both elevation tiers and chunk boundaries.</summary>
+        public ThemeDef CliffThemeAt(float x, float y) => CliffThemeAt(x, y,
+            Level(GroundAt(Mathf.FloorToInt(x), Mathf.FloorToInt(y))) > 0);
+
+        public ThemeDef CliffThemeAt(float x, float y, bool raised)
+        {
+            if (!raised) return RawCliffThemeAt(x, y);
+            var start = new Vector2Int(Mathf.FloorToInt(x), Mathf.FloorToInt(y));
+            if (cliffThemes.TryGetValue(start, out var cached)) return cached;
+            var component = new List<Vector2Int> { start };
+            var examined = new HashSet<Vector2Int> { start };
+            var counts = new int[DB.Themes.Count];
+            ThemeDef chosen = null;
+            int limit = Mathf.Max(64, DB.WorldRules.cliffMaterialSearchLimit);
+            for (int cursor = 0; cursor < component.Count && chosen == null; cursor++)
+            {
+                var at = component[cursor];
+                var raw = RawCliffThemeAt(at.x + .5f, at.y + .5f);
+                counts[Mathf.Clamp(raw.index, 0, counts.Length - 1)]++;
+                foreach (var direction in cliffNeighbours)
+                {
+                    var next = at + direction;
+                    if (!examined.Add(next)) continue;
+                    if (cliffThemes.TryGetValue(next, out var known)) { chosen = known; break; }
+                    if (Level(GroundAt(next.x, next.y)) == 0) continue;
+                    component.Add(next);
+                    // Extremely long ranges share a fixed neutral rock material. A moving local sample or chunk
+                    // cutoff would produce a new colour seam when the next piece loads.
+                    if (component.Count >= limit) { chosen = DB.SpawnTheme; break; }
+                }
+            }
+            if (chosen == null)
+            {
+                int best = 0;
+                for (int i = 1; i < counts.Length; i++) if (counts[i] > counts[best]) best = i;
+                chosen = DB.Themes[best];
+            }
+            if (cliffThemes.Count + component.Count > Mathf.Max(limit, DB.WorldRules.cliffMaterialCacheLimit)) cliffThemes.Clear();
+            foreach (var at in component) cliffThemes[at] = chosen;
+            return chosen;
+        }
+
+        ThemeDef RawCliffThemeAt(float x, float y)
+        {
+            var p = new Vector2(x, y);
+            foreach (var site in Exploration.Near(p))
+            {
+                var d = Exploration.Definition(site); var q = p - site.center;
+                if (Mathf.Abs(q.x) <= d.halfSize.x && Mathf.Abs(q.y) <= d.halfSize.y) return site.theme;
+            }
+            return LiquidThemeAt(p);
+        }
 
         public Biome BiomeAt(float x, float y) => ThemeAt(x, y).biome;
 
@@ -137,6 +194,8 @@ namespace Diverse
                 return Ground.Grass;
             }
 
+            if (Exploration.TryGround(tx, ty, out var designed)) return designed;
+
             // Ground around structures (landmarks and border sites first: they were placed before the terrain)
             foreach (var s in StructuresNear(pos, 24))
             {
@@ -145,20 +204,20 @@ namespace Diverse
                 switch (s.kind)
                 {
                     case StructKind.Landmark:
-                    case StructKind.Border:
                     {
                         // One readable arena, with a deliberate apron; no patchwork of unrelated paving.
-                        var t = s.kind == StructKind.Border ? CliffThemeAt(x, y) : s.theme;
+                        var t = s.theme;
                         float apron = Mathf.Max(Mathf.Abs(x - s.center.x), Mathf.Abs(y - s.center.y) * 1.2f);
                         return apron < s.radius * .7f ? t.arenaGround : t.ground;
                     }
-                    case StructKind.Camp: if (d < s.radius * 0.8f) return Ground.Path; break;
+                    case StructKind.Border: break; // Keep the regional surface through mixed boss sites.
+                    case StructKind.Camp: if (d < s.radius * 0.8f) return s.theme.road; break;
                     case StructKind.Ruins:
                         if (Mathf.Abs(x - s.center.x) < s.radius * .75f && Mathf.Abs(y - s.center.y) < s.radius * .6f)
                             return Ground.Flagstone;
                         break;
                     case StructKind.Shrine: if (d < 3.2f) return Ground.Plaza; break;
-                    case StructKind.Graveyard: if (d < s.radius * 0.9f) return Ground.DarkGrass; break;
+                    case StructKind.Graveyard: if (d < s.radius * 0.9f) return s.theme.ground; break;
                     case StructKind.Pond:
                         if (d < s.radius * 0.7f)
                         {
@@ -167,8 +226,8 @@ namespace Diverse
                             return liquid == Ground.Water && d < s.radius * 0.4f ? Ground.DeepWater : liquid;
                         }
                         break;
-                    case StructKind.Lair: if (d < s.radius * 0.9f) return Ground.Ash; break;
-                    case StructKind.Ferry: if (d < 2.2f) return Ground.Path; break;
+                    case StructKind.Lair: if (d < s.radius * 0.9f) return s.theme.ground; break;
+                    case StructKind.Ferry: if (d < 2.2f) return s.theme.road; break;
                 }
             }
 
@@ -176,10 +235,11 @@ namespace Diverse
             var theme = ThemeAt(MathX.FloorDiv(tx, surfaceStep) * surfaceStep + surfaceStep * .5f,
                 MathX.FloorDiv(ty, surfaceStep) * surfaceStep + surfaceStep * .5f);
             bool nearTown = dTown < TownRadius + 6;
+            bool approach = Exploration.TrailAt(pos, out _);
 
             // Mountain ranges and mesas
             int h = nearTown ? 0 : Terrain.Height(tx, ty);
-            if (h > 0) return h == 2 ? Ground.Peak : Ground.Cliff;
+            if (h > 0 && !approach) return h == 2 ? Ground.Peak : Ground.Cliff;
 
             // Rivers and lakes, filled with the theme's liquid; roads and the hidden trails bridge them
             int water = nearTown ? 0 : Terrain.Water(pos);
@@ -188,11 +248,11 @@ namespace Diverse
             {
                 var liquid = LiquidThemeAt(pos).liquid;
                 if (!IsLiquid(liquid)) return liquid;      // frozen: walk across, no bridge
-                if (road || OnTrail(tx, ty)) return Ground.Wood;
+                if (road || approach || OnTrail(tx, ty)) return Ground.Wood;
                 if (liquid == Ground.Water) return water == 2 ? Ground.DeepWater : Ground.Water;
                 return liquid;
             }
-            if (road) return theme.road;
+            if (road || approach) return theme.road;
 
             // A designed world can lay its own roads / lanes / paving over open land (never right next to the town)
             var open = OpenGround(theme, x, y, pos);
@@ -202,12 +262,23 @@ namespace Diverse
         Ground OpenGround(ThemeDef t, float x, float y, Vector2 pos)
         {
             if (t.liquid == Ground.Water && t.ground == Ground.Grass && Terrain.Shore(pos)) return Ground.Sand;   // sandy lake shores
+            // Surface variation stays within the grass family; ash/ice/paving belong to actual places and geography.
+            if (t.ground is not (Ground.Grass or Ground.DarkGrass) || t.groundAlt is not (Ground.Grass or Ground.DarkGrass)) return t.ground;
             // Broad material islands on a two-tile grid. Small variations belong in the texture, not the material map.
-            int step = Mathf.Max(1, DB.WorldRules.terrainStep);
-            float sx = MathX.FloorDiv(Mathf.FloorToInt(x), step) * step + step * .5f;
-            float sy = MathX.FloorDiv(Mathf.FloorToInt(y), step) * step + step * .5f;
-            float detail = Noise.Perlin(sx, sy, seed + 91, 0.035f);
-            return detail > 1 - t.altShare ? t.groundAlt : t.ground;
+            int step = Mathf.Max(4, DB.WorldRules.materialCell);
+            int cx = MathX.FloorDiv(Mathf.FloorToInt(x), step), cy = MathX.FloorDiv(Mathf.FloorToInt(y), step);
+            var key = new Vector3Int(cx, cy, t.index);
+            if (!alternateCells.TryGetValue(key, out bool alternate))
+            {
+                bool Raw(int a, int b) => Noise.Perlin((a + .5f) * step, (b + .5f) * step, seed + 91, .035f) > 1 - t.altShare;
+                alternate = Raw(cx, cy); int support = 0;
+                for (int dy = -1; dy <= 1; dy++) for (int dx = -1; dx <= 1; dx++)
+                    if ((dx != 0 || dy != 0) && Raw(cx + dx, cy + dy)) support++;
+                alternate = alternate ? support >= DB.WorldRules.materialMinNeighbours : support >= 6;
+                if (alternateCells.Count > 8192) alternateCells.Clear();
+                alternateCells[key] = alternate;
+            }
+            return alternate ? t.groundAlt : t.ground;
         }
 
         public static bool IsWater(Ground g) => g == Ground.Water || g == Ground.DeepWater;
@@ -228,6 +299,17 @@ namespace Diverse
         public bool BridgeHorizontalAt(int tx, int ty)
         {
             var pos = new Vector2(tx + .5f, ty + .5f);
+            foreach (var s in Exploration.Near(pos))
+            {
+                var layers = Exploration.Definition(s).grounds;
+                for (int i = layers.Count - 1; i >= 0; i--)
+                    if (layers[i].Contains(pos - s.center))
+                    {
+                        if (layers[i].Resolve(s.theme) == Ground.Wood) return layers[i].halfSize.x >= layers[i].halfSize.y;
+                        break;
+                    }
+            }
+            if (Exploration.TrailAt(pos, out bool horizontal)) return horizontal;
             if (Terrain.OnRoad(pos))
             {
                 Terrain.RoadFrame(pos, out var direction);
@@ -291,6 +373,9 @@ namespace Diverse
                         list.Add(s);
                     }
 
+            foreach (var s in Exploration.Near(regionMin + Vector2.one * regionSize * .5f, regionSize))
+                if (InRegion(s.center, regionMin, regionSize)) list.Add(s);
+
             var rng = new Rng(Hash.U(rx, ry, seed + 1009));
             // 1–2 candidates per region, on open dry land away from the landmarks
             int count = rng.Chance(0.55f) ? 2 : 1;
@@ -301,7 +386,7 @@ namespace Diverse
                 bool overlaps = false;
                 foreach (var o in list) if (Vector2.Distance(o.center, c) < o.radius + 12) overlaps = true;
                 if (Zones != null) foreach (var o in Zones.sites) if (Vector2.Distance(o.center, c) < o.radius + 16) overlaps = true;
-                if (overlaps || !OpenLand(c, 6)) continue;
+                if (overlaps || Exploration.Clearance(c) < 12 || !OpenLand(c, 6)) continue;
 
                 var theme = ThemeAt(c.x, c.y);
                 float dist = c.magnitude;
@@ -357,8 +442,10 @@ namespace Diverse
         public IEnumerable<StructureSpec> StructuresNear(Vector2 p, float range)
         {
             float regionSize = Chunk * RegionChunks;
-            int rx0 = Mathf.FloorToInt((p.x - range) / regionSize), rx1 = Mathf.FloorToInt((p.x + range) / regionSize);
-            int ry0 = Mathf.FloorToInt((p.y - range) / regionSize), ry1 = Mathf.FloorToInt((p.y + range) / regionSize);
+            // A place's centre may be in the next region while the player is already inside its footprint.
+            float search = range + Chunk * 2;
+            int rx0 = Mathf.FloorToInt((p.x - search) / regionSize), rx1 = Mathf.FloorToInt((p.x + search) / regionSize);
+            int ry0 = Mathf.FloorToInt((p.y - search) / regionSize), ry1 = Mathf.FloorToInt((p.y + search) / regionSize);
             for (int ry = ry0; ry <= ry1; ry++)
                 for (int rx = rx0; rx <= rx1; rx++)
                     foreach (var s in StructuresInRegion(rx, ry))

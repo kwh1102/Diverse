@@ -113,6 +113,7 @@ namespace Diverse
                 case StructKind.Ferry: BuildFerry(c, s); break;
                 case StructKind.Landmark: BuildLandmark(c, s); break;
                 case StructKind.Border: BuildBorder(c, s); break;
+                case StructKind.Exploration: ExplorationBuilder.Build(this, c, s); break;
             }
         }
 

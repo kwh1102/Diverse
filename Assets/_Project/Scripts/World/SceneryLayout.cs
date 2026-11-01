@@ -82,7 +82,7 @@ namespace Diverse
             foreach (var structure in world.Gen.StructuresNear(at, 8))
                 if ((structure.center - at).sqrMagnitude < (structure.radius + 2) * (structure.radius + 2)) return null;
 
-            var theme = level > 0 ? world.Gen.CliffThemeAt(at.x, at.y) : world.Gen.ThemeAt(at.x, at.y);
+            var theme = level > 0 ? world.Gen.CliffThemeAt(at.x, at.y, true) : world.Gen.ThemeAt(at.x, at.y);
             float grove = Noise.Perlin(at.x, at.y, seed + 333, .045f);
             float roll = Hash.F(cx, cy, seed + 17), acc = 0;
             foreach (var d in theme.decor)

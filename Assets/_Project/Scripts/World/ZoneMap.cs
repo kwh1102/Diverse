@@ -149,11 +149,11 @@ namespace Diverse
         public ThemeDef ThemeAt(float x, float y)
         {
             var p = new Vector2(x, y);
-            float patch = Mathf.Clamp01((Noise.Fractal(x, y, seed + 901, 0.05f, 2) - 0.3f) / 0.4f);
-            if (patch < SpawnShare(p)) return DB.SpawnTheme;
-            return themes[ZoneAt(p, patch)];
+            // Follow one continuous warped region boundary, shared with liquids and cliffs.
+            // Random material islands made unrelated biomes leak into otherwise coherent regions.
+            if (SpawnShare(p) >= .5f) return DB.SpawnTheme;
+            return themes[At(p).a];
         }
-
         /// <summary>A theme value blended smoothly by zone shares (terrain uses this so ranges don't jump at borders).</summary>
         public float Blend(Vector2 p, System.Func<ThemeDef, float> f)
         {
