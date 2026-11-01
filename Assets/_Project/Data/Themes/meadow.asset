@@ -20,7 +20,8 @@ MonoBehaviour:
     mapColor: {r: 0.43529412, g: 0.6901961, b: 0.2901961, a: 1}
     ground: 0
     groundAlt: 1
-    altShare: 0.3
+    cliffTop: 0
+    altShare: 0.13
     liquid: 8
     road: 2
     mountainBias: 0
@@ -39,7 +40,7 @@ MonoBehaviour:
       onCliffs: 0
     - sprite: tree_Meadow_{v}
       variants: 4
-      chance: 0.035
+      chance: 0.043
       block: 1
       width: 1
       depth: 0.6
@@ -48,7 +49,7 @@ MonoBehaviour:
       onCliffs: 0
     - sprite: rock_Meadow_{v}
       variants: 3
-      chance: 0.004
+      chance: 0.011
       block: 1
       width: 0.85
       depth: 0.55
@@ -57,7 +58,7 @@ MonoBehaviour:
       onCliffs: 1
     - sprite: bush_Meadow_{v}
       variants: 2
-      chance: 0.03
+      chance: 0.018
       block: 0
       width: 0.8
       depth: 0.5

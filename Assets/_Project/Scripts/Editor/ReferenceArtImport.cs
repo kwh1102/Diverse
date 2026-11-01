@@ -24,7 +24,7 @@ namespace Diverse.EditorTools
             return managed.Contains(key);
         }
 
-        [MenuItem("Diverse/Art/Apply Reference Redesign (first review)")]
+        [MenuItem("Diverse/Art/Legacy/Apply First Reference Slice")]
         public static void Apply()
         {
             Style();

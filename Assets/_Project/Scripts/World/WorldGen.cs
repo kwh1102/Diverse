@@ -101,6 +101,9 @@ namespace Diverse
             return Zones.themes[Zones.At(p).a];
         }
 
+        /// <summary>Coherent rock/cap material, rather than the tile-wise biome scatter used for foliage.</summary>
+        public ThemeDef CliffThemeAt(float x, float y) => LiquidThemeAt(new Vector2(x, y));
+
         public Biome BiomeAt(float x, float y) => ThemeAt(x, y).biome;
 
         /// <summary>Custom-mode biomes: temperature / moisture noise (harsh biomes farther out).</summary>
@@ -144,13 +147,16 @@ namespace Diverse
                     case StructKind.Landmark:
                     case StructKind.Border:
                     {
-                        // An arena paved in patches with the theme's ground (both themes at a border site)
-                        var t = s.kind == StructKind.Border && Hash.F(tx / 3, ty / 3, seed + 5) > 0.5f ? Zones.themes[s.zone2] : s.theme;
-                        if (d < s.radius * 0.8f && Noise.Perlin(x, y, seed + 6, 0.18f) > 0.42f) return t.arenaGround;
-                        return Noise.Perlin(x, y, seed + 7, 0.12f) > 1 - t.altShare ? t.groundAlt : t.ground;
+                        // One readable arena, with a deliberate apron; no patchwork of unrelated paving.
+                        var t = s.kind == StructKind.Border ? CliffThemeAt(x, y) : s.theme;
+                        float apron = Mathf.Max(Mathf.Abs(x - s.center.x), Mathf.Abs(y - s.center.y) * 1.2f);
+                        return apron < s.radius * .7f ? t.arenaGround : t.ground;
                     }
                     case StructKind.Camp: if (d < s.radius * 0.8f) return Ground.Path; break;
-                    case StructKind.Ruins: if (Hash.F(tx, ty, seed + 3) > 0.35f && d < s.radius * 0.85f) return Ground.Plaza; break;
+                    case StructKind.Ruins:
+                        if (Mathf.Abs(x - s.center.x) < s.radius * .75f && Mathf.Abs(y - s.center.y) < s.radius * .6f)
+                            return Ground.Flagstone;
+                        break;
                     case StructKind.Shrine: if (d < 3.2f) return Ground.Plaza; break;
                     case StructKind.Graveyard: if (d < s.radius * 0.9f) return Ground.DarkGrass; break;
                     case StructKind.Pond:
@@ -166,7 +172,9 @@ namespace Diverse
                 }
             }
 
-            var theme = ThemeAt(x, y);
+            int surfaceStep = Mathf.Max(2, DB.WorldRules.terrainStep);
+            var theme = ThemeAt(MathX.FloorDiv(tx, surfaceStep) * surfaceStep + surfaceStep * .5f,
+                MathX.FloorDiv(ty, surfaceStep) * surfaceStep + surfaceStep * .5f);
             bool nearTown = dTown < TownRadius + 6;
 
             // Mountain ranges and mesas
@@ -194,7 +202,11 @@ namespace Diverse
         Ground OpenGround(ThemeDef t, float x, float y, Vector2 pos)
         {
             if (t.liquid == Ground.Water && t.ground == Ground.Grass && Terrain.Shore(pos)) return Ground.Sand;   // sandy lake shores
-            float detail = Noise.Perlin(x, y, seed + 91, 0.12f);
+            // Broad material islands on a two-tile grid. Small variations belong in the texture, not the material map.
+            int step = Mathf.Max(1, DB.WorldRules.terrainStep);
+            float sx = MathX.FloorDiv(Mathf.FloorToInt(x), step) * step + step * .5f;
+            float sy = MathX.FloorDiv(Mathf.FloorToInt(y), step) * step + step * .5f;
+            float detail = Noise.Perlin(sx, sy, seed + 91, 0.035f);
             return detail > 1 - t.altShare ? t.groundAlt : t.ground;
         }
 
@@ -212,6 +224,20 @@ namespace Diverse
         /// Invisible north-south / east-west trails, one every TrailSpacing tiles (offset per line).
         /// They only show up where they cross a river — as a 3-wide bridge — so crossings are sparse but reliable.
         /// </summary>
+        /// <summary>Art orientation only; deck coverage and navigation still come from GroundAt.</summary>
+        public bool BridgeHorizontalAt(int tx, int ty)
+        {
+            var pos = new Vector2(tx + .5f, ty + .5f);
+            if (Terrain.OnRoad(pos))
+            {
+                Terrain.RoadFrame(pos, out var direction);
+                return Mathf.Abs(direction.x) >= Mathf.Abs(direction.y);
+            }
+            int cy = MathX.FloorDiv(ty, TrailSpacing);
+            int lineY = cy * TrailSpacing + 20 + (int)(Hash.U(0, cy, seed + 607) % (TrailSpacing - 40));
+            return Mathf.Abs(ty - lineY) <= 1;
+        }
+
         bool OnTrail(int tx, int ty)
         {
             int cx = MathX.FloorDiv(tx, TrailSpacing), cy = MathX.FloorDiv(ty, TrailSpacing);
@@ -246,6 +272,7 @@ namespace Diverse
         {
             var key = new Vector2Int(rx, ry);
             if (regionCache.TryGetValue(key, out var list)) return list;
+            if (regionCache.Count > 512) regionCache.Clear();
             list = new List<StructureSpec>();
             regionCache[key] = list;
 

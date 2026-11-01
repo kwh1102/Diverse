@@ -20,6 +20,7 @@ MonoBehaviour:
     mapColor: {r: 0.37254903, g: 0.47843137, b: 0.17254902, a: 1}
     ground: 5
     groundAlt: 1
+    cliffTop: 5
     altShare: 0.35
     liquid: 14
     road: 2
@@ -66,7 +67,7 @@ MonoBehaviour:
       onCliffs: 0
     - sprite: tree_Marsh_{v}
       variants: 4
-      chance: 0.04
+      chance: 0.06
       block: 1
       width: 1
       depth: 0.6
@@ -75,7 +76,7 @@ MonoBehaviour:
       onCliffs: 0
     - sprite: rock_Marsh_{v}
       variants: 3
-      chance: 0.004
+      chance: 0.011
       block: 1
       width: 0.85
       depth: 0.55
@@ -84,7 +85,7 @@ MonoBehaviour:
       onCliffs: 1
     - sprite: bush_Marsh_{v}
       variants: 2
-      chance: 0.03
+      chance: 0.018
       block: 0
       width: 0.8
       depth: 0.5

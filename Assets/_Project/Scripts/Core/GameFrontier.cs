@@ -11,6 +11,7 @@ namespace Diverse
     {
         int lastRing = -1, lastOpenRing = -1;
         float mistWarnT;
+        float mistFxT;
 
         void UpdateFrontier(float dt)
         {
@@ -60,11 +61,13 @@ namespace Diverse
             if (bound <= 0 || Fx.I == null) return;
             float d = p.Pos.magnitude;
             if (d < bound - 14) return;
-            if (Random.value > 0.5f) return;
+            mistFxT -= Time.deltaTime;
+            if (mistFxT > 0) return;
+            mistFxT = Mathf.Max(.05f, DB.ArtStyle.frontierSpeckInterval);
             var dir = p.Pos.SafeNormal(Vector2.up);
             var side = new Vector2(-dir.y, dir.x);
             var at = dir * (bound + Random.Range(0f, 2f)) + side * (Vector2.Dot(p.Pos, side) + Random.Range(-12f, 12f));
-            Fx.I.Burst(at, new Color32(220, 214, 236, 255), 1, 0.6f, 1.6f, 0.4f, 3, 360, 0, false, true);
+            Fx.I.Burst(at, new Color32(170, 190, 190, 130), 1, 0.4f, 1.6f, 0.4f, 1, 360, 0, false, false);
         }
     }
 }

@@ -6,7 +6,7 @@ namespace Diverse.EditorTools
 {
     public static class TerrainArtReview
     {
-        [MenuItem("Diverse/Art/Apply Terrain Depth Review")]
+        [MenuItem("Diverse/Art/Legacy/Apply Old Oblique Terrain Review")]
         public static void Apply()
         {
             var data = AssetDatabase.LoadAssetAtPath<ArtStyleData>("Assets/_Project/Data/ArtStyle.asset");

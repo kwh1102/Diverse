@@ -28,10 +28,13 @@ namespace Diverse.EditorTools
             for (int i = 0; i < 90; i++) yield return null;
             var game = Game.I;
             if (game == null) { Finish(false); yield break; }
-            foreach (string id in new[] { "overgrowth", "swamp", "glacier", "canyon", "crystal", "fortress", "mirror", "meadow", "volcano" })
+            var regions = SessionState.GetBool("Diverse.AllTerrainCapture.SitesOnly", false) ? System.Array.Empty<string>() :
+                new[] { "overgrowth", "swamp", "glacier", "canyon", "crystal", "fortress", "mirror", "meadow", "volcano" };
+            foreach (string id in regions)
             {
                 game.World.zoneThemes.Clear(); game.World.zoneThemes.AddRange(Enumerable.Repeat(id, ZoneMap.Count));
                 World.I.ResetForRun(); World.I.Init(game.World.seed);
+                Fx.I.ClearAll();
                 for (int i = 0; i < 2; i++) yield return null;
                 var world = WorldStreamer.I; var gen = world.Gen;
                 int best = int.MinValue; Vector2 at = Vector2.zero;
@@ -62,7 +65,55 @@ namespace Diverse.EditorTools
                 File.AppendAllText(Dir + "/terrain_checks.txt", id + " camera=" + at + " ground=" + expected + "\n");
                 Debug.Log("[AllTerrain] Captured and verified " + id);
             }
-            File.WriteAllText(Dir + "/result.txt", "PASS: all 9 base regions rendered through Game.unity; 9 full-region vs separate-chunk checks passed. Scratch saves only.");
+            // Real river crossings explicitly exercise shallow water, banks, land transitions and wooden decks.
+            if (!SessionState.GetBool("Diverse.AllTerrainCapture.SitesOnly", false))
+                foreach (string id in new[] { "meadow", "canyon" })
+                {
+                    game.World.zoneThemes.Clear(); game.World.zoneThemes.AddRange(Enumerable.Repeat(id, ZoneMap.Count));
+                    World.I.ResetForRun(); World.I.Init(game.World.seed);
+                    var world = WorldStreamer.I; var gen = world.Gen;
+                    int best = int.MinValue; Vector2 at = Vector2.zero;
+                    for (int y = -210; y <= 210; y += 3) for (int x = -210; x <= 210; x += 3)
+                    {
+                        if (x * x + y * y < 90 * 90 || gen.GroundAt(x, y) != Ground.Wood) continue;
+                        int water = 0, land = 0, raised = 0, deck = 0;
+                        for (int dy = -6; dy <= 6; dy += 2) for (int dx = -10; dx <= 10; dx += 2)
+                        {
+                            var m = gen.GroundAt(x + dx, y + dy);
+                            if (WorldGen.IsWater(m)) water++;
+                            else if (m == Ground.Wood) deck++;
+                            else if (WorldGen.Level(m) > 0) raised++;
+                            else land++;
+                        }
+                        if (water < 12 || land < 8) continue;
+                        int score = Mathf.Min(water, 35) * 3 + Mathf.Min(land, 25) * 2 + deck - raised * 3;
+                        if (score > best) { best = score; at = new Vector2(x, y); }
+                    }
+                    if (best == int.MinValue) { Debug.LogError("No bridge review location for " + id); yield break; }
+                    world.Warm(at); game.Player.Pos = world.NearestWalkable(at, game.Player.radius, 8, false);
+                    CameraRig.I.target = null; CameraRig.I.Snap(at);
+                    for (int i = 0; i < 10; i++) yield return null;
+                    ReferenceReviewRunner.Shot(id + "_water_bridge", false, Dir);
+                    ReferenceReviewRunner.Shot(id + "_water_bridge_hud", true, Dir);
+                    if (!ReferenceReviewRunner.CheckChunkSeams(at, id + " bridge", Dir)) { Finish(false); yield break; }
+                }
+            // Capture the authored town and the actual generated boss sites, in addition to open terrain.
+            foreach (string id in new[] { "meadow", "overgrowth", "swamp", "glacier", "canyon", "crystal", "fortress", "mirror", "volcano" })
+            {
+                game.World.zoneThemes.Clear(); game.World.zoneThemes.AddRange(Enumerable.Repeat(id, ZoneMap.Count));
+                World.I.ResetForRun(); World.I.Init(game.World.seed);
+                var world = WorldStreamer.I;
+                var site = world.Gen.Zones.sites.First(s => s.kind == StructKind.Landmark);
+                Vector2 at = id == "meadow" ? Vector2.zero : site.center + Vector2.up * 3;
+                world.Warm(at);
+                game.Player.Pos = world.NearestWalkable(id == "meadow" ? new Vector2(0, -2) : site.center + new Vector2(-3, -2), game.Player.radius, 8, false);
+                CameraRig.I.target = null; CameraRig.I.Snap(at);
+                for (int i = 0; i < 8; i++) yield return null;
+                string label = id == "meadow" ? "town" : id + "_landmark";
+                ReferenceReviewRunner.Shot(label, false, Dir, 360);
+                ReferenceReviewRunner.Shot(label + "_hud", true, Dir, 360);
+            }
+            File.WriteAllText(Dir + "/result.txt", "PASS: terrain regions, real river/wooden-bridge crossings, town and actual generated landmarks rendered through Game.unity; captured terrain/bridge full-region vs separate-chunk checks passed. Scratch saves only.");
             Debug.Log("[AllTerrain] PASS"); Finish(errors == 0);
         }
     }

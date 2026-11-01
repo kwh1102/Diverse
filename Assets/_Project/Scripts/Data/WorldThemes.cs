@@ -46,6 +46,8 @@ namespace Diverse
         [Header("Ground")]
         public Ground ground = Ground.Grass;
         public Ground groundAlt = Ground.DarkGrass;
+        [Tooltip("Continuous raised surface; independent of the paving on the low ground")]
+        public Ground cliffTop = Ground.Grass;
         [Range(0, 1)] public float altShare = 0.3f;
         [Tooltip("What fills rivers and lakes here (Water, Lava, Toxic, Ice…)")]
         public Ground liquid = Ground.Water;
@@ -121,6 +123,14 @@ namespace Diverse
         public float passRadius = 7;
         [Tooltip("Mountains fade out this far around the spawn, roads and landmarks (tiles)")]
         public float clearance = 12;
+        [Tooltip("Terrain footprints advance in this many tiles; removes thin fingers and single-tile holes")]
+        [Range(1, 3)] public int terrainStep = 2;
+        [Header("Scenery composition")]
+        [Range(2, 5)] public int sceneryCell = 3;
+        [Tooltip("Empty space between sprite silhouettes (tiles)")]
+        public float sceneryGap = 0.35f;
+        [Tooltip("Clear space beyond the edge of roads for scenery")]
+        public float sceneryRoadMargin = 1.2f;
 
         [Header("Water")]
         public float riverFrequency = 0.006f;

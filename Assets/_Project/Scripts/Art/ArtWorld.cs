@@ -16,7 +16,6 @@ namespace Diverse
         // The colours are resolved once per look (DesignRuntime.Version) into a table.
         static readonly Color32[] groundTable = new Color32[3 * 32];   // 3 colours per Ground (room to grow)
         static int groundTableFor = -1;
-        static readonly Color32 ShoreEdge = Pal.Hex("3b2f3a"), ShoreDeep = Pal.Hex("2f5fa8"), ShoreFoam = Pal.Hex("bfe6ff");
 
         public static void GroundColors(Ground g, out Color32 a, out Color32 b, out Color32 c)
         {
@@ -68,77 +67,6 @@ namespace Diverse
             DesignRuntime.Ground(g, ref a, ref b, ref c);
         }
 
-        /// <summary>
-        /// 청크 하나의 지면을 텍스처 한 장으로 굽는다. 타일 경계에 디더링/테두리를 넣어 도트 느낌을 살린다.
-        /// </summary>
-        public static Texture2D BakeGround(Ground[,] tiles, int size, int wx0, int wy0, int seed)
-        {
-            int T = PPU;
-            var px = new Color32[size * T * size * T];
-            int W = size * T;
-            for (int ty = 0; ty < size; ty++)
-                for (int tx = 0; tx < size; tx++)
-                {
-                    var g = tiles[tx + 1, ty + 1];
-                    GroundColors(g, out var a, out var b, out var c);
-                    bool water = g == Ground.Water || g == Ground.DeepWater;
-                    for (int y = 0; y < T; y++)
-                        for (int x = 0; x < T; x++)
-                        {
-                            int gx = (wx0 + tx) * T + x, gy = (wy0 + ty) * T + y;
-                            float n = Hash.F(gx, gy, seed);
-                            Color32 col = a;
-                            if (n < 0.18f) col = b;
-                            else if (n > 0.94f) col = c;
-                            if (DesignRuntime.GroundTexel(g, gx, gy, out var texel)) col = texel;   // generated ground texture
-
-                            // 이웃 타일과의 경계 처리
-                            Ground l = tiles[tx, ty + 1], r = tiles[tx + 2, ty + 1], d = tiles[tx + 1, ty], u = tiles[tx + 1, ty + 2];
-                            if (!water)
-                            {
-                                if (x == 0 && l != g && Pri(l) > Pri(g)) col = Mix(col, l, gx, gy, seed);
-                                if (x == T - 1 && r != g && Pri(r) > Pri(g)) col = Mix(col, r, gx, gy, seed);
-                                if (y == 0 && d != g && Pri(d) > Pri(g)) col = Mix(col, d, gx, gy, seed);
-                                if (y == T - 1 && u != g && Pri(u) > Pri(g)) col = Mix(col, u, gx, gy, seed);
-                            }
-                            else
-                            {
-                                // 물가: 위쪽 땅과 맞닿으면 거품/모래 테두리, 잔물결
-                                bool landUp = u != Ground.Water && u != Ground.DeepWater;
-                                bool landL = l != Ground.Water && l != Ground.DeepWater;
-                                bool landR = r != Ground.Water && r != Ground.DeepWater;
-                                bool landD = d != Ground.Water && d != Ground.DeepWater;
-                                if (landUp && y >= T - 3) col = y == T - 1 ? ShoreEdge : ShoreDeep;
-                                else if ((landL && x == 0) || (landR && x == T - 1) || (landD && y == 0)) col = ShoreFoam;
-                                else if (((gx / 3 + gy * 2) % 13 == 0) && n > 0.5f) col = c;
-                            }
-
-                            // Bridge: planks across the travel direction, dark rails where it borders water
-                            if (g == Ground.Wood)
-                            {
-                                bool wl = l == Ground.Water || l == Ground.DeepWater, wr = r == Ground.Water || r == Ground.DeepWater;
-                                bool wd = d == Ground.Water || d == Ground.DeepWater, wu = u == Ground.Water || u == Ground.DeepWater;
-                                bool horizontal = (wu || wd) && !(wl || wr);
-                                int along = horizontal ? gx : gy;
-                                col = along % 4 == 0 ? b : (Hash.F(gx / 4, gy / 4, seed) > 0.5f ? a : c);
-                                if ((wl && x <= 1) || (wr && x >= T - 2) || (wd && y <= 1) || (wu && y >= T - 2)) col = Pal.WoodDark;
-                            }
-
-                            // 풀 지면에 작은 풀잎 무늬
-                            if ((g == Ground.Grass || g == Ground.DarkGrass) && Hash.F(gx / 2, gy / 2, seed + 77) > 0.985f && y > 1)
-                            {
-                                col = b;
-                                px[(ty * T + y - 1) * W + tx * T + x] = b;
-                            }
-                            px[(ty * T + y) * W + tx * T + x] = col;
-                        }
-                }
-            var tex = new Texture2D(W, W, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };
-            tex.SetPixels32(px);
-            tex.Apply(false, false);
-            return tex;
-        }
-
         /// <summary>Theme scenery by sprite key (painted art in Resources/Sprites; code-drawn fallbacks for the nature sets).</summary>
         public static Sprite Decor(string key)
         {
@@ -153,20 +81,6 @@ namespace Diverse
                 }
             if (parts.Length == 2 && parts[0] == "flower" && int.TryParse(parts[1], out int f)) return Flower(f);
             return Get(key, () => Scenery(key));
-        }
-
-        static int Pri(Ground g) => g switch
-        {
-            Ground.Water or Ground.DeepWater => -1,
-            Ground.Path => 6, Ground.Plaza => 7, Ground.Wood => 8,
-            Ground.Snow => 5, Ground.Sand => 4, Ground.Ash => 3, Ground.Swamp => 2, Ground.DarkGrass => 1,
-            _ => 0,
-        };
-
-        static Color32 Mix(Color32 baseCol, Ground other, int gx, int gy, int seed)
-        {
-            GroundColors(other, out var a, out _, out _);
-            return Hash.F(gx, gy, seed + 5) > 0.5f ? a : baseCol;
         }
 
         /// <summary>마을 사람 (동물 NPC). kind: owl(이야기꾼), cat(상인), bear(대장장이), rabbit(주민)</summary>

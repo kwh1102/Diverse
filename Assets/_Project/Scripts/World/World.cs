@@ -283,11 +283,11 @@ namespace Diverse
 
         void BuildRuins(ChunkView c, StructureSpec s)
         {
-            var rng = new Rng(Hash.Str(s.id));
             for (int i = 0; i < 7; i++)
             {
-                var p = s.center + MathX.Dir(i * 51 + rng.Range(0, 20)) * rng.Range(3f, 7f);
-                c.AddDecor(Art.Prop(rng.Chance(0.5f) ? "pillar_broken" : "pillar"), p, true, 0.75f, 0.45f);
+                // A recognizable colonnade with an open entrance, not unrelated pillars scattered in a ring.
+                var p = s.center + new Vector2(i < 6 ? (i % 2 == 0 ? -4 : 4) : 0, i < 6 ? 4 - (i / 2) * 3.5f : 5);
+                c.AddDecor(Art.Prop(i % 3 == 0 ? "pillar_broken" : "pillar"), p, true, 0.75f, 0.45f);
             }
             // The altar stays after it has been read, but without its shard (and it pays out only once)
             bool read = Save.Flag("ruin:" + s.id);
@@ -315,13 +315,12 @@ namespace Diverse
 
         void BuildGrove(ChunkView c, StructureSpec s)
         {
-            var rng = new Rng(Hash.Str(s.id));
             for (int i = 0; i < 9; i++)
             {
-                var p = s.center + MathX.Dir(i * 40) * rng.Range(4f, 6.5f);
+                var p = s.center + MathX.Dir(i * 40) * 6.5f;
                 c.AddDecor(Art.Tree(Biome.Meadow, 2), p, true, 1.0f, 0.6f);
             }
-            for (int i = 0; i < 14; i++) c.AddDecor(Art.Flower(i), s.center + Random.insideUnitCircle * 3.5f, false, 0, 0, true);
+            for (int i = 0; i < 6; i++) c.AddDecor(Art.Flower(i), s.center + MathX.Dir(i * 60 + 25) * 2.8f, false, 0, 0, true);
             if (!Save.Flag("grove:" + s.id))
             {
                 var it = Interactable.Create(c.transform, "herb", "grove:" + s.id, "빛나는 약초", s.center, Art.Bush(Biome.Meadow, 0), c);

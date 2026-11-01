@@ -120,7 +120,7 @@ namespace Diverse.EditorTools
             return true;
         }
 
-        public static void Shot(string name, bool ui, string directory = ReviewDir)
+        public static void Shot(string name, bool ui, string directory = ReviewDir, float nativeHeight = 225)
         {
             const int w = 1440, h = 900;
             var cam = Camera.main;
@@ -141,7 +141,7 @@ namespace Diverse.EditorTools
                 if (sr.sprite != null && sr.sprite.name.StartsWith("rabbit_")) sr.enabled = true;
             var rt = new RenderTexture(w, h, 24);
             float old = cam.orthographicSize;
-            cam.orthographicSize = h / (2f * Art.PPU * 4); cam.targetTexture = rt; cam.Render(); cam.targetTexture = null; cam.orthographicSize = old;
+            cam.orthographicSize = nativeHeight / (2f * Art.PPU); cam.targetTexture = rt; cam.Render(); cam.targetTexture = null; cam.orthographicSize = old;
             RenderTexture.active = rt;
             var image = new Texture2D(w, h, TextureFormat.RGB24, false);
             image.ReadPixels(new Rect(0, 0, w, h), 0, 0); image.Apply();

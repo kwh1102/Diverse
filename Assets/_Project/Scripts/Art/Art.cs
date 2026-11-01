@@ -71,6 +71,11 @@ namespace Diverse
         /// <summary>Load the hand-drawn sprites now (scene start) instead of on the first sprite that needs one.</summary>
         public static void Preload() => Hand();
 
+        public static Color32 PaletteColor(Color32 color)
+        {
+            var p = TileBaker.PaletteColor(TileBaker.Snap(color)); p.a = color.a; return p;
+        }
+
         /// <summary>Editor bake: draw from code even where a PNG exists in Resources/Sprites (to redraw it).</summary>
         public static bool DrawOnly;
 

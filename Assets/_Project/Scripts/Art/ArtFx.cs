@@ -44,8 +44,9 @@ namespace Diverse
                             if (d > radiusPx || d < inner) continue;
                             float rel = (d - inner) / Mathf.Max(1, th);
                             Color32 px = rel > 0.55f ? core : col;
-                            if (rel < 0.18f) px = Pal.A(col, 170);
-                            if (f >= 3 && Hash.F(x, y, f) > 0.55f) continue;   // 사라질 때 디더링
+                            if (rel < 0.18f) px = col;
+                            // The tail contracts as one clean pixel shape; stochastic transparency was visual noise.
+                            if (f >= 3 && along > (f == 3 ? .68f : .35f)) continue;
                             cv.Set(x, y, px);
                         }
                     // 끝단 부스러기

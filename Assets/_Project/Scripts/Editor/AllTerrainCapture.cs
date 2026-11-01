@@ -11,13 +11,19 @@ namespace Diverse.EditorTools
         const string Key = "Diverse.AllTerrainCapture";
 
         [MenuItem("Diverse/Art/Capture All Terrain Regions")]
-        public static void RunBatch()
+        public static void RunBatch() => Begin(false);
+
+        public static void RunBatchSites() => Begin(true);
+
+        static void Begin(bool sitesOnly)
         {
             string dir = Path.GetFullPath("Logs/AllTerrainScratch");
             Directory.CreateDirectory(dir); Directory.CreateDirectory(Path.Combine(dir, "slots/normal_1"));
             File.WriteAllText(Path.Combine(dir, "settings.json"), JsonUtility.ToJson(new Settings { aiEnabled = false, sfx = 0, music = 0, lastSlot = 1 }));
             File.WriteAllText(Path.Combine(dir, "slots/normal_1/world.json"), JsonUtility.ToJson(new WorldSave { seed = 12345 }));
-            Directory.CreateDirectory("Logs/AllTerrain"); File.WriteAllText("Logs/AllTerrain/terrain_checks.txt", "");
+            Directory.CreateDirectory("Logs/AllTerrain");
+            if (!sitesOnly) File.WriteAllText("Logs/AllTerrain/terrain_checks.txt", "");
+            SessionState.SetBool(Key + ".SitesOnly", sitesOnly);
             SessionState.SetBool(Key, true); SessionState.SetBool(Key + ".OK", false); SessionState.SetString(Key + ".Save", dir);
             Environment.SetEnvironmentVariable("DIVERSE_SAVE_DIR", dir);
             EditorSceneManager.OpenScene(UIBuilder.GameScenePath);

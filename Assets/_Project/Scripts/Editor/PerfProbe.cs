@@ -12,7 +12,7 @@ using UnityEngine;
 namespace Diverse.EditorTools
 {
     /// <summary>
-    /// Play-mode frame probe: a designed city world, 20 s walking east (chunks stream in) then 20 s of non-stop fighting.
+    /// Play-mode frame probe: the built-in world, 20 s walking east (chunks stream in) then 20 s of non-stop fighting.
     /// Every frame records its time, GC allocation / collections and the Diverse.* profiler markers, then writes the slowest
     /// frames with what ran in them to Logs/PerfProbe.txt. Batch (with graphics): -executeMethod Diverse.EditorTools.PerfProbe.RunBatch
     /// Uses a scratch save folder (DIVERSE_SAVE_DIR), AI off.
@@ -70,6 +70,8 @@ namespace Diverse.EditorTools
             ProfilerRecorder gcAlloc;
             int lastGc;
             bool fontRebuilt;   // a dynamic font atlas was rebuilt this frame (every uGUI text re-generates)
+            float walked;
+            int streamed;
             void OnFont(Font f) => fontRebuilt = true;
 
             void Awake() => DontDestroyOnLoad(gameObject);
@@ -79,7 +81,7 @@ namespace Diverse.EditorTools
                 for (int i = 0; i < 90; i++) yield return null;
                 var g = Game.I;
                 if (g == null || g.Player == null) { Write("FAIL: no game"); yield break; }
-                g.ApplyDesign(DesignStore.Commit(DesignTestData.Pictured(g.Player)));
+                // Benchmark the built-in world the player actually uses; the old custom city layout is retired.
                 g.Player.invulnUntil = float.MaxValue;
                 for (int i = 0; i < 60; i++) yield return null;
 
@@ -93,6 +95,7 @@ namespace Diverse.EditorTools
                 Font.textureRebuilt += OnFont;
 
                 // Walking: keep a destination far to the east so new chunks stream in the whole time
+                Vector2 start = g.Player.Pos; int chunksBefore = HitchLog.ChunksBuilt;
                 float t0 = Time.realtimeSinceStartup;
                 while (Time.realtimeSinceStartup - t0 < 20)
                 {
@@ -100,6 +103,7 @@ namespace Diverse.EditorTools
                     Record("walk");
                     yield return null;
                 }
+                walked = Vector2.Distance(start, g.Player.Pos); streamed = HitchLog.ChunksBuilt - chunksBefore;
                 // Fighting: a pack of enemies around the hero, the hero swinging at the nearest one
                 var attack = typeof(Player).GetMethod("BasicAttack", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
                 g.Player.StopMoving();
@@ -141,6 +145,7 @@ namespace Diverse.EditorTools
             void Report()
             {
                 var sb = new StringBuilder();
+                sb.AppendLine($"Built-in world: walked {walked:0.0} tiles, streamed {streamed} new chunks during the walk phase.");
                 foreach (var phase in new[] { "walk", "fight" })
                 {
                     var f = frames.Where(x => x.phase == phase).Skip(2).ToList();

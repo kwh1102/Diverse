@@ -8,7 +8,7 @@ namespace Diverse
     public enum TilePattern { Plain, Tufts, Pebbles, Ripples, Speckles, Cobbles, Slabs, Planks, Cracks, Puddles, Crust, Strata, Sparkles, Tiles, Moss, Snowdrifts, CrystalBed, MirrorPaving, Sandstone }
 
     /// <summary>How a cliff wall is built (16 dots per level).</summary>
-    public enum WallPattern { Blocks, Bricks, Strata, Columns, Facets, Roots }
+    public enum WallPattern { Blocks, Bricks, Strata, Columns, Facets, Roots, Earth }
 
     /// <summary>A ground's look: pattern + palette ramp (palette indices, dark → light; ramp[1] is the base colour).</summary>
     [Serializable]
@@ -23,6 +23,8 @@ namespace Diverse
         public int petal = -1;
         [Tooltip("Palette index of this ground in shade (grass blades, the foot of a cliff); -1 = ramp[0]")]
         public int shade = -1;
+        [Tooltip("Low-contrast surface colours between the main ramp tones; -1 uses the main ramp")]
+        public int undertone = -1, overtone = -1;
         [Tooltip("Liquids: palette index of the line where they meet land (foam, a glowing crust); -1 = none")]
         public int edge = -1;
         [Tooltip("Liquids: the bank on the land just above (north of) them, from the liquid line upward; -1 = the land's shade")]
@@ -56,23 +58,35 @@ namespace Diverse
         public int outline = 0;
         [Tooltip("Round contact shadows under things that stand: palette index and opacity")]
         public int shadow = 1;
-        [Range(0, 1)] public float shadowAlpha = 0.45f;
+        [Range(0, 1)] public float shadowAlpha = 0.23f;
 
         [Header("Ground tiles")]
         public List<GroundLook> grounds = new List<GroundLook>();
         [Tooltip("How far ground borders wander from the tile grid (0 = smooth rounded borders)")]
-        [Range(0, 0.45f)] public float edgeNoise = 0.28f;
+        [Range(0, 0.45f)] public float edgeNoise;
         [Tooltip("Width of the darker rim inside a ground where it meets a lower one (0 = none)")]
-        [Range(0, 0.3f)] public float edgeRim = 0.07f;
+        [Range(0, 0.3f)] public float edgeRim = 0.035f;
+        [Tooltip("Pixels cut off ground corners; straight edges stay on the tile grid")]
+        [Range(1, 6)] public int groundCorner = 3;
+        [Tooltip("Density of clustered grass blades, pebbles and other small surface motifs")]
+        [Range(0, 1)] public float groundDetail = 0.28f;
+        [Tooltip("Maximum pixel depth of decorative material transitions; does not change collision")]
+        [Range(2, 8)] public int groundFringe = 5;
+        [Tooltip("Width in pixels of shallow water beside land")]
+        [Range(2, 8)] public int shoreWidth = 6;
+        [Tooltip("World-pixel size of soft, stepped colour clusters on surfaces")]
+        [Range(16, 80)] public int surfacePatchSize = 38;
+        [Tooltip("Seconds between subtle frontier mist specks; independent of frame rate")]
+        public float frontierSpeckInterval = .14f;
 
         [Header("Cliff projection")]
         public List<CliffLook> cliffs = new List<CliffLook>();
         [Tooltip("Vertical pixels per cliff level; navigation and raised decorations use the same value")]
-        [Range(16, 32)] public int cliffRise = 24;
+        [Range(16, 32)] public int cliffRise = 16;
         [Tooltip("Horizontal pixels of projection per level, revealing the lit side face")]
-        [Range(0, 8)] public int cliffSkew = 4;
+        [Range(0, 8)] public int cliffSkew;
         [Tooltip("Radius in dots of the rounded outer corners of cliff tops")]
-        public int cornerRadius = 8;
+        public int cornerRadius = 3;
         [Tooltip("Rows of shade on the ground at the foot of a cliff")]
         public int footShade = 2;
 

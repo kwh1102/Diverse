@@ -18,20 +18,24 @@ MonoBehaviour:
     borderWiggle: 30
     landmarkDistance: {x: 250, y: 360}
     borderSiteDistance: {x: 140, y: 210}
-    rangeFrequency: 0.0055
+    rangeFrequency: 0.008
     rangeWarp: 32
     rangeMaskFrequency: 0.003
-    rangeMaskThreshold: 0.46
-    cliffLevel: 0.88
-    peakLevel: 0.95
+    rangeMaskThreshold: 0.42
+    cliffLevel: 0.855
+    peakLevel: 0.955
     passSpacing: 80
     passRadius: 7
     clearance: 12
+    terrainStep: 2
+    sceneryCell: 3
+    sceneryGap: 0.35
+    sceneryRoadMargin: 1.2
     riverFrequency: 0.006
     riverWidth: 0.012
     lakeFrequency: 0.018
     lakeLevel: 0.73
-    roadWidth: 1.6
+    roadWidth: 2
     roadWander: 12
     maxAlive: 12
     maxAlivePerRing: 2

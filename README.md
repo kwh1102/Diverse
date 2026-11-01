@@ -137,4 +137,4 @@
 ## 라이선스
 
 - 폰트: [갈무리(Galmuri)](https://github.com/quiple/galmuri) (SIL Open Font License 1.1) — `Resources/Fonts/LICENSE.txt`
-- 그 외 그래픽과 사운드는 모두 코드로 생성 (`Resources/Sprites`의 PNG도 코드 그림을 구운 것).
+- 기본 그래픽은 코드로 그리는 픽셀 아트와 ImageGen 원본 시트를 함께 사용한다. 현재 월드 원본·프롬프트는 `ArtSource/WorldOverhaul/`, 아트·배치·검증 안내는 [Docs/WorldArt.md](Docs/WorldArt.md). 사운드는 코드로 생성한다.

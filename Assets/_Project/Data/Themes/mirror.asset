@@ -20,6 +20,7 @@ MonoBehaviour:
     mapColor: {r: 0.35686275, g: 0.24705882, b: 0.5254902, a: 1}
     ground: 18
     groundAlt: 6
+    cliffTop: 18
     altShare: 0.25
     liquid: 8
     road: 2
@@ -66,7 +67,7 @@ MonoBehaviour:
       onCliffs: 0
     - sprite: tree_Mirror_{v}
       variants: 4
-      chance: 0.03
+      chance: 0.043
       block: 1
       width: 1
       depth: 0.6
@@ -75,7 +76,7 @@ MonoBehaviour:
       onCliffs: 0
     - sprite: rock_Mirror_{v}
       variants: 3
-      chance: 0.004
+      chance: 0.011
       block: 1
       width: 0.85
       depth: 0.55
@@ -84,7 +85,7 @@ MonoBehaviour:
       onCliffs: 1
     - sprite: bush_Mirror_{v}
       variants: 2
-      chance: 0.03
+      chance: 0.018
       block: 0
       width: 0.8
       depth: 0.5

@@ -1,3 +1,5 @@
+> Archived art pass. Superseded by ArtSource/WorldOverhaul and Docs/WorldArt.md (2026-11-02). The commands below reproduce the earlier look, not the current production art.
+
 # Reference redesign — applied art and regional terrain
 
 The user's reference.png is the visual authority. Applied work includes the default rabbit, meadow and volcanic objects, jelly/flame enemies, the shared UI skin, and terrain for all nine base regions. Other costumes, NPCs, bosses, buildings and the remaining regional objects, effects and complete UI layout redesign remain separate work.

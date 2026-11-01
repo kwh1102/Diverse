@@ -54,6 +54,7 @@ namespace Diverse
     {
         public static WorldStreamer I { get; private set; }
         public WorldGen Gen { get; private set; }
+        public SceneryLayout Scenery { get; private set; }
         public int loadRadius = 2;          // chunks to load in each direction (5x5)
         public int unloadRadius = 3;
 
@@ -69,14 +70,26 @@ namespace Diverse
         readonly Dictionary<Vector2Int, int> blocked = new Dictionary<Vector2Int, int>();
         const float PathPad = 0.3f;         // ~ a body radius, so paths keep clear of shapes
         readonly Queue<Vector2Int> buildQueue = new Queue<Vector2Int>();
+        readonly HashSet<Vector2Int> queued = new HashSet<Vector2Int>();
+        Vector2Int lastFocus = new Vector2Int(int.MinValue, int.MinValue);
+        int lastRx, lastRy;
+        TileBaker.Operation pendingBake;
+        Vector2Int pendingKey;
+        [SerializeField, Tooltip("CPU raster budget per streaming frame (ms); initial scene warming is synchronous.")]
+        float bakeBudgetMs = 2;
         [SerializeField] ChunkView chunkPrefab;     // empty template: chunks are filled procedurally by ChunkView.Build
 
         void Awake() => I = this;
-        void OnDestroy() { if (I == this) I = null; }
+        void OnDestroy() { CancelBake(); DropBakedGround(); if (I == this) I = null; }
 #if UNITY_EDITOR
         /// <summary>Editor tools build chunks in edit mode, where Awake does not run.</summary>
         public void EditorRegister() => I = this;
         public void EditorUnregister() { if (I == this) I = null; }
+        public void EditorInit(WorldGen generator)
+        {
+            Clear(); groundCache.Clear(); blockCache.Clear(); DropBakedGround();
+            Gen = generator; Scenery = new SceneryLayout(this);
+        }
 #endif
 
         /// <summary>Start a world for this seed (also used by ResetWorld: drops every loaded chunk first).</summary>
@@ -88,20 +101,24 @@ namespace Diverse
             DropBakedGround();
             // Every world uses the five built-in zones (build type + theme each).
             Gen = new WorldGen(seed, ZoneMap.ForWorld(Session.World, seed));
+            Scenery = new SceneryLayout(this);
         }
 
         public void Clear()
         {
-            foreach (var c in chunks.Values) if (c != null) Destroy(c.gameObject);
+            CancelBake();
+            foreach (var c in chunks.Values) if (c != null) { c.Unload(); Destroy(c.gameObject); }
             chunks.Clear();
             blocked.Clear();
             solidCells.Clear();
             buildQueue.Clear();
+            queued.Clear(); lastFocus = new Vector2Int(int.MinValue, int.MinValue);
         }
 
         /// <summary>Drop every loaded chunk properly (the design look changed); Warm/Tick builds them again with the new art.</summary>
         public void UnloadAll()
         {
+            CancelBake();
             groundCache.Clear();     // a designed layout may lay different roads
             blockCache.Clear();
             foreach (var view in chunks.Values)
@@ -112,6 +129,8 @@ namespace Diverse
             }
             chunks.Clear();
             buildQueue.Clear();
+            queued.Clear(); lastFocus = new Vector2Int(int.MinValue, int.MinValue);
+            Scenery = new SceneryLayout(this);
             DropBakedGround();       // … and paints the ground differently (after Unload handed the old textures back)
         }
 
@@ -121,6 +140,7 @@ namespace Diverse
         /// <summary>Build the chunks around the starting point right away (no stutter at game start).</summary>
         public void Warm(Vector2 p)
         {
+            CancelBake();
             var c = ChunkOf(p);
             LoadRadii(out int rx, out int ry);
             for (int y = -ry; y <= ry; y++)
@@ -151,16 +171,38 @@ namespace Diverse
             var c = ChunkOf(focus);
             LoadRadii(out int rx, out int ry);
             // Queue chunks to load, nearest first
-            for (int r = 0; r <= Mathf.Max(rx, ry); r++)
-                for (int y = -r; y <= r; y++)
-                    for (int x = -r; x <= r; x++)
-                    {
-                        if (Mathf.Max(Mathf.Abs(x), Mathf.Abs(y)) != r || Mathf.Abs(x) > rx || Mathf.Abs(y) > ry) continue;
-                        var k = new Vector2Int(c.x + x, c.y + y);
-                        if (!chunks.ContainsKey(k) && !buildQueue.Contains(k)) buildQueue.Enqueue(k);
-                    }
-            // Build at most one per frame (spreads the load)
-            if (buildQueue.Count > 0) Ensure(buildQueue.Dequeue());
+            if (c != lastFocus || rx != lastRx || ry != lastRy)
+            {
+                buildQueue.Clear(); queued.Clear();
+                lastFocus = c; lastRx = rx; lastRy = ry;
+                for (int r = 0; r <= Mathf.Max(rx, ry); r++)
+                    for (int y = -r; y <= r; y++)
+                        for (int x = -r; x <= r; x++)
+                        {
+                            if (Mathf.Max(Mathf.Abs(x), Mathf.Abs(y)) != r || Mathf.Abs(x) > rx || Mathf.Abs(y) > ry) continue;
+                            var k = new Vector2Int(c.x + x, c.y + y);
+                            if (!chunks.ContainsKey(k) && queued.Add(k)) buildQueue.Enqueue(k);
+                        }
+            }
+            // A terrain bake can take longer than a frame even with only one chunk. Rasterize it over several frames,
+            // before the chunk enters view; instantiate scenery only once the completed texture is ready.
+            if (pendingBake != null)
+            {
+                if (Mathf.Abs(pendingKey.x - c.x) > rx + 1 || Mathf.Abs(pendingKey.y - c.y) > ry + 1) CancelBake();
+                else if (pendingBake.Step(bakeBudgetMs))
+                {
+                    KeepBakedGround(pendingKey, pendingBake.Texture); pendingBake = null; Ensure(pendingKey);
+                }
+            }
+            else if (buildQueue.Count > 0)
+            {
+                var k = buildQueue.Dequeue(); queued.Remove(k);
+                if (!chunks.ContainsKey(k))
+                {
+                    if (bakedGround.ContainsKey(k)) Ensure(k);
+                    else { pendingKey = k; pendingBake = new TileBaker.Operation(this, k); }
+                }
+            }
 
             // Unload
             List<Vector2Int> remove = null;
@@ -188,6 +230,8 @@ namespace Diverse
             HitchLog.ChunksBuilt++;
             view.Build(this, k);
         }
+
+        void CancelBake() { pendingBake?.Cancel(); pendingBake = null; }
 
         public bool IsLoaded(Vector2 p) => chunks.ContainsKey(ChunkOf(p));
 

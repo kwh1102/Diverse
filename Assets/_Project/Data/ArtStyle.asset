@@ -15,87 +15,87 @@ MonoBehaviour:
   def:
     palette:
     - serializedVersion: 2
-      rgba: 4281542180
+      rgba: 4282069288
     - serializedVersion: 2
-      rgba: 4281740074
+      rgba: 4282595888
     - serializedVersion: 2
-      rgba: 4282332212
+      rgba: 4283254076
     - serializedVersion: 2
-      rgba: 4282793021
+      rgba: 4284109129
     - serializedVersion: 2
-      rgba: 4282793536
+      rgba: 4284438352
     - serializedVersion: 2
-      rgba: 4283451464
+      rgba: 4285227611
     - serializedVersion: 2
-      rgba: 4284570203
+      rgba: 4286806899
     - serializedVersion: 2
-      rgba: 4284638316
+      rgba: 4288584855
     - serializedVersion: 2
-      rgba: 4286350996
+      rgba: 4289377717
     - serializedVersion: 2
-      rgba: 4287870918
+      rgba: 4289647329
     - serializedVersion: 2
-      rgba: 4288269537
+      rgba: 4292341751
     - serializedVersion: 2
-      rgba: 4282469913
+      rgba: 4282995756
     - serializedVersion: 2
-      rgba: 4282479668
+      rgba: 4283660622
     - serializedVersion: 2
-      rgba: 4282420825
+      rgba: 4284190059
     - serializedVersion: 2
-      rgba: 4282623349
+      rgba: 4284458630
     - serializedVersion: 2
-      rgba: 4282887813
+      rgba: 4285711269
     - serializedVersion: 2
-      rgba: 4283286700
+      rgba: 4287356104
     - serializedVersion: 2
-      rgba: 4282402390
+      rgba: 4282337367
     - serializedVersion: 2
-      rgba: 4283983484
+      rgba: 4283328904
     - serializedVersion: 2
-      rgba: 4283992997
+      rgba: 4284123052
     - serializedVersion: 2
-      rgba: 4285638082
+      rgba: 4285441475
     - serializedVersion: 2
-      rgba: 4284403948
+      rgba: 4286239727
     - serializedVersion: 2
-      rgba: 4280429696
+      rgba: 4281811345
     - serializedVersion: 2
-      rgba: 4279647436
+      rgba: 4282407894
     - serializedVersion: 2
-      rgba: 4279727359
+      rgba: 4282555128
     - serializedVersion: 2
-      rgba: 4286208035
+      rgba: 4286079028
     - serializedVersion: 2
-      rgba: 4290020908
+      rgba: 4289565007
     - serializedVersion: 2
-      rgba: 4291539819
+      rgba: 4291938446
     - serializedVersion: 2
-      rgba: 4292601032
+      rgba: 4292865237
     - serializedVersion: 2
-      rgba: 4284496971
+      rgba: 4284367945
     - serializedVersion: 2
-      rgba: 4287849606
+      rgba: 4288376960
     - serializedVersion: 2
-      rgba: 4291142078
+      rgba: 4291601592
     - serializedVersion: 2
-      rgba: 4287349210
+      rgba: 4287743198
     - serializedVersion: 2
-      rgba: 4282858814
+      rgba: 4284108872
     - serializedVersion: 2
-      rgba: 4290619869
+      rgba: 4290819813
     - serializedVersion: 2
-      rgba: 4287000751
+      rgba: 4288776121
     - serializedVersion: 2
       rgba: 4282266676
     - serializedVersion: 2
       rgba: 4283319623
     - serializedVersion: 2
-      rgba: 4282736433
+      rgba: 4283987026
     - serializedVersion: 2
-      rgba: 4282272293
+      rgba: 4283262021
     - serializedVersion: 2
-      rgba: 4283465807
+      rgba: 4284517997
     - serializedVersion: 2
       rgba: 4282864710
     - serializedVersion: 2
@@ -133,11 +133,11 @@ MonoBehaviour:
     - serializedVersion: 2
       rgba: 4287855469
     - serializedVersion: 2
-      rgba: 4282925374
+      rgba: 4286086770
     - serializedVersion: 2
-      rgba: 4285428083
+      rgba: 4287271559
     - serializedVersion: 2
-      rgba: 4286483345
+      rgba: 4287996056
     - serializedVersion: 2
       rgba: 4282551412
     - serializedVersion: 2
@@ -146,6 +146,82 @@ MonoBehaviour:
       rgba: 4286474597
     - serializedVersion: 2
       rgba: 4288252545
+    - serializedVersion: 2
+      rgba: 4283860323
+    - serializedVersion: 2
+      rgba: 4284585847
+    - serializedVersion: 2
+      rgba: 4283328840
+    - serializedVersion: 2
+      rgba: 4284252255
+    - serializedVersion: 2
+      rgba: 4285110968
+    - serializedVersion: 2
+      rgba: 4286296526
+    - serializedVersion: 2
+      rgba: 4286756302
+    - serializedVersion: 2
+      rgba: 4288597735
+    - serializedVersion: 2
+      rgba: 4292926672
+    - serializedVersion: 2
+      rgba: 4292997358
+    - serializedVersion: 2
+      rgba: 4282407505
+    - serializedVersion: 2
+      rgba: 4283988081
+    - serializedVersion: 2
+      rgba: 4283779911
+    - serializedVersion: 2
+      rgba: 4285096028
+    - serializedVersion: 2
+      rgba: 4286613371
+    - serializedVersion: 2
+      rgba: 4287733139
+    - serializedVersion: 2
+      rgba: 4286613371
+    - serializedVersion: 2
+      rgba: 4287733139
+    - serializedVersion: 2
+      rgba: 4288316232
+    - serializedVersion: 2
+      rgba: 4290226539
+    - serializedVersion: 2
+      rgba: 4285421872
+    - serializedVersion: 2
+      rgba: 4287920964
+    - serializedVersion: 2
+      rgba: 4283397012
+    - serializedVersion: 2
+      rgba: 4284715957
+    - serializedVersion: 2
+      rgba: 4290751614
+    - serializedVersion: 2
+      rgba: 4292399793
+    - serializedVersion: 2
+      rgba: 4287392368
+    - serializedVersion: 2
+      rgba: 4288840590
+    - serializedVersion: 2
+      rgba: 4284041288
+    - serializedVersion: 2
+      rgba: 4285749851
+    - serializedVersion: 2
+      rgba: 4284513194
+    - serializedVersion: 2
+      rgba: 4285963209
+    - serializedVersion: 2
+      rgba: 4283000651
+    - serializedVersion: 2
+      rgba: 4284324736
+    - serializedVersion: 2
+      rgba: 4281624010
+    - serializedVersion: 2
+      rgba: 4283544309
+    - serializedVersion: 2
+      rgba: 4284902749
+    - serializedVersion: 2
+      rgba: 4288261027
     paletteNames:
     - outline
     - stone deep
@@ -213,16 +289,56 @@ MonoBehaviour:
     - bog liquid glint
     - mineral floor shade
     - mineral floor light
+    - surface Grass soft shade
+    - surface Grass soft light
+    - surface DarkGrass soft shade
+    - surface DarkGrass soft light
+    - surface Path soft shade
+    - surface Path soft light
+    - surface Sand soft shade
+    - surface Sand soft light
+    - surface Snow soft shade
+    - surface Snow soft light
+    - surface Swamp soft shade
+    - surface Swamp soft light
+    - surface Ash soft shade
+    - surface Ash soft light
+    - surface Plaza soft shade
+    - surface Plaza soft light
+    - surface Flagstone soft shade
+    - surface Flagstone soft light
+    - surface Water soft shade
+    - surface Water soft light
+    - surface DeepWater soft shade
+    - surface DeepWater soft light
+    - surface Wood soft shade
+    - surface Wood soft light
+    - surface Ice soft shade
+    - surface Ice soft light
+    - surface Crystal soft shade
+    - surface Crystal soft light
+    - surface Mirror soft shade
+    - surface Mirror soft light
+    - surface Redrock soft shade
+    - surface Redrock soft light
+    - surface Toxic soft shade
+    - surface Toxic soft light
+    - surface Lava soft shade
+    - surface Lava soft light
+    - surface paving mortar
+    - surface paving bevel
     outline: 0
     shadow: 1
-    shadowAlpha: 0.32
+    shadowAlpha: 0.23
     grounds:
     - ground: 0
       pattern: 1
-      ramp: 0d0000000e0000000f00000010000000
+      ramp: 0c0000000d0000000e00000010000000
       accent: 21
-      petal: 20
-      shade: 13
+      petal: 10
+      shade: 12
+      undertone: 66
+      overtone: 67
       edge: -1
       bank: 
     - ground: 1
@@ -231,6 +347,8 @@ MonoBehaviour:
       accent: 19
       petal: -1
       shade: 39
+      undertone: 68
+      overtone: 69
       edge: -1
       bank: 
     - ground: 2
@@ -239,6 +357,8 @@ MonoBehaviour:
       accent: -1
       petal: -1
       shade: 19
+      undertone: 70
+      overtone: 71
       edge: -1
       bank: 
     - ground: 3
@@ -247,6 +367,8 @@ MonoBehaviour:
       accent: -1
       petal: -1
       shade: 19
+      undertone: 72
+      overtone: 73
       edge: -1
       bank: 
     - ground: 4
@@ -255,6 +377,8 @@ MonoBehaviour:
       accent: -1
       petal: -1
       shade: 44
+      undertone: 74
+      overtone: 75
       edge: -1
       bank: 
     - ground: 5
@@ -263,6 +387,8 @@ MonoBehaviour:
       accent: 43
       petal: -1
       shade: 42
+      undertone: 76
+      overtone: 77
       edge: -1
       bank: 
     - ground: 6
@@ -271,14 +397,18 @@ MonoBehaviour:
       accent: -1
       petal: -1
       shade: 36
+      undertone: 78
+      overtone: 79
       edge: -1
       bank: 
     - ground: 7
       pattern: 5
-      ramp: 3b0000003c0000003d00000014000000
+      ramp: 660000003c00000067000000
       accent: -1
       petal: -1
       shade: 59
+      undertone: 80
+      overtone: 81
       edge: -1
       bank: 
     - ground: 8
@@ -287,6 +417,8 @@ MonoBehaviour:
       accent: -1
       petal: -1
       shade: 25
+      undertone: 84
+      overtone: 85
       edge: 25
       bank: 110000001200000013000000
     - ground: 9
@@ -295,14 +427,18 @@ MonoBehaviour:
       accent: -1
       petal: -1
       shade: 25
+      undertone: 86
+      overtone: 87
       edge: 25
       bank: 110000001200000013000000
     - ground: 10
       pattern: 7
-      ramp: 110000001200000013000000
+      ramp: 110000001300000014000000
       accent: -1
       petal: -1
-      shade: 17
+      shade: 18
+      undertone: 88
+      overtone: 89
       edge: -1
       bank: 
     - ground: 11
@@ -311,6 +447,8 @@ MonoBehaviour:
       accent: -1
       petal: -1
       shade: 5
+      undertone: -1
+      overtone: -1
       edge: -1
       bank: 
     - ground: 12
@@ -319,6 +457,8 @@ MonoBehaviour:
       accent: -1
       petal: -1
       shade: 6
+      undertone: -1
+      overtone: -1
       edge: -1
       bank: 
     - ground: 13
@@ -327,6 +467,8 @@ MonoBehaviour:
       accent: -1
       petal: -1
       shade: 22
+      undertone: 100
+      overtone: 101
       edge: 23
       bank: 0000000002000000
     - ground: 14
@@ -335,6 +477,8 @@ MonoBehaviour:
       accent: 63
       petal: -1
       shade: 39
+      undertone: 98
+      overtone: 99
       edge: 43
       bank: 2a00000011000000
     - ground: 15
@@ -343,6 +487,8 @@ MonoBehaviour:
       accent: -1
       petal: -1
       shade: 47
+      undertone: 90
+      overtone: 91
       edge: -1
       bank: 
     - ground: 16
@@ -351,14 +497,18 @@ MonoBehaviour:
       accent: 49
       petal: -1
       shade: 64
+      undertone: 92
+      overtone: 93
       edge: -1
       bank: 
     - ground: 17
       pattern: 6
-      ramp: 3b0000003c0000003d00000007000000
-      accent: 40
+      ramp: 660000003c00000067000000
+      accent: -1
       petal: -1
       shade: 59
+      undertone: 82
+      overtone: 83
       edge: -1
       bank: 
     - ground: 18
@@ -367,6 +517,8 @@ MonoBehaviour:
       accent: 49
       petal: -1
       shade: 56
+      undertone: 94
+      overtone: 95
       edge: -1
       bank: 
     - ground: 19
@@ -375,20 +527,28 @@ MonoBehaviour:
       accent: 19
       petal: -1
       shade: 50
+      undertone: 96
+      overtone: 97
       edge: -1
       bank: 
-    edgeNoise: 0.13
-    edgeRim: 0.045
+    edgeNoise: 0
+    edgeRim: 0.035
+    groundCorner: 3
+    groundDetail: 0.62
+    groundFringe: 5
+    shoreWidth: 6
+    surfacePatchSize: 38
+    frontierSpeckInterval: 0.14
     cliffs:
     - theme: meadow
-      wall: 3
-      ramp: 02000000050000000600000007000000
-      accent: 18
+      wall: 6
+      ramp: 11000000120000001300000014000000
+      accent: -1
       lip: -1
     - theme: overgrowth
-      wall: 5
-      ramp: 27000000020000000500000012000000
-      accent: 40
+      wall: 6
+      ramp: 11000000120000001300000014000000
+      accent: -1
       lip: -1
     - theme: volcano
       wall: 3
@@ -411,10 +571,10 @@ MonoBehaviour:
       accent: 19
       lip: 52
     - theme: fortress
-      wall: 1
-      ramp: 020000003b0000003c0000003d000000
-      accent: 40
-      lip: 61
+      wall: 6
+      ramp: 11000000120000001300000014000000
+      accent: -1
+      lip: -1
     - theme: mirror
       wall: 4
       ramp: 0000000038000000390000003a000000
@@ -425,12 +585,11 @@ MonoBehaviour:
       ramp: 270000002a0000001100000029000000
       accent: 43
       lip: 43
-    cliffRise: 24
-    cliffSkew: 4
-    cornerRadius: 8
-    footShade: 3
+    cliffRise: 16
+    cliffSkew: 0
+    cornerRadius: 3
+    footShade: 2
     characterHeight: {x: 16, y: 20}
-    prompt: 'Match ArtSource/ReferenceRedesign/reference.png: chunky low-resolution
-      top-down pixel art, compact beige rabbit with red scarf, round layered green
-      trees, warm tan paths, vertical charcoal stone cliffs, flat olive grass, orange
-      lava. Dark closed outlines, 2-4 flat tones, no gradients or painted microtexture.'
+    prompt: Cute Sephiria-inspired low-resolution pixel art; puffy silhouettes; large
+      flat pixel clusters; 3-4 material tones; upper-left light; charcoal one-pixel
+      outline; straight RPG camera; no realism, gradients, dithering or fine texture.

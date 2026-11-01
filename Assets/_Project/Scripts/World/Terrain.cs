@@ -58,9 +58,13 @@ namespace Diverse
         }
 
         /// <summary>Distance to the nearest road (a large number far from all of them).</summary>
-        public float RoadDistance(Vector2 p)
+        public float RoadDistance(Vector2 p) => RoadFrame(p, out _);
+
+        /// <summary>Closest road segment's tangent, for consistently orienting the deck across a river.</summary>
+        public float RoadFrame(Vector2 p, out Vector2 direction)
         {
             float best = 999;
+            direction = Vector2.up;
             foreach (var r in roads)
             {
                 if (!r.box.Contains(p)) continue;
@@ -69,7 +73,7 @@ namespace Diverse
                     var a = r.pts[i]; var ab = r.pts[i + 1] - a;
                     float t = Mathf.Clamp01(Vector2.Dot(p - a, ab) / ab.sqrMagnitude);
                     float d = Vector2.Distance(p, a + ab * t);
-                    if (d < best) best = d;
+                    if (d < best) { best = d; direction = ab; }
                 }
             }
             return best;
@@ -122,7 +126,9 @@ namespace Diverse
         /// <summary>Terrain level at a tile: 0 open ground, 1 rock (cliffs), 2 the upper tier.</summary>
         public int Height(int tx, int ty)
         {
-            var p = new Vector2(tx + 0.5f, ty + 0.5f);
+            int step = Mathf.Max(1, R.terrainStep);
+            var p = new Vector2(MathX.FloorDiv(tx, step) * step + step * .5f,
+                MathX.FloorDiv(ty, step) * step + step * .5f);
             float bias = Bias(p, t => t.mountainBias);
             float e = Crest(p, bias);
             var r = R;

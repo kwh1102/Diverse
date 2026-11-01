@@ -110,6 +110,7 @@ namespace Diverse.EditorTools
             {
                 id = id, displayName = name, prefix = prefix, biome = b, mapColor = Pal.Hex(color),
                 ground = g, groundAlt = alt, altShare = altShare, liquid = liquid, road = id == "fortress" ? Ground.Flagstone : Ground.Path,
+                cliffTop = id == "fortress" ? Ground.Grass : g,
                 mountainBias = mountains, waterBias = water, mesas = id == "canyon" ? 0.7f : 0, density = density, decor = decor,
                 landmarkName = landmark, landmarkSprite = string.IsNullOrEmpty(landmark) ? "" : "landmark_" + id, landmarkFootprint = footprint,
                 arenaRadius = arena, arenaGround = arenaGround, boss = boss, enemies = new List<string>(enemies),

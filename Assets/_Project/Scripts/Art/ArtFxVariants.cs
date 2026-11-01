@@ -31,7 +31,8 @@ namespace Diverse
                         cv.Line((int)p0.x, (int)p0.y, (int)p1.x, (int)p1.y, f == 0 ? Pal.White : t == 0 ? col : Pal.White);
                     }
                 }
-                if (f >= 2) for (int i = 0; i < S * 2; i++) { int x = (int)(Hash.F(i, f, 3) * S), y = (int)(Hash.F(i, f, 4) * S); if (Hash.F(x, y, f) > 0.5f) cv.Set(x, y, new Color32(0, 0, 0, 0)); }
+                // A clean opening in the centre makes the cross split into four disappearing strokes.
+                if (f >= 2) cv.Circle(c, c, sizePx * (f == 2 ? .3f : .65f), new Color32(0, 0, 0, 0));
                 frames[f] = cv.ToSprite(new Vector2(c, c));
             }
             return frames;
