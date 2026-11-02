@@ -102,6 +102,7 @@ namespace Diverse
         [Range(0, 3)] public float density = 1;
         public List<DecorEntry> decor = new List<DecorEntry>();
         public SceneryProfile scenery = new SceneryProfile();
+        public EnvironmentThemeDef environment = new EnvironmentThemeDef();
 
         public float SceneryScale(string key, bool focal = false)
         {
@@ -144,6 +145,7 @@ namespace Diverse
     [Serializable]
     public class WorldRulesDef
     {
+        public EnvironmentDef environment = new EnvironmentDef();
         [Header("Zones (5 slices around the spawn)")]
         [Tooltip("The spawn's own neutral land")]
         public float centerRadius = 46;

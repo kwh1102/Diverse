@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4daca7ae967f1b344872deceda26c0b3, type: 3}
   m_Name: canyon
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   def:
     id: canyon
     displayName: "\uC9C8\uD48D\uC758 \uD611\uACE1"
@@ -298,6 +298,16 @@ MonoBehaviour:
         role: 0
         blocks: 1
         footprint: {x: 1, y: 0.6}
+    environment:
+      wind: 0.25
+      cloth: 1.5
+      glint: 0.12
+      accent: {r: 0.55, g: 0.85, b: 0.85, a: 1}
+      dust: {r: 0.8, g: 0.63, b: 0.36, a: 0.3}
+      weatherRate: 1.5
+      weatherSize: 0.08
+      weatherLife: 3
+      weatherVelocity: {x: 0.6, y: 0.05}
     landmarkName: "\uBC14\uB78C\uD0D1"
     landmarkSprite: landmark_canyon
     landmarkFootprint: {x: 4, y: 2.5}

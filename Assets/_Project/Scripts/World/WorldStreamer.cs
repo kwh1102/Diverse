@@ -55,6 +55,7 @@ namespace Diverse
         public static WorldStreamer I { get; private set; }
         public WorldGen Gen { get; private set; }
         public SceneryLayout Scenery { get; private set; }
+        public EnvironmentAnimator Environment { get; private set; }
         public int loadRadius = 2;          // chunks to load in each direction (5x5)
         public int unloadRadius = 3;
 
@@ -89,6 +90,7 @@ namespace Diverse
         {
             Clear(); groundCache.Clear(); blockCache.Clear(); DropBakedGround();
             Gen = generator; Scenery = new SceneryLayout(this);
+            InitEnvironment();
         }
 #endif
 
@@ -102,6 +104,13 @@ namespace Diverse
             // Every world uses the five built-in zones (build type + theme each).
             Gen = new WorldGen(seed, ZoneMap.ForWorld(Session.World, seed));
             Scenery = new SceneryLayout(this);
+            InitEnvironment();
+        }
+
+        void InitEnvironment()
+        {
+            if (Environment == null) Environment = GetComponent<EnvironmentAnimator>() ?? gameObject.AddComponent<EnvironmentAnimator>();
+            Environment.Initialize(this);
         }
 
         public void Clear()

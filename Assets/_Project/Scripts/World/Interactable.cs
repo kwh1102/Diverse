@@ -30,6 +30,8 @@ namespace Diverse
             it.basePos = pos;
             Art.Setup(it.sr, sprite, Art.SortY(pos.y));
             Art.Setup(it.shadow, Art.Shadow(Mathf.Max(10, Mathf.RoundToInt(sprite.rect.width * 0.6f))), -30000);
+            if (WorldStreamer.I != null && WorldStreamer.I.Gen != null)
+                WorldStreamer.I.Environment?.Register(it.sr, sprite.name, WorldStreamer.I.Gen.ThemeAt(pos.x, pos.y));
             All.Add(it);
             chunk?.Register(it);
             return it;

@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4daca7ae967f1b344872deceda26c0b3, type: 3}
   m_Name: crystal
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   def:
     id: crystal
     displayName: "\uACF5\uBA85\uC758 \uC218\uC815\uD3C9\uC6D0"
@@ -298,6 +298,16 @@ MonoBehaviour:
         role: 0
         blocks: 1
         footprint: {x: 1, y: 0.6}
+    environment:
+      wind: 0.7
+      cloth: 1.5
+      glint: 0.12
+      accent: {r: 0.5, g: 0.85, b: 1, a: 1}
+      dust: {r: 0.5, g: 0.8, b: 1, a: 0.4}
+      weatherRate: 0.7
+      weatherSize: 0.08
+      weatherLife: 3
+      weatherVelocity: {x: 0.05, y: 0.15}
     landmarkName: "\uACF5\uBA85\uD0D1"
     landmarkSprite: landmark_crystal
     landmarkFootprint: {x: 5, y: 3}

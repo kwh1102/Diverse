@@ -11,8 +11,313 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5590f34f59ef0e747a55d1feb23ea8bf, type: 3}
   m_Name: WorldRules
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   def:
+    environment:
+      enabled: 1
+      framesPerSecond: 8
+      windSpeed: 1.2
+      windSpatialScale: 0.13
+      waterStrength: 0.1
+      liquidSpeed: 0.6
+      tickInterval: 0.1
+      cullMargin: 2
+      maxParticles: 64
+      emissionBudget: 2
+      emitterScanBudget: 24
+      smokeLife: 2.5
+      smokeSize: 0.4
+      smokeRise: 0.45
+      bubbleLife: 1.2
+      bubbleSize: 0.35
+      bubbleRise: 0.08
+      portalLife: 0.7
+      portalRadius: 0.7
+      portalParticleSize: 0.07
+      liquidInterval: 6
+      objects:
+      - sprite: tree_Dunes_*
+        motion: 0
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: tree_Crystal_*
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: tree_*
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: bush_Tundra_*
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: bush_Crystal_*
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: bush_*
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: flower_*
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: prop_banner
+        motion: 2
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: explore_fortress_1
+        motion: 2
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: explore_canyon_3
+        motion: 2
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: prop_campfire
+        motion: 0
+        effect: 1
+        offset: {x: 0, y: 0.2}
+        scale: 0.7
+        interval: 2
+      - sprite: prop_lamp
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: prop_warpstone
+        motion: 3
+        effect: 4
+        offset: {x: 0, y: 1.1}
+        scale: 0.6
+        interval: 0.3
+      - sprite: explore_volcano_0
+        motion: 3
+        effect: 2
+        offset: {x: 0, y: 1}
+        scale: 0.65
+        interval: 2.5
+      - sprite: explore_volcano_3
+        motion: 3
+        effect: 1
+        offset: {x: 0, y: 0.35}
+        scale: 0.6
+        interval: 2
+      - sprite: explore_overgrowth_0
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: explore_overgrowth_1
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: explore_swamp_2
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: explore_glacier_2
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: explore_crystal_*
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: explore_mirror_0
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: explore_mirror_2
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: explore_mirror_3
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_overgrowth_0
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_swamp_0
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_glacier_0
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_crystal_0
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_mirror_0
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_volcano_0
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_overgrowth_1
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_swamp_1
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_glacier_1
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_crystal_1
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_mirror_1
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_volcano_1
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_overgrowth_2
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_swamp_2
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_glacier_2
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_crystal_2
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_mirror_2
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_volcano_2
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_overgrowth_3
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_swamp_3
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_glacier_3
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_crystal_3
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_mirror_3
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_volcano_3
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
     centerRadius: 46
     blendWidth: 40
     borderWiggle: 30

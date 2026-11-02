@@ -9,6 +9,13 @@ Shader "Diverse/Sprite"
         _MainTex ("Sprite Texture", 2D) = "white" {}
         _Flash ("Flash", Range(0,1)) = 0
         _FlashColor ("Flash Color", Color) = (1,1,1,1)
+        [HideInInspector] _EnvMotion ("Environment motion", Float) = 0
+        [HideInInspector] _EnvStrength ("Environment amplitude", Float) = 1
+        [HideInInspector] _EnvSpeed ("Environment speed", Float) = 1.2
+        [HideInInspector] _EnvFPS ("Environment stepped frames", Float) = 8
+        [HideInInspector] _EnvSpatial ("Environment spatial phase", Float) = .13
+        [HideInInspector] _EnvTint ("Environment accent", Color) = (.55,.85,.85,1)
+        [HideInInspector] _EnvironmentMask ("Liquid mask", 2D) = "black" {}
         [HideInInspector] _Color ("Tint", Color) = (1,1,1,1)
     }
     SubShader
@@ -27,11 +34,15 @@ Shader "Diverse/Sprite"
             half4 _Color;
             half4 _FlashColor;
             half _Flash;
+            float _EnvMotion, _EnvStrength, _EnvSpeed, _EnvFPS, _EnvSpatial;
+            half4 _EnvTint;
         CBUFFER_END
+        #include "DiverseEnvironment.hlsl"
 
-        half4 SpriteColor(float2 uv, half4 tint)
+        half4 SpriteColor(float2 uv, half4 tint, float2 root, float2 world)
         {
-            half4 c = tint * SamplePixelArt(TEXTURE2D_ARGS(_MainTex, sampler_MainTex), uv);
+            half4 c = tint * SamplePixelArt(TEXTURE2D_ARGS(_MainTex, sampler_MainTex), EnvironmentUV(uv, root, world));
+            c = EnvironmentColor(c, uv, world, root);
             c.rgb = lerp(c.rgb, _FlashColor.rgb, _Flash);
             return c;
         }
@@ -47,7 +58,7 @@ Shader "Diverse/Sprite"
             #include_with_pragmas "Packages/com.unity.render-pipelines.universal/Shaders/2D/Include/ShapeLightShared.hlsl"
 
             struct Attributes { float3 positionOS : POSITION; float4 color : COLOR; float2 uv : TEXCOORD0; UNITY_VERTEX_INPUT_INSTANCE_ID };
-            struct Varyings { float4 positionCS : SV_POSITION; half4 color : COLOR; float2 uv : TEXCOORD0; half2 lightingUV : TEXCOORD1; UNITY_VERTEX_OUTPUT_STEREO };
+            struct Varyings { float4 positionCS : SV_POSITION; half4 color : COLOR; float2 uv : TEXCOORD0; half2 lightingUV : TEXCOORD1; float2 root : TEXCOORD2; float2 world : TEXCOORD3; UNITY_VERTEX_OUTPUT_STEREO };
 
             #include "Packages/com.unity.render-pipelines.universal/Shaders/2D/Include/LightingUtility.hlsl"
             TEXTURE2D(_MaskTex); SAMPLER(sampler_MaskTex);
@@ -73,6 +84,8 @@ Shader "Diverse/Sprite"
                 v.positionOS = UnityFlipSprite(v.positionOS, unity_SpriteProps.xy);
                 o.positionCS = TransformObjectToHClip(v.positionOS);
                 o.uv = v.uv;
+                o.root = TransformObjectToWorld(float3(0,0,0)).xy;
+                o.world = TransformObjectToWorld(v.positionOS).xy;
                 o.lightingUV = half2(ComputeScreenPos(o.positionCS / o.positionCS.w).xy);
                 o.color = v.color * _Color * unity_SpriteColor;
                 return o;
@@ -82,7 +95,7 @@ Shader "Diverse/Sprite"
 
             half4 frag(Varyings i) : SV_Target
             {
-                half4 c = SpriteColor(i.uv, i.color);
+                half4 c = SpriteColor(i.uv, i.color, i.root, i.world);
                 clip(c.a - 0.01);
                 SurfaceData2D surfaceData;
                 InputData2D inputData;
@@ -102,7 +115,7 @@ Shader "Diverse/Sprite"
             #pragma multi_compile_instancing
 
             struct Attributes { float3 positionOS : POSITION; float4 color : COLOR; float2 uv : TEXCOORD0; UNITY_VERTEX_INPUT_INSTANCE_ID };
-            struct Varyings { float4 positionCS : SV_POSITION; half4 color : COLOR; float2 uv : TEXCOORD0; UNITY_VERTEX_OUTPUT_STEREO };
+            struct Varyings { float4 positionCS : SV_POSITION; half4 color : COLOR; float2 uv : TEXCOORD0; float2 root : TEXCOORD2; float2 world : TEXCOORD3; UNITY_VERTEX_OUTPUT_STEREO };
 
             Varyings vert(Attributes v)
             {
@@ -113,13 +126,15 @@ Shader "Diverse/Sprite"
                 v.positionOS = UnityFlipSprite(v.positionOS, unity_SpriteProps.xy);
                 o.positionCS = TransformObjectToHClip(v.positionOS);
                 o.uv = v.uv;
+                o.root = TransformObjectToWorld(float3(0,0,0)).xy;
+                o.world = TransformObjectToWorld(v.positionOS).xy;
                 o.color = v.color * _Color * unity_SpriteColor;
                 return o;
             }
 
             half4 frag(Varyings i) : SV_Target
             {
-                half4 c = SpriteColor(i.uv, i.color);
+                half4 c = SpriteColor(i.uv, i.color, i.root, i.world);
                 clip(c.a - 0.01);
                 return c;
             }

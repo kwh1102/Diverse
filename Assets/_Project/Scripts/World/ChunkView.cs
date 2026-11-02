@@ -16,6 +16,7 @@ namespace Diverse
         readonly List<Interactable> interactables = new List<Interactable>();
         [SerializeField] SpriteRenderer ground;     // baked per chunk at runtime
         Texture2D groundTex;
+        Texture2D environmentMask;
         WorldStreamer w;
 
         static readonly ProfilerMarker BuildMarker = new ProfilerMarker("Diverse.ChunkBuild");   // read by DesignPerf / PerfProbe
@@ -35,6 +36,7 @@ namespace Diverse
             ground.sprite = Sprite.Create(groundTex, new Rect(0, 0, N * Art.PPU, N * Art.PPU), Vector2.zero, Art.PPU, 0, SpriteMeshType.FullRect);
             ground.sharedMaterial = Art.SpriteMat;
             ground.transform.position = origin;
+            environmentMask = w.Environment?.BindGround(ground, k);
 
             // 2) Authored structure layouts; scenery reserves their complete surroundings.
             foreach (var s in w.Gen.StructuresInChunk(k.x, k.y))
@@ -69,6 +71,7 @@ namespace Diverse
                 sh.transform.localPosition = new Vector3(0, 0.05f, 0);
                 Art.MakeRenderer(sh, s.rect.height >= 18 ? Art.CastShadow(s) : Art.Shadow(Mathf.RoundToInt(s.rect.width * 0.7f)), -30000);
             }
+            if (!flat) w.Environment?.Register(sr, s.name, w.Gen.ThemeAt(p.x, p.y));
             return sr;
         }
 
@@ -77,6 +80,7 @@ namespace Diverse
             // Sprite.Create wrappers are native Unity objects: destroying their renderer does not release them.
             if (ground != null && ground.sprite != null) Destroy(ground.sprite);
             if (groundTex != null) Destroy(groundTex);
+            if (environmentMask != null) Destroy(environmentMask);
         }
 
         public void BlockArea(Vector2 center, float wdt, float hgt, Footprint shape = Footprint.Rect) => solids.Add(w.AddSolid(shape, center, wdt, hgt));

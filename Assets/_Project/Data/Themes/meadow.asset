@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4daca7ae967f1b344872deceda26c0b3, type: 3}
   m_Name: meadow
-  m_EditorClassIdentifier: 
+  m_EditorClassIdentifier:
   def:
     id: meadow
     displayName: "\uBC14\uB78C\uACB0 \uCD08\uC6D0"
@@ -38,6 +38,16 @@ MonoBehaviour:
       flat: 0
       clustered: 1
       onCliffs: 1
+      role: 0
+      visualScale: 1
+      scaleVariation: 0.15
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
     - sprite: explore_meadow_1
       variants: 1
       chance: 0.012
@@ -47,6 +57,16 @@ MonoBehaviour:
       flat: 0
       clustered: 0
       onCliffs: 1
+      role: 0
+      visualScale: 1
+      scaleVariation: 0.15
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
     - sprite: explore_meadow_2
       variants: 1
       chance: 0.012
@@ -56,6 +76,16 @@ MonoBehaviour:
       flat: 0
       clustered: 0
       onCliffs: 0
+      role: 0
+      visualScale: 1
+      scaleVariation: 0.15
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
     - sprite: explore_meadow_3
       variants: 1
       chance: 0.012
@@ -65,6 +95,16 @@ MonoBehaviour:
       flat: 0
       clustered: 0
       onCliffs: 0
+      role: 0
+      visualScale: 1
+      scaleVariation: 0.15
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
     - sprite: flower_{v}
       variants: 5
       chance: 0.03
@@ -74,6 +114,16 @@ MonoBehaviour:
       flat: 1
       clustered: 0
       onCliffs: 0
+      role: 0
+      visualScale: 1
+      scaleVariation: 0.15
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
     - sprite: tree_Meadow_{v}
       variants: 4
       chance: 0.043
@@ -83,6 +133,16 @@ MonoBehaviour:
       flat: 0
       clustered: 1
       onCliffs: 0
+      role: 0
+      visualScale: 1
+      scaleVariation: 0.15
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
     - sprite: rock_Meadow_{v}
       variants: 3
       chance: 0.011
@@ -92,6 +152,16 @@ MonoBehaviour:
       flat: 0
       clustered: 0
       onCliffs: 1
+      role: 0
+      visualScale: 1
+      scaleVariation: 0.15
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
     - sprite: bush_Meadow_{v}
       variants: 2
       chance: 0.018
@@ -101,6 +171,16 @@ MonoBehaviour:
       flat: 0
       clustered: 0
       onCliffs: 1
+      role: 0
+      visualScale: 1
+      scaleVariation: 0.15
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
     - sprite: tuft_Meadow_{v}
       variants: 2
       chance: 0.07
@@ -110,8 +190,49 @@ MonoBehaviour:
       flat: 1
       clustered: 0
       onCliffs: 1
-    landmarkName: 
-    landmarkSprite: 
+      role: 0
+      visualScale: 1
+      scaleVariation: 0.15
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
+    scenery:
+      enabled: 0
+      patchSize: 42
+      patchThreshold: 0.47
+      patchFeather: 0.16
+      clearingSize: 22
+      clearingThreshold: 0.66
+      isolatedChance: 0.025
+      canopySpacing: 0.52
+      footGap: 0.65
+      groundStrength: 0.7
+      occlusionHeight: 2.5
+      occludedAlpha: 0.38
+      fadeSpeed: 8
+      buildingScale: 1.5
+      anchorScale: 1.5
+      landmarkScale: 1.35
+      groupChance: 0.65
+      groupRadius: 6
+      groupName:
+      group: []
+    environment:
+      wind: 1
+      cloth: 1.5
+      glint: 0.12
+      accent: {r: 0.55, g: 0.85, b: 0.85, a: 1}
+      dust: {r: 0.65, g: 0.75, b: 0.55, a: 0.3}
+      weatherRate: 1
+      weatherSize: 0.08
+      weatherLife: 3
+      weatherVelocity: {x: 0.3, y: -0.2}
+    landmarkName:
+    landmarkSprite:
     landmarkFootprint: {x: 0, y: 0}
     arenaRadius: 0
     arenaGround: 7
