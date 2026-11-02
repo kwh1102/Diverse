@@ -31,7 +31,7 @@ namespace Diverse
     /// 2. Landmarks: each zone's landmark and the border sites (ZoneMap.sites), placed before any terrain
     /// 3. Large terrain (Terrain): mountain ranges with natural saddles, mesas, rivers and lakes, roads to the landmarks
     /// 4. Theme painting: ground, liquids and cliff look from the theme at each tile (organic patches near borders)
-    /// 5. Small scenery: ChunkView scatters each theme's decor on open ground
+    /// 5. Scenery: shared habitat patches, reserved small places and silhouette/contact-aware regional props
     /// Every step reads world coordinates only, so any chunk order gives the same world. Structures: one or two
     /// candidates per region (3x3 chunks), kept off mountains, water and the landmarks.
     /// </summary>

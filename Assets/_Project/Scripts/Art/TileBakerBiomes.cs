@@ -34,6 +34,10 @@ namespace Diverse
                 if ((surfaceStamps[(int)((h >> 20) % 4) * 8 + v] & (1 << u)) != 0)
                     return water || (h & 1) == 0 ? Under(l) : Over(l);
             }
+            // The same patches that concentrate trees/minerals also shade their ground, including snow and paving.
+            // Low-contrast stepped marks use the material's own palette; no unrelated terrain is painted here.
+            float habitat = HabitatAt(x, y);
+            if (habitat > .2f && Hf(MathX.FloorDiv(x, 4), MathX.FloorDiv(y, 3), salt + 91) < habitat * .8f) return Under(l);
             return R(l.ramp, 1);
         }
 

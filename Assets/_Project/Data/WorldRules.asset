@@ -35,6 +35,9 @@ MonoBehaviour:
     explorationClearance: 5
     explorationTrailLength: 18
     explorationTrailWidth: 1.1
+    explorationTrailConnectDistance: 48
+    explorationTrailNeighbourDistance: 96
+    explorationTrailBend: 4
     settlementGround: 2
     settlementRoad: 17
     materialCell: 4
@@ -1750,15 +1753,23 @@ MonoBehaviour:
         role: 5
         blocks: 0
         footprint: {x: 0.6, y: 0.4}
-    sceneryCell: 3
-    sceneryGap: 0.35
-    sceneryRoadMargin: 1.2
+    sceneryCell: 2
+    sceneryGap: 0.15
+    sceneryRoadMargin: 1.3
+    sceneryGroupCell: 44
     riverFrequency: 0.006
     riverWidth: 0.012
     lakeFrequency: 0.018
     lakeLevel: 0.73
     roadWidth: 2
-    roadWander: 12
+    roadWander: 9
+    roadExits: 3
+    roadBranchDistance: {x: 48, y: 72}
+    roadSegmentLength: 12
+    roadTerrainAvoidance: 10
+    roadBranchWidth: 1.35
+    roadLoopWidth: 1.05
+    roadLoops: 2
     maxAlive: 12
     maxAlivePerRing: 2
     spawnRadius: {x: 15, y: 24}

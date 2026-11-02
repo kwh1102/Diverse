@@ -27,107 +27,217 @@ MonoBehaviour:
     mountainBias: -0.2
     waterBias: 0
     mesas: 0
-    density: 0.7
+    density: 0.95
     decor:
     - sprite: explore_crystal_0
       variants: 1
-      chance: 0.012
+      chance: 0.08
       block: 1
       width: 0.8
       depth: 0.5
       flat: 0
       clustered: 1
       onCliffs: 1
+      role: 1
+      visualScale: 1.155
+      scaleVariation: 0.12
+      mediumScale: 1.68
+      rareScale: 2.1
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 2.1
     - sprite: explore_crystal_1
       variants: 1
-      chance: 0.012
+      chance: 0.04
       block: 1
       width: 0.8
       depth: 0.5
       flat: 0
-      clustered: 0
+      clustered: 1
       onCliffs: 1
+      role: 3
+      visualScale: 1.6
+      scaleVariation: 0.12
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
     - sprite: explore_crystal_2
       variants: 1
-      chance: 0.012
+      chance: 0
       block: 1
       width: 1.2
       depth: 0.5
       flat: 0
-      clustered: 0
+      clustered: 1
       onCliffs: 0
+      role: 5
+      visualScale: 1.25
+      scaleVariation: 0.12
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
     - sprite: explore_crystal_3
       variants: 1
-      chance: 0.012
+      chance: 0
       block: 1
       width: 0.8
       depth: 0.5
       flat: 0
-      clustered: 0
+      clustered: 1
       onCliffs: 0
+      role: 5
+      visualScale: 1.5
+      scaleVariation: 0.12
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
     - sprite: deco_crystal_0
       variants: 1
-      chance: 0.004
+      chance: 0.055
       block: 1
       width: 1.2
       depth: 0.6
       flat: 0
-      clustered: 0
+      clustered: 1
       onCliffs: 1
+      role: 1
+      visualScale: 1.045
+      scaleVariation: 0.12
+      mediumScale: 1.52
+      rareScale: 1.9
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 1.9
     - sprite: deco_crystal_1
       variants: 1
-      chance: 0.002
+      chance: 0.055
       block: 1
       width: 0.7
       depth: 0.4
       flat: 0
-      clustered: 0
+      clustered: 1
       onCliffs: 0
+      role: 1
+      visualScale: 1.045
+      scaleVariation: 0.12
+      mediumScale: 1.52
+      rareScale: 1.9
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 1.9
     - sprite: deco_crystal_2
       variants: 1
-      chance: 0.003
+      chance: 0.055
       block: 0
       width: 0.8
       depth: 0.5
       flat: 1
-      clustered: 0
+      clustered: 1
       onCliffs: 0
+      role: 1
+      visualScale: 1.045
+      scaleVariation: 0.12
+      mediumScale: 1.52
+      rareScale: 1.9
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 1.9
     - sprite: deco_crystal_3
       variants: 1
-      chance: 0.003
+      chance: 0.055
       block: 1
       width: 0.6
       depth: 0.4
       flat: 0
-      clustered: 0
+      clustered: 1
       onCliffs: 0
+      role: 1
+      visualScale: 1.045
+      scaleVariation: 0.12
+      mediumScale: 1.52
+      rareScale: 1.9
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 1.9
     - sprite: tree_Crystal_{v}
       variants: 4
-      chance: 0.043
+      chance: 0.12
       block: 1
-      width: 1
-      depth: 0.6
+      width: 1.2
+      depth: 0.8
       flat: 0
       clustered: 1
       onCliffs: 0
+      role: 1
+      visualScale: 1.1275
+      scaleVariation: 0.22
+      mediumScale: 1.64
+      rareScale: 2.05
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 2.05
     - sprite: rock_Crystal_{v}
       variants: 3
-      chance: 0.011
+      chance: 0.025
       block: 1
       width: 0.85
       depth: 0.55
       flat: 0
       clustered: 0
       onCliffs: 1
+      role: 3
+      visualScale: 1.4
+      scaleVariation: 0.12
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
     - sprite: bush_Crystal_{v}
       variants: 2
-      chance: 0.018
+      chance: 0.055
       block: 0
       width: 0.8
       depth: 0.5
       flat: 0
       clustered: 0
       onCliffs: 1
+      role: 2
+      visualScale: 1.45
+      scaleVariation: 0.12
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
     - sprite: tuft_Crystal_{v}
       variants: 2
       chance: 0.07
@@ -137,6 +247,57 @@ MonoBehaviour:
       flat: 1
       clustered: 0
       onCliffs: 1
+      role: 2
+      visualScale: 1.25
+      scaleVariation: 0.12
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
+    scenery:
+      enabled: 1
+      patchSize: 46
+      patchThreshold: 0.5
+      patchFeather: 0.16
+      clearingSize: 22
+      clearingThreshold: 0.66
+      isolatedChance: 0.025
+      canopySpacing: 0.6
+      footGap: 0.65
+      groundStrength: 0.75
+      occlusionHeight: 2.5
+      occludedAlpha: 0.38
+      fadeSpeed: 8
+      buildingScale: 1.5
+      anchorScale: 1.5
+      landmarkScale: 1.4
+      groupChance: 0.65
+      groupRadius: 6
+      groupName: crystal observation station
+      group:
+      - sprite: explore_crystal_0
+        position: {x: 0, y: 2}
+        role: 0
+        blocks: 1
+        footprint: {x: 1.5, y: 0.6}
+      - sprite: explore_crystal_2
+        position: {x: -2.8, y: -0.6}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_crystal_3
+        position: {x: 2.5, y: -0.6}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_crystal_1
+        position: {x: 2.6, y: 2.5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
     landmarkName: "\uACF5\uBA85\uD0D1"
     landmarkSprite: landmark_crystal
     landmarkFootprint: {x: 5, y: 3}

@@ -131,7 +131,7 @@ namespace Diverse
         {
             var t = s.theme;
             var at = s.center + new Vector2(0, 3.5f);
-            c.AddDecor(Art.Get(t.landmarkSprite, () => Art.Prop("obelisk")), at, true, t.landmarkFootprint.x, t.landmarkFootprint.y, name: "landmark");
+            c.AddDecor(Art.Get(t.landmarkSprite, () => Art.Prop("obelisk")), at, true, t.landmarkFootprint.x, t.landmarkFootprint.y, name: "landmark", scale: t.SceneryScale(t.landmarkSprite));
             if (Save.clearedCamps.Contains(s.id)) { Reward(c, s, $"{s.name}의 보물"); return; }
             SpawnBoss(c, s, s.boss, s.center + Vector2.down * 2.5f, 1.5f);
         }
@@ -148,7 +148,7 @@ namespace Diverse
                 var big = t.decor.Find(d => d.block && !d.flat && d.sprite.StartsWith("deco_")) ?? t.decor.Find(d => d.block);
                 if (big == null) continue;
                 var p = s.center + MathX.Dir(i * 60 + rng.Range(-12, 12)) * rng.Range(6.5f, 8.5f);
-                c.AddDecor(Art.Get(big.Key(Hash.U(i, 3, (int)s.center.x)), () => Art.Prop("pillar_broken")), p, true, big.width, big.depth);
+                c.AddDecor(Art.Get(big.Key(Hash.U(i, 3, (int)s.center.x)), () => Art.Prop("pillar_broken")), p, true, big.width, big.depth, scale: big.visualScale);
             }
             if (Save.clearedCamps.Contains(s.id)) { Reward(c, s, $"{s.name}의 보물"); return; }
             SpawnBoss(c, s, s.boss, s.center + Vector2.down * 1.5f, 0.75f);
@@ -319,7 +319,7 @@ namespace Diverse
             for (int i = 0; i < 9; i++)
             {
                 var p = s.center + MathX.Dir(i * 40) * 6.5f;
-                c.AddDecor(Art.Tree(Biome.Meadow, 2), p, true, 1.0f, 0.6f);
+                c.AddDecor(Art.Tree(s.biome, 2), p, true, 1.0f, 0.6f);
             }
             for (int i = 0; i < 6; i++) c.AddDecor(Art.Flower(i), s.center + MathX.Dir(i * 60 + 25) * 2.8f, false, 0, 0, true);
             if (!Save.Flag("grove:" + s.id))

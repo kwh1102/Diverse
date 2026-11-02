@@ -30,6 +30,7 @@ namespace Diverse
         static byte[] th;
         static int n, ox, oy;               // map size, world tile of map index 0
         static byte[] neighbours;
+        static byte[] habitatCover;
 
         static void Prepare()
         {
@@ -55,13 +56,18 @@ namespace Diverse
             Prepare();
             int N = tiles;
             n = N + 2 * B; ox = tileOrigin.x - B; oy = tileOrigin.y - B;
-            if (g == null || g.Length != n * n) { g = new Ground[n * n]; flatGround = new Ground[n * n]; th = new byte[n * n]; neighbours = new byte[n * n]; }
+            if (g == null || g.Length != n * n) { g = new Ground[n * n]; flatGround = new Ground[n * n]; th = new byte[n * n]; neighbours = new byte[n * n]; habitatCover = new byte[n * n]; }
             for (int y = 0; y < n; y++)
                 for (int x = 0; x < n; x++)
                 {
                     g[y * n + x] = w.GroundAtTile(ox + x, oy + y);
                     th[y * n + x] = (byte)w.Gen.CliffThemeAt(ox + x + 0.5f, oy + y + 0.5f, WorldGen.Level(g[y * n + x]) > 0).index;
                     flatGround[y * n + x] = WorldGen.Level(g[y * n + x]) > 0 ? ThemeGround(ox + x, oy + y) : g[y * n + x];
+                    var at = new Vector2(ox + x + .5f, oy + y + .5f);
+                    var theme = w.Gen.ThemeAt(at.x, at.y);
+                    var material = flatGround[y * n + x];
+                    habitatCover[y * n + x] = (byte)(255 * (WorldGen.IsLiquid(material) || material is Ground.Path or Ground.Plaza or Ground.Wood ? 0 :
+                        w.Scenery.GroundCover(at, theme)));
                 }
             for (int y = 0; y < n; y++) for (int x = 0; x < n; x++)
             {
@@ -249,6 +255,15 @@ namespace Diverse
             var look = Look(material);
             int color = Pattern(look, material, gx, gy);
             return SurfaceEdge(material, look, gx, gy, color);
+        }
+
+        static float HabitatAt(int gx, int gy)
+        {
+            float x = (gx + .5f) / T - .5f - ox, y = (gy + .5f) / T - .5f - oy;
+            int ix = Mathf.FloorToInt(x), iy = Mathf.FloorToInt(y);
+            float At(int a, int b) => habitatCover[Mathf.Clamp(b, 0, n - 1) * n + Mathf.Clamp(a, 0, n - 1)] / 255f;
+            return Mathf.Lerp(Mathf.Lerp(At(ix, iy), At(ix + 1, iy), x - ix),
+                Mathf.Lerp(At(ix, iy + 1), At(ix + 1, iy + 1), x - ix), y - iy);
         }
         // ───────────── Ground patterns ─────────────
 

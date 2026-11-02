@@ -49,12 +49,17 @@ namespace Diverse
         /// Place a decoration. When block is set, a footprint of bw×bh (world units) centered just above p blocks movement.
         /// Footprints default to ellipses (natural shapes); pass shape for tents (triangle) or crates (rect).
         /// </summary>
-        public SpriteRenderer AddDecor(Sprite s, Vector2 p, bool block, float bw, float bh, bool flat = false, string name = "decor", Footprint shape = Footprint.Ellipse)
+        public SpriteRenderer AddDecor(Sprite s, Vector2 p, bool block, float bw, float bh, bool flat = false, string name = "decor", Footprint shape = Footprint.Ellipse, float scale = 0)
         {
+            if (scale <= 0) scale = w.Gen.ThemeAt(p.x, p.y).SceneryScale(s.name);
             var go = new GameObject(name);
             go.transform.SetParent(transform, false);
             go.transform.position = new Vector3(Mathf.Round(p.x * Art.PPU) / Art.PPU, Mathf.Round(p.y * Art.PPU) / Art.PPU, 0);
             var sr = Art.MakeRenderer(go, s, flat ? -31000 : Art.SortY(p.y));
+            go.transform.localScale = Vector3.one * scale;
+            var profile = w.Gen.ThemeAt(p.x, p.y).scenery;
+            if (!flat && profile.enabled && s.rect.height / Art.PPU * scale >= profile.occlusionHeight)
+                go.AddComponent<SceneryOcclusion>().Init(sr, profile);
             if (block && bw > 0) solids.Add(w.AddSolid(shape, p + new Vector2(0, bh * 0.5f), bw, bh));
             if (block || !flat && s.rect.height >= 12)
             {

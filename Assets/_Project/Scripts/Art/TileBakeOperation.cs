@@ -9,7 +9,7 @@ namespace Diverse
 
         static void ReleaseScratchReferences()
         {
-            g = null; flatGround = null; th = null; neighbours = null;
+            g = null; flatGround = null; th = null; neighbours = null; habitatCover = null;
             lowerContour = null; upperContour = null; nextLower = null; nextUpper = null;
             surfaceMaterials = null; surfaceDistance = null; surfaceOther = null; surfaceDirection = null; bridgeAxes = null;
         }
@@ -22,6 +22,7 @@ namespace Diverse
         {
             readonly Ground[] savedGround, savedFlat;
             readonly byte[] savedThemes, savedNeighbours, savedLower, savedUpper;
+            readonly byte[] savedHabitat;
             readonly byte[] savedMaterials, savedDistance, savedOther, savedDirection, savedBridgeAxes;
             readonly int savedSurfaceWidth, savedSurfaceX, savedSurfaceY, savedPadding;
             readonly int[] savedNextLower, savedNextUpper;
@@ -41,6 +42,7 @@ namespace Diverse
                 origin = chunk * WorldGen.Chunk; width = WorldGen.Chunk * T;
                 PrepareRegion(world, origin, WorldGen.Chunk);
                 savedGround = g; savedFlat = flatGround; savedThemes = th; savedNeighbours = neighbours;
+                savedHabitat = habitatCover;
                 savedLower = lowerContour; savedUpper = upperContour; savedNextLower = nextLower; savedNextUpper = nextUpper;
                 savedN = n; savedOx = ox; savedOy = oy; savedWidth = contourWidth; savedX = contourX; savedY = contourY;
                 savedRise = rise; savedSkew = skew; savedRaised = hasRaised;
@@ -53,6 +55,7 @@ namespace Diverse
             void Restore()
             {
                 g = savedGround; flatGround = savedFlat; th = savedThemes; neighbours = savedNeighbours;
+                habitatCover = savedHabitat;
                 lowerContour = savedLower; upperContour = savedUpper; nextLower = savedNextLower; nextUpper = savedNextUpper;
                 n = savedN; ox = savedOx; oy = savedOy; contourWidth = savedWidth; contourX = savedX; contourY = savedY;
                 rise = savedRise; skew = savedSkew; hasRaised = savedRaised;

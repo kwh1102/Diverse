@@ -6,6 +6,26 @@ namespace Diverse
 {
     /// <summary>The 8 build types a zone can favour (the combat side of a zone; its look is a ThemeDef).</summary>
     public enum CombatType { MeleeRapid, MeleeBurst, RangedRapid, RangedBurst, Speed, Tank, Evasion, Area }
+    public enum SceneryRole { Legacy, Canopy, Understory, Boulder, Relic, Supply }
+
+    [Serializable]
+    public class SceneryProfile
+    {
+        public bool enabled;
+        public float patchSize = 42, patchThreshold = .47f, patchFeather = .16f;
+        public float clearingSize = 22, clearingThreshold = .66f;
+        [Range(0, 1)] public float isolatedChance = .025f;
+        public float canopySpacing = .52f, footGap = .65f;
+        public float groundStrength = .7f;
+        public float occlusionHeight = 2.5f;
+        [Range(.1f, 1)] public float occludedAlpha = .38f;
+        public float fadeSpeed = 8;
+        public float buildingScale = 1.5f, anchorScale = 1.5f, landmarkScale = 1.35f;
+        [Range(0, 1)] public float groupChance = .65f;
+        public float groupRadius = 6;
+        public string groupName;
+        public List<ExplorationPropDef> group = new List<ExplorationPropDef>();
+    }
 
     /// <summary>One kind of scenery a theme scatters (a tree, rock, mushroom…). sprite may contain {v} for variants.</summary>
     [Serializable]
@@ -24,6 +44,24 @@ namespace Diverse
         public bool clustered;
         [Tooltip("Also grows on top of cliffs")]
         public bool onCliffs;
+        public SceneryRole role;
+        [Min(.25f)] public float visualScale = 1;
+        [Range(0, .4f)] public float scaleVariation = .15f;
+        [Header("Optional size hierarchy (0 keeps the ordinary size)")]
+        public float mediumScale, rareScale;
+        [Range(0, 1)] public float mediumChance = .22f, rareChance = .04f;
+        [Range(0, 1)] public float mediumPatchThreshold = .5f, rarePatchThreshold = .75f;
+        [Tooltip("Reserve this visual size even for smaller individuals, so shrinking does not increase density")]
+        public float spacingScale;
+
+        public float IndividualScale(float variation, float sizeRoll, float patch)
+        {
+            float basis = visualScale;
+            if (rareScale > 0 && patch >= rarePatchThreshold && sizeRoll < rareChance) basis = rareScale;
+            else if (mediumScale > 0 && patch >= mediumPatchThreshold && sizeRoll >= rareChance && sizeRoll < rareChance + mediumChance)
+                basis = mediumScale;
+            return basis * Mathf.Lerp(1 - scaleVariation, 1 + scaleVariation, variation);
+        }
 
         public string Key(uint hash) => variants > 1 ? sprite.Replace("{v}", (hash % (uint)variants).ToString()) : sprite.Replace("{v}", "0");
     }
@@ -63,6 +101,18 @@ namespace Diverse
         [Header("Scenery")]
         [Range(0, 3)] public float density = 1;
         public List<DecorEntry> decor = new List<DecorEntry>();
+        public SceneryProfile scenery = new SceneryProfile();
+
+        public float SceneryScale(string key, bool focal = false)
+        {
+            if (!scenery.enabled) return 1;
+            if (key.StartsWith("house_")) return scenery.buildingScale;
+            if (key is "prop_tent" or "prop_stall") return scenery.buildingScale;
+            if (key.StartsWith("explore_anchor_")) return scenery.anchorScale;
+            if (key.StartsWith("landmark_")) return scenery.landmarkScale;
+            var entry = decor.Find(d => key.StartsWith(d.sprite.Replace("{v}", "")) || d.sprite == key);
+            return entry != null ? focal && entry.mediumScale > 0 ? entry.mediumScale : entry.visualScale : 1;
+        }
 
         [Header("Landmark (the zone's heart; its pure boss waits in front of it)")]
         public string landmarkName = "";
@@ -135,6 +185,9 @@ namespace Diverse
         public float explorationClearance = 5;
         public float explorationTrailLength = 18;
         public float explorationTrailWidth = 1.1f;
+        public float explorationTrailConnectDistance = 48;
+        public float explorationTrailNeighbourDistance = 96;
+        public float explorationTrailBend = 4;
         public Ground settlementGround = Ground.Path;
         public Ground settlementRoad = Ground.Flagstone;
         [Tooltip("Material macro cells; isolated small islands merge with surrounding ground")]
@@ -143,10 +196,11 @@ namespace Diverse
         public List<ExplorationSiteDef> exploration = new List<ExplorationSiteDef>();
         [Header("Scenery composition")]
         [Range(2, 5)] public int sceneryCell = 3;
-        [Tooltip("Empty space between sprite silhouettes (tiles)")]
+        [Tooltip("Empty space between legacy sprite silhouettes (tiles); composed canopies use their profile spacing")]
         public float sceneryGap = 0.35f;
         [Tooltip("Clear space beyond the edge of roads for scenery")]
         public float sceneryRoadMargin = 1.2f;
+        public int sceneryGroupCell = 44;
 
         [Header("Water")]
         public float riverFrequency = 0.006f;
@@ -154,9 +208,14 @@ namespace Diverse
         public float lakeFrequency = 0.018f;
         [Range(0.5f, 0.95f)] public float lakeLevel = 0.73f;
 
-        [Header("Roads (spawn → landmarks and border sites)")]
+        [Header("Road network (town exits, shared branches, local loops)")]
         public float roadWidth = 1.6f;
         public float roadWander = 12;
+        [Range(2, 4)] public int roadExits = 3;
+        public Vector2 roadBranchDistance = new Vector2(48, 72);
+        public float roadSegmentLength = 12, roadTerrainAvoidance = 10;
+        public float roadBranchWidth = 1.35f, roadLoopWidth = 1;
+        public int roadLoops = 2;
 
         [Header("Monster spawning (around the player, by theme)")]
         public int maxAlive = 12;

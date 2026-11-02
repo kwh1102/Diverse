@@ -802,9 +802,12 @@ namespace Diverse.EditorTools
                 if (Game.I.Ui == null) return "UI missing";
                 if (Object.FindFirstObjectByType<EditorOnlyPreview>() != null) return "editor-only preview survived into play";
                 if (DB.Weapons.Count != 6 || DB.Costumes.Count != 6 || DB.Enemies.Count < 11) return $"DB counts {DB.Weapons.Count}/{DB.Costumes.Count}/{DB.Enemies.Count}";
-                // Art.Get should pick up the baked PNG (an imported asset), and it must stay readable for Art.Silhouette
+                // The source must be the imported PNG; the idle pose may be a runtime copy with corrected eye pixels.
+                var source = Art.Get($"rabbit_{DB.Costumes[0].id}_Idle0", () => null);
                 var rabbit = Art.Rabbit(DB.Costumes[0], Pose.Idle0);
-                if (!AssetDatabase.Contains(rabbit)) return "baked sprite PNG not used (still procedural)";
+                if (source == null || !AssetDatabase.Contains(source)) return "baked sprite PNG not used (still procedural)";
+                if (rabbit.rect.size != source.rect.size || rabbit.pivot != source.pivot || rabbit.pixelsPerUnit != source.pixelsPerUnit)
+                    return "idle correction changed imported sprite geometry";
                 if (!rabbit.texture.isReadable) return "baked sprite not readable";
                 return null;
             }

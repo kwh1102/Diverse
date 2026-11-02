@@ -78,7 +78,7 @@ namespace Diverse.EditorTools
                 if (p != null && layout.Accepted(c.x, c.y, p)) accepted.Add(p);
             }
             for (int i = 0; i < accepted.Count; i++) for (int j = i + 1; j < accepted.Count; j++)
-                Require(accepted[i].level != accepted[j].level || !accepted[i].visual.Overlaps(accepted[j].visual), theme + " overlapping accepted scenery");
+                Require(!SceneryLayout.Conflicts(accepted[i], accepted[j]), theme + " overlapping contact/spacing areas");
             var reversed = new SceneryLayout(world); int count = 0;
             for (int i = cells.Count - 1; i >= 0; i--)
             {
@@ -88,7 +88,7 @@ namespace Diverse.EditorTools
                 Require(accepted.Any(a => a.position == p.position && a.sprite.name == p.sprite.name), theme + " load-order changed scenery");
             }
             Require(count == accepted.Count, theme + " load-order changed placement count");
-            report.AppendLine("  " + accepted.Count + " accepted scenery: 0 silhouette overlaps, identical reverse proposal order");
+            report.AppendLine("  " + accepted.Count + " accepted scenery: 0 contact/spacing overlaps, identical reverse proposal order (canopy overlap is intentional)");
         }
 
         static void CheckSprites(StringBuilder report)

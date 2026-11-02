@@ -17,7 +17,8 @@ namespace Diverse
                 {
                     int level = WorldGen.Level(world.Gen.GroundAt(Mathf.FloorToInt(pos.x), Mathf.FloorToInt(pos.y)));
                     chunk.AddDecor(sprite, pos + new Vector2(level * WorldGen.FaceSkew, level * WorldGen.FaceHeight),
-                        prop.blocks && level == 0, prop.footprint.x, prop.footprint.y, name: "exploration " + prop.sprite);
+                        prop.blocks && level == 0, prop.footprint.x, prop.footprint.y, name: "exploration " + prop.sprite,
+                        scale: site.theme.SceneryScale(prop.sprite));
                     continue;
                 }
                 string kind = prop.role switch
