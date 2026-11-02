@@ -83,6 +83,8 @@ namespace Diverse
         readonly Dictionary<Vector2Int, List<StructureSpec>> regionCache = new Dictionary<Vector2Int, List<StructureSpec>>();
         readonly Dictionary<Vector3Int, bool> alternateCells = new Dictionary<Vector3Int, bool>();
         readonly Dictionary<Vector2Int, ThemeDef> cliffThemes = new Dictionary<Vector2Int, ThemeDef>();
+        readonly Dictionary<Vector2Int, Ground> groundSamples = new Dictionary<Vector2Int, Ground>();
+        readonly Queue<Vector2Int> groundSampleOrder = new Queue<Vector2Int>();
         static readonly Vector2Int[] cliffNeighbours = { Vector2Int.left, Vector2Int.right, Vector2Int.up, Vector2Int.down };
 
         public WorldGen(int seed, ZoneMap zones = null)
@@ -114,9 +116,17 @@ namespace Diverse
 
         public ThemeDef CliffThemeAt(float x, float y, bool raised)
         {
-            if (!raised) return RawCliffThemeAt(x, y);
+            ThemeDef result = null;
+            foreach (var theme in CliffThemeSteps(x,y,raised)) if (theme != null) result = theme;
+            return result;
+        }
+
+        /// <summary>Same connected-cliff material choice, yielding between flood-fill nodes for streaming.</summary>
+        public IEnumerable<ThemeDef> CliffThemeSteps(float x, float y, bool raised)
+        {
+            if (!raised) { yield return RawCliffThemeAt(x,y); yield break; }
             var start = new Vector2Int(Mathf.FloorToInt(x), Mathf.FloorToInt(y));
-            if (cliffThemes.TryGetValue(start, out var cached)) return cached;
+            if (cliffThemes.TryGetValue(start, out var cached)) { yield return cached; yield break; }
             var component = new List<Vector2Int> { start };
             var examined = new HashSet<Vector2Int> { start };
             var counts = new int[DB.Themes.Count];
@@ -138,6 +148,7 @@ namespace Diverse
                     // cutoff would produce a new colour seam when the next piece loads.
                     if (component.Count >= limit) { chosen = DB.SpawnTheme; break; }
                 }
+                yield return null;
             }
             if (chosen == null)
             {
@@ -147,7 +158,7 @@ namespace Diverse
             }
             if (cliffThemes.Count + component.Count > Mathf.Max(limit, DB.WorldRules.cliffMaterialCacheLimit)) cliffThemes.Clear();
             foreach (var at in component) cliffThemes[at] = chosen;
-            return chosen;
+            yield return chosen;
         }
 
         ThemeDef RawCliffThemeAt(float x, float y)
@@ -181,6 +192,18 @@ namespace Diverse
         // ───────────── Ground ─────────────
 
         public Ground GroundAt(int tx, int ty)
+        {
+            var key = new Vector2Int(tx,ty);
+            if (groundSamples.TryGetValue(key,out var sample)) return sample;
+            sample = ComputeGroundAt(tx,ty);
+            while (groundSamples.Count >= 8192) groundSamples.Remove(groundSampleOrder.Dequeue());
+            groundSamples[key] = sample; groundSampleOrder.Enqueue(key);
+            return sample;
+        }
+
+        public void ClearGroundSamples() { groundSamples.Clear(); groundSampleOrder.Clear(); }
+
+        Ground ComputeGroundAt(int tx, int ty)
         {
             float x = tx + 0.5f, y = ty + 0.5f;
             var pos = new Vector2(x, y);

@@ -25,7 +25,7 @@ namespace Diverse
             var p = g.Player.Pos;
             map.Center = p;
             map.PixelsPerUnit = map.Rect.rect.width / viewUnits;
-            map.Paint((cx, cy) => true);
+            map.Paint((cx, cy) => true, frontier: g.Player.Bound);
             map.DrawRoute(g.Player);
             foreach (var site in World.I.Gen.StructuresNear(p, viewUnits))
             {

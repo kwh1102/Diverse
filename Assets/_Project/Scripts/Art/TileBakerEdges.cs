@@ -29,7 +29,7 @@ namespace Diverse
             return material == Ground.Wood || moved == Ground.Wood ? material : moved;
         }
 
-        static void PrepareSurfaces(WorldStreamer world)
+        static System.Collections.Generic.IEnumerable<int> PrepareSurfaceSteps(WorldStreamer world)
         {
             surfacePadding = Mathf.Clamp(Mathf.Max(S.groundFringe, S.shoreWidth), 2, 8) + 2;
             surfaceWidth = (n - 2 * B) * T + 2 * surfacePadding;
@@ -41,10 +41,23 @@ namespace Diverse
                 surfaceOther = new byte[count]; surfaceDirection = new byte[count];
             }
             System.Array.Clear(surfaceDistance, 0, count);
-            for (int y = 0; y < surfaceWidth; y++) for (int x = 0; x < surfaceWidth; x++)
-                surfaceMaterials[y * surfaceWidth + x] = (byte)MicroMaterial(surfaceX + x, surfaceY + y);
+            for (int y = 0; y < surfaceWidth; y++)
+            {
+                int ty = Mathf.Clamp(MathX.FloorDiv(surfaceY+y,T)-oy,0,n-1);
+                for (int x = 0; x < surfaceWidth;)
+                {
+                    int tx = Mathf.Clamp(MathX.FloorDiv(surfaceX+x,T)-ox,0,n-1);
+                    int end = Mathf.Min(surfaceWidth, (tx+ox+1)*T-surfaceX);
+                    if ((neighbours[ty*n+tx]&4) != 0)
+                        for (;x<end;x++) surfaceMaterials[y*surfaceWidth+x] = (byte)flatGround[ty*n+tx];
+                    else
+                        for (;x<end;x++) surfaceMaterials[y*surfaceWidth+x] = (byte)MicroMaterial(surfaceX+x,surfaceY+y);
+                }
+                yield return 0;
+            }
             int reach = surfacePadding - 2;
             for (int y = surfacePadding; y < surfaceWidth - surfacePadding; y++)
+            {
                 for (int x = surfacePadding; x < surfaceWidth - surfacePadding; x++)
                 {
                     int i = y * surfaceWidth + x;
@@ -60,11 +73,17 @@ namespace Diverse
                         found = true; break;
                     }
                 }
+                yield return 0;
+            }
             if (bridgeAxes == null || bridgeAxes.Length != n * n) bridgeAxes = new byte[n * n];
-            for (int y = 0; y < n; y++) for (int x = 0; x < n; x++)
+            for (int y = 0; y < n; y++)
             {
+                for (int x = 0; x < n; x++)
+                {
                 if (g[y * n + x] != Ground.Wood) continue;
                 bridgeAxes[y * n + x] = (byte)(world.Gen.BridgeHorizontalAt(ox + x, oy + y) ? 0 : 1);
+                }
+                yield return 0;
             }
         }
 

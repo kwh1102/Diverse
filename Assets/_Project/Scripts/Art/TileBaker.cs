@@ -51,26 +51,41 @@ namespace Diverse
         public static Texture2D Bake(WorldStreamer w, Vector2Int k, Texture2D into = null)
             => BakeRegion(w, k * WorldGen.Chunk, WorldGen.Chunk, into);
 
-        static void PrepareRegion(WorldStreamer w, Vector2Int tileOrigin, int tiles)
+        static IEnumerable<int> PrepareRegionSteps(WorldStreamer w, Vector2Int tileOrigin, int tiles)
         {
             Prepare();
             int N = tiles;
             n = N + 2 * B; ox = tileOrigin.x - B; oy = tileOrigin.y - B;
             if (g == null || g.Length != n * n) { g = new Ground[n * n]; flatGround = new Ground[n * n]; th = new byte[n * n]; neighbours = new byte[n * n]; habitatCover = new byte[n * n]; }
             for (int y = 0; y < n; y++)
+            {
                 for (int x = 0; x < n; x++)
                 {
                     g[y * n + x] = w.GroundAtTile(ox + x, oy + y);
-                    th[y * n + x] = (byte)w.Gen.CliffThemeAt(ox + x + 0.5f, oy + y + 0.5f, WorldGen.Level(g[y * n + x]) > 0).index;
+                    foreach (var cliff in w.Gen.CliffThemeSteps(ox+x+.5f,oy+y+.5f,WorldGen.Level(g[y*n+x])>0))
+                    {
+                        if (cliff != null) th[y*n+x] = (byte)cliff.index;
+                        yield return 0;
+                    }
                     flatGround[y * n + x] = WorldGen.Level(g[y * n + x]) > 0 ? ThemeGround(ox + x, oy + y) : g[y * n + x];
                     var at = new Vector2(ox + x + .5f, oy + y + .5f);
                     var theme = w.Gen.ThemeAt(at.x, at.y);
                     var material = flatGround[y * n + x];
-                    habitatCover[y * n + x] = (byte)(255 * (WorldGen.IsLiquid(material) || material is Ground.Path or Ground.Plaza or Ground.Wood ? 0 :
-                        w.Scenery.GroundCover(at, theme)));
+                    habitatCover[y*n+x] = 0;
+                    if (!WorldGen.IsLiquid(material) && material is not (Ground.Path or Ground.Plaza or Ground.Wood))
+                        foreach (float cover in w.Scenery.GroundCoverSteps(at,theme))
+                        {
+                            if (cover >= 0) habitatCover[y*n+x] = (byte)(255*cover);
+                            yield return 0;
+                        }
+                    // A cold world query can be expensive; yield between individual terrain samples.
+                    yield return 0;
                 }
-            for (int y = 0; y < n; y++) for (int x = 0; x < n; x++)
+            }
+            for (int y = 0; y < n; y++)
             {
+                for (int x = 0; x < n; x++)
+                {
                 byte flags = 0;
                 bool uniform = true;
                 for (int dy = -1; dy <= 1; dy++) for (int dx = -1; dx <= 1; dx++)
@@ -81,9 +96,11 @@ namespace Diverse
                 }
                 if (uniform) flags |= 4;
                 neighbours[y * n + x] = flags;
+                }
+                yield return 0;
             }
-            PrepareSurfaces(w);
-            PrepareContours();
+            foreach (int step in PrepareSurfaceSteps(w)) yield return step;
+            foreach (int step in PrepareContourSteps()) yield return step;
         }
 
         /// <summary>Same world-coordinate renderer for one chunk or a contiguous square review region.</summary>
@@ -92,7 +109,7 @@ namespace Diverse
             // A review capture may synchronously bake while a streaming operation is between frames. Give it separate
             // scratch buffers so it cannot overwrite the in-progress operation's world data.
             if (activeOperation != null) ReleaseScratchReferences();
-            PrepareRegion(w, tileOrigin, tiles);
+            foreach (int step in PrepareRegionSteps(w, tileOrigin, tiles)) { }
             int N = tiles;
             int W = N * T;
             var px = new Color32[W * W];

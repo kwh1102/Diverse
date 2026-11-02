@@ -32,17 +32,36 @@ namespace Diverse
 
         public void Build(ChunkView view)
         {
-            BuildGroups(view);
+            foreach (int step in BuildSteps(view)) { }
+        }
+
+        public IEnumerable<int> BuildSteps(ChunkView view)
+        {
+            foreach (int step in BuildGroupSteps(view)) yield return step;
             int cell = Cell, n = WorldGen.Chunk;
             int x0 = MathX.FloorDiv(view.key.x * n - cell, cell), y0 = MathX.FloorDiv(view.key.y * n - cell, cell);
             int x1 = MathX.FloorDiv((view.key.x + 1) * n, cell), y1 = MathX.FloorDiv((view.key.y + 1) * n, cell);
+            int reach = Mathf.CeilToInt(MaxVisualExtent / Cell) + 1;
             for (int y = y0; y <= y1; y++) for (int x = x0; x <= x1; x++)
             {
+                foreach (int step in ResolveSteps(x,y)) yield return step;
                 var p = At(x, y);
-                if (p == null || WorldStreamer.ChunkOf(p.position) != view.key || !Accepted(x, y, p)) continue;
+                if (p == null || WorldStreamer.ChunkOf(p.position) != view.key) continue;
+                bool accepted = true;
+                for (int dy = -reach; dy <= reach && accepted; dy++) for (int dx = -reach; dx <= reach && accepted; dx++)
+                {
+                    if (dx == 0 && dy == 0) continue;
+                    foreach (int step in ResolveSteps(x+dx,y+dy)) yield return step;
+                    var other = At(x+dx,y+dy);
+                    if (other == null || other.level != p.level) continue;
+                    bool wins = other.priority < p.priority || other.priority == p.priority && (dy < 0 || dy == 0 && dx < 0);
+                    if (wins && Conflicts(other,p)) accepted = false;
+                }
+                if (!accepted) continue;
                 var d = p.entry;
                 var at = p.position + new Vector2(p.level * WorldGen.FaceSkew, p.level * WorldGen.FaceHeight);
                 view.AddDecor(p.sprite, at, p.level == 0 && d.block, d.width, d.depth, false, "scenery", scale: p.scale);
+                yield return 0;
             }
             // Bounded cache; evicting proposals cannot change their deterministic result.
             if (proposals.Count > 6000) proposals.Clear();
@@ -91,27 +110,57 @@ namespace Diverse
         {
             var key = new Vector2Int(cx, cy);
             if (proposals.TryGetValue(key, out var cached)) return cached;
-            return proposals[key] = Propose(cx, cy);
+            foreach (var proposal in ProposeSteps(cx,cy)) if (proposal != null) cached = proposal;
+            return proposals[key] = cached;
         }
 
-        Placement Propose(int cx, int cy)
+        IEnumerable<int> ResolveSteps(int x,int y)
+        {
+            var key = new Vector2Int(x,y);
+            if (proposals.ContainsKey(key)) yield break;
+            Placement result = null;
+            foreach (var proposal in ProposeSteps(x,y))
+            {
+                if (proposal != null) result = proposal;
+                yield return 0;
+            }
+            proposals[key] = result;
+        }
+
+        IEnumerable<Placement> ProposeSteps(int cx, int cy)
         {
             int seed = world.Gen.seed, cell = Cell;
             uint h = Hash.U(cx, cy, seed + 4242);
             var at = new Vector2(cx * cell + .5f + Hash.F(cx, cy, seed + 4243) * (cell - 1),
                 cy * cell + .5f + Hash.F(cx, cy, seed + 4245) * (cell - 1));
             at = new Vector2(Mathf.Round(at.x * Art.PPU) / Art.PPU, Mathf.Round(at.y * Art.PPU) / Art.PPU);
-            if (at.magnitude < WorldGen.TownRadius + 4) return null;
+            if (at.magnitude < WorldGen.TownRadius + 4) yield break;
             int tx = Mathf.FloorToInt(at.x), ty = Mathf.FloorToInt(at.y);
             Ground ground = world.GroundAtTile(tx, ty);
+            yield return null;
             int level = WorldGen.Level(ground);
-            if (WorldGen.IsLiquid(ground) || ground is Ground.Path or Ground.Plaza or Ground.Wood) return null;
-            if (level == 0 && (!world.OpenTile(tx, ty) || world.Gen.Terrain.RoadClearance(at) < Rules.sceneryRoadMargin)) return null;
+            if (WorldGen.IsLiquid(ground) || ground is Ground.Path or Ground.Plaza or Ground.Wood) yield break;
+            if (level == 0 && (!world.OpenTile(tx, ty) || world.Gen.Terrain.RoadClearance(at) < Rules.sceneryRoadMargin)) yield break;
             foreach (var structure in world.Gen.StructuresNear(at, 8))
-                if ((structure.center - at).sqrMagnitude < (structure.radius + 2) * (structure.radius + 2)) return null;
+                if ((structure.center - at).sqrMagnitude < (structure.radius + 2) * (structure.radius + 2)) yield break;
 
-            var theme = level > 0 ? world.Gen.CliffThemeAt(at.x, at.y, true) : world.Gen.ThemeAt(at.x, at.y);
-            if (theme.scenery.enabled && ReservedByGroup(at)) return null;
+            ThemeDef theme = world.Gen.ThemeAt(at.x,at.y);
+            if (level > 0)
+                foreach (var resolved in world.Gen.CliffThemeSteps(at.x,at.y,true))
+                {
+                    if (resolved != null) theme = resolved;
+                    yield return null;
+                }
+            if (theme.scenery.enabled)
+            {
+                int groupX = Mathf.FloorToInt(at.x/GroupCell), groupY = Mathf.FloorToInt(at.y/GroupCell);
+                for (int gy = groupY-1; gy <= groupY+1; gy++) for (int gx = groupX-1; gx <= groupX+1; gx++)
+                {
+                    foreach (int step in ResolveGroupSteps(gx,gy)) yield return null;
+                    var group = GroupAt(gx,gy);
+                    if (group != null && Vector2.Distance(at,group.center) < group.theme.scenery.groupRadius+2) yield break;
+                }
+            }
             float grove = SceneryHabitat.Sample(at, theme, seed);
             float roll = Hash.F(cx, cy, seed + 17), acc = 0;
             // Selection is normalized, so early props cannot consume the whole probability budget of trees.
@@ -120,7 +169,7 @@ namespace Diverse
             {
                 float total = 0;
                 foreach (var d in theme.decor) total += Weight(d, theme, ground, level, grove);
-                if (Hash.F(cx, cy, seed + 19) >= Mathf.Clamp01(total * cell * cell * theme.density)) return null;
+                if (Hash.F(cx, cy, seed + 19) >= Mathf.Clamp01(total * cell * cell * theme.density)) yield break;
                 float choice = roll * total;
                 foreach (var d in theme.decor)
                 {
@@ -141,7 +190,7 @@ namespace Diverse
                     if (roll >= acc) continue;
                 }
                 var sprite = Art.Decor(d.Key(h));
-                if (sprite == null) return null;
+                if (sprite == null) yield break;
                 float variation = Hash.F(cx, cy, seed + 23);
                 float scale = theme.scenery.enabled ? d.IndividualScale(variation, Hash.F(cx, cy, seed + 29), grove) : 1;
                 // Quantized visual size, fixed contact footprint: a canopy can overhang without widening the trunk.
@@ -155,8 +204,9 @@ namespace Diverse
                     var sample = at + new Vector2((x - 1) * (width * .5f + .25f), (y - 1) * (depth * .5f + .3f));
                     int sx = Mathf.FloorToInt(sample.x), sy = Mathf.FloorToInt(sample.y);
                     var g = world.GroundAtTile(sx, sy);
-                    if (WorldGen.Level(g) != level || WorldGen.IsLiquid(g) || g is Ground.Path or Ground.Wood or Ground.Plaza) return null;
-                    if (level == 0 && !world.OpenTile(sx, sy)) return null;
+                    yield return null;
+                    if (WorldGen.Level(g) != level || WorldGen.IsLiquid(g) || g is Ground.Path or Ground.Wood or Ground.Plaza) yield break;
+                    if (level == 0 && !world.OpenTile(sx, sy)) yield break;
                 }
                 float gap = Rules.sceneryGap;
                 var visual = new Rect(at.x - imageWidth * .5f - gap * .5f, at.y - gap * .5f, imageWidth + gap, imageHeight + gap);
@@ -168,7 +218,7 @@ namespace Diverse
                 float spaceWidth = canopy ? reservedWidth * theme.scenery.canopySpacing : reservedWidth;
                 float spaceHeight = canopy ? reservedHeight * theme.scenery.canopySpacing : reservedHeight;
                 float footGap = theme.scenery.enabled ? theme.scenery.footGap : gap;
-                return new Placement
+                yield return new Placement
                 {
                     sprite = sprite, entry = d, position = at, level = level, priority = h,
                     scale = scale, visual = visual,
@@ -176,8 +226,9 @@ namespace Diverse
                         spaceWidth + gap, spaceHeight + gap) : visual,
                     footprint = new Rect(at.x - (d.width + footGap) * .5f, at.y - footGap * .5f, d.width + footGap, depth + footGap),
                 };
+                yield break;
             }
-            return null;
+            yield break;
         }
 
         static float Weight(DecorEntry d, ThemeDef theme, Ground ground, int level, float patch)

@@ -337,7 +337,9 @@ namespace Diverse
         void BuildWanderer(ChunkView c, StructureSpec s)
         {
             if (Save.Flag("wanderer:" + s.id)) return;
-            var it = Interactable.Create(c.transform, "wanderer", "wanderer:" + s.id, "길 잃은 방랑자", s.center, Art.Npc("villager" + (Hash.U(1, 2, (int)s.center.x) % 6), 0), c);
+            string look = "wanderer" + (Hash.Str(s.id) % 6);
+            var it = Interactable.Create(c.transform, "wanderer", "wanderer:" + s.id, "길 잃은 방랑자", s.center, Art.Npc(look, 0), c);
+            it.idleFrames = new[] { Art.Npc(look, 0), Art.Npc(look, 1) };
             it.data = s;
             c.AddDecor(Art.Prop("campfire"), s.center + new Vector2(1.2f, -0.3f), false, 0, 0);
             AddFire(c, s.center + new Vector2(1.2f, -0.3f));

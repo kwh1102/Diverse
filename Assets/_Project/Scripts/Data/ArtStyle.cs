@@ -78,6 +78,11 @@ namespace Diverse
         [Range(16, 80)] public int surfacePatchSize = 38;
         [Tooltip("Seconds between subtle frontier mist specks; independent of frame rate")]
         public float frontierSpeckInterval = .14f;
+        [Header("Mist of Oblivion")]
+        [Min(.5f)] public float frontierMistWidth = 5;
+        public Color frontierMistColor = new Color(.44f, .47f, .59f, .94f);
+        public Color frontierMapColor = new Color(.44f, .43f, .57f, 1);
+        [Min(0)] public float frontierMistSpeed = .25f;
         [Header("Hero idle")]
         public float heroBlinkInterval = 4.8f;
         public float heroBlinkDuration = .08f;

@@ -130,7 +130,7 @@ namespace Diverse.EditorTools
                 var direct = TileBaker.Bake(world, key);
                 Require(direct.GetPixels32().SequenceEqual(operation.Texture.GetPixels32()), "Sliced and synchronous renderer differ");
                 Object.DestroyImmediate(direct); Object.DestroyImmediate(operation.Texture);
-                report.AppendLine($"Time slicing: exact pixels despite {steps} interleaved review renders; preparation {prepareMs:0.00} ms, largest raster slice {operation.MaxSliceMs:0.00} ms (2 ms budget plus one four-row block; texture upload excluded).");
+                report.AppendLine($"Time slicing: exact pixels despite {steps} interleaved review renders; constructor {prepareMs:0.00} ms, largest preparation/raster slice {operation.MaxSliceMs:0.00} ms (2 ms budget plus one terrain sample or pixel block; texture upload excluded).");
             }
             finally { operation.Cancel(); }
         }

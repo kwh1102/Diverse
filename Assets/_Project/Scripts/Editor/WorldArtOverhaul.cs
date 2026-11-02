@@ -222,8 +222,7 @@ namespace Diverse.EditorTools
                     Export(t, Grid(t, i, 5, 2), $"rabbit_{c.id}_{poses[i]}", 28, canvas: new Vector2Int(36, 34), costume: c.id == "white" ? null : c);
                 Export(t, Grid(t, 0, 5, 2), "elder_" + c.id, 27, canvas: new Vector2Int(36, 34), costume: c);
             }
-            for (int i = 0; i < 10; i++) for (int f = 0; f < 2; f++)
-                Export(t, Grid(t, f, 5, 2), $"npc_villager{i}_{f}", 25, canvas: new Vector2Int(34, 30));
+            ImportResidents();
             UnityEngine.Object.DestroyImmediate(t);
         }
 
@@ -297,6 +296,7 @@ namespace Diverse.EditorTools
                 if (frame is 1 or 4 && y < 3) outX += (x < dw / 2 ? -1 : 1) * (frame == 1 ? 1 : -1);
                 if (y + dy < h && outX >= 0 && outX < w) result[(y + dy) * w + outX] = color;
             }
+            PreserveNpcEyes(key, result, w, h, frame);
             var tex = new Texture2D(w, h, TextureFormat.RGBA32, false); tex.SetPixels32(result); tex.Apply();
             string path = Output + key + ".png"; byte[] bytes = tex.EncodeToPNG(); UnityEngine.Object.DestroyImmediate(tex);
             if (!File.Exists(path) || !File.ReadAllBytes(path).SequenceEqual(bytes)) File.WriteAllBytes(path, bytes);

@@ -674,6 +674,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   loadRadius: 2
   unloadRadius: 3
+  bakeBudgetMs: 2
+  visibleBakeBudgetMs: 5
+  streamingLookAhead: 1.5
   chunkPrefab: {fileID: 9082211916712469909, guid: c966ddd8b8ec3d241a93154a39907ea6, type: 3}
 --- !u!4 &1635730842
 Transform:

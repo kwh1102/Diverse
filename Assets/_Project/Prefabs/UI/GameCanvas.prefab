@@ -11749,10 +11749,6 @@ MonoBehaviour:
   maxZoom: 24
   playerHighlight: {r: 1, g: 0.92, b: 0.3, a: 1}
   warpPickRadius: 10
-  frontierColor: {r: 1, g: 0.35, b: 0.45, a: 1}
-  frontierOutline: {r: 0.13, g: 0.08, b: 0.15, a: 1}
-  frontierMarkerSize: 6
-  frontierOutlineSize: 9
 --- !u!1 &3502289977285851800
 GameObject:
   m_ObjectHideFlags: 0

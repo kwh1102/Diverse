@@ -11,7 +11,7 @@ namespace Diverse
         static int contourWidth, contourX, contourY, rise, skew;
         static bool hasRaised;
 
-        static void PrepareContours()
+        static System.Collections.Generic.IEnumerable<int> PrepareContourSteps()
         {
             contourWidth = n * T; contourX = ox * T; contourY = oy * T;
             rise = Mathf.Clamp(S.cliffRise, 16, 32); skew = Mathf.Clamp(S.cliffSkew, 0, 8);
@@ -21,8 +21,10 @@ namespace Diverse
             int radius = Mathf.Clamp(S.cornerRadius, 1, T / 2);
             hasRaised = false;
             System.Array.Clear(lowerContour, 0, length); System.Array.Clear(upperContour, 0, length);
-            for (int ty = 0; ty < n; ty++) for (int tx = 0; tx < n; tx++)
+            for (int ty = 0; ty < n; ty++)
             {
+                for (int tx = 0; tx < n; tx++)
+                {
                 int level = WorldGen.Level(g[ty * n + tx]);
                 if (level == 0) continue;
                 hasRaised = true;
@@ -45,6 +47,8 @@ namespace Diverse
                         into[(ty * T + y) * contourWidth + tx * T + x] = 255;
                     }
                 }
+                }
+                yield return 0;
             }
             // For a straight RPG camera a column has no horizontal shear. A suffix lookup finds the first solid
             // sample on a view ray in O(1), replacing up to 64 contour probes for every output pixel.
@@ -59,6 +63,7 @@ namespace Diverse
                         if (upperContour[i] >= 128) b = y;
                         nextLower[i] = a; nextUpper[i] = b;
                     }
+                    if (x % 8 == 7) yield return 0;
                 }
         }
 

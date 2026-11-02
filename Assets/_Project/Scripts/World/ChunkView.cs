@@ -18,17 +18,48 @@ namespace Diverse
         Texture2D groundTex;
         Texture2D environmentMask;
         WorldStreamer w;
+        IEnumerator<int> building;
+        public bool Ready { get; private set; }
+        public string BuildPhase { get; private set; }
 
         static readonly ProfilerMarker BuildMarker = new ProfilerMarker("Diverse.ChunkBuild");   // read by DesignPerf / PerfProbe
 
         public void Build(WorldStreamer world, Vector2Int k)
         {
+            BeginBuild(world,k);
+            while (!StepBuild(float.MaxValue)) { }
+        }
+
+        public void BeginBuild(WorldStreamer world, Vector2Int k)
+        {
+            w = world; key = k; Ready = false;
+            building = BuildSteps().GetEnumerator();
+        }
+
+        public bool StepBuild(float budgetMs)
+        {
             using var _perf = BuildMarker.Auto();
-            w = world;
-            key = k;
+            if (Ready) return true;
+            long started = System.Diagnostics.Stopwatch.GetTimestamp();
+            double ticks = budgetMs*System.Diagnostics.Stopwatch.Frequency/1000.0;
+            do
+            {
+                if (!building.MoveNext())
+                {
+                    building.Dispose(); building = null; Ready = true;
+                    BuildPhase = "activate"; gameObject.SetActive(true); return true;
+                }
+            } while (System.Diagnostics.Stopwatch.GetTimestamp()-started < ticks);
+            return false;
+        }
+
+        IEnumerable<int> BuildSteps()
+        {
+            var k = key;
             int N = WorldGen.Chunk;
             var origin = new Vector2(k.x * N, k.y * N);
             transform.position = Vector3.zero;
+            BuildPhase = "ground";
 
             // 1) 지면
             // Pixel-art tiles from the art rules (TileBaker): patterns, tidy edges, cliffs and banks in the 3/4 view
@@ -37,13 +68,20 @@ namespace Diverse
             ground.sharedMaterial = Art.SpriteMat;
             ground.transform.position = origin;
             environmentMask = w.Environment?.BindGround(ground, k);
+            yield return 0;
 
             // 2) Authored structure layouts; scenery reserves their complete surroundings.
             foreach (var s in w.Gen.StructuresInChunk(k.x, k.y))
+            {
+                BuildPhase = "structure " + s.kind;
                 World.I.BuildStructure(this, s);
+                yield return 0;
+            }
 
             // 3) Deterministic, silhouette-aware scenery; flat detail is already in the baked ground.
-            w.Scenery.Build(this);
+            BuildPhase = "scenery";
+            foreach (int step in w.Scenery.BuildSteps(this)) yield return step;
+            BuildPhase = "world memory";
             World.I.OnChunkBuilt(this);
         }
 
@@ -90,6 +128,7 @@ namespace Diverse
 
         public void Unload()
         {
+            building?.Dispose(); building = null; Ready = false;
             foreach (var s in solids) w.RemoveSolid(s);
             solids.Clear();
             foreach (var e in spawned) if (e != null && e.Alive) e.Despawn();

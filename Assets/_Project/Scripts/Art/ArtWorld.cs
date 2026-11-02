@@ -83,7 +83,7 @@ namespace Diverse
             return Get(key, () => Scenery(key));
         }
 
-        /// <summary>마을 사람 (동물 NPC). kind: owl(이야기꾼), cat(상인), bear(대장장이), rabbit(주민)</summary>
+        /// <summary>동물 NPC: owl/cat/bear/otter, villager0~9(주민), wanderer0~5(방랑자).</summary>
         public static Sprite Npc(string kind, int frame) => Get($"npc_{kind}_{frame}", () => DrawNpc(kind, frame));
 
     }

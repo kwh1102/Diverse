@@ -36,8 +36,7 @@ namespace Diverse.EditorTools
             }
             Export(states, Grid(states, 2, 4, 1), "prop_chest", 15, nativeWidth: 22);
             Export(states, Grid(states, 3, 4, 1), "prop_chest_open", 23, nativeWidth: 22);
-            for (int npc = 0; npc < 10; npc++) for (int pose = 0; pose < 2; pose++)
-                Export(states, Grid(states, pose, 4, 1), $"npc_villager{npc}_{pose}", 25, canvas: new Vector2Int(34, 30));
+            ImportResidents();
             Object.DestroyImmediate(states);
         }
 

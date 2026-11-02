@@ -20,27 +20,35 @@ namespace Diverse
         /// </summary>
         public sealed class Operation
         {
-            readonly Ground[] savedGround, savedFlat;
-            readonly byte[] savedThemes, savedNeighbours, savedLower, savedUpper;
-            readonly byte[] savedHabitat;
-            readonly byte[] savedMaterials, savedDistance, savedOther, savedDirection, savedBridgeAxes;
-            readonly int savedSurfaceWidth, savedSurfaceX, savedSurfaceY, savedPadding;
-            readonly int[] savedNextLower, savedNextUpper;
-            readonly int savedN, savedOx, savedOy, savedWidth, savedX, savedY, savedRise, savedSkew;
-            readonly bool savedRaised;
+            Ground[] savedGround, savedFlat;
+            byte[] savedThemes, savedNeighbours, savedLower, savedUpper;
+            byte[] savedHabitat;
+            byte[] savedMaterials, savedDistance, savedOther, savedDirection, savedBridgeAxes;
+            int savedSurfaceWidth, savedSurfaceX, savedSurfaceY, savedPadding;
+            int[] savedNextLower, savedNextUpper;
+            int savedN, savedOx, savedOy, savedWidth, savedX, savedY, savedRise, savedSkew;
+            bool savedRaised;
             readonly Color32[] pixels;
             readonly Vector2Int origin;
             readonly int width;
-            int row;
+            int pixel;
+            bool captured, prepared;
+            System.Collections.Generic.IEnumerator<int> preparation;
             public bool Complete { get; private set; }
             public Texture2D Texture { get; private set; }
             public double MaxSliceMs { get; private set; }
+            public double PreparationMs { get; private set; }
 
             public Operation(WorldStreamer world, Vector2Int chunk)
             {
                 if (activeOperation != null) throw new System.InvalidOperationException("Only one streaming bake may run at a time.");
                 origin = chunk * WorldGen.Chunk; width = WorldGen.Chunk * T;
-                PrepareRegion(world, origin, WorldGen.Chunk);
+                preparation = PrepareRegionSteps(world, origin, WorldGen.Chunk).GetEnumerator();
+                pixels = new Color32[width * width]; activeOperation = this;
+            }
+
+            void Capture()
+            {
                 savedGround = g; savedFlat = flatGround; savedThemes = th; savedNeighbours = neighbours;
                 savedHabitat = habitatCover;
                 savedLower = lowerContour; savedUpper = upperContour; savedNextLower = nextLower; savedNextUpper = nextUpper;
@@ -49,7 +57,7 @@ namespace Diverse
                 savedMaterials = surfaceMaterials; savedDistance = surfaceDistance; savedOther = surfaceOther;
                 savedDirection = surfaceDirection; savedBridgeAxes = bridgeAxes;
                 savedSurfaceWidth = surfaceWidth; savedSurfaceX = surfaceX; savedSurfaceY = surfaceY; savedPadding = surfacePadding;
-                pixels = new Color32[width * width]; activeOperation = this;
+                captured = true;
             }
 
             void Restore()
@@ -68,22 +76,39 @@ namespace Diverse
             {
                 if (Complete) return true;
                 if (activeOperation != this) throw new System.InvalidOperationException("Cancelled bake operation.");
-                Restore(); long start = Stopwatch.GetTimestamp();
+                // Reuse the previous completed bake's scratch buffers. Only an interleaved synchronous capture
+                // needs separate buffers; discarding them for every streamed chunk generated megabytes of garbage.
+                if (captured) Restore();
+                long start = Stopwatch.GetTimestamp();
                 double ticks = Mathf.Max(.1f, budgetMs) * Stopwatch.Frequency / 1000.0;
                 do
                 {
-                    int until = Mathf.Min(width, row + 4);
-                    for (; row < until; row++) for (int x = 0; x < width; x++)
-                        pixels[row * width + x] = pal[Mathf.Clamp(ContourDot(origin.x * T + x, origin.y * T + row), 0, pal.Length - 1)];
-                } while (row < width && Stopwatch.GetTimestamp() - start < ticks);
+                    if (!prepared)
+                    {
+                        long before = Stopwatch.GetTimestamp();
+                        if (!preparation.MoveNext()) { prepared = true; preparation.Dispose(); preparation = null; }
+                        PreparationMs += (Stopwatch.GetTimestamp()-before)*1000.0/Stopwatch.Frequency;
+                    }
+                    else
+                    {
+                        int until = Mathf.Min(pixels.Length, pixel + 256);
+                        for (; pixel < until; pixel++)
+                            pixels[pixel] = pal[Mathf.Clamp(ContourDot(origin.x*T + pixel%width, origin.y*T + pixel/width), 0, pal.Length-1)];
+                    }
+                } while (pixel < pixels.Length && Stopwatch.GetTimestamp() - start < ticks);
+                Capture();
                 MaxSliceMs = System.Math.Max(MaxSliceMs, (Stopwatch.GetTimestamp() - start) * 1000.0 / Stopwatch.Frequency);
-                if (row < width) return false;
+                if (pixel < pixels.Length) return false;
                 Texture = new Texture2D(width, width, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };
                 Texture.SetPixels32(pixels); Texture.Apply(false, false);
                 Complete = true; activeOperation = null; return true;
             }
 
-            public void Cancel() { if (activeOperation == this) activeOperation = null; }
+            public void Cancel()
+            {
+                preparation?.Dispose(); preparation = null;
+                if (activeOperation == this) activeOperation = null;
+            }
         }
     }
 }

@@ -44,7 +44,7 @@ namespace Diverse
             if (idleFrames != null && idleFrames.Length > 1)
             {
                 animT += Time.deltaTime;
-                int frame = kind == "npc_villager" ? (int)Player.IdlePose(animT) : (int)(animT * 2) % idleFrames.Length;
+                int frame = kind is "npc_villager" or "wanderer" ? (int)Player.IdlePose(animT) : (int)(animT * 2) % idleFrames.Length;
                 sr.sprite = idleFrames[frame % idleFrames.Length];
             }
             if (kind == "shrine")

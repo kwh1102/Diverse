@@ -539,6 +539,10 @@ MonoBehaviour:
     shoreWidth: 6
     surfacePatchSize: 38
     frontierSpeckInterval: 0.14
+    frontierMistWidth: 5
+    frontierMistColor: {r: 0.44, g: 0.47, b: 0.59, a: 0.94}
+    frontierMapColor: {r: 0.44, g: 0.43, b: 0.57, a: 1}
+    frontierMistSpeed: 0.25
     heroBlinkInterval: 4.8
     heroBlinkDuration: 0.08
     cliffs:

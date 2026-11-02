@@ -51,3 +51,14 @@
 **Diverse → World → Overview Maps and Checks**는 3개 시드의 지형 비율, 접근성, 모든 랜드마크 도달 여부와 결정성을 검사한다. `Logs/World/report.txt`에 기록한다. **Diverse → Art → Check World Overhaul**은 청크 접합, 장식 간격/역순 결과, 픽셀 규격과 시간 분할 렌더링을 검사한다.
 
 실제 게임 검토는 `Scenes/Game.unity`에서 Play하거나 **Capture All Terrain Regions**로 촬영한다. 촬영/스모크/성능 검증은 별도의 저장 경로를 쓰며 실제 사용자 세이브를 수정하지 않는다.
+
+## 주민·안개 경계·지도 성능
+
+- 주민 10종과 방랑자 6종은 `ArtSource/Residents`의 ImageGen 원본에서 가져온다. 프롬프트도 같은 폴더에 보관한다. **Diverse → Art → Import Resident and Wanderer Art**로 다시 가져오며, 월드/탐험 아트 가져오기도 같은 시트를 사용한다. 주민 PNG의 GUID는 유지한다.
+- `WorldRules`의 영역 경계와 별도로, 이동 제한 반경은 `WorldGen.Bound`를 따른다. `FrontierMist`는 같은 반경에 흐르는 안개를 표시하고 해금 시 새 반경으로 이동한다. `Data/ArtStyle.asset`의 `frontierMistWidth`, `frontierMistColor`, `frontierMistSpeed`, `frontierMapColor`로 편집한다. 세계지도는 빨간 점 대신 연속 안개 띠와 바깥쪽 음영을 표시하고, 닫힌 곳의 이동 목표는 거부한다.
+- 지도는 실제 청크/베이크 텍스처/지형 캐시를 불러오지 않는다. 별도의 지도 색상 캐시(최대 4096개, 픽셀 데이터 약 4MiB)를 쓰며 오래된 항목만 하나씩 퇴출한다. 한 번에 전체 캐시를 지우지 않는다. 월드 변경/디자인 변경 시 캐시를 무효화한다.
+- `MapCanvas`의 `terrainBudgetMs`(기본 2ms), `repaintInterval`(기본 0.08초)로 새 지형 계산을 분할한다. 텍스처 최대 크기는 축당 512px이며, 같은 구간은 다시 칠하지 않는다. 드래그의 세부 위치는 UV로 반영한다. 지형이 덜 채워졌으면 다음 갱신에서 이어 계산한다. 안개 음영은 GPU UI 셰이더로 그린다. 구조물은 탐험한 영역만 점진적으로 조회하며, 고정 목표는 계속 표시한다.
+- **Diverse → Checks → Residents, Frontier and Map Performance**: 실제 Game 씬에서 주민/방랑자·안개·세계지도를 촬영하고, 2401개 탐험 청크가 있는 지도에서 최소 배율 이동 비용과 실제 청크/지형 캐시 변화, 해금 시 안개 해제를 검사한다. `Logs/FrontierReview`에 스크린샷과 측정을 남긴다. 별도 scratch save를 사용한다.
+- NPC 눈은 `Editor/NpcEyeImport.cs`의 네이티브 도트 기준점으로 가져온다. 큰 원본을 면적 평균으로 줄이면 좌우 눈 폭/높이가 달라지므로 얼굴 특징을 최종 도트에 보존한다. 주민 10종·방랑자 6종·곰/고양이/수달에 적용하고, 이야기꾼과 주인공은 기존 그림을 유지한다. 미니맵도 `Player.Bound`로 세계지도와 같은 안개를 그린다.
+- 청크 베이크는 지형 샘플·절벽 재질 탐색·표면/윤곽 준비·픽셀 그리기를 모두 시간 분할한다. 지형 샘플은 필요한 칸만 계산하고, 같은 시드의 중복 조회는 제한된 캐시에 보관한다. `Game.unity`의 `WorldStreamer`에서 `bakeBudgetMs`(화면 밖 2ms), `visibleBakeBudgetMs`(이미 화면에 들어온 청크 5ms), `streamingLookAhead`(진행 방향 1.5초)를 조정한다. 현재 화면과 진행 방향을 우선하고, 새 작업은 큐에서 꺼낸 프레임에 바로 진행한다.
+- 장식 후보의 주변 조회와 오브젝트 생성도 같은 예산으로 나눈다. 청크는 비활성 상태에서 완성한 뒤 표시하며, 준비가 끝나기 전에는 새 적의 스폰 대상으로 쓰지 않는다. 초기 시작/워프의 `Warm`은 동기적으로 완성한다. 임시 래스터 버퍼는 다음 청크에서 재사용한다.
