@@ -6,7 +6,9 @@
 ## 실행
 
 1. Unity에서 `Assets/_Project/Scenes/MainMenu.unity`를 연다 (메뉴 **Diverse → 메인 메뉴 씬 열기**)
-2. ▶ Play. 타이틀 → 캐릭터 선택 → `Game` 씬으로 넘어간다.
+2. ▶ Play. 타이틀 → 세계 선택 → 캐릭터·무기 디자인 → `Game` 씬으로 넘어간다.
+
+모드 구분 없이 기본 세계·적을 사용하며, 캐릭터와 무기·공격만 디자인한다. 세계는 최대 3개까지 저장한다. 기존 일반 모드 저장은 그대로 이어지고, 이전 커스텀 모드 저장(`slots/custom_*`)은 파일만 보존하며 세계 목록에는 표시하지 않는다.
 
 `Game.unity`를 바로 열고 ▶ 해도 된다(저장된 삶을 이어 하거나, 마지막으로 고른 캐릭터로 새 삶을 시작).
 
@@ -135,4 +137,4 @@
 ## 라이선스
 
 - 폰트: [갈무리(Galmuri)](https://github.com/quiple/galmuri) (SIL Open Font License 1.1) — `Resources/Fonts/LICENSE.txt`
-- 그 외 그래픽과 사운드는 모두 코드로 생성 (`Resources/Sprites`의 PNG도 코드 그림을 구운 것).
+- 기본 그래픽은 코드로 그리는 픽셀 아트와 ImageGen 원본 시트를 함께 사용한다. 현재 월드 원본·프롬프트는 `ArtSource/WorldOverhaul/`, 아트·배치·검증 안내는 [Docs/WorldArt.md](Docs/WorldArt.md), 8개 지역 군집·크기·도로 설정은 [Docs/WorldComposition.md](Docs/WorldComposition.md), 환경 움직임·효과·최적화는 [Docs/EnvironmentAnimation.md](Docs/EnvironmentAnimation.md). 사운드는 코드로 생성한다.

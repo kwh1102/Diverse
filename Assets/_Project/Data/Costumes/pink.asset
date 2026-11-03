@@ -19,19 +19,19 @@ MonoBehaviour:
       +20%"
     fur:
       serializedVersion: 2
-      rgba: 4292925183
+      rgba: 4291799527
     furShade:
       serializedVersion: 2
-      rgba: 4290357478
+      rgba: 4288442296
     outfit:
       serializedVersion: 2
-      rgba: 4291424767
+      rgba: 4283024865
     outfitShade:
       serializedVersion: 2
-      rgba: 4287612121
+      rgba: 4283860644
     accent:
       serializedVersion: 2
-      rgba: 4289232895
+      rgba: 4293324786
     style: 4
     mods:
     - stat: 10

@@ -11,6 +11,7 @@ namespace Diverse
         /// <summary>X-shaped cut mark: two strokes shoot out from the centre, then thin and fade (crits, sharp weapons).</summary>
         public static Sprite[] ImpactCross(Color32 col, int sizePx) => GetAnim($"impact_x_{col}_{sizePx}", () =>
         {
+            col = Pa(col);     // effects take their colours from the palette too
             var frames = new Sprite[4];
             int S = sizePx * 2 + 4;
             float c = S / 2f;
@@ -30,7 +31,8 @@ namespace Diverse
                         cv.Line((int)p0.x, (int)p0.y, (int)p1.x, (int)p1.y, f == 0 ? Pal.White : t == 0 ? col : Pal.White);
                     }
                 }
-                if (f >= 2) for (int i = 0; i < S * 2; i++) { int x = (int)(Hash.F(i, f, 3) * S), y = (int)(Hash.F(i, f, 4) * S); if (Hash.F(x, y, f) > 0.5f) cv.Set(x, y, new Color32(0, 0, 0, 0)); }
+                // A clean opening in the centre makes the cross split into four disappearing strokes.
+                if (f >= 2) cv.Circle(c, c, sizePx * (f == 2 ? .3f : .65f), new Color32(0, 0, 0, 0));
                 frames[f] = cv.ToSprite(new Vector2(c, c));
             }
             return frames;
@@ -39,6 +41,7 @@ namespace Diverse
         /// <summary>Ring that pops outward with a few beads riding on it (heavy blows).</summary>
         public static Sprite[] ImpactRing(Color32 col, int sizePx) => GetAnim($"impact_ring_{col}_{sizePx}", () =>
         {
+            col = Pa(col);     // effects take their colours from the palette too
             var frames = new Sprite[4];
             int S = sizePx * 2 + 6;
             float c = S / 2f;
@@ -61,6 +64,7 @@ namespace Diverse
         /// <summary>Shards flung forward in a cone (the effect's +x is the blow's direction).</summary>
         public static Sprite[] ImpactShards(Color32 col, int sizePx) => GetAnim($"impact_shard_{col}_{sizePx}", () =>
         {
+            col = Pa(col);     // effects take their colours from the palette too
             var frames = new Sprite[4];
             int S = sizePx * 2 + 6;
             float c = S / 2f;
@@ -89,6 +93,7 @@ namespace Diverse
         /// <summary>Speed lines streaking forward (thrusts, finisher lunges). Pivot at the back end.</summary>
         public static Sprite[] SpeedLines(Color32 col, int lengthPx) => GetAnim($"speed_{col}_{lengthPx}", () =>
         {
+            col = Pa(col);     // effects take their colours from the palette too
             var frames = new Sprite[4];
             int W = lengthPx + 4, H = 15;
             int[] rows = { 2, 5, 7, 9, 12 };

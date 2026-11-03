@@ -3,6 +3,11 @@ using UnityEngine;
 
 namespace Diverse
 {
+    /// <summary>
+    /// Monsters by the same rules as the hero (Art/ArtHero.cs): flat palette tones, two dot eyes, one dark outline.
+    /// Small monsters are dot templates on a y-down grid; bosses are drawn from round shapes at the same 1-dot scale
+    /// (a shade under a lighter fill). Frames: 0 idle, 1 and 4 the two steps, 2 the wind-up (squint, rise), 3 hurt (shut eyes).
+    /// </summary>
     public static partial class Art
     {
         // Called every frame by every enemy: a per-key frame array so no lookup string is built per call
@@ -23,237 +28,385 @@ namespace Diverse
         {
             switch (key)
             {
-                case "shroom": return Shroom(f, 1f, Pal.Hex("e8584f"), Pal.Hex("b23a3a"), false);
-                case "boss_shroom": return Shroom(f, 2.1f, Pal.Hex("8bc34a"), Pal.Hex("5a8a2e"), true);
+                case "shroom": return Shroom(f);
+                case "boss_shroom": return BossShroom(f);
                 case "jelly": return Jelly(f);
-                case "fox": return Fox(f, false);
-                case "boss_fox": return Fox(f, true);
+                case "fox": return Fox(f);
+                case "boss_fox": return BossFox(f);
                 case "raccoon": return Raccoon(f);
-                case "wisp": return Wisp(f, Pal.Hex("b18cff"), Pal.Hex("e6dcff"));
-                case "frostling": return Wisp(f, Pal.Hex("7fd6ff"), Pal.Hex("e8fbff"));
+                case "wisp": return Wisp(f, false);
+                case "frostling": return Wisp(f, true);
                 case "boar": return Boar(f);
                 case "bat": return Bat(f);
                 case "boss_knight": return Knight(f);
                 case "frog": return Frog(f);
             }
-            return Shroom(f, 1, Pal.Hex("e8584f"), Pal.Hex("b23a3a"), false);
+            return Shroom(f);
         }
 
-        static void Eyes(PixelCanvas cv, int x, int y, int gap, bool angry, Color32 col)
+        /// <summary>Rows the body sinks (steps, hurt) or rises (wind-up) on the y-down grid.</summary>
+        static int Sink(int f) => f == 1 || f == 3 || f == 4 ? 1 : f == 2 ? -1 : 0;
+        static void Face(Figure fig, int f) { if (f == 2) fig.Squint(); else if (f == 3) fig.Shut(); }
+
+        static Sprite Finish(Figure fig, Dictionary<char, Color32> keys, int pivotX, int pivotY = 1)
         {
-            cv.Rect(x, y, 2, 2, col); cv.Rect(x + gap, y, 2, 2, col);
-            cv.Set(x, y + 1, Pal.White); cv.Set(x + gap, y + 1, Pal.White);
-            if (angry) { cv.Line(x - 1, y + 3, x + 1, y + 2, Pal.Outline); cv.Line(x + gap + 2, y + 3, x + gap, y + 2, Pal.Outline); }
+            var cv = fig.Paint(keys);
+            cv.Outline(OutlineColor);
+            return cv.ToSprite(new Vector2(pivotX, pivotY));
         }
 
-        static Sprite Shroom(int f, float s, Color32 cap, Color32 capShade, bool boss)
+        static class Mob
         {
-            int w = Mathf.RoundToInt(20 * s), h = Mathf.RoundToInt(20 * s);
-            var cv = new PixelCanvas(w + 2, h + 2);
-            float cx = (w + 2) / 2f;
-            int bob = f == 1 ? 1 : 0;
-            // 다리
-            cv.Ellipse(cx - 3 * s, 2, 2 * s, 1.5f * s, Pal.Hex("d8c8b0"));
-            cv.Ellipse(cx + 3 * s + (f == 1 ? 1 : 0), 2, 2 * s, 1.5f * s, Pal.Hex("d8c8b0"));
-            // 몸통
-            cv.Ellipse(cx, 6 * s - bob, 5 * s, 4.5f * s, Pal.Hex("f5ead6"));
-            // 갓
-            cv.Ellipse(cx, 12 * s - bob, 9 * s, 5.5f * s, cap);
-            cv.Rect((int)(cx - 9 * s), (int)(9 * s - bob), (int)(18 * s), (int)(1 * s + 1), capShade);
-            // 점
-            cv.Circle(cx - 4 * s, 13 * s - bob, 1.6f * s, Pal.White);
-            cv.Circle(cx + 3 * s, 15 * s - bob, 1.3f * s, Pal.White);
-            cv.Circle(cx + 6 * s, 11.5f * s - bob, 1f * s, Pal.White);
-            Eyes(cv, (int)(cx - 3 * s), (int)(5 * s - bob), (int)(4 * s), boss || f == 2, Pal.EyeDark);
-            if (boss)
+            public static readonly string[] Cap =
             {
-                cv.Rect((int)(cx - 4), (int)(17 * s - bob), 9, 3, Pal.Gold);
-                cv.Set((int)cx - 4, (int)(17 * s - bob) + 3, Pal.Gold); cv.Set((int)cx, (int)(17 * s - bob) + 3, Pal.Gold); cv.Set((int)cx + 4, (int)(17 * s - bob) + 3, Pal.Gold);
-                cv.Line((int)(cx - 7 * s), (int)(4 * s), (int)(cx - 10 * s), (int)(1 * s), Pal.Hex("6b4a2e"));
-                cv.Line((int)(cx + 7 * s), (int)(4 * s), (int)(cx + 10 * s), (int)(1 * s), Pal.Hex("6b4a2e"));
-            }
-            cv.InnerShade(cap, capShade, 1, -1);
-            cv.Outline(Pal.Outline);
-            return cv.ToSprite(new Vector2(cx, 1));
+                ".....ffffff.....",
+                "...ffwwffffff...",
+                "..fwwwffffwwff..",
+                ".ffwwfffffwwfff.",
+                "fffffffwwffffffs",
+                "ffffffwwffffffss",
+                ".ssssssssssssss.",
+            };
+            public static readonly string[] Stem =
+            {
+                ".bbbbbbbb.",
+                "bbbebbebbc",
+                "bbbebbebbc",
+                "bbbbbbbbcc",
+                ".bbbbbbcc.",
+            };
+            public static readonly string[] StemFoot = { "bb", "cc" };
+
+            public static readonly string[] Jelly =
+            {
+                "....ffffffff....",
+                "..ffffffffffff..",
+                ".fllfffffffffff.",
+                ".flffffffffffffs",
+                "ffffffefffeffffs",
+                "ffffffefffeffffs",
+                "fffffffffffffffs",
+                "sffffffffffffsss",
+                ".ssssssssssssss.",
+            };
+            public static readonly string[] JellySquash =
+            {
+                ".....ffffffff.....",
+                "..ffffffffffffff..",
+                ".flffffffffffffff.",
+                "fffffffefffefffffs",
+                "fffffffefffefffffs",
+                "ffffffffffffffffss",
+                "sffffffffffffffsss",
+                ".ssssssssssssssss.",
+            };
+            public static readonly string[] JellyTall =
+            {
+                "....ffffff....",
+                "..ffffffffff..",
+                ".fllffffffffs.",
+                ".flfffffffffs.",
+                "fffffefffeffss",
+                "fffffefffeffss",
+                "ffffffffffffss",
+                "fffffffffffsss",
+                "sffffffffffss.",
+                ".ssssssssss...",
+            };
+
+            public static readonly string[] Ghost =
+            {
+                "....ffffff....",
+                "..ffffffffff..",
+                ".fllffffffffs.",
+                ".flfffffffffs.",
+                "fffffefffeffss",
+                "fffffefffeffss",
+                "ffffffffffffss",
+                "ffffffffffffss",
+                "fffffffffffsss",
+                "ffsfffsfffsfss",
+            };
+            public static readonly string[] GhostTailA = { "ff.ff.sff.sfs.", "f...f...f...s." };
+            public static readonly string[] GhostTailB = { ".ff.ff.ff.ss..", "..f...f...s..." };
+            public static readonly string[] Spikes = { ".l...l...l.", ".l..lll..l.", "lll.lll.lll" };
+
+            public static readonly string[] Frog =
+            {
+                "..ff......ff....",
+                ".fwef....fwef...",
+                ".fwef....fwef...",
+                "ffffffffffffff..",
+                "fffffffffffffff.",
+                "ffffnnnnnnnfffs.",
+                "fbbbbbbbbbbbffs.",
+                "sbbbbbbbbbbbbss.",
+                ".ssbbbbbbbbbss..",
+            };
+            public static readonly string[] FrogFeet = { "ss..........ss.." };
+
+            public static readonly string[] BatBody = { "f....f", "ff..ff", "ffffff", "feffef", "ffffff", ".ffff." };
+            public static readonly string[] WingUp = { "d......", "dd.....", "ddd....", "dddd...", "ddddd..", ".dddddd", "..d.d.d" };
+            public static readonly string[] WingDown = { "..d.d.d", ".dddddd", "ddddd..", "dddd...", "ddd....", "dd.....", "d......" };
+
+            public static readonly string[] Boar =
+            {
+                "........ssssssss........",
+                "......ssffffffffss.ff...",
+                "....ssffffffffffffffff..",
+                "...sfffffffffffffffefw..",
+                "..sffffffffffffffffeffb.",
+                "..sfffffffffffffffffbbbb",
+                "..sffffffffffffffffffwbb",
+                "..sfffffffffffffffffff..",
+                "...sffffffffffffffffs...",
+                "....ssssssssssssssss....",
+            };
+            public static readonly string[] Leg = { "ff", "ff", "ss" };
+
+            public static readonly string[] HeadFox =
+            {
+                "..ffffffff..",
+                ".ffffffffff.",
+                "ffffffffffff",
+                "aaaaaaaaaaaa",
+                "ffffffeffeff",
+                "ffffffeffeff",
+                "fffwwwwwwwwn",
+                "sfwwwwwwwwws",
+                ".sswwwwwwss.",
+            };
+            public static readonly string[] EarFox = { "f...", "ff..", "fwf.", "ffff" };
+            public static readonly string[] FoxTail = { "...ff.", "..ffff", ".fffff", "ffffs.", "wwws..", "www..." };
+
+            public static readonly string[] HeadRaccoon =
+            {
+                "..ffffffff..",
+                ".ffffffffff.",
+                "ffffffffffff",
+                "dddddddddddd",
+                "ddddddeddedd",
+                "ddddddeddedd",
+                "fffwwwwwwwwn",
+                "sfwwwwwwwwws",
+                ".sswwwwwwss.",
+            };
+            public static readonly string[] RingTail = { "...ff", "..dd.", ".ff..", "dd...", "ff..." };
+            public static readonly string[] Blade = { "m", "m", "m", "m", "k" };
+        }
+
+        static Sprite Shroom(int f)
+        {
+            var g = new Figure(22, 22);
+            int y = Sink(f);
+            g.Stamp(Mob.StemFoot, 7, f == 1 ? 18 : 19);
+            g.Stamp(Mob.StemFoot, 13, f == 4 ? 18 : 19);
+            g.Stamp(Mob.Stem, 6, 14 + y);
+            g.Stamp(Mob.Cap, 3, 7 + y);
+            Face(g, f);
+            return Finish(g, K(('f', "cb3416"), ('s', "572526"), ('w', "f2efe6"), ('b', "d9c38c"), ('c', "a48656")), 11);
         }
 
         static Sprite Jelly(int f)
         {
-            var cv = new PixelCanvas(20, 18);
-            var body = Pal.Hex("6fe0b8"); var shade = Pal.Hex("3fae8a");
-            float sq = f == 1 ? 1.2f : (f == 2 ? 0.85f : 1f);
-            cv.Ellipse(10, 6 / sq, 8 * sq, 6 / sq, body);
-            cv.Rect(2, 1, 16, 2, body);
-            cv.Ellipse(7, 9 / sq, 2f, 1.4f, Pal.A(Pal.White, 200));
-            Eyes(cv, 7, (int)(5 / sq), 5, f == 2, Pal.EyeDark);
-            cv.InnerShade(body, shade, 1, -1);
-            cv.Outline(Pal.Outline);
-            return cv.ToSprite(new Vector2(10, 1));
+            var g = new Figure(20, 16);
+            if (f == 1 || f == 4 || f == 3) g.Stamp(Mob.JellySquash, 1, 7);
+            else if (f == 2) g.Stamp(Mob.JellyTall, 3, 5);
+            else g.Stamp(Mob.Jelly, 2, 6);
+            Face(g, f);
+            return Finish(g, K(('f', "84ac49"), ('s', "589543"), ('l', "a8c44b")), 10);
         }
 
-        static Sprite Fox(int f, bool boss)
+        static Sprite Wisp(int f, bool frost)
         {
-            float s = boss ? 1.7f : 1f;
-            int W = Mathf.RoundToInt(28 * s), H = Mathf.RoundToInt(28 * s);
-            var cv = new PixelCanvas(W, H);
-            var fur = boss ? Pal.Hex("e8553a") : Pal.Hex("f08a3e");
-            var shade = boss ? Pal.Hex("a83322") : Pal.Hex("b85f26");
-            var cloth = boss ? Pal.Hex("2d2a3a") : Pal.Hex("5c4a7a");
-            float cx = W / 2f;
-            int lf = f == 1 ? 2 : 0;
-            // 꼬리
-            cv.ThickLine(new Vector2(cx - 5 * s, 6 * s), new Vector2(cx - 10 * s, 12 * s), 2.6f * s, fur);
-            cv.Circle(cx - 10.5f * s, 13 * s, 2.2f * s, Pal.White);
-            if (boss) { cv.Circle(cx - 11 * s, 15 * s, 2.4f * s, Pal.Fire); cv.Circle(cx - 11 * s, 16 * s, 1.2f * s, Pal.Lightning); }
-            // 다리
-            cv.Rect((int)(cx - 3 * s) + lf, 0, (int)(2 * s), (int)(3 * s), shade);
-            cv.Rect((int)(cx + 1 * s) - lf, 0, (int)(2 * s), (int)(3 * s), shade);
-            // 몸 (조끼)
-            cv.Ellipse(cx, 7 * s, 4.5f * s, 4.5f * s, cloth);
-            cv.Ellipse(cx + 1 * s, 7 * s, 2 * s, 3 * s, Pal.White);
-            cv.Rect((int)(cx - 4 * s), (int)(4 * s), (int)(9 * s), 1, Pal.Gold);
-            // 머리
-            float hy = 15 * s;
-            cv.Ellipse(cx + 1 * s, hy, 6 * s, 5 * s, fur);
-            // 귀
-            for (int i = 0; i < 5 * s; i++)
-            {
-                cv.Rect((int)(cx - 4 * s + i * 0.3f), (int)(hy + 3 * s + i), (int)Mathf.Max(1, 3 * s - i * 0.6f), 1, fur);
-                cv.Rect((int)(cx + 3 * s + i * 0.3f), (int)(hy + 3 * s + i), (int)Mathf.Max(1, 3 * s - i * 0.6f), 1, fur);
-            }
-            // 주둥이
-            cv.Ellipse(cx + 5 * s, hy - 2 * s, 3 * s, 2 * s, Pal.White);
-            cv.Set((int)(cx + 7.5f * s), (int)(hy - 1.5f * s), Pal.EyeDark);
-            // 두건/안대
-            cv.Rect((int)(cx - 5 * s), (int)(hy + 1 * s), (int)(11 * s), (int)(1.5f * s), boss ? Pal.Blood : Pal.Hex("3e6fb0"));
-            Eyes(cv, (int)(cx + 1 * s), (int)(hy - 0.5f * s), (int)(3 * s), true, boss ? Pal.Gold : Pal.EyeDark);
-            // 단검/대도
-            if (boss) cv.ThickLine(new Vector2(cx + 6 * s, 5 * s), new Vector2(cx + 13 * s, 13 * s), 1.1f, Pal.Steel);
-            else cv.Line((int)(cx + 4 * s), (int)(5 * s), (int)(cx + 9 * s), (int)(9 * s), Pal.Steel);
-            cv.InnerShade(fur, shade, 1, -1);
-            cv.Outline(Pal.Outline);
-            return cv.ToSprite(new Vector2(cx, 1));
+            var g = new Figure(20, 24);
+            int y = f == 1 ? -1 : f == 2 ? -2 : f == 3 ? 1 : 0;      // floats up and down
+            if (frost) g.Stamp(Mob.Spikes, 4, 7 + y);
+            g.Stamp(Mob.Ghost, 3, 9 + y);
+            g.Stamp(f == 1 || f == 3 ? Mob.GhostTailB : Mob.GhostTailA, 3, 19 + y);
+            Face(g, f);
+            var keys = frost ? K(('f', "6cc0dc"), ('s', "2986b8"), ('l', "c8ecef")) : K(('f', "c79bd6"), ('s', "8a5fa8"), ('l', "f2efe6"));
+            return Finish(g, keys, 10);
         }
 
-        /// <summary>Frog: 0 sitting, 1 crouched (about to hop), 2 mouth open (tongue windup).</summary>
         static Sprite Frog(int f)
         {
-            var cv = new PixelCanvas(22, 18);
-            var body = Pal.Hex("7cc95a"); var shade = Pal.Hex("4f9a3c"); var belly = Pal.Hex("e8f0b0");
-            float sq = f == 1 ? 0.8f : 1f;
-            // back legs
-            cv.Ellipse(4, 2, 3.5f, 2f, shade); cv.Ellipse(18, 2, 3.5f, 2f, shade);
-            // body + belly
-            cv.Ellipse(11, 6 * sq, 7.5f, 5.5f * sq, body);
-            cv.Ellipse(11, 4 * sq, 4.5f, 2.6f * sq, belly);
-            // eye bumps on top
-            int ey = (int)(11 * sq);
-            cv.Circle(7, ey, 2.6f, body); cv.Circle(15, ey, 2.6f, body);
-            cv.Circle(7, ey, 1.4f, Pal.White); cv.Circle(15, ey, 1.4f, Pal.White);
-            cv.Set(7, ey, Pal.EyeDark); cv.Set(15, ey, Pal.EyeDark);
-            if (f == 2) { cv.Rect(8, (int)(6 * sq), 6, 2, Pal.Hex("8a2a3a")); cv.Rect(10, (int)(6 * sq), 2, 1, Pal.Hex("ff7a9a")); }
-            else cv.Line(8, (int)(7 * sq), 14, (int)(7 * sq), Pal.Hex("2f5a26"));
-            // front feet
-            cv.Rect(6, 0, 3, 1, shade); cv.Rect(13, 0, 3, 1, shade);
-            cv.InnerShade(body, shade, 1, -1);
-            cv.Outline(Pal.Outline);
-            return cv.ToSprite(new Vector2(11, 1));
-        }
-
-        static Sprite Raccoon(int f)
-        {
-            var cv = new PixelCanvas(24, 24);
-            var fur = Pal.Hex("8c8a98"); var shade = Pal.Hex("5f5d6b");
-            int lf = f == 1 ? 1 : 0;
-            // 꼬리 줄무늬
-            for (int i = 0; i < 4; i++) cv.Circle(4 + i * 0.5f, 5 + i * 2, 2.2f, i % 2 == 0 ? fur : Pal.Hex("3a3846"));
-            cv.Rect(9 + lf, 0, 2, 3, shade); cv.Rect(13 - lf, 0, 2, 3, shade);
-            cv.Ellipse(12, 6, 4.5f, 4, Pal.Hex("7a5a3a"));
-            cv.Rect(8, 5, 9, 1, Pal.WoodDark);
-            cv.Ellipse(12.5f, 13, 6, 5, fur);
-            cv.Ellipse(9, 18, 1.8f, 2, fur); cv.Ellipse(16, 18, 1.8f, 2, fur);
-            cv.Rect(8, 12, 10, 3, Pal.Hex("3a3846"));      // 가면
-            Eyes(cv, 10, 12, 4, true, Pal.Hex("ffe08a"));
-            cv.Ellipse(14, 10, 2, 1.4f, Pal.White);
-            cv.Set(15, 10, Pal.EyeDark);
-            // 새총
-            cv.Line(17, 5, 21, 9, Pal.Wood); cv.Line(21, 9, 22, 11, Pal.Wood); cv.Line(21, 9, 20, 11, Pal.Wood);
-            cv.InnerShade(fur, shade, 1, -1);
-            cv.Outline(Pal.Outline);
-            return cv.ToSprite(new Vector2(12, 1));
-        }
-
-        static Sprite Wisp(int f, Color32 col, Color32 core)
-        {
-            var cv = new PixelCanvas(20, 24);
-            float bob = f == 1 ? 1 : 0;
-            cv.Ellipse(10, 12 + bob, 7, 7, col);
-            for (int i = 0; i < 3; i++)
-                cv.Ellipse(5 + i * 5, 5 + bob + (i == 1 ? -1 : 0) + (f == 1 ? (i % 2) : 0), 2.2f, 3, col);
-            cv.Ellipse(10, 13 + bob, 4, 4, core);
-            cv.Rect(7, 12 + (int)bob, 2, 3, Pal.EyeDark); cv.Rect(11, 12 + (int)bob, 2, 3, Pal.EyeDark);
-            cv.Outline(Pal.Mul(col, 0.4f));
-            return cv.ToSprite(new Vector2(10, 1));
-        }
-
-        static Sprite Boar(int f)
-        {
-            var cv = new PixelCanvas(32, 24);
-            var fur = Pal.Hex("8a5a44"); var shade = Pal.Hex("5e3a2c"); var stone = Pal.Hex("9aa0ac");
-            int lf = f == 1 ? 2 : 0;
-            cv.Rect(8 + lf, 0, 3, 4, shade); cv.Rect(20 - lf, 0, 3, 4, shade);
-            cv.Ellipse(15, 9, 11, 7, fur);
-            // 돌 갑옷
-            cv.Ellipse(12, 13, 7, 4, stone); cv.Ellipse(18, 14, 5, 3, Pal.Hex("b9bfca"));
-            cv.Line(9, 13, 15, 15, Pal.SteelDark);
-            // 머리
-            cv.Ellipse(25, 8, 5, 5, fur);
-            cv.Ellipse(28.5f, 6, 2.4f, 2, Pal.Hex("e8a0a0"));
-            cv.Line(27, 4, 30, 9, Pal.White); // 엄니
-            Eyes(cv, 24, 9, 3, true, Pal.Hex("ff6b5a"));
-            cv.InnerShade(fur, shade, 1, -1);
-            cv.Outline(Pal.Outline);
-            return cv.ToSprite(new Vector2(16, 1));
+            var g = new Figure(22, 18);
+            int y = f == 2 ? -2 : Sink(f);
+            g.Stamp(Mob.FrogFeet, 3, 16);
+            g.Stamp(Mob.Frog, 3, 7 + y);
+            Face(g, f);
+            var keys = K(('f', "589543"), ('s', "387840"), ('b', "c1a572"), ('w', "f2efe6"));
+            keys['n'] = OutlineColor;
+            return Finish(g, keys, 11);
         }
 
         static Sprite Bat(int f)
         {
-            var cv = new PixelCanvas(22, 14);
-            var body = Pal.Hex("5a4a7a"); var wing = Pal.Hex("3d3058");
-            int up = f == 1 ? 3 : 0;
-            for (int s = -1; s <= 1; s += 2)
+            var g = new Figure(22, 14);
+            bool up = f == 0 || f == 2 || f == 4;
+            int y = f == 2 ? -1 : 0;
+            g.Stamp(up ? Mob.WingUp : Mob.WingDown, 2, up ? 1 + y : 5 + y);
+            g.Stamp(up ? Mob.WingUp : Mob.WingDown, 13, up ? 1 + y : 5 + y, true);
+            g.Stamp(Mob.BatBody, 8, 4 + y);
+            var keys = K(('f', "8a5fa8"), ('d', "4b3566"));
+            keys['e'] = Pc(Pal.Hex(f == 3 ? "f2efe6" : "cb3416"));
+            return Finish(g, keys, 11, 0);
+        }
+
+        static Sprite Boar(int f)
+        {
+            var g = new Figure(32, 24);
+            int y = f == 2 ? -1 : f == 3 ? 1 : 0;
+            int[] lx = { 7, 10, 18, 21 };
+            for (int i = 0; i < 4; i++)
             {
-                cv.ThickLine(new Vector2(11, 7), new Vector2(11 + s * 9, 7 + 3 - up * 1.5f), 1.6f, wing);
-                cv.ThickLine(new Vector2(11 + s * 9, 7 + 3 - up * 1.5f), new Vector2(11 + s * 6, 4 + up), 1.2f, wing);
+                bool lift = (f == 1 && i % 2 == 0) || (f == 4 && i % 2 == 1);
+                g.Stamp(Mob.Leg, lx[i], lift ? 19 : 20);
             }
-            cv.Circle(11, 7, 3.6f, body);
-            cv.Set(9, 11, body); cv.Set(13, 11, body);
-            cv.Set(10, 7, Pal.Hex("ff6b8a")); cv.Set(12, 7, Pal.Hex("ff6b8a"));
-            cv.Outline(Pal.Outline);
-            return cv.ToSprite(new Vector2(11, 0));
+            g.Stamp(Mob.Boar, 4, 10 + y);
+            Face(g, f);
+            return Finish(g, K(('f', "7a6457"), ('s', "544440"), ('b', "e7a9cf"), ('w', "f2efe6")), 16);
+        }
+
+        /// <summary>Two-legged bandits share the hero's build (body, feet, paw) under their own head.</summary>
+        static void Biped(Figure g, int f, string[] head, string[] ear, string[] tail, bool roundEars)
+        {
+            int y = Sink(f);
+            int lfx = 10, lfy = 27, rfx = 15, rfy = 27;
+            if (f == 1) { lfx = 9; lfy = 26; rfx = 16; }
+            if (f == 4) { lfx = 11; rfx = 14; rfy = 26; }
+            g.Stamp(tail, 4, 18 + y);
+            g.Stamp(Parts.Foot, lfx, lfy);
+            g.Stamp(Parts.Foot, rfx, rfy);
+            g.Stamp(Parts.Body, 10, 22 + y);
+            g.Stamp(head, 8, 13 + y);
+            if (roundEars) { g.Stamp(ear, 7, 11 + y); g.Stamp(ear, 15, 11 + y, true); }
+            else { g.Stamp(ear, 8, 9 + y); g.Stamp(ear, 16, 9 + y, true); }
+            int pawY = f == 2 ? 20 : 23;
+            g.Stamp(Mob.Blade, 18, pawY - 5 + y);
+            g.Stamp(Parts.Paw, 17, pawY + y);
+            Face(g, f);
+        }
+
+        static Sprite Fox(int f)
+        {
+            var g = new Figure(26, 30);
+            Biped(g, f, Mob.HeadFox, Mob.EarFox, Mob.FoxTail, false);
+            var keys = K(('f', "f46616"), ('s', "cb3416"), ('w', "f2efe6"), ('a', "2986b8"), ('m', "c9c6cc"), ('k', "544440"));
+            keys['n'] = OutlineColor;
+            return Finish(g, keys, 13);
+        }
+
+        static Sprite Raccoon(int f)
+        {
+            var g = new Figure(26, 30);
+            Biped(g, f, Mob.HeadRaccoon, Parts.EarRound, Mob.RingTail, true);
+            var keys = K(('f', "8a8a94"), ('s', "5c5a61"), ('w', "c9c6cc"), ('d', "3a3e4c"), ('m', "c9c6cc"), ('k', "544440"));
+            keys['e'] = Pc(Pal.Hex("f2efe6"));      // eyes shine out of the dark mask
+            keys['n'] = OutlineColor;
+            return Finish(g, keys, 13);
+        }
+
+        // ───────────── Bosses: round shapes at the same dot scale ─────────────
+
+        /// <summary>A rounded part: its shade, then a slightly smaller lighter fill toward the light (top-left).</summary>
+        static void Blob(PixelCanvas cv, float cx, float cy, float rx, float ry, Color32 main, Color32 shade)
+        {
+            cv.Ellipse(cx, cy, rx, ry, shade);
+            cv.Ellipse(cx - 1, cy + 1, rx - 1, ry - 1, main);
+        }
+
+        /// <summary>Two eyes (2 wide, 4 tall), narrowed for the wind-up, shut into dashes when hurt.</summary>
+        static void BossEyes(PixelCanvas cv, int x, int y, int gap, int f, Color32 col)
+        {
+            for (int i = 0; i < 2; i++)
+            {
+                int ex = x + i * gap;
+                if (f == 3) cv.Rect(ex - 1, y, 4, 1, col);
+                else if (f == 2) cv.Rect(ex, y, 2, 2, col);
+                else cv.Rect(ex, y, 2, 4, col);
+            }
+        }
+
+        static void Tri(PixelCanvas cv, int x0, int x1, int yBase, int h, Color32 c)
+        {
+            for (int k = 0; k < h; k++)
+            {
+                float t = k / (float)h;
+                int a = Mathf.RoundToInt(Mathf.Lerp(x0, (x0 + x1) / 2f, t)), b = Mathf.RoundToInt(Mathf.Lerp(x1, (x0 + x1) / 2f, t));
+                cv.Rect(a, yBase + k, Mathf.Max(1, b - a + 1), 1, c);
+            }
+        }
+
+        static int Rise(int f) => f == 1 || f == 3 || f == 4 ? -1 : f == 2 ? 2 : 0;    // y up
+
+        static Sprite BossShroom(int f)
+        {
+            var cv = new PixelCanvas(44, 44);
+            int r = Rise(f);
+            Color32 cap = Pc(Pal.Hex("70a744")), capS = Pc(Pal.Hex("387840")), spot = Pc(Pal.Hex("f2efe6")),
+                    stem = Pc(Pal.Hex("d9c38c")), stemS = Pc(Pal.Hex("a48656")), gold = Pc(Pal.Hex("e1c549")), gem = Pc(Pal.Hex("cb3416"));
+            cv.Ellipse(15, 3 + (f == 1 ? 1 : 0), 4, 2.5f, stemS);
+            cv.Ellipse(29, 3 + (f == 4 ? 1 : 0), 4, 2.5f, stemS);
+            Blob(cv, 22, 12 + r, 11, 8, stem, stemS);
+            BossEyes(cv, 21, 11 + r, 6, f, OutlineColor);
+            Blob(cv, 22, 26 + r, 20, 9, cap, capS);
+            cv.Circle(12, 28 + r, 2.5f, spot); cv.Circle(22, 31 + r, 2, spot); cv.Circle(31, 27 + r, 3, spot); cv.Circle(17, 24 + r, 1.5f, spot);
+            cv.Rect(16, 34 + r, 12, 3, gold);
+            for (int i = 0; i < 3; i++) Tri(cv, 16 + i * 5, 17 + i * 5, 37 + r, 4, gold);
+            cv.Rect(21, 35 + r, 2, 1, gem);
+            cv.Outline(OutlineColor);
+            return cv.ToSprite(new Vector2(22, 1));
+        }
+
+        static Sprite BossFox(int f)
+        {
+            var cv = new PixelCanvas(48, 48);
+            int r = Rise(f);
+            Color32 fur = Pc(Pal.Hex("f46616")), furS = Pc(Pal.Hex("cb3416")), white = Pc(Pal.Hex("f2efe6")), whiteS = Pc(Pal.Hex("c9c6cc")),
+                    vest = Pc(Pal.Hex("3a3e4c")), vestS = Pc(Pal.Hex("272834")), band = Pc(Pal.Hex("cb3416")), steel = Pc(Pal.Hex("c9c6cc")), steelS = Pc(Pal.Hex("8a8a94"));
+            Blob(cv, 11, 20 + r, 7, 10, fur, furS);                                  // tail
+            Blob(cv, 8, 28 + r, 4, 4, white, whiteS);
+            cv.Ellipse(19, 3 + (f == 1 ? 1 : 0), 4, 2.5f, furS);
+            cv.Ellipse(30, 3 + (f == 4 ? 1 : 0), 4, 2.5f, furS);
+            Blob(cv, 24, 14 + r, 11, 10, vest, vestS);
+            Blob(cv, 25, 14 + r, 5, 7, white, whiteS);
+            Tri(cv, 15, 21, 36 + r, 9, furS); Tri(cv, 16, 20, 36 + r, 6, fur);       // ears
+            Tri(cv, 28, 34, 36 + r, 9, furS); Tri(cv, 29, 33, 36 + r, 6, fur);
+            Blob(cv, 25, 30 + r, 12, 9, fur, furS);
+            Blob(cv, 29, 26 + r, 7, 4, white, whiteS);
+            cv.Rect(35, 27 + r, 2, 2, OutlineColor);                                 // nose
+            cv.Rect(14, 33 + r, 23, 2, band);
+            BossEyes(cv, 23, 28 + r, 6, f, OutlineColor);
+            int sy = f == 2 ? 20 : 12;                                               // the blade, raised for the wind-up
+            for (int k = 0; k < 22; k++) { cv.Rect(38 + k / 4, sy + k + r, 2, 1, steel); cv.Set(39 + k / 4, sy + k + r, steelS); }
+            cv.Rect(35, sy - 1 + r, 7, 2, Pc(Pal.Hex("e1c549")));
+            Blob(cv, 37, sy - 1 + r, 3, 3, fur, furS);                              // paw
+            cv.Outline(OutlineColor);
+            return cv.ToSprite(new Vector2(24, 1));
         }
 
         static Sprite Knight(int f)
         {
             var cv = new PixelCanvas(40, 46);
-            var armor = Pal.Hex("4a4a62"); var shade = Pal.Hex("2e2e40"); var trim = Pal.Hex("9d8cff");
-            int lf = f == 1 ? 2 : 0;
-            // 망토
-            for (int y = 0; y < 26; y++) cv.Rect(8 - y / 6, 4 + y, 10 + y / 3, 1, Pal.Hex("3a1f4a"));
-            cv.Rect(13 + lf, 0, 5, 6, shade); cv.Rect(22 - lf, 0, 5, 6, shade);
-            cv.Ellipse(20, 15, 9, 10, armor);
-            cv.Rect(12, 10, 17, 2, trim);
-            cv.Ellipse(20, 31, 7, 7, armor);           // 투구
-            cv.Rect(15, 30, 11, 2, Pal.EyeDark);
-            cv.Rect(17, 30, 2, 2, trim); cv.Rect(22, 30, 2, 2, trim);
-            cv.Rect(19, 37, 3, 5, trim);                // 장식
-            cv.Ellipse(11, 20, 3.5f, 3.5f, armor);     // 어깨
-            cv.Ellipse(29, 20, 3.5f, 3.5f, armor);
-            // 대검
-            cv.ThickLine(new Vector2(31, 14), new Vector2(38, 42), 1.3f, Pal.Hex("cfc6ff"));
-            cv.Rect(28, 12, 8, 2, trim);
-            cv.InnerShade(armor, shade, 1, -1);
-            cv.Outline(Pal.Outline);
+            int r = Rise(f);
+            Color32 plate = Pc(Pal.Hex("5c5a61")), plateS = Pc(Pal.Hex("3a3e4c")), cape = Pc(Pal.Hex("4b3566")), capeS = Pc(Pal.Hex("272834")),
+                    plume = Pc(Pal.Hex("8a5fa8")), glow = Pc(Pal.Hex(f == 2 ? "f46616" : "c79bd6")), steel = Pc(Pal.Hex("c9c6cc")), steelS = Pc(Pal.Hex("8a8a94"));
+            Blob(cv, 14, 19 + r, 10, 15, cape, capeS);
+            cv.Rect(13, 1 + (f == 1 ? 1 : 0), 5, 9, plateS); cv.Rect(22, 1 + (f == 4 ? 1 : 0), 5, 9, plateS);
+            cv.Rect(13, 9 + (f == 1 ? 1 : 0), 4, 1, plate); cv.Rect(22, 9 + (f == 4 ? 1 : 0), 4, 1, plate);
+            Blob(cv, 20, 18 + r, 10, 9, plate, plateS);
+            cv.Rect(11, 15 + r, 19, 2, cape);                                      // belt
+            Blob(cv, 21, 32 + r, 8, 8, plate, plateS);
+            cv.Rect(15, 31 + r, 13, 3, OutlineColor);                              // visor slit
+            if (f != 3) { cv.Rect(20, 32 + r, 2, 1, glow); cv.Rect(25, 32 + r, 2, 1, glow); }
+            cv.Ellipse(18, 42 + r, 3, 3, plume); cv.Rect(19, 39 + r, 2, 2, plume);
+            int sy = f == 2 ? 18 : 10;
+            for (int k = 0; k < 26; k++) { cv.Rect(32 + k / 9, sy + k + r, 2, 1, steel); cv.Set(33 + k / 9, sy + k + r, steelS); }
+            cv.Rect(29, sy - 1 + r, 7, 2, Pc(Pal.Hex("e1c549")));
+            Blob(cv, 31, sy - 2 + r, 3, 3, plate, plateS);
+            cv.Outline(OutlineColor);
             return cv.ToSprite(new Vector2(20, 1));
         }
     }

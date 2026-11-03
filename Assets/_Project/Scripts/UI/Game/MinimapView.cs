@@ -4,13 +4,14 @@ using UnityEngine;
 
 namespace Diverse
 {
-    /// <summary>HUD minimap: 48 world units around the player, enemies as dots, quest targets and the tower on the edge.</summary>
+    /// <summary>HUD minimap: 48 world units around the player, enemies as dots, quest targets on the edge.</summary>
     public class MinimapView : MonoBehaviour
     {
         [SerializeField] MapCanvas map;
         [SerializeField] float viewUnits = 48;
         [SerializeField] float refreshInterval = 0.1f;
         [SerializeField, Min(1)] int enemyMarkerSize = 3, bossMarkerSize = 6;
+        [SerializeField, Min(1)] int placeMarkerSize = 9;
         float t;
 
         static readonly ProfilerMarker MinimapMarker = new ProfilerMarker("Diverse.Minimap");   // read by DesignPerf / PerfProbe
@@ -24,8 +25,15 @@ namespace Diverse
             var p = g.Player.Pos;
             map.Center = p;
             map.PixelsPerUnit = map.Rect.rect.width / viewUnits;
-            map.Paint((cx, cy) => true);
+            map.Paint((cx, cy) => true, frontier: g.Player.Bound);
             map.DrawRoute(g.Player);
+            foreach (var site in World.I.Gen.StructuresNear(p, viewUnits))
+            {
+                if (!site.landmark || (!g.World.discovered.Contains(site.id) && Vector2.Distance(p, site.center) > site.radius + 6)) continue;
+                bool village = site.kind == StructKind.Town || site.kind == StructKind.Exploration &&
+                    World.I.Gen.Exploration.Definition(site)?.kind == ExplorationKind.Hamlet;
+                map.Marker(site.center, village ? "◘" : "◇", Pal.Gold, null, village, placeMarkerSize);
+            }
             if (g.Player.TravelTarget.HasValue)
                 map.Marker(g.Player.TravelTarget.Value, "×", Pal.Gold, null, true, 13);
             foreach (var a in Actor.All)
@@ -35,7 +43,6 @@ namespace Diverse
                 map.Marker(a.Pos, "■", boss ? Color.magenta : new Color(1, 0.3f, 0.3f), null, false, boss ? bossMarkerSize : enemyMarkerSize);
             }
             foreach (var q in g.World.quests.Where(x => x.status == 1 && x.kind != "hunt")) map.Marker(new Vector2(q.tx, q.ty), "!", Pal.Gold, null, true);
-            map.Marker(WorldGen.TowerPos, "▲", Pal.Hex("c9b8ff"), null, true);
             map.Marker(p, "●", Color.white, null, false);
             map.EndMarkers();
         }

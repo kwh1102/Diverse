@@ -54,11 +54,22 @@ namespace Diverse
     {
         public static WorldStreamer I { get; private set; }
         public WorldGen Gen { get; private set; }
+        public SceneryLayout Scenery { get; private set; }
+        public EnvironmentAnimator Environment { get; private set; }
+        public double LastBakeSliceMs { get; private set; }
+        public double LastBuildMs { get; private set; }
+        public string LastBuildPhase { get; private set; }
         public int loadRadius = 2;          // chunks to load in each direction (5x5)
         public int unloadRadius = 3;
 
         readonly Dictionary<Vector2Int, ChunkView> chunks = new Dictionary<Vector2Int, ChunkView>();
-        readonly Dictionary<Vector2Int, Ground[,]> groundCache = new Dictionary<Vector2Int, Ground[,]>();
+        sealed class GroundChunk
+        {
+            public readonly Ground[,] tiles = new Ground[WorldGen.Chunk + 2, WorldGen.Chunk + 2];
+            public readonly bool[,] valid = new bool[WorldGen.Chunk + 2, WorldGen.Chunk + 2];
+        }
+        readonly Dictionary<Vector2Int, GroundChunk> groundCache = new Dictionary<Vector2Int, GroundChunk>();
+        readonly Queue<Vector2Int> groundOrder = new Queue<Vector2Int>();
         // Baked ground textures of chunks that were unloaded: walking back re-uses them instead of baking again (LRU)
         readonly Dictionary<Vector2Int, Texture2D> bakedGround = new Dictionary<Vector2Int, Texture2D>();
         readonly LinkedList<Vector2Int> bakedOrder = new LinkedList<Vector2Int>();
@@ -69,14 +80,36 @@ namespace Diverse
         readonly Dictionary<Vector2Int, int> blocked = new Dictionary<Vector2Int, int>();
         const float PathPad = 0.3f;         // ~ a body radius, so paths keep clear of shapes
         readonly Queue<Vector2Int> buildQueue = new Queue<Vector2Int>();
+        readonly HashSet<Vector2Int> queued = new HashSet<Vector2Int>();
+        readonly List<Vector2Int> buildCandidates = new List<Vector2Int>();
+        Vector2 previousPosition, priorityFocus;
+        Rect priorityView;
+        bool hasPosition;
+        Vector2Int lastFocus = new Vector2Int(int.MinValue, int.MinValue);
+        int lastRx, lastRy;
+        TileBaker.Operation pendingBake;
+        ChunkView pendingBuild;
+        Vector2Int pendingKey;
+        [SerializeField, Tooltip("CPU raster budget per streaming frame (ms); initial scene warming is synchronous.")]
+        float bakeBudgetMs = 2;
+        [SerializeField, Min(.1f), Tooltip("Preparation+raster budget when an unbuilt chunk is already in the camera view.")]
+        float visibleBakeBudgetMs = 5;
+        [SerializeField, Min(0), Tooltip("Prioritize chunks ahead of the player's movement (seconds).")]
+        float streamingLookAhead = 1.5f;
         [SerializeField] ChunkView chunkPrefab;     // empty template: chunks are filled procedurally by ChunkView.Build
 
         void Awake() => I = this;
-        void OnDestroy() { if (I == this) I = null; }
+        void OnDestroy() { CancelBake(); DropBakedGround(); if (I == this) I = null; }
 #if UNITY_EDITOR
         /// <summary>Editor tools build chunks in edit mode, where Awake does not run.</summary>
         public void EditorRegister() => I = this;
         public void EditorUnregister() { if (I == this) I = null; }
+        public void EditorInit(WorldGen generator)
+        {
+            Clear(); groundCache.Clear(); groundOrder.Clear(); blockCache.Clear(); DropBakedGround();
+            Gen = generator; Scenery = new SceneryLayout(this);
+            InitEnvironment();
+        }
 #endif
 
         /// <summary>Start a world for this seed (also used by ResetWorld: drops every loaded chunk first).</summary>
@@ -84,23 +117,44 @@ namespace Diverse
         {
             Clear();
             groundCache.Clear();
+            groundOrder.Clear();
+            blockCache.Clear();
             DropBakedGround();
-            Gen = new WorldGen(seed);
+            // Every world uses the five built-in zones (build type + theme each).
+            Gen = new WorldGen(seed, ZoneMap.ForWorld(Session.World, seed));
+            Scenery = new SceneryLayout(this);
+            InitEnvironment();
+        }
+
+        void InitEnvironment()
+        {
+            if (Environment == null) Environment = GetComponent<EnvironmentAnimator>() ?? gameObject.AddComponent<EnvironmentAnimator>();
+            Environment.Initialize(this);
+            if (Application.isPlaying && GetComponent<FrontierMist>() == null) gameObject.AddComponent<FrontierMist>();
         }
 
         public void Clear()
         {
-            foreach (var c in chunks.Values) if (c != null) Destroy(c.gameObject);
+            CancelBake();
+            pendingBuild = null;
+            foreach (var c in chunks.Values) if (c != null) { c.Unload(); Destroy(c.gameObject); }
             chunks.Clear();
             blocked.Clear();
             solidCells.Clear();
             buildQueue.Clear();
+            queued.Clear(); lastFocus = new Vector2Int(int.MinValue, int.MinValue);
+            hasPosition = false;
         }
 
         /// <summary>Drop every loaded chunk properly (the design look changed); Warm/Tick builds them again with the new art.</summary>
         public void UnloadAll()
         {
+            CancelBake();
+            pendingBuild = null;
             groundCache.Clear();     // a designed layout may lay different roads
+            groundOrder.Clear();
+            Gen?.ClearGroundSamples();
+            blockCache.Clear();
             foreach (var view in chunks.Values)
             {
                 if (view == null) continue;
@@ -109,6 +163,9 @@ namespace Diverse
             }
             chunks.Clear();
             buildQueue.Clear();
+            queued.Clear(); lastFocus = new Vector2Int(int.MinValue, int.MinValue);
+            hasPosition = false;
+            Scenery = new SceneryLayout(this);
             DropBakedGround();       // … and paints the ground differently (after Unload handed the old textures back)
         }
 
@@ -118,6 +175,12 @@ namespace Diverse
         /// <summary>Build the chunks around the starting point right away (no stutter at game start).</summary>
         public void Warm(Vector2 p)
         {
+            CancelBake();
+            if (pendingBuild != null)
+            {
+                while (!pendingBuild.StepBuild(float.MaxValue)) { }
+                pendingBuild = null; HitchLog.ChunksBuilt++;
+            }
             var c = ChunkOf(p);
             LoadRadii(out int rx, out int ry);
             for (int y = -ry; y <= ry; y++)
@@ -145,19 +208,68 @@ namespace Diverse
         public void Tick(Vector2 focus)
         {
             using var _perf = ChunksMarker.Auto();
+            LastBakeSliceMs = LastBuildMs = 0;
             var c = ChunkOf(focus);
+            Vector2 velocity = hasPosition && Time.deltaTime > .00001f ? (focus-previousPosition)/Time.deltaTime : Vector2.zero;
+            previousPosition = focus; hasPosition = true;
+            priorityFocus = focus + Vector2.ClampMagnitude(velocity * streamingLookAhead, WorldGen.Chunk);
+            priorityView = CameraRig.I != null ? CameraRig.I.ViewRect() : new Rect(focus-Vector2.one*8, Vector2.one*16);
             LoadRadii(out int rx, out int ry);
             // Queue chunks to load, nearest first
-            for (int r = 0; r <= Mathf.Max(rx, ry); r++)
-                for (int y = -r; y <= r; y++)
-                    for (int x = -r; x <= r; x++)
-                    {
-                        if (Mathf.Max(Mathf.Abs(x), Mathf.Abs(y)) != r || Mathf.Abs(x) > rx || Mathf.Abs(y) > ry) continue;
-                        var k = new Vector2Int(c.x + x, c.y + y);
-                        if (!chunks.ContainsKey(k) && !buildQueue.Contains(k)) buildQueue.Enqueue(k);
-                    }
-            // Build at most one per frame (spreads the load)
-            if (buildQueue.Count > 0) Ensure(buildQueue.Dequeue());
+            if (c != lastFocus || rx != lastRx || ry != lastRy)
+            {
+                buildQueue.Clear(); queued.Clear();
+                buildCandidates.Clear();
+                lastFocus = c; lastRx = rx; lastRy = ry;
+                for (int r = 0; r <= Mathf.Max(rx, ry); r++)
+                    for (int y = -r; y <= r; y++)
+                        for (int x = -r; x <= r; x++)
+                        {
+                            if (Mathf.Max(Mathf.Abs(x), Mathf.Abs(y)) != r || Mathf.Abs(x) > rx || Mathf.Abs(y) > ry) continue;
+                            var k = new Vector2Int(c.x + x, c.y + y);
+                            if (!chunks.ContainsKey(k) && (pendingBake == null || k != pendingKey) && queued.Add(k)) buildCandidates.Add(k);
+                        }
+                buildCandidates.Sort(CompareBuildPriority);
+                foreach (var key in buildCandidates) buildQueue.Enqueue(key);
+            }
+            // A terrain bake can take longer than a frame even with only one chunk. Rasterize it over several frames,
+            // before the chunk enters view; instantiate scenery only once the completed texture is ready.
+            if (pendingBake != null && (Mathf.Abs(pendingKey.x-c.x)>rx+1 || Mathf.Abs(pendingKey.y-c.y)>ry+1)) CancelBake();
+            if (pendingBake == null && pendingBuild == null)
+            {
+                while (buildQueue.Count > 0)
+                {
+                    var k = buildQueue.Dequeue(); queued.Remove(k);
+                    if (chunks.ContainsKey(k)) continue;
+                    if (bakedGround.ContainsKey(k)) BeginChunkBuild(k);
+                    else { pendingKey = k; pendingBake = new TileBaker.Operation(this, k); }
+                    break;
+                }
+            }
+            if (pendingBake != null)
+            {
+                float budget = ChunkRect(pendingKey).Overlaps(priorityView) ? Mathf.Max(bakeBudgetMs,visibleBakeBudgetMs) : bakeBudgetMs;
+                long started = System.Diagnostics.Stopwatch.GetTimestamp();
+                bool complete = pendingBake.Step(budget);
+                LastBakeSliceMs = (System.Diagnostics.Stopwatch.GetTimestamp()-started)*1000.0/System.Diagnostics.Stopwatch.Frequency;
+                if (complete)
+                {
+                    KeepBakedGround(pendingKey,pendingBake.Texture); pendingBake = null; BeginChunkBuild(pendingKey);
+                }
+            }
+            if (pendingBuild != null)
+            {
+                float budget = ChunkRect(pendingBuild.key).Overlaps(priorityView) ? Mathf.Max(bakeBudgetMs,visibleBakeBudgetMs) : bakeBudgetMs;
+                float remaining = budget-(float)LastBakeSliceMs;
+                if (remaining > .1f)
+                {
+                    long started = System.Diagnostics.Stopwatch.GetTimestamp();
+                    bool complete = pendingBuild.StepBuild(remaining);
+                    LastBuildPhase = pendingBuild.BuildPhase;
+                    LastBuildMs = (System.Diagnostics.Stopwatch.GetTimestamp()-started)*1000.0/System.Diagnostics.Stopwatch.Frequency;
+                    if (complete) { pendingBuild = null; HitchLog.ChunksBuilt++; }
+                }
+            }
 
             // Unload
             List<Vector2Int> remove = null;
@@ -176,6 +288,15 @@ namespace Diverse
                 }
         }
 
+        static Rect ChunkRect(Vector2Int key) => new Rect(key.x*WorldGen.Chunk,key.y*WorldGen.Chunk,WorldGen.Chunk,WorldGen.Chunk);
+        int CompareBuildPriority(Vector2Int a, Vector2Int b)
+        {
+            float Score(Vector2Int key) => (ChunkRect(key).center-priorityFocus).sqrMagnitude -
+                (ChunkRect(key).Overlaps(priorityView) ? 1000000 : 0);
+            int compare = Score(a).CompareTo(Score(b));
+            return compare != 0 ? compare : a.x != b.x ? a.x.CompareTo(b.x) : a.y.CompareTo(b.y);
+        }
+
         void Ensure(Vector2Int k)
         {
             if (chunks.ContainsKey(k)) return;
@@ -183,10 +304,24 @@ namespace Diverse
             view.name = $"Chunk {k.x},{k.y}";
             chunks[k] = view;
             HitchLog.ChunksBuilt++;
+            long started = System.Diagnostics.Stopwatch.GetTimestamp();
             view.Build(this, k);
+            LastBuildMs = (System.Diagnostics.Stopwatch.GetTimestamp()-started)*1000.0/System.Diagnostics.Stopwatch.Frequency;
         }
 
-        public bool IsLoaded(Vector2 p) => chunks.ContainsKey(ChunkOf(p));
+        void BeginChunkBuild(Vector2Int key)
+        {
+            if (chunks.ContainsKey(key)) return;
+            var view = Instantiate(chunkPrefab,transform,false);
+            view.gameObject.SetActive(false);
+            view.name = $"Chunk {key.x},{key.y}";
+            chunks[key] = pendingBuild = view;
+            view.BeginBuild(this,key);
+        }
+
+        void CancelBake() { pendingBake?.Cancel(); pendingBake = null; }
+
+        public bool IsLoaded(Vector2 p) => chunks.TryGetValue(ChunkOf(p),out var chunk) && chunk.Ready;
 
         public ChunkView ChunkAt(Vector2 p) => chunks.TryGetValue(ChunkOf(p), out var c) ? c : null;
 
@@ -227,22 +362,36 @@ namespace Diverse
 
         public Ground[,] GroundOf(Vector2Int k)
         {
-            if (groundCache.TryGetValue(k, out var g)) return g;
+            var g = GroundEntry(k);
             int N = WorldGen.Chunk;
-            g = new Ground[N + 2, N + 2];
             for (int y = -1; y <= N; y++)
                 for (int x = -1; x <= N; x++)
-                    g[x + 1, y + 1] = Gen.GroundAt(k.x * N + x, k.y * N + y);
-            if (groundCache.Count > 400) groundCache.Clear();
-            groundCache[k] = g;
-            return g;
+                    GroundSample(g, k, x + 1, y + 1);
+            return g.tiles;
+        }
+
+        GroundChunk GroundEntry(Vector2Int key)
+        {
+            if (groundCache.TryGetValue(key, out var entry)) return entry;
+            while (groundCache.Count >= 400) groundCache.Remove(groundOrder.Dequeue());
+            groundCache[key] = entry = new GroundChunk(); groundOrder.Enqueue(key);
+            return entry;
+        }
+
+        Ground GroundSample(GroundChunk entry, Vector2Int key, int x, int y)
+        {
+            if (!entry.valid[x, y])
+            {
+                entry.tiles[x, y] = Gen.GroundAt(key.x * WorldGen.Chunk + x - 1, key.y * WorldGen.Chunk + y - 1);
+                entry.valid[x, y] = true;
+            }
+            return entry.tiles[x, y];
         }
 
         public Ground GroundAtTile(int tx, int ty)
         {
             var k = new Vector2Int(MathX.FloorDiv(tx, WorldGen.Chunk), MathX.FloorDiv(ty, WorldGen.Chunk));
-            var g = GroundOf(k);
-            return g[tx - k.x * WorldGen.Chunk + 1, ty - k.y * WorldGen.Chunk + 1];
+            return GroundSample(GroundEntry(k), k, tx - k.x * WorldGen.Chunk + 1, ty - k.y * WorldGen.Chunk + 1);
         }
 
         public Solid AddSolid(Footprint kind, Vector2 center, float w, float h)
@@ -285,28 +434,70 @@ namespace Diverse
             return false;
         }
 
-        bool WaterAt(int tx, int ty)
+        // What a tile blocks: 0 nothing, 1 liquid (a raft crosses it), 2 a cliff, or ground the 3/4 view hides behind one
+        const byte Open = 0, Liquid = 1, Rock = 2;
+        readonly Dictionary<Vector2Int, byte[]> blockCache = new Dictionary<Vector2Int, byte[]>();
+
+        byte[] BlocksOf(Vector2Int k)
         {
-            if (!chunks.ContainsKey(new Vector2Int(MathX.FloorDiv(tx, WorldGen.Chunk), MathX.FloorDiv(ty, WorldGen.Chunk)))) return false;
-            return WorldGen.IsWater(GroundAtTile(tx, ty));
+            if (blockCache.TryGetValue(k, out var b)) return b;
+            int N = WorldGen.Chunk;
+            int hide = Mathf.CeilToInt(2 * WorldGen.FaceHeight);
+            b = new byte[N * N];
+            for (int y = 0; y < N; y++)
+                for (int x = 0; x < N; x++)
+                {
+                    int tx = k.x * N + x, ty = k.y * N + y;
+                    var g = GroundAtTile(tx, ty);
+                    byte v = WorldGen.Level(g) > 0 ? Rock : WorldGen.IsLiquid(g) ? Liquid : Open;
+                    // A cliff m tiles to the south draws its top over this tile when it stands high enough: you can't walk
+                    // there (you would seem to walk on the cliff)
+                    for (int m = 1; m <= hide && v == Open; m++)
+                        if (Mathf.CeilToInt(WorldGen.Level(GroundAtTile(tx, ty - m)) * WorldGen.FaceHeight) >= m) v = Rock;
+                    b[y * N + x] = v;
+                }
+            if (blockCache.Count > 400) blockCache.Clear();
+            blockCache[k] = b;
+            return b;
+        }
+
+        /// <summary>Block kind of a loaded tile (unloaded tiles are open, as before).</summary>
+        byte BlockAt(int tx, int ty)
+        {
+            var k = new Vector2Int(MathX.FloorDiv(tx, WorldGen.Chunk), MathX.FloorDiv(ty, WorldGen.Chunk));
+            if (!chunks.TryGetValue(k,out var chunk)) return Open;
+            return BlocksOf(k)[(ty - k.y * WorldGen.Chunk) * WorldGen.Chunk + tx - k.x * WorldGen.Chunk];
+        }
+
+        /// <summary>Open ground (no liquid, cliff, or ground hidden behind a cliff), whether or not its chunk is loaded.</summary>
+        public bool OpenTile(int tx, int ty)
+        {
+            var k = new Vector2Int(MathX.FloorDiv(tx, WorldGen.Chunk), MathX.FloorDiv(ty, WorldGen.Chunk));
+            return BlocksOf(k)[(ty - k.y * WorldGen.Chunk) * WorldGen.Chunk + tx - k.x * WorldGen.Chunk] == Open;
+        }
+
+        bool TileBlocked(int tx, int ty, bool swim)
+        {
+            byte b = BlockAt(tx, ty);
+            return b == Rock || (b == Liquid && !swim);
         }
 
         /// <summary>Tile-level walkability (pathfinding grid).</summary>
         public bool Walkable(int tx, int ty, bool swim = false)
         {
             if (blocked.ContainsKey(new Vector2Int(tx, ty))) return false;
-            return swim || !WaterAt(tx, ty);
+            return !TileBlocked(tx, ty, swim);
         }
 
-        /// <summary>Point-level walkability (movement): exact obstacle shapes + water tiles.</summary>
+        /// <summary>Point-level walkability (movement): exact obstacle shapes + water and cliff tiles.</summary>
         public bool Walkable(Vector2 p, bool swim = false)
         {
             if (HitsSolid(p)) return false;
-            return swim || !WaterAt(Mathf.FloorToInt(p.x), Mathf.FloorToInt(p.y));
+            return !TileBlocked(Mathf.FloorToInt(p.x), Mathf.FloorToInt(p.y), swim);
         }
 
-        /// <summary>나무·바위·벽처럼 투사체도 막는 장애물인지 (물은 제외).</summary>
-        public bool IsSolidObstacle(Vector2 p) => HitsSolid(p);
+        /// <summary>Obstacles that also stop shots: trees, rocks, walls, cliffs (not water).</summary>
+        public bool IsSolidObstacle(Vector2 p) => HitsSolid(p) || BlockAt(Mathf.FloorToInt(p.x), Mathf.FloorToInt(p.y)) == Rock;
 
         /// <summary>
         /// Collision-aware movement. Slides along walls (resolving X and Y separately).

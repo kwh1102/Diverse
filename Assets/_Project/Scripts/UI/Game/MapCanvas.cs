@@ -14,9 +14,26 @@ namespace Diverse
         [SerializeField] Text markerTemplate;       // icon glyph; child "Name" holds the optional label
         [SerializeField] Color background = new Color(0.08f, 0.06f, 0.11f);
 
-        static readonly Dictionary<Vector2Int, Color32[]> tiles = new Dictionary<Vector2Int, Color32[]>();
+        sealed class MapTile
+        {
+            public readonly Color32[] pixels = new Color32[WorldGen.Chunk * WorldGen.Chunk];
+            public int filled;
+        }
+        static readonly Dictionary<Vector2Int, MapTile> tiles = new Dictionary<Vector2Int, MapTile>();
+        static readonly Queue<Vector2Int> tileOrder = new Queue<Vector2Int>();
+        static WorldGen cachedWorld;
+        static int cacheRevision;
+        const int CachedChunks = 4096;
+        [SerializeField, Min(.1f)] float terrainBudgetMs = 2;
+        [SerializeField, Min(.02f)] float repaintInterval = .08f;
+        readonly Dictionary<Vector2Int, Color32[]> visibleTiles = new Dictionary<Vector2Int, Color32[]>();
+        int paintedX = int.MinValue, paintedY, paintedStep, paintedRevision = -1;
+        int paintedCacheRevision = -1;
+        float paintedBound = -1, nextPaint;
+        bool incomplete;
         readonly List<Text> markers = new List<Text>();
         Texture2D tex;
+        Material mistMaterial;
         Color32[] px;
         int used;
         MapRouteGraphic route;
@@ -49,10 +66,12 @@ namespace Diverse
         public RectTransform Rect => (RectTransform)image.transform;
 
         /// <summary>Repaint the visible area. include(cx, cy) decides which chunks are drawn.</summary>
-        const int MaxTexels = 1024;
+        const int MaxTexels = 512;
 
-        public void Paint(System.Func<int, int, bool> include)
+        public void Paint(System.Func<int, int, bool> include, int revision = 0, float frontier = 0)
         {
+            used = 0;
+            if (cachedWorld != WorldStreamer.I.Gen) { ClearCache(); cachedWorld = WorldStreamer.I.Gen; }
             var size = Rect.rect.size;
             // One texel per world tile when zoomed in (point-filtered = crisp). Zoomed far out, one texel covers several
             // tiles (step) so the texture stays ≤ MaxTexels. The texel size must be the same on both axes and the texture
@@ -67,47 +86,102 @@ namespace Diverse
                 tex = new Texture2D(tw, th, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };
                 px = new Color32[tw * th];
                 image.texture = tex;
+                paintedX = int.MinValue;
             }
             // Texture origin snapped to whole texels (world units, multiple of step)
             int x0 = MathX.FloorDiv(Mathf.FloorToInt(Center.x - visW / 2f), step) * step;
             int y0 = MathX.FloorDiv(Mathf.FloorToInt(Center.y - visH / 2f), step) * step;
+            // Sub-tile panning changes only the UVs. Terrain is uploaded at most 12.5 times per second.
+            float fx = (Center.x - visW / 2f - x0) / step, fy = (Center.y - visH / 2f - y0) / step;
+            image.uvRect = new UnityEngine.Rect(fx / tw, fy / th, visW / step / tw, visH / step / th);
+            bool changed = x0 != paintedX || y0 != paintedY || step != paintedStep || revision != paintedRevision || frontier != paintedBound || paintedCacheRevision != cacheRevision;
+            if ((!changed && !incomplete) || Time.unscaledTime < nextPaint && paintedX != int.MinValue && paintedStep == step)
+            {
+                image.uvRect = new UnityEngine.Rect((Center.x - visW / 2f - paintedX) / step / tw,
+                    (Center.y - visH / 2f - paintedY) / step / th, visW / step / tw, visH / step / th);
+                SetMist(frontier, paintedX, paintedY, tw * step, th * step);
+                return;
+            }
+            nextPaint = Time.unscaledTime + repaintInterval;
+            paintedX = x0; paintedY = y0; paintedStep = step; paintedRevision = revision; paintedBound = frontier;
+            paintedCacheRevision = cacheRevision;
             int N = WorldGen.Chunk;
             Color32 bg = background;
-            for (int y = 0; y < th; y++)
-                for (int x = 0; x < tw; x++)
+            // Include tests happen once per chunk, never once per pixel. Map generation never fills the live ground cache.
+            visibleTiles.Clear(); incomplete = false;
+            long started = System.Diagnostics.Stopwatch.GetTimestamp();
+            double budget = terrainBudgetMs * System.Diagnostics.Stopwatch.Frequency / 1000.0;
+            for (int cy = MathX.FloorDiv(y0, N); cy <= MathX.FloorDiv(y0 + (th - 1) * step, N); cy++)
+                for (int cx = MathX.FloorDiv(x0, N); cx <= MathX.FloorDiv(x0 + (tw - 1) * step, N); cx++)
                 {
-                    int wx = x0 + x * step, wy = y0 + y * step;
-                    int cx = MathX.FloorDiv(wx, N), cy = MathX.FloorDiv(wy, N);
-                    px[y * tw + x] = include(cx, cy) ? Tile(cx, cy)[(wy - cy * N) * N + (wx - cx * N)] : bg;
+                    if (!include(cx, cy)) continue;
+                    var key = new Vector2Int(cx, cy);
+                    if (!tiles.TryGetValue(key, out var tile) || tile.filled < N * N)
+                    {
+                        if (System.Diagnostics.Stopwatch.GetTimestamp() - started >= budget) { incomplete = true; continue; }
+                        tile = Tile(cx, cy, started, budget);
+                    }
+                    if (tile.filled < N * N) { incomplete = true; continue; }
+                    visibleTiles[key] = tile.pixels;
                 }
+            SetMist(frontier, x0, y0, tw * step, th * step);
+            for (int y = 0; y < th; y++)
+            {
+                int wy = y0 + y * step, cy = MathX.FloorDiv(wy, N);
+                for (int x = 0; x < tw;)
+                {
+                    int wx = x0 + x * step, cx = MathX.FloorDiv(wx, N);
+                    int end = Mathf.Min(tw, Mathf.CeilToInt(((cx + 1) * N - x0) / (float)step));
+                    if (visibleTiles.TryGetValue(new Vector2Int(cx, cy), out var colors))
+                        for (; x < end; x++) px[y * tw + x] = colors[(wy - cy * N) * N + x0 + x * step - cx * N];
+                    else
+                        for (; x < end; x++) px[y * tw + x] = bg;
+                }
+            }
             tex.SetPixels32(px);
             tex.Apply(false);
             // uvRect in texels: where the view's left/bottom edge falls inside the texture, and how much of it is visible
-            float fx = (Center.x - visW / 2f - x0) / step, fy = (Center.y - visH / 2f - y0) / step;
-            image.uvRect = new UnityEngine.Rect(fx / tw, fy / th, visW / step / tw, visH / step / th);
-            used = 0;
         }
 
-        static Color32[] Tile(int cx, int cy)
+        void SetMist(float bound, float x, float y, float width, float height)
+        {
+            if (bound <= 0) { if (mistMaterial != null) image.material = null; return; }
+            if (mistMaterial == null)
+            {
+                var shader = Resources.Load<Shader>("Shaders/MapMist");
+                if (shader == null) return;
+                mistMaterial = new Material(shader) { name = "World map mist (runtime)" };
+            }
+            image.material = mistMaterial;
+            mistMaterial.SetVector("_WorldRect", new Vector4(x, y, width, height));
+            mistMaterial.SetFloat("_Bound", bound);
+            mistMaterial.SetFloat("_Width", Mathf.Max(3 / PixelsPerUnit, 2));
+            mistMaterial.SetColor("_MistColor", DB.ArtStyle.frontierMapColor);
+        }
+
+        static MapTile Tile(int cx, int cy, long started, double budget)
         {
             var k = new Vector2Int(cx, cy);
-            if (tiles.TryGetValue(k, out var t)) return t;
             int N = WorldGen.Chunk;
-            t = new Color32[N * N];
-            var ground = WorldStreamer.I.GroundOf(k);
-            for (int y = 0; y < N; y++)
-                for (int x = 0; x < N; x++)
-                {
-                    Art.GroundColors(ground[x + 1, y + 1], out var a, out var b, out _);
-                    t[y * N + x] = Hash.F(cx * N + x, cy * N + y, 9) > 0.8f ? b : a;
-                }
-            if (tiles.Count > 3000) tiles.Clear();
-            tiles[k] = t;
+            if (!tiles.TryGetValue(k, out var t))
+            {
+                // Evict individual entries, avoiding the old all-at-once regeneration spike.
+                while (tiles.Count >= CachedChunks) tiles.Remove(tileOrder.Dequeue());
+                tiles[k] = t = new MapTile(); tileOrder.Enqueue(k);
+            }
+            var gen = WorldStreamer.I.Gen;
+            while (t.filled < N * N)
+            {
+                int x = t.filled % N, y = t.filled / N;
+                Art.GroundColors(gen.GroundAt(cx * N + x, cy * N + y), out var a, out var b, out _);
+                t.pixels[t.filled++] = Hash.F(cx * N + x, cy * N + y, 9) > 0.8f ? b : a;
+                if (System.Diagnostics.Stopwatch.GetTimestamp() - started >= budget) break;
+            }
             return t;
         }
 
         /// <summary>Forget cached tiles (new world seed).</summary>
-        public static void ClearCache() => tiles.Clear();
+        public static void ClearCache() { tiles.Clear(); tileOrder.Clear(); cachedWorld = null; cacheRevision++; }
 
         public Vector2 WorldToLocal(Vector2 w) => new Vector2((w.x - Center.x) * PixelsPerUnit, (w.y - Center.y) * PixelsPerUnit) + Rect.rect.center;
 
@@ -142,7 +216,7 @@ namespace Diverse
             for (int i = used; i < markers.Count; i++) UIKit.Show(markers[i], false);
         }
 
-        void OnDestroy() { if (tex != null) Destroy(tex); }
+        void OnDestroy() { if (tex != null) Destroy(tex); if (mistMaterial != null) Destroy(mistMaterial); }
     }
 
     // Clip every segment to the map before building a constant-width UI line.

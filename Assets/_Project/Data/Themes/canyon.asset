@@ -1,0 +1,320 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4daca7ae967f1b344872deceda26c0b3, type: 3}
+  m_Name: canyon
+  m_EditorClassIdentifier:
+  def:
+    id: canyon
+    displayName: "\uC9C8\uD48D\uC758 \uD611\uACE1"
+    prefix: "\uD611\uACE1"
+    biome: 2
+    mapColor: {r: 0.8156863, g: 0.46666667, b: 0.24313726, a: 1}
+    ground: 19
+    groundAlt: 3
+    cliffTop: 19
+    altShare: 0.35
+    liquid: 8
+    road: 2
+    mountainBias: 0.1
+    waterBias: -0.15
+    mesas: 0.7
+    density: 0.95
+    decor:
+    - sprite: explore_canyon_0
+      variants: 1
+      chance: 0
+      block: 1
+      width: 0.8
+      depth: 0.5
+      flat: 0
+      clustered: 1
+      onCliffs: 1
+      role: 5
+      visualScale: 1.3
+      scaleVariation: 0.12
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
+    - sprite: explore_canyon_1
+      variants: 1
+      chance: 0.04
+      block: 1
+      width: 0.8
+      depth: 0.5
+      flat: 0
+      clustered: 1
+      onCliffs: 1
+      role: 2
+      visualScale: 1.04
+      scaleVariation: 0.12
+      mediumScale: 1.2800001
+      rareScale: 1.6
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 1.6
+    - sprite: explore_canyon_2
+      variants: 1
+      chance: 0.04
+      block: 1
+      width: 1.2
+      depth: 0.5
+      flat: 0
+      clustered: 1
+      onCliffs: 0
+      role: 4
+      visualScale: 1.8
+      scaleVariation: 0.12
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
+    - sprite: explore_canyon_3
+      variants: 1
+      chance: 0
+      block: 1
+      width: 0.8
+      depth: 0.5
+      flat: 0
+      clustered: 1
+      onCliffs: 0
+      role: 5
+      visualScale: 1.35
+      scaleVariation: 0.12
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
+    - sprite: deco_canyon_0
+      variants: 1
+      chance: 0.055
+      block: 1
+      width: 0.8
+      depth: 0.5
+      flat: 0
+      clustered: 1
+      onCliffs: 0
+      role: 1
+      visualScale: 1.2349999
+      scaleVariation: 0.12
+      mediumScale: 1.52
+      rareScale: 1.9
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 1.9
+    - sprite: deco_canyon_1
+      variants: 1
+      chance: 0.025
+      block: 0
+      width: 0.8
+      depth: 0.5
+      flat: 0
+      clustered: 1
+      onCliffs: 0
+      role: 3
+      visualScale: 1.3
+      scaleVariation: 0.12
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
+    - sprite: deco_canyon_2
+      variants: 1
+      chance: 0.055
+      block: 0
+      width: 0.8
+      depth: 0.5
+      flat: 1
+      clustered: 1
+      onCliffs: 0
+      role: 1
+      visualScale: 1.2349999
+      scaleVariation: 0.12
+      mediumScale: 1.52
+      rareScale: 1.9
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 1.9
+    - sprite: deco_canyon_3
+      variants: 1
+      chance: 0.025
+      block: 1
+      width: 0.3
+      depth: 0.3
+      flat: 0
+      clustered: 1
+      onCliffs: 0
+      role: 3
+      visualScale: 1.3
+      scaleVariation: 0.12
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
+    - sprite: tree_Dunes_{v}
+      variants: 4
+      chance: 0.12
+      block: 1
+      width: 1.2
+      depth: 0.8
+      flat: 0
+      clustered: 1
+      onCliffs: 0
+      role: 1
+      visualScale: 1.3324999
+      scaleVariation: 0.22
+      mediumScale: 1.64
+      rareScale: 2.05
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 2.05
+    - sprite: rock_Dunes_{v}
+      variants: 3
+      chance: 0.025
+      block: 1
+      width: 0.85
+      depth: 0.55
+      flat: 0
+      clustered: 0
+      onCliffs: 1
+      role: 3
+      visualScale: 1.4
+      scaleVariation: 0.12
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
+    - sprite: bush_Dunes_{v}
+      variants: 2
+      chance: 0.055
+      block: 0
+      width: 0.8
+      depth: 0.5
+      flat: 0
+      clustered: 0
+      onCliffs: 1
+      role: 2
+      visualScale: 1.45
+      scaleVariation: 0.12
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
+    - sprite: tuft_Dunes_{v}
+      variants: 2
+      chance: 0.07
+      block: 0
+      width: 0.8
+      depth: 0.5
+      flat: 1
+      clustered: 0
+      onCliffs: 1
+      role: 2
+      visualScale: 1.25
+      scaleVariation: 0.12
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
+    scenery:
+      enabled: 1
+      patchSize: 46
+      patchThreshold: 0.5
+      patchFeather: 0.16
+      clearingSize: 22
+      clearingThreshold: 0.66
+      isolatedChance: 0.025
+      canopySpacing: 0.6
+      footGap: 0.65
+      groundStrength: 0.75
+      occlusionHeight: 2.5
+      occludedAlpha: 0.38
+      fadeSpeed: 8
+      buildingScale: 1.5
+      anchorScale: 1.5
+      landmarkScale: 1.4
+      groupChance: 0.65
+      groupRadius: 6
+      groupName: desert waymarker ruins
+      group:
+      - sprite: explore_canyon_3
+        position: {x: 0, y: 2}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_canyon_2
+        position: {x: -2.8, y: 1}
+        role: 0
+        blocks: 1
+        footprint: {x: 1.2, y: 0.6}
+      - sprite: explore_canyon_0
+        position: {x: 2.4, y: -0.5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_canyon_1
+        position: {x: -2.5, y: -2}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+    environment:
+      wind: 0.25
+      cloth: 1.5
+      glint: 0.12
+      accent: {r: 0.55, g: 0.85, b: 0.85, a: 1}
+      dust: {r: 0.8, g: 0.63, b: 0.36, a: 0.3}
+      weatherRate: 1.5
+      weatherSize: 0.08
+      weatherLife: 3
+      weatherVelocity: {x: 0.6, y: 0.05}
+    landmarkName: "\uBC14\uB78C\uD0D1"
+    landmarkSprite: landmark_canyon
+    landmarkFootprint: {x: 4, y: 2.5}
+    arenaRadius: 18
+    arenaGround: 3
+    enemies:
+    - raccoon
+    - boar
+    - jelly
+    boss: boss_fox

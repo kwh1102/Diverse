@@ -140,7 +140,7 @@ namespace Diverse.EditorTools
                 step = "menu";
                 if (Find<MenuUI>() == null) { Fail("MenuUI missing (MainMenu scene)"); yield break; }
 
-                // 0) Title (모드·세계 선택 / 설정 / 종료) → slot screen. A normal-mode world designs only the hero and weapon;
+                // 0) Title (세계 선택 / 설정 / 종료) → slot screen. Design only the hero and weapon;
                 //    worlds are created, continued and deleted per row
                 step = "title";
                 var titleView = Find<TitleView>();
@@ -173,30 +173,26 @@ namespace Diverse.EditorTools
                 if (!Visible<SaveSelectView>()) { Fail("slot screen did not open from the title"); yield break; }
                 var slotsView = Find<SaveSelectView>();
                 Transform Row(int i) => slotsView.transform.Find("Panel/Slots/Slot " + i);
-                Click(slotsView, "NormalTab");
-                yield return Frames(1);
+                if (slotsView.transform.Find("Panel/NormalTab") != null || slotsView.transform.Find("Panel/CustomTab") != null)
+                    Fail("obsolete mode tabs remain on the slot screen");
                 Click(Row(1), "Play");               // empty second slot → new world → design the first life
                 yield return Frames(2);
-                if (Session.Mode != GameMode.Normal || Session.Slot != 2) { Fail("creating a normal world failed"); yield break; }
+                if (Session.Slot != 2) { Fail("creating a world failed"); yield break; }
                 var normalStudio = Find<DesignStudioView>();
                 if (!Visible<DesignStudioView>()) { Fail("a new world did not open the design studio"); yield break; }
                 if (normalStudio.GetComponentsInChildren<Button>().Any(b => b.name == "Tab 2" || b.name == "Tab 3")) Fail("normal mode still offers world/enemy design");
                 Click(normalStudio, "Back");
                 yield return Frames(2);
                 if (!Visible<SaveSelectView>()) { Fail("studio back did not return to the slot screen"); yield break; }
-                Click(slotsView, "NormalTab");
-                yield return Frames(2);
                 Click(Row(1), "Delete");
                 yield return Frames(1);
-                if (SaveSystem.Peek(GameMode.Normal, 2) == null) Fail("one press already deleted the world (no confirmation)");
+                if (SaveSystem.Peek(2) == null) Fail("one press already deleted the world (no confirmation)");
                 Click(Row(1), "Delete");
                 yield return Frames(1);
-                if (SaveSystem.Peek(GameMode.Normal, 2) != null) Fail("deleting a world left it behind");
-                Click(slotsView, "CustomTab");
-                yield return Frames(1);
+                if (SaveSystem.Peek(2) != null) Fail("deleting a world left it behind");
                 Click(Row(0), "Play");
                 yield return Frames(2);
-                if (Session.Mode != GameMode.Custom || Session.Slot != 1) { Fail("opening a custom world failed"); yield break; }
+                if (Session.Slot != 1) { Fail("opening a world failed"); yield break; }
 
                 // Design pieces that the live AI path uses (no network here)
                 step = "design units";
@@ -217,7 +213,7 @@ namespace Diverse.EditorTools
                     "눈 내린 겨울 숲, 하늘색 호수",
                     "모든 적이 과자로 만들어진 세계",
                 };
-                for (int i = 0; i < 4; i++)
+                for (int i = 0; i < 2; i++)
                 {
                     Click(studio, "Tab " + i);
                     promptField.text = prompts[i];
@@ -228,14 +224,15 @@ namespace Diverse.EditorTools
                 if (pack.weapon.shape != "needle" || pack.weapon.hold != "Mouth" || pack.attack.origin != "Mouth" || pack.weapon.baseWeapon != "Crossbow")
                     Fail($"toothpick prompt not understood ({pack.weapon.shape}/{pack.weapon.hold}/{pack.attack.origin}/{pack.weapon.baseWeapon})");
                 if (pack.ignored.Count == 0) Fail("power request was not reported as ignored");
-                if (pack.hero.hat != "wizard" || pack.world.IsDefault || pack.enemies.Identity) Fail("hero/world/enemy prompts not applied");
+                if (pack.hero.hat != "wizard") Fail("hero prompt not applied");
+                if (!pack.world.IsDefault || !pack.enemies.Identity) Fail("design changed the built-in world or enemies");
                 if (Art.Bolt() == null || Art.Weapon(WeaponKind.Crossbow) == null) Fail("designed sprites missing");
                 Click(studio, "Undo");
                 yield return Frames(1);
                 if (DesignRuntime.Active.weapon.shape == "needle") Fail("undo did not restore the previous look");
                 Click(studio, "Generate");          // nothing changed → redo the current tab
                 yield return Frames(1);
-                for (int i = 0; i < 4; i++) { Click(studio, "Tab " + i); promptField.text = prompts[i] + " 좋아"; }
+                for (int i = 0; i < 2; i++) { Click(studio, "Tab " + i); promptField.text = prompts[i] + " 좋아"; }
                 Click(studio, "Generate");
                 yield return Frames(2);
 
@@ -308,17 +305,16 @@ namespace Diverse.EditorTools
                 g.Player.PendingEvolutions = 0;
                 yield return Frames(2);
 
-                // 3d) Ruin altar pays its shard once
+                // 3d) Ruin altar is read once (the flag sticks, the second visit shows the faded inscription)
                 step = "ruin altar";
                 {
                     var spec = new StructureSpec { id = "smoke_ruin", name = "시험 유적", kind = StructKind.Ruins, center = g.Player.Pos + Vector2.right * 6 };
                     var chunk = WorldStreamer.I.ChunkAt(g.Player.Pos);
                     var alt = Interactable.Create(chunk.transform, "ruin_altar", "ruin:" + spec.id, "고대 제단", spec.center, Art.Prop("altar"), chunk);
                     alt.data = spec;
-                    int shards = g.World.memoryShards;
                     Dialogue.Open(g, alt); yield return Frames(2); g.CloseOverlay(); yield return Frames(1);
                     Dialogue.Open(g, alt); yield return Frames(2); g.CloseOverlay(); yield return Frames(1);
-                    if (g.World.memoryShards != shards + 1) Fail($"altar paid {g.World.memoryShards - shards} shards (expected 1)");
+                    if (!g.World.Flag("ruin:" + spec.id)) Fail("altar was not marked as read");
                     Object.Destroy(alt.gameObject);
                 }
 
@@ -336,6 +332,26 @@ namespace Diverse.EditorTools
                     if (!g.World.clearedCamps.Contains("smoke_camp")) Fail("camp not cleared after its last member died");
                     if (q.status != 2) Fail($"clear quest not completed (status {q.status})");
                     g.World.quests.Remove(q);
+                }
+
+                // 3f) Monsters roam the land: away from the town, packs appear around the hero (out of sight), by theme
+                step = "roaming monsters";
+                {
+                    var home = g.Player.Pos;
+                    var away = WorldStreamer.I.NearestWalkable(new Vector2(48, 30), 0.5f, 12);
+                    g.Player.Pos = away;
+                    WorldStreamer.I.Warm(away);
+                    int roaming = 0;
+                    for (int i = 0; i < 400 && roaming == 0; i++)
+                    {
+                        yield return null;
+                        foreach (var a in Actor.All) if (a is Enemy e && e.Alive && e.campId == null && Vector2.Distance(e.Pos, away) < DB.WorldRules.despawnRadius) roaming++;
+                    }
+                    if (roaming == 0) Fail("no roaming monsters appeared around the hero");
+                    foreach (var a in Actor.All.ToArray()) if (a is Enemy e && e.campId == null) e.Despawn();
+                    g.Player.Pos = home;
+                    WorldStreamer.I.Warm(home);
+                    yield return Frames(2);
                 }
 
                 // 3f) Warp stones: buy → place in the field → map click travels back to town
@@ -414,14 +430,14 @@ namespace Diverse.EditorTools
                     int gold = g.Player.Gold, dashMax = g.Player.DashChargesMax, dash = g.Player.DashCharges;
                     g.Player.Gold = 1000; g.Player.DashChargesMax = 2; g.Player.DashCharges = 2;
                     Dialogue.Open(g, merchant);
-                    Dialogue.Current.options[1].act(); Dialogue.Current.options[1].act();
+                    Dialogue.Current.options[0].act(); Dialogue.Current.options[0].act();
                     yield return Frames(3);
-                    if (g.Player.DashChargesMax != 4 || Dialogue.Current.options[1].enabled) Fail("dash purchase limit not enforced");
+                    if (g.Player.DashChargesMax != 4 || Dialogue.Current.options[0].enabled) Fail("dash purchase limit not enforced");
                     var buttons = Find<DialogueView>().GetComponentsInChildren<Button>(true);
                     var shoe = buttons.FirstOrDefault(b => b.gameObject.activeInHierarchy && b.GetComponentInChildren<Text>().text.Contains("대시 신발"));
                     if (shoe == null || shoe.interactable || shoe.colors.disabledColor == shoe.colors.normalColor) Fail("disabled purchase has no distinct appearance");
                     int paid = g.Player.Gold;
-                    Dialogue.Current.options[1].act();
+                    Dialogue.Current.options[0].act();
                     if (g.Player.Gold != paid || g.Player.DashChargesMax != 4) Fail("disabled purchase callback charged gold");
                     g.CloseOverlay(); g.Player.Gold = gold; g.Player.DashChargesMax = dashMax; g.Player.DashCharges = dash;
                 }
@@ -659,8 +675,8 @@ namespace Diverse.EditorTools
                 yield return Frames(2);
                 if (!Visible<DesignStudioView>()) { Fail("design studio did not open from the pause menu"); yield break; }
                 var gameStudio = Find<DesignStudioView>();
-                Click(gameStudio, "Tab 2");
-                gameStudio.GetComponentInChildren<InputField>().text = "가을 단풍 숲";
+                if (gameStudio.GetComponentsInChildren<Button>().Any(b => b.name is "Tab 2" or "Tab 3"))
+                    Fail("in-game studio still offers world/enemy design");
                 Click(gameStudio, "Tab 1");
                 gameStudio.GetComponentInChildren<InputField>().text = "보라색 몽둥이, 묵직하게";
                 Click(gameStudio, "Generate");
@@ -670,24 +686,22 @@ namespace Diverse.EditorTools
                 if (Visible<DesignStudioView>()) Fail("design studio did not close after applying");
                 if (!g.Player.Costume.id.StartsWith(DesignStore.CostumePrefix)) Fail("in-game design did not redraw the hero");
                 if (g.Player.Weapon.kind != kindBefore || g.Player.Weapon.baseDamage != damageBefore) Fail("in-game design changed the weapon chassis/numbers");
-                if (DesignRuntime.Active.world.IsDefault) Fail("in-game world design not active");
+                if (!DesignRuntime.Active.world.IsDefault || !DesignRuntime.Active.enemies.Identity) Fail("in-game design changed the world or enemies");
                 g.CloseOverlay();
                 yield return Frames(30);
 
-                // 4c) A fully pictured design (synthetic pictures, no network): ground textures, scenery, town, effects, enemies, poses
+                // 4c) An older fully pictured pack keeps hero/weapon effects while world/enemy overrides are ignored.
                 step = "pictured design";
                 var pictured = DesignTestData.Pictured(g.Player);
                 g.ApplyDesign(DesignStore.Commit(pictured));
                 yield return Frames(40);
-                // City layout: a street grid on open land, buildings lining the streets
-                bool street = false;
-                for (int t = 24; t < 200 && !street; t += 12) street |= WorldStreamer.I.GroundAtTile(t, -40) == Ground.Path;
-                if (!street) Fail("city layout laid no streets");
-                if (!Object.FindObjectsByType<SpriteRenderer>(FindObjectsSortMode.None).Any(s => s.name == "building" || s.name == "decor" || s.name == "prop")) Fail("no designed scenery was placed");
+                if (!DesignRuntime.Active.world.IsDefault || !DesignRuntime.Active.enemies.Identity
+                    || DesignRuntime.Active.enemies.art.Count > 0 || DesignRuntime.Active.enemies.names.Count > 0)
+                    Fail("an older pack replaced the built-in world or enemies");
                 if (Art.Enemy("shroom", 1).rect.height < 10) Fail("enemy moving pose missing");
                 var designed = DesignCombat.For(DesignRuntime.Active);
                 if (designed == null || Art.Slash(designed.slashColor, designed.slashCore, 20, 140, 1).Length != 5) Fail("designed swing effect not used");
-                if (!DesignRuntime.GroundTexel(Ground.Grass, 3, 5, out _)) Fail("ground texture not used");
+                if (DesignRuntime.GroundTexel(Ground.Grass, 3, 5, out _)) Fail("an older pack replaced the ground texture");
                 if (g.Player.Weapon.kind != kindBefore) Fail("pictured design changed the weapon chassis");
                 yield return Frames(20);
 
@@ -788,9 +802,12 @@ namespace Diverse.EditorTools
                 if (Game.I.Ui == null) return "UI missing";
                 if (Object.FindFirstObjectByType<EditorOnlyPreview>() != null) return "editor-only preview survived into play";
                 if (DB.Weapons.Count != 6 || DB.Costumes.Count != 6 || DB.Enemies.Count < 11) return $"DB counts {DB.Weapons.Count}/{DB.Costumes.Count}/{DB.Enemies.Count}";
-                // Art.Get should pick up the baked PNG (an imported asset), and it must stay readable for Art.Silhouette
+                // The source must be the imported PNG; the idle pose may be a runtime copy with corrected eye pixels.
+                var source = Art.Get($"rabbit_{DB.Costumes[0].id}_Idle0", () => null);
                 var rabbit = Art.Rabbit(DB.Costumes[0], Pose.Idle0);
-                if (!AssetDatabase.Contains(rabbit)) return "baked sprite PNG not used (still procedural)";
+                if (source == null || !AssetDatabase.Contains(source)) return "baked sprite PNG not used (still procedural)";
+                if (rabbit.rect.size != source.rect.size || rabbit.pivot != source.pivot || rabbit.pixelsPerUnit != source.pixelsPerUnit)
+                    return "idle correction changed imported sprite geometry";
                 if (!rabbit.texture.isReadable) return "baked sprite not readable";
                 return null;
             }

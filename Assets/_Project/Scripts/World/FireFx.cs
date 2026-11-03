@@ -15,6 +15,16 @@ namespace Diverse
         }
         void Update()
         {
+            if (WorldStreamer.I != null && WorldStreamer.I.Environment != null && WorldStreamer.I.Environment.Active)
+            {
+                // The campfire's shared sheet and capped smoke pool replace the old frame-rate-dependent spark bursts.
+                flame.enabled = false;
+                if (!glow.isVisible || GameTime.Paused) return;
+                float pulse = .9f + Mathf.Sin(WorldStreamer.I.Environment.Clock * 5) * .1f;
+                glow.color = new Color(1, .6f, .3f, .35f * pulse);
+                return;
+            }
+            if (GameTime.Paused || !glow.isVisible) return;
             t += Time.deltaTime;
             float k = 0.85f + Mathf.PerlinNoise(t * 6, 0.3f) * 0.3f;
             glow.color = new Color(1f, 0.6f, 0.3f, 0.35f * k);

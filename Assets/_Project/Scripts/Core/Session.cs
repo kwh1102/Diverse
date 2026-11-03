@@ -26,8 +26,6 @@ namespace Diverse
         /// <summary>Game → menu: open the character select right away (after a death).</summary>
         public static bool OpenCharacterSelect;
 
-        /// <summary>The open save slot's mode. Normal keeps the hand-made world and enemies (DesignRuntime enforces it).</summary>
-        public static GameMode Mode => SaveSystem.Mode;
         public static int Slot => SaveSystem.Slot;
         /// <summary>A slot was picked on the slot screen in this play session (the menu opens on that screen until then).</summary>
         public static bool SlotChosen { get; private set; }
@@ -53,12 +51,11 @@ namespace Diverse
             GraphicsQuality.Apply(Settings);
             Controls.Init(Settings);
             SaveSystem.MigrateLegacySaves();
-            LoadSlot((GameMode)Mathf.Clamp(Settings.lastMode, 0, 1), Mathf.Clamp(Settings.lastSlot, 1, SaveSystem.SlotCount));
+            LoadSlot(Mathf.Clamp(Settings.lastSlot, 1, SaveSystem.SlotCount));
         }
 
-        static void LoadSlot(GameMode mode, int slot)
+        static void LoadSlot(int slot)
         {
-            SaveSystem.Mode = mode;
             SaveSystem.Slot = slot;
             World = SaveSystem.LoadWorld();
             PendingRun = SaveSystem.LoadRun();
@@ -66,12 +63,11 @@ namespace Diverse
         }
 
         /// <summary>Slot screen: play this slot (an empty slot starts a new world there, saved right away).</summary>
-        public static void OpenSlot(GameMode mode, int slot)
+        public static void OpenSlot(int slot)
         {
-            bool empty = SaveSystem.Peek(mode, slot) == null;
-            LoadSlot(mode, slot);
+            bool empty = SaveSystem.Peek(slot) == null;
+            LoadSlot(slot);
             if (empty) SaveSystem.SaveWorld(World);
-            Settings.lastMode = (int)mode;
             Settings.lastSlot = slot;
             SaveSystem.SaveSettings(Settings);
             SlotChosen = true;

@@ -124,6 +124,7 @@ namespace Diverse
         public void Burst(Vector2 pos, Color32 col, int count, float speed, float life = 0.45f, float gravity = 0f, int size = 2, float spreadDeg = 360, float dirDeg = 0, bool ground = false, bool additive = false)
         {
             if (count > 1) count = Mathf.Max(1, Mathf.RoundToInt(count * GraphicsQuality.EffectScale));   // 설정 → 그래픽 → 효과
+            col = Art.PaletteColor(col);
             for (int i = 0; i < count; i++)
             {
                 var p = GetParticle(size, additive);

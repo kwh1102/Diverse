@@ -19,9 +19,11 @@ namespace Diverse.EditorTools
         const string RunningKey = "Diverse.Capture.Running";
         const string BatchKey = "Diverse.Capture.Batch";
         const string DirKey = "Diverse.Capture.Dir";
+        const string OverwriteKey = "Diverse.Capture.Overwrite";
+        static bool Overwrite => SessionState.GetBool(OverwriteKey, false);
         static string TitlePath => UIBuilder.UIDir + "/TitleBackground.png";
         static string TownPath => UIBuilder.UIDir + "/TownPreview.png";
-        const int W = 640, H = 360;
+        const int W = 640, H = 360, Scale = 1;    // the starting town, 1 texel = 1 art pixel
 
         [MenuItem("Diverse/타이틀 배경·마을 미리보기 다시 찍기", priority = 82)]
         public static void RunMenu()
@@ -34,9 +36,12 @@ namespace Diverse.EditorTools
 
         public static void RunBatch() => Begin(true);
 
+        /// <summary>Batch: retake both pictures in place (same assets, so the menu and scene keep their references).</summary>
+        public static void RunBatchOverwrite() { SessionState.SetBool(OverwriteKey, true); Begin(true); }
+
         static void Begin(bool batch)
         {
-            if (File.Exists(TitlePath) && File.Exists(TownPath)) { Wire(); if (batch) EditorApplication.Exit(0); return; }
+            if (!Overwrite && File.Exists(TitlePath) && File.Exists(TownPath)) { Wire(); if (batch) EditorApplication.Exit(0); return; }
             // Scratch save so the capture never touches the player's world (fixed seed: same picture every time)
             var dir = Path.Combine(Path.GetTempPath(), "DiverseCapture");
             if (Directory.Exists(dir)) Directory.Delete(dir, true);
@@ -74,9 +79,10 @@ namespace Diverse.EditorTools
             {
                 EditorApplication.playModeStateChanged -= OnPlayMode;
                 SessionState.SetBool(RunningKey, false);
+                SessionState.SetBool(OverwriteKey, false);
                 System.Environment.SetEnvironmentVariable("DIVERSE_SAVE_DIR", null);
                 UIBuilder.ImportPicture(TitlePath, 100);
-                UIBuilder.ImportPicture(TownPath, Art.PPU);
+                UIBuilder.ImportPicture(TownPath, Art.PPU * Scale);
                 bool ok = File.Exists(TitlePath) && File.Exists(TownPath);
                 if (ok) Wire();
                 Debug.Log("[Diverse] 마을 사진 " + (ok ? "저장 완료" : "실패"));
@@ -130,7 +136,7 @@ namespace Diverse.EditorTools
                 var cam = rig.Cam;
                 var rt = new RenderTexture(W, H, 24) { filterMode = FilterMode.Point };
                 float oldSize = cam.orthographicSize;
-                cam.orthographicSize = H / (2f * Art.PPU);    // 1 texel = 1 art pixel
+                cam.orthographicSize = H / (2f * Art.PPU * Scale);
                 cam.targetTexture = rt;
                 cam.Render();
                 cam.targetTexture = null;
@@ -142,12 +148,12 @@ namespace Diverse.EditorTools
                 RenderTexture.active = null;
                 rt.Release();
 
-                if (!File.Exists(TownPath)) File.WriteAllBytes(TownPath, tex.EncodeToPNG());
+                if (Overwrite || !File.Exists(TownPath)) File.WriteAllBytes(TownPath, tex.EncodeToPNG());
                 // The old title dimmed the world by 35% so the text reads well
                 var px = tex.GetPixels32();
                 for (int i = 0; i < px.Length; i++) px[i] = Color32.Lerp(px[i], new Color32(13, 8, 20, 255), 0.35f);
                 tex.SetPixels32(px);
-                if (!File.Exists(TitlePath)) File.WriteAllBytes(TitlePath, tex.EncodeToPNG());
+                if (Overwrite || !File.Exists(TitlePath)) File.WriteAllBytes(TitlePath, tex.EncodeToPNG());
                 Destroy(tex);
                 EditorApplication.ExitPlaymode();
             }

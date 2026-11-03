@@ -16,116 +16,109 @@ namespace Diverse
         readonly List<Interactable> interactables = new List<Interactable>();
         [SerializeField] SpriteRenderer ground;     // baked per chunk at runtime
         Texture2D groundTex;
-        readonly List<Transform> sway = new List<Transform>();   // designed-world decorations that move in the wind
+        Texture2D environmentMask;
         WorldStreamer w;
+        IEnumerator<int> building;
+        public bool Ready { get; private set; }
+        public string BuildPhase { get; private set; }
 
         static readonly ProfilerMarker BuildMarker = new ProfilerMarker("Diverse.ChunkBuild");   // read by DesignPerf / PerfProbe
 
         public void Build(WorldStreamer world, Vector2Int k)
         {
+            BeginBuild(world,k);
+            while (!StepBuild(float.MaxValue)) { }
+        }
+
+        public void BeginBuild(WorldStreamer world, Vector2Int k)
+        {
+            w = world; key = k; Ready = false;
+            building = BuildSteps().GetEnumerator();
+        }
+
+        public bool StepBuild(float budgetMs)
+        {
             using var _perf = BuildMarker.Auto();
-            w = world;
-            key = k;
+            if (Ready) return true;
+            long started = System.Diagnostics.Stopwatch.GetTimestamp();
+            double ticks = budgetMs*System.Diagnostics.Stopwatch.Frequency/1000.0;
+            do
+            {
+                if (!building.MoveNext())
+                {
+                    building.Dispose(); building = null; Ready = true;
+                    BuildPhase = "activate"; gameObject.SetActive(true); return true;
+                }
+            } while (System.Diagnostics.Stopwatch.GetTimestamp()-started < ticks);
+            return false;
+        }
+
+        IEnumerable<int> BuildSteps()
+        {
+            var k = key;
             int N = WorldGen.Chunk;
             var origin = new Vector2(k.x * N, k.y * N);
             transform.position = Vector3.zero;
+            BuildPhase = "ground";
 
             // 1) 지면
-            var tiles = w.GroundOf(k);
-            groundTex = w.TakeBakedGround(k) ?? Art.BakeGround(tiles, N, k.x * N, k.y * N, w.Gen.seed);
+            // Pixel-art tiles from the art rules (TileBaker): patterns, tidy edges, cliffs and banks in the 3/4 view
+            groundTex = w.TakeBakedGround(k) ?? TileBaker.Bake(w, k);
             ground.sprite = Sprite.Create(groundTex, new Rect(0, 0, N * Art.PPU, N * Art.PPU), Vector2.zero, Art.PPU, 0, SpriteMeshType.FullRect);
+            ground.sharedMaterial = Art.SpriteMat;
             ground.transform.position = origin;
+            environmentMask = w.Environment?.BindGround(ground, k);
+            yield return 0;
 
-            // 2) 구조물 영역 계산 (장식이 구조물 위에 생기지 않도록)
-            var structs = new List<StructureSpec>(w.Gen.StructuresNear(origin + Vector2.one * N / 2f, N));
+            // 2) Authored structure layouts; scenery reserves their complete surroundings.
             foreach (var s in w.Gen.StructuresInChunk(k.x, k.y))
+            {
+                BuildPhase = "structure " + s.kind;
                 World.I.BuildStructure(this, s);
+                yield return 0;
+            }
 
-            // 3) 장식
-            var rng = new Rng(Hash.U(k.x, k.y, w.Gen.seed + 4242));
-            for (int ty = 0; ty < N; ty++)
-                for (int tx = 0; tx < N; tx++)
-                {
-                    int wx = k.x * N + tx, wy = k.y * N + ty;
-                    var g = tiles[tx + 1, ty + 1];
-                    if (WorldGen.IsWater(g) || g == Ground.Path || g == Ground.Plaza || g == Ground.Wood) continue;
-                    var p = new Vector2(wx + 0.5f, wy + 0.5f);
-                    if (InStructure(structs, p, 1.5f)) continue;
-                    if (p.y > 0 && p.y < WorldGen.TowerPos.y && Mathf.Abs(p.x - Mathf.Sin(p.y * 0.08f) * 3f) < 3f) continue;
-                    // A designed world arranges its own scenery by layout (streets, groves, rows…) instead of the biome rules
-                    if (DesignLayout.Active)
-                    {
-                        if (p.magnitude > WorldGen.TownRadius + 3) DesignLayout.Decorate(this, tiles, tx, ty, wx, wy, p, w.Gen.seed);
-                        continue;
-                    }
-                    var biome = w.Gen.BiomeAt(p.x, p.y);
-                    float density = Noise.Perlin(p.x, p.y, w.Gen.seed + 333, 0.05f);
-                    float r = Hash.F(wx, wy, w.Gen.seed + 17);
-
-                    float treeChance = biome switch
-                    {
-                        Biome.Forest => 0.16f * density * 2f, Biome.Meadow => 0.035f * density * 2f, Biome.Tundra => 0.06f * density * 2f,
-                        Biome.Marsh => 0.05f, Biome.Dunes => 0.012f, _ => 0.02f,
-                    };
-                    if (p.magnitude < WorldGen.TownRadius + 3) treeChance = 0;
-
-                    if (r < treeChance && tx % 2 == 0 && ty % 2 == 1)
-                    {
-                        // Only the trunk blocks — the canopy is drawn over the player
-                        AddDecor(Art.Tree(biome, (int)(Hash.U(wx, wy, 5) % 4)), p, true, 1.0f, 0.6f);
-                    }
-                    else if (r < treeChance + 0.0025f)
-                    {
-                        AddDecor(Art.Rock(biome, (int)(Hash.U(wx, wy, 6) % 3)), p, true, 0.85f, 0.55f);
-                    }
-                    else if (r < treeChance + 0.03f && biome != Biome.Dunes && biome != Biome.Ashland)
-                    {
-                        AddDecor(Art.Bush(biome, (int)(Hash.U(wx, wy, 7) % 2)), p + new Vector2(rng.Range(-0.3f, 0.3f), 0), false, 0, 0);
-                    }
-                    else if (r < treeChance + 0.11f)
-                    {
-                        var sp = biome == Biome.Meadow && Hash.F(wx, wy, 9) > 0.5f ? Art.Flower((int)(Hash.U(wx, wy, 8) % 5)) : Art.Tuft(biome, (int)(Hash.U(wx, wy, 8) % 2));
-                        AddDecor(sp, p + new Vector2(rng.Range(-0.4f, 0.4f), rng.Range(-0.4f, 0.4f)), false, 0, 0, flat: true);
-                    }
-                }
+            // 3) Deterministic, silhouette-aware scenery; flat detail is already in the baked ground.
+            BuildPhase = "scenery";
+            foreach (int step in w.Scenery.BuildSteps(this)) yield return step;
+            BuildPhase = "world memory";
             World.I.OnChunkBuilt(this);
-        }
-
-        static bool InStructure(List<StructureSpec> list, Vector2 p, float pad)
-        {
-            foreach (var s in list) if (Vector2.Distance(s.center, p) < s.radius + pad) return true;
-            if (Vector2.Distance(p, WorldGen.TowerPos) < 12) return true;
-            return false;
         }
 
         /// <summary>
         /// Place a decoration. When block is set, a footprint of bw×bh (world units) centered just above p blocks movement.
         /// Footprints default to ellipses (natural shapes); pass shape for tents (triangle) or crates (rect).
         /// </summary>
-        public SpriteRenderer AddDecor(Sprite s, Vector2 p, bool block, float bw, float bh, bool flat = false, string name = "decor", Footprint shape = Footprint.Ellipse)
+        public SpriteRenderer AddDecor(Sprite s, Vector2 p, bool block, float bw, float bh, bool flat = false, string name = "decor", Footprint shape = Footprint.Ellipse, float scale = 0)
         {
+            if (scale <= 0) scale = w.Gen.ThemeAt(p.x, p.y).SceneryScale(s.name);
             var go = new GameObject(name);
             go.transform.SetParent(transform, false);
             go.transform.position = new Vector3(Mathf.Round(p.x * Art.PPU) / Art.PPU, Mathf.Round(p.y * Art.PPU) / Art.PPU, 0);
             var sr = Art.MakeRenderer(go, s, flat ? -31000 : Art.SortY(p.y));
-            if (!flat && name == "decor" && DesignLayout.Active) sway.Add(go.transform);
+            go.transform.localScale = Vector3.one * scale;
+            var profile = w.Gen.ThemeAt(p.x, p.y).scenery;
+            if (!flat && profile.enabled && s.rect.height / Art.PPU * scale >= profile.occlusionHeight)
+                go.AddComponent<SceneryOcclusion>().Init(sr, profile);
             if (block && bw > 0) solids.Add(w.AddSolid(shape, p + new Vector2(0, bh * 0.5f), bw, bh));
-            if (block)
+            if (block || !flat && s.rect.height >= 12)
             {
+                // A shadow under everything that stands: tall things cast their silhouette toward the lower right
                 var sh = new GameObject("shadow");
                 sh.transform.SetParent(go.transform, false);
                 sh.transform.localPosition = new Vector3(0, 0.05f, 0);
-                Art.MakeRenderer(sh, Art.Shadow(Mathf.RoundToInt(s.rect.width * 0.7f)), -30000);
+                Art.MakeRenderer(sh, s.rect.height >= 18 ? Art.CastShadow(s) : Art.Shadow(Mathf.RoundToInt(s.rect.width * 0.7f)), -30000);
             }
+            if (!flat) w.Environment?.Register(sr, s.name, w.Gen.ThemeAt(p.x, p.y));
             return sr;
         }
 
-        void Update()
+        void OnDestroy()
         {
-            if (sway.Count == 0) return;
-            float t = Time.time;
-            foreach (var s in sway)
-                if (s != null) s.localRotation = Quaternion.Euler(0, 0, Mathf.Sin(t * 1.4f + s.position.x * 0.9f + s.position.y * 0.4f) * 1.6f);
+            // Sprite.Create wrappers are native Unity objects: destroying their renderer does not release them.
+            if (ground != null && ground.sprite != null) Destroy(ground.sprite);
+            if (groundTex != null) Destroy(groundTex);
+            if (environmentMask != null) Destroy(environmentMask);
         }
 
         public void BlockArea(Vector2 center, float wdt, float hgt, Footprint shape = Footprint.Rect) => solids.Add(w.AddSolid(shape, center, wdt, hgt));
@@ -135,6 +128,7 @@ namespace Diverse
 
         public void Unload()
         {
+            building?.Dispose(); building = null; Ready = false;
             foreach (var s in solids) w.RemoveSolid(s);
             solids.Clear();
             foreach (var e in spawned) if (e != null && e.Alive) e.Despawn();

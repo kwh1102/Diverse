@@ -467,7 +467,7 @@ static string TemporalAlias(string s) => Norm(s) switch
             ["freeze"] = "Stun", ["stun"] = "Stun", ["slow"] = "Slow", ["knockback"] = "Push", ["vortex"] = "Pull", ["suck"] = "Pull", ["blackhole"] = "Pull",
             ["heal"] = "Heal", ["regen"] = "Heal", ["barrier"] = "Shield", ["shield"] = "Shield", ["buff"] = "Buff", ["empower"] = "EmpowerNext",
             ["summon"] = "Spawn", ["spawn"] = "Spawn", ["teleport"] = "Blink", ["blink"] = "Blink", ["dashto"] = "Leap", ["swap"] = "Swap", ["cooldownreset"] = "ResetCooldowns",
-            ["refund"] = "ResetCooldowns", ["gold"] = "GainGold", ["xp"] = "GainXp", ["experience"] = "GainXp", ["potion"] = "GainPotion", ["consume"] = "Detonate",
+            ["refund"] = "ResetCooldowns", ["gold"] = "GainGold", ["xp"] = "GainXp", ["experience"] = "GainXp", ["consume"] = "Detonate",
             ["pop"] = "Detonate", ["contagion"] = "Spread", ["plague"] = "Spread", ["sweep"] = "Slash", ["laser"] = "Beam", ["ray"] = "Beam",
             ["amplify"] = "AmplifyTagged", ["repeat"] = "RepeatTagged", ["echo"] = "RepeatTagged", ["doublecast"] = "RepeatTagged", ["haste"] = "HasteTagged",
             ["infuse"] = "InfuseTagged", ["extend"] = "ExtendTagged", ["enlarge"] = "EnlargeTagged", ["multiply"] = "MultiplyTagged", ["retag"] = "RetagAbilities",

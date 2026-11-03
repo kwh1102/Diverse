@@ -420,13 +420,9 @@ namespace Diverse
         static AbilityDef Price(GenerationContext c, System.Random r)
         {
             var a = new AbilityDef();
-            switch (r.Next(3))
+            switch (r.Next(2))
             {
-                case 0:   // no potions → strong regen-like sustain from kills
-                    a.rules.Add(new RuleDef { kind = RuleKind.Constrain, ops = { new OpDef { op = "Forbid", mode = "Potion" } } });
-                    a.rules.Add(new RuleDef { kind = RuleKind.Trigger, trigger = "Kill", ops = { new OpDef { op = "Heal" } } });
-                    break;
-                case 1:   // no natural regen → damage taken returns as shield
+                case 0:   // no natural regen → damage taken returns as shield
                     a.rules.Add(new RuleDef { kind = RuleKind.Constrain, ops = { new OpDef { op = "Forbid", mode = "Regen" } } });
                     a.rules.Add(new RuleDef { kind = RuleKind.Continuous, ops = { new OpDef { op = "Convert", from = "DamageTaken", to = "Shield" } } });
                     break;
@@ -438,15 +434,14 @@ namespace Diverse
             return Finish(a, c);
         }
 
-        /// <summary>Tier 3: a player action is replaced (dash → blink/nova, combo finisher → +projectiles, potion → shield).</summary>
+        /// <summary>Tier 3: a player action is replaced (dash → blink/nova, combo finisher → +projectiles).</summary>
         static AbilityDef Replacement(GenerationContext c, System.Random r)
         {
-            string action = Weighted(r, new List<(string, float)> { ("Dash", Rel(c, "DODGE MOBILITY")), ("ComboFinisher", Rel(c, "MELEE COMBO")), ("Potion", 0.4f) });
+            string action = Weighted(r, new List<(string, float)> { ("Dash", Rel(c, "DODGE MOBILITY")), ("ComboFinisher", Rel(c, "MELEE COMBO")) });
             string with = action switch
             {
                 "Dash" => Pick(r, new[] { "Blink", "Nova", "Shield" }),
-                "ComboFinisher" => Pick(r, new[] { "Nova", "Projectile", "Spawn" }),
-                _ => Pick(r, new[] { "Shield", "Nova" }),
+                _ => Pick(r, new[] { "Nova", "Projectile", "Spawn" }),
             };
             var a = new AbilityDef { rules = { new RuleDef { kind = RuleKind.Replace, replaces = action, ops = { new OpDef { op = "ReplaceWith", mode = with, element = Chance(r, 0.6) ? Pick(r, Elements) : null, entity = with == "Spawn" ? Pick(r, new[] { "PhantomWeapon", "Zone", "Mine" }) : null, count = 3 } } } } };
             return Finish(a, c);

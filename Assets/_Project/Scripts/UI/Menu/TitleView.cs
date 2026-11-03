@@ -4,7 +4,7 @@ using UnityEngine.UI;
 namespace Diverse
 {
     /// <summary>
-    /// Title screen (MainMenu scene): only 모드·세계 선택 / 설정 / 종료. Continuing, ending a life, starting one and
+    /// Title screen (MainMenu scene): only 세계 선택 / 설정 / 종료. Continuing, ending a life, starting one and
     /// creating or deleting worlds all happen per world on the slot screen (SaveSelectView).
     /// </summary>
     public class TitleView : MonoBehaviour

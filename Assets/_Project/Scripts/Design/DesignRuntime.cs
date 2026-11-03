@@ -35,8 +35,8 @@ namespace Diverse
         public static bool Activate(DesignPack p)
         {
             p ??= DesignPack.Default();
-            // Normal mode keeps the hand-made world and enemies whatever a pack says: only the hero and weapon are designed
-            if (Session.Mode == GameMode.Normal && (!p.world.IsDefault || !p.enemies.Identity || p.enemies.art.Count > 0 || p.enemies.names.Count > 0))
+            // Keep the built-in world and enemies even when loading an older design pack.
+            if (!p.world.IsDefault || !p.enemies.Identity || p.enemies.art.Count > 0 || p.enemies.names.Count > 0)
             {
                 p = p.Clone();
                 p.world = new WorldLook();
@@ -117,7 +117,7 @@ namespace Diverse
         /// <summary>Mouth position on the hero sprite (a generated picture is any shape: roughly the front of the head).</summary>
         public static Vector2 MouthAnchor(CostumeDef c) => c?.frames != null
             ? new Vector2(c.frames[0].width * 0.3f / Art.PPU, c.frames[0].height * 0.62f / Art.PPU)
-            : new Vector2(4.5f / Art.PPU, 11.5f / Art.PPU);
+            : new Vector2(6f / Art.PPU, 9.5f / Art.PPU);
 
         public static Color32? Trail => string.IsNullOrEmpty(Active.attack.trail) ? null : Pal.Hex(Active.attack.trail);
         public static bool ShotSpins => Active.attack.projectile.spin;
@@ -172,7 +172,7 @@ namespace Diverse
             }
             if (w.HasTown)
             {
-                if (key.StartsWith("house_")) return Picture(w.townImages[Variant(key) % 2], s) ?? s;
+                if (key.StartsWith("house_")) return Picture(w.townImages[(key.Length > 6 && key[6] == '1' ? 1 : 0)], s) ?? s;   // house_<v>_<roof>
                 if (key == "prop_lamp") return Picture(w.townImages[2], s) ?? s;
                 if (key == "prop_well") return Picture(w.townImages[3], s) ?? s;
             }

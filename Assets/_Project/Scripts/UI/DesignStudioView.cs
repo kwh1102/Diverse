@@ -63,7 +63,6 @@ namespace Diverse
         InputField prevTyping;
 
         public bool IsOpen => gameObject.activeSelf;
-        static bool Custom => Session.Mode == GameMode.Custom;
         string openedFor;   // the save slot the work in progress belongs to
 
         public void Init(MenuUI m)
@@ -137,7 +136,7 @@ namespace Diverse
             // Menu: start from the world's look once per visit; coming back from the classic select keeps the work in progress
             if (!InGame)
             {
-                string slot = Session.Mode + "_" + Session.Slot;
+                string slot = Session.Slot.ToString();
                 if (working == null || openedFor != slot) { openedFor = slot; Begin(DesignStore.OfWorld(Session.World).Clone()); }
                 else Preview();
             }
@@ -164,6 +163,9 @@ namespace Diverse
 
         void Begin(DesignPack pack)
         {
+            pack.world = new WorldLook();
+            pack.enemies = new EnemyLook();
+            pack.prompts[2] = pack.prompts[3] = "";
             original = pack.Clone();
             working = pack;
             history.Clear();
@@ -172,9 +174,9 @@ namespace Diverse
             busy = false;
             UIKit.Label(startButton, InGame ? "적용하고 닫기" : "삶을 시작하기");
             UIKit.Label(backButton, InGame ? "취소" : "뒤로");
-            // Normal mode: only the character and weapon tabs
-            for (int i = 2; i < tabs.Length; i++) UIKit.Show(tabs[i], Custom);
-            if (!Custom && tab >= 2) tab = 0;
+            // Only character and weapon design are available.
+            for (int i = 2; i < tabs.Length; i++) UIKit.Show(tabs[i], false);
+            if (tab >= 2) tab = 0;
             SelectTab(tab);
             Preview();
         }
@@ -195,7 +197,7 @@ namespace Diverse
 
         void SelectTab(int k)
         {
-            tab = Mathf.Clamp(k, 0, 3);
+            tab = Mathf.Clamp(k, 0, 1);
             prompt.SetTextWithoutNotify(drafts[tab]);
             if (prompt.placeholder is Text ph) ph.text = Examples[tab];
             UIKit.Set(tabHint, Hints[tab]);
@@ -210,8 +212,8 @@ namespace Diverse
         {
             if (busy) return;
             // Every tab whose prompt changed goes into ONE request; with nothing changed, the current tab is redone
-            // Normal mode designs only the hero and the weapon (the world and enemies stay hand-made)
-            var sections = Enumerable.Range(0, 4).Select(i => drafts[i].Length > 0 && drafts[i] != sent[i] && (Custom || i < 2)).ToArray();
+            // The generation API uses four sections; world and enemy sections stay off.
+            var sections = Enumerable.Range(0, 4).Select(i => i < 2 && drafts[i].Length > 0 && drafts[i] != sent[i]).ToArray();
             if (!sections.Any(s => s))
             {
                 if (drafts[tab].Length == 0) { statusText = "<color=#ffb36b>먼저 원하는 모습을 적어 주세요.</color>"; return; }
@@ -316,7 +318,7 @@ namespace Diverse
             var kind = DesignRuntime.Chassis(working);
             UIKit.Sprite(heroWeapon, DesignRuntime.WeaponHidden ? null : Art.Weapon(kind));
             UIKit.Show(flipWeapon, working.weapon.image != null && !DesignRuntime.WeaponHidden);
-            UIKit.Show(fixEnemies, Custom && working.enemies.art.Any(a => a.image != null));
+            UIKit.Show(fixEnemies, false);
             UIKit.Show(flipEffects, working.attack.effectImages != null);
             var shot = working.attack.projectile;
             var b = DesignCombat.For(working) ?? DB.W(kind);

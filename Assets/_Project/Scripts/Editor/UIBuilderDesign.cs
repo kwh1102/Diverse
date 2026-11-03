@@ -113,7 +113,7 @@ namespace Diverse.EditorTools
             Place("EnemyNames", 4, 242, 212, 12);
         }
 
-        /// <summary>Mode + save slot screen (SaveSelectView) and the title's "모드·세계 선택" button, added to the existing MenuCanvas.</summary>
+        /// <summary>Save slot screen (SaveSelectView) and the title's world selection button, added to the existing MenuCanvas.</summary>
         [MenuItem("Diverse/모드·세이브 슬롯 화면 추가 (기존 프리팹에)")]
         public static void InstallSaveSlots()
         {
@@ -138,7 +138,7 @@ namespace Diverse.EditorTools
         {
             var col = title != null ? title.transform.Find("Buttons") as RectTransform : null;
             if (col == null || col.Find("ChangeSlot") != null) return;
-            var b = Btn(col, "ChangeSlot", "모드·세계 선택", TL, Vector2.zero, new Vector2(140, 22));
+            var b = Btn(col, "ChangeSlot", "세계 선택", TL, Vector2.zero, new Vector2(140, 22));
             var quit = col.Find("Quit");
             if (quit != null) b.transform.SetSiblingIndex(quit.GetSiblingIndex());
             col.sizeDelta = new Vector2(col.sizeDelta.x, 190);
@@ -153,9 +153,6 @@ namespace Diverse.EditorTools
             var v = shade.gameObject.AddComponent<SaveSelectView>();
             var a = Panel(shade, "Panel", W, H);
             Label(a, "Heading", "어떤 세계에서 살아갈까요?", TL, new Vector2(0, 8), new Vector2(W, 20), 17, TextAnchor.MiddleCenter, Pal.Hex("fff2d6"), bold: true);
-            var normal = Btn(a, "NormalTab", "일반 모드", TL, new Vector2(20, 36), new Vector2(186, 22));
-            var custom = Btn(a, "CustomTab", "커스텀 모드", TL, new Vector2(214, 36), new Vector2(186, 22));
-            var desc = Label(a, "ModeDesc", "", TL, new Vector2(20, 64), new Vector2(380, 28), 9, color: Pal.Hex("c9bcd8"));
 
             var list = Node(a, "Slots", TL, new Vector2(20, 96), new Vector2(380, 140));
             var vl = list.gameObject.AddComponent<VerticalLayoutGroup>();
@@ -168,14 +165,13 @@ namespace Diverse.EditorTools
             Btn(slot.transform, "Delete", "삭제", new Vector2(1, 0.5f), new Vector2(-8, 0), new Vector2(58, 22), 9).GetComponent<RectTransform>().pivot = new Vector2(1, 0.5f);
 
             Btn(a, "Back", "뒤로", TL, new Vector2(20, H - 32), new Vector2(80, 22));
-            Wire(v, "normalTab", normal); Wire(v, "customTab", custom); Wire(v, "modeDesc", desc);
             Wire(v, "slotTemplate", slot);
             LayoutSaveSelect(v);
             return v;
         }
 
         /// <summary>
-        /// Title keeps only 모드·세계 선택 / 설정 / 종료; each world row on the slot screen gets 이어하기·새 삶 / 삶 끝내기 / 삭제
+        /// Title keeps only 세계 선택 / 설정 / 종료; each world row on the slot screen gets 이어하기·새 삶 / 삶 끝내기 / 삭제
         /// and the slot screen a 뒤로 button. Patches the existing MenuCanvas in place.
         /// </summary>
         [MenuItem("Diverse/메인 메뉴 정리 (기존 프리팹에)")]
@@ -196,21 +192,37 @@ namespace Diverse.EditorTools
                         if (b != null) Object.DestroyImmediate(b.gameObject);
                     }
                     var slotB = col.Find("ChangeSlot");
-                    if (slotB != null) { slotB.SetAsFirstSibling(); Wire(title, "slotButton", slotB.GetComponent<Button>()); }
+                    if (slotB != null) { slotB.SetAsFirstSibling(); UIKit.Label(slotB.GetComponent<Button>(), "세계 선택"); Wire(title, "slotButton", slotB.GetComponent<Button>()); }
                     col.sizeDelta = new Vector2(col.sizeDelta.x, 90);
                 }
                 var v = root.GetComponentInChildren<SaveSelectView>(true);
                 if (v != null) LayoutSaveSelect(v);
+                RemoveWorldDesignTabs(root);
                 return true;
             });
+            Patch(UIPrefabDir + "/GameCanvas.prefab", root => { RemoveWorldDesignTabs(root); return true; });
             AssetDatabase.SaveAssets();
             Debug.Log("[Diverse] main menu layout updated");
+        }
+
+        static void RemoveWorldDesignTabs(GameObject root)
+        {
+            var studio = root.GetComponentInChildren<DesignStudioView>(true);
+            if (studio == null) return;
+            var tabs = studio.transform.Find("Panel/Tabs");
+            if (tabs == null) return;
+            foreach (var name in new[] { "Tab 2", "Tab 3" })
+            {
+                var obsolete = tabs.Find(name);
+                if (obsolete != null) Object.DestroyImmediate(obsolete.gameObject);
+            }
+            WireArray(studio, "tabs", new Object[] { tabs.Find("Tab 0").GetComponent<Button>(), tabs.Find("Tab 1").GetComponent<Button>() });
         }
 
         /// <summary>Slot screen: a wider panel, per-row Play / Abandon / Delete buttons, and 뒤로 (adds what is missing).</summary>
         static void LayoutSaveSelect(SaveSelectView v)
         {
-            const float W = 480, H = 290;
+            const float W = 480, H = 240;
             var a = v.transform.Find("Panel") as RectTransform;
             a.sizeDelta = new Vector2(W, H);
             void Place(Transform parent, string name, float x, float y, float w, float h)
@@ -222,10 +234,12 @@ namespace Diverse.EditorTools
                 rt.sizeDelta = new Vector2(w, h);
             }
             Place(a, "Heading", 0, 8, W, 20);
-            Place(a, "NormalTab", 20, 36, 216, 22);
-            Place(a, "CustomTab", 244, 36, 216, 22);
-            Place(a, "ModeDesc", 20, 64, 440, 28);
-            Place(a, "Slots", 20, 96, 440, 156);
+            foreach (var name in new[] { "NormalTab", "CustomTab", "ModeDesc" })
+            {
+                var obsolete = a.Find(name);
+                if (obsolete != null) Object.DestroyImmediate(obsolete.gameObject);
+            }
+            Place(a, "Slots", 20, 46, 440, 156);
 
             var quit = a.Find("Quit");
             if (quit != null) { quit.name = "Back"; UIKit.Label(quit.GetComponent<Button>(), "뒤로"); }
@@ -297,9 +311,9 @@ namespace Diverse.EditorTools
             var tabsRt = Node(a, "Tabs", TL, new Vector2(x0, 34), new Vector2(cw, 20));
             var tl = tabsRt.gameObject.AddComponent<HorizontalLayoutGroup>();
             tl.spacing = 4; tl.childControlWidth = true; tl.childForceExpandWidth = true; tl.childControlHeight = true;
-            string[] names = { "캐릭터", "무기·공격", "세계", "적" };
-            var tabs = new Object[4];
-            for (int i = 0; i < 4; i++) tabs[i] = Btn(tabsRt, "Tab " + i, names[i], TL, Vector2.zero, new Vector2(80, 20), 10);
+            string[] names = { "캐릭터", "무기·공격" };
+            var tabs = new Object[2];
+            for (int i = 0; i < tabs.Length; i++) tabs[i] = Btn(tabsRt, "Tab " + i, names[i], TL, Vector2.zero, new Vector2(80, 20), 10);
             var hint = Label(a, "TabHint", "토끼의 털·옷·모자를 적어 주세요.", TL, new Vector2(x0, 58), new Vector2(cw, 14), 9, color: Pal.Hex("c9bcd8"));
 
             var inputRt = Node(a, "Prompt", TL, new Vector2(x0, 74), new Vector2(cw, 52));

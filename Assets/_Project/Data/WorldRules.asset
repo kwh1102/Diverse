@@ -1,0 +1,2085 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5590f34f59ef0e747a55d1feb23ea8bf, type: 3}
+  m_Name: WorldRules
+  m_EditorClassIdentifier:
+  def:
+    environment:
+      enabled: 1
+      framesPerSecond: 8
+      windSpeed: 1.2
+      windSpatialScale: 0.13
+      waterStrength: 0.1
+      liquidSpeed: 0.6
+      tickInterval: 0.1
+      cullMargin: 2
+      maxParticles: 64
+      emissionBudget: 2
+      emitterScanBudget: 24
+      smokeLife: 2.5
+      smokeSize: 0.4
+      smokeRise: 0.45
+      bubbleLife: 1.2
+      bubbleSize: 0.35
+      bubbleRise: 0.08
+      portalLife: 0.7
+      portalRadius: 0.7
+      portalParticleSize: 0.07
+      liquidInterval: 6
+      objects:
+      - sprite: tree_Dunes_*
+        motion: 0
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: tree_Crystal_*
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: tree_*
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: bush_Tundra_*
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: bush_Crystal_*
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: bush_*
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: flower_*
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: prop_banner
+        motion: 2
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: explore_fortress_1
+        motion: 2
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: explore_canyon_3
+        motion: 2
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: prop_campfire
+        motion: 0
+        effect: 1
+        offset: {x: 0, y: 0.2}
+        scale: 0.7
+        interval: 2
+      - sprite: prop_lamp
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: prop_warpstone
+        motion: 3
+        effect: 4
+        offset: {x: 0, y: 1.1}
+        scale: 0.6
+        interval: 0.3
+      - sprite: explore_volcano_0
+        motion: 3
+        effect: 2
+        offset: {x: 0, y: 1}
+        scale: 0.65
+        interval: 2.5
+      - sprite: explore_volcano_3
+        motion: 3
+        effect: 1
+        offset: {x: 0, y: 0.35}
+        scale: 0.6
+        interval: 2
+      - sprite: explore_overgrowth_0
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: explore_overgrowth_1
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: explore_swamp_2
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: explore_glacier_2
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: explore_crystal_*
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: explore_mirror_0
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: explore_mirror_2
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: explore_mirror_3
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_overgrowth_0
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_swamp_0
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_glacier_0
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_crystal_0
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_mirror_0
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_volcano_0
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_overgrowth_1
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_swamp_1
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_glacier_1
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_crystal_1
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_mirror_1
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_volcano_1
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_overgrowth_2
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_swamp_2
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_glacier_2
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_crystal_2
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_mirror_2
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_volcano_2
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_overgrowth_3
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_swamp_3
+        motion: 1
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_glacier_3
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_crystal_3
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_mirror_3
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+      - sprite: deco_volcano_3
+        motion: 3
+        effect: 0
+        offset: {x: 0, y: 0}
+        scale: 1
+        interval: 4
+    centerRadius: 46
+    blendWidth: 40
+    borderWiggle: 30
+    landmarkDistance: {x: 250, y: 360}
+    borderSiteDistance: {x: 140, y: 210}
+    rangeFrequency: 0.008
+    rangeWarp: 32
+    rangeMaskFrequency: 0.003
+    rangeMaskThreshold: 0.405
+    cliffLevel: 0.845
+    peakLevel: 0.95
+    passSpacing: 80
+    passRadius: 7
+    clearance: 12
+    terrainStep: 2
+    cliffMaterialSearchLimit: 2048
+    cliffMaterialCacheLimit: 32768
+    explorationCell: 56
+    explorationJitter: 4
+    explorationClearance: 5
+    explorationTrailLength: 18
+    explorationTrailWidth: 1.1
+    explorationTrailConnectDistance: 48
+    explorationTrailNeighbourDistance: 96
+    explorationTrailBend: 4
+    settlementGround: 2
+    settlementRoad: 17
+    materialCell: 4
+    materialMinNeighbours: 3
+    exploration:
+    - id: meadow_Hamlet
+      theme: meadow
+      displayName: "\uBB3C\uB808\uBC29\uC557\uAC04 \uB9C8\uC744"
+      kind: 0
+      halfSize: {x: 14, y: 11}
+      cornerCut: 3
+      story: "\uBC14\uD034\uB294 \uBA48\uCDC4\uC9C0\uB9CC \uC6B0\uBB3C\uAC00\uC5D0\uB294
+        \uC0C8 \uBC1C\uC790\uAD6D\uC774 \uB0A8\uC544 \uC788\uB2E4. \uC5EC\uD589\uC790\uB4E4\uC740
+        \uC774 \uC791\uC740 \uB9C8\uC744\uC744 \uBCF4\uAE09 \uAC70\uC810\uC73C\uB85C
+        \uC4F0\uACE0 \uC788\uB2E4."
+      grounds:
+      - center: {x: 0, y: 0}
+        halfSize: {x: 2, y: 11}
+        cornerCut: 0
+        shape: 0
+        material: 2
+        ground: 0
+      - center: {x: 0, y: -1}
+        halfSize: {x: 14, y: 1.5}
+        cornerCut: 0
+        shape: 0
+        material: 2
+        ground: 0
+      props:
+      - sprite: house_0_c2603e
+        position: {x: -7, y: 3}
+        role: 0
+        blocks: 1
+        footprint: {x: 3.6, y: 1.8}
+      - sprite: house_1_4f7bd9
+        position: {x: 7, y: 3}
+        role: 0
+        blocks: 1
+        footprint: {x: 3.6, y: 1.8}
+      - sprite: explore_anchor_meadow
+        position: {x: -7, y: -6}
+        role: 0
+        blocks: 1
+        footprint: {x: 4.5, y: 1.8}
+      - sprite: prop_well
+        position: {x: 0, y: 4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1.3, y: 0.8}
+      - sprite: prop_stall
+        position: {x: 7, y: -6}
+        role: 0
+        blocks: 1
+        footprint: {x: 2.5, y: 1}
+      - sprite: npc_cat_0
+        position: {x: 6, y: -7.5}
+        role: 3
+        blocks: 0
+        footprint: {x: 0.7, y: 0.4}
+      - sprite: npc_villager0_0
+        position: {x: -5, y: -0.5}
+        role: 4
+        blocks: 0
+        footprint: {x: 0.7, y: 0.4}
+      - sprite: explore_meadow_2
+        position: {x: -10.5, y: -0.5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_meadow_3
+        position: {x: 10.5, y: -0.5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_meadow_0
+        position: {x: -2.5, y: 6.5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_lamp
+        position: {x: -2.5, y: -4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_lamp
+        position: {x: 2.5, y: -4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_barrel
+        position: {x: -10.5, y: -5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_crate
+        position: {x: 10.5, y: 4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_meadow_1
+        position: {x: -11, y: 5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_board
+        position: {x: 0, y: -8}
+        role: 1
+        blocks: 0
+        footprint: {x: 0.8, y: 0.4}
+      - sprite: prop_chest
+        position: {x: 10, y: -8}
+        role: 2
+        blocks: 0
+        footprint: {x: 1, y: 0.5}
+    - id: meadow_RuinedCourt
+      theme: meadow
+      displayName: "\uB4E4\uAF43 \uD3D0\uD5C8"
+      kind: 1
+      halfSize: {x: 14, y: 11}
+      cornerCut: 3
+      story: "\uAE30\uB465 \uC0AC\uC774\uB85C \uB4E4\uAF43\uC774 \uC790\uB780\uB2E4.
+        \uBB34\uB108\uC9C4 \uB9C8\uB2F9\uC758 \uC11C\uCABD \uAD6C\uC11D\uC5D0 \uC624\uB798\uB41C
+        \uC5EC\uD589 \uAC00\uBC29\uC744 \uC228\uACBC\uB2E4\uB294 \uAE30\uB85D\uC774
+        \uB0A8\uC544 \uC788\uB2E4."
+      grounds:
+      - center: {x: 0, y: 0}
+        halfSize: {x: 10, y: 7}
+        cornerCut: 0
+        shape: 0
+        material: 0
+        ground: 17
+      props:
+      - sprite: explore_anchor_meadow
+        position: {x: 0, y: 5}
+        role: 0
+        blocks: 1
+        footprint: {x: 5, y: 1.6}
+      - sprite: prop_pillar
+        position: {x: -7, y: -4}
+        role: 0
+        blocks: 1
+        footprint: {x: 0.8, y: 0.6}
+      - sprite: prop_pillar_broken
+        position: {x: -7, y: 1}
+        role: 0
+        blocks: 1
+        footprint: {x: 0.8, y: 0.6}
+      - sprite: prop_pillar
+        position: {x: -7, y: 5}
+        role: 0
+        blocks: 1
+        footprint: {x: 0.8, y: 0.6}
+      - sprite: prop_pillar
+        position: {x: 7, y: -4}
+        role: 0
+        blocks: 1
+        footprint: {x: 0.8, y: 0.6}
+      - sprite: prop_pillar_broken
+        position: {x: 7, y: 1}
+        role: 0
+        blocks: 1
+        footprint: {x: 0.8, y: 0.6}
+      - sprite: prop_pillar
+        position: {x: 7, y: 5}
+        role: 0
+        blocks: 1
+        footprint: {x: 0.8, y: 0.6}
+      - sprite: prop_wall
+        position: {x: -3, y: -5}
+        role: 0
+        blocks: 1
+        footprint: {x: 2, y: 0.5}
+      - sprite: prop_wall
+        position: {x: 4, y: -5}
+        role: 0
+        blocks: 1
+        footprint: {x: 2, y: 0.5}
+      - sprite: explore_meadow_0
+        position: {x: -11, y: -5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_meadow_1
+        position: {x: 11, y: -5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_meadow_2
+        position: {x: -11, y: 2}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_meadow_3
+        position: {x: 11, y: 3}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_board
+        position: {x: 0, y: -7}
+        role: 1
+        blocks: 0
+        footprint: {x: 0.8, y: 0.4}
+      - sprite: prop_chest
+        position: {x: -5, y: 1}
+        role: 2
+        blocks: 0
+        footprint: {x: 1, y: 0.5}
+    - id: overgrowth_Jungle
+      theme: overgrowth
+      displayName: "\uB369\uAD74 \uBBF8\uB85C"
+      kind: 3
+      halfSize: {x: 14, y: 11}
+      cornerCut: 3
+      story: "\uCEE4\uB2E4\uB780 \uC78E\uACFC \uC4F0\uB7EC\uC9C4 \uACE0\uBAA9 \uC0AC\uC774\uB85C
+        \uC881\uC740 \uAE38\uC774 \uC774\uC5B4\uC9C4\uB2E4. \uAE38\uC744 \uBC97\uC5B4\uB09C
+        \uBE48\uD130\uC5D0\uB294 \uC57D\uCD08\uB97C \uCC44\uC9D1\uD558\uB358 \uC774\uC758
+        \uD754\uC801\uC774 \uB0A8\uC544 \uC788\uB2E4."
+      grounds:
+      - center: {x: 0, y: 0}
+        halfSize: {x: 14, y: 11}
+        cornerCut: 0
+        shape: 0
+        material: 0
+        ground: 1
+      - center: {x: 0, y: -7}
+        halfSize: {x: 1.3, y: 4}
+        cornerCut: 0
+        shape: 0
+        material: 2
+        ground: 0
+      - center: {x: -3, y: -3}
+        halfSize: {x: 4.3, y: 1.3}
+        cornerCut: 0
+        shape: 0
+        material: 2
+        ground: 0
+      - center: {x: -6, y: 0}
+        halfSize: {x: 1.3, y: 3.1}
+        cornerCut: 0
+        shape: 0
+        material: 2
+        ground: 0
+      - center: {x: -3, y: 3}
+        halfSize: {x: 4.3, y: 1.3}
+        cornerCut: 0
+        shape: 0
+        material: 2
+        ground: 0
+      - center: {x: 0, y: 5}
+        halfSize: {x: 1.3, y: 2.1}
+        cornerCut: 0
+        shape: 0
+        material: 2
+        ground: 0
+      - center: {x: 3, y: -3}
+        halfSize: {x: 3.1, y: 1.1}
+        cornerCut: 0
+        shape: 0
+        material: 2
+        ground: 0
+      props:
+      - sprite: explore_anchor_overgrowth
+        position: {x: 0, y: 5}
+        role: 0
+        blocks: 1
+        footprint: {x: 5, y: 1.6}
+      - sprite: tree_Forest_0
+        position: {x: -10, y: 5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1.2, y: 0.8}
+      - sprite: tree_Forest_0
+        position: {x: 10, y: 5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1.2, y: 0.8}
+      - sprite: tree_Forest_0
+        position: {x: -10, y: -1}
+        role: 0
+        blocks: 1
+        footprint: {x: 1.2, y: 0.8}
+      - sprite: tree_Forest_0
+        position: {x: 9, y: -1}
+        role: 0
+        blocks: 1
+        footprint: {x: 1.2, y: 0.8}
+      - sprite: tree_Forest_0
+        position: {x: -11, y: -6}
+        role: 0
+        blocks: 1
+        footprint: {x: 1.2, y: 0.8}
+      - sprite: tree_Forest_0
+        position: {x: 10, y: -6}
+        role: 0
+        blocks: 1
+        footprint: {x: 1.2, y: 0.8}
+      - sprite: tree_Forest_0
+        position: {x: -4, y: -7}
+        role: 0
+        blocks: 1
+        footprint: {x: 1.2, y: 0.8}
+      - sprite: tree_Forest_0
+        position: {x: 4, y: -7}
+        role: 0
+        blocks: 1
+        footprint: {x: 1.2, y: 0.8}
+      - sprite: tree_Forest_0
+        position: {x: 5, y: 3}
+        role: 0
+        blocks: 1
+        footprint: {x: 1.2, y: 0.8}
+      - sprite: explore_overgrowth_0
+        position: {x: -5, y: -1}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_overgrowth_1
+        position: {x: 5, y: -1}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_overgrowth_2
+        position: {x: -6, y: 4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_overgrowth_3
+        position: {x: 6, y: 4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_overgrowth_0
+        position: {x: -5, y: -7}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_overgrowth_3
+        position: {x: 5, y: -7}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_board
+        position: {x: 0, y: -7}
+        role: 1
+        blocks: 0
+        footprint: {x: 0.8, y: 0.4}
+      - sprite: prop_chest
+        position: {x: -6, y: -4}
+        role: 2
+        blocks: 0
+        footprint: {x: 1, y: 0.5}
+      - sprite: explore_overgrowth_0
+        position: {x: 6, y: -4}
+        role: 5
+        blocks: 0
+        footprint: {x: 0.6, y: 0.4}
+    - id: overgrowth_Cavern
+      theme: overgrowth
+      displayName: "\uBFCC\uB9AC \uC544\uB798 \uB3D9\uAD74"
+      kind: 2
+      halfSize: {x: 14, y: 11}
+      cornerCut: 3
+      story: "\uACE0\uBAA9\uC758 \uBFCC\uB9AC\uAC00 \uBC14\uC704\uB97C \uC6C0\uCF1C\uC950\uACE0
+        \uC788\uB2E4. \uB0A8\uCABD\uC73C\uB85C \uC5F4\uB9B0 \uC785\uAD6C\uC5D0\uC11C
+        \uB4E4\uC5B4\uAC00 \uC67C\uCABD \uBCBD\uC744 \uB530\uB77C\uAC00\uBA74 \uC608\uC804
+        \uD0D0\uD5D8\uAC00\uC758 \uC740\uB2C9\uCC98\uC5D0 \uB2FF\uB294\uB2E4."
+      grounds:
+      - center: {x: 0, y: 0}
+        halfSize: {x: 14, y: 11}
+        cornerCut: 0
+        shape: 0
+        material: 0
+        ground: 6
+      - center: {x: 0, y: 8}
+        halfSize: {x: 14, y: 3}
+        cornerCut: 1.5
+        shape: 0
+        material: 0
+        ground: 11
+      - center: {x: -11.5, y: 3}
+        halfSize: {x: 2.5, y: 8}
+        cornerCut: 1.5
+        shape: 0
+        material: 0
+        ground: 11
+      - center: {x: 11.5, y: 3}
+        halfSize: {x: 2.5, y: 8}
+        cornerCut: 1.5
+        shape: 0
+        material: 0
+        ground: 11
+      - center: {x: 0, y: 9.5}
+        halfSize: {x: 14, y: 1.5}
+        cornerCut: 1.5
+        shape: 0
+        material: 0
+        ground: 12
+      - center: {x: -13, y: 3}
+        halfSize: {x: 1, y: 8}
+        cornerCut: 1.5
+        shape: 0
+        material: 0
+        ground: 12
+      - center: {x: 13, y: 3}
+        halfSize: {x: 1, y: 8}
+        cornerCut: 1.5
+        shape: 0
+        material: 0
+        ground: 12
+      - center: {x: -6, y: -4}
+        halfSize: {x: 2.5, y: 2.5}
+        cornerCut: 1.5
+        shape: 0
+        material: 0
+        ground: 11
+      - center: {x: 6, y: -4}
+        halfSize: {x: 2.5, y: 2.5}
+        cornerCut: 1.5
+        shape: 0
+        material: 0
+        ground: 11
+      props:
+      - sprite: explore_anchor_overgrowth
+        position: {x: 0, y: 4}
+        role: 0
+        blocks: 1
+        footprint: {x: 4.5, y: 1.3}
+      - sprite: explore_overgrowth_0
+        position: {x: -7, y: 3}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_overgrowth_1
+        position: {x: 7, y: 3}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_overgrowth_2
+        position: {x: 6, y: -3}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_overgrowth_3
+        position: {x: -7, y: -4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_overgrowth_0
+        position: {x: -5, y: 3}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_overgrowth_2
+        position: {x: 5, y: 1}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_overgrowth_1
+        position: {x: -8, y: -7}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_overgrowth_3
+        position: {x: 8, y: -7}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_lamp
+        position: {x: -3, y: -6}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_lamp
+        position: {x: 3, y: -6}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_board
+        position: {x: 0, y: -5}
+        role: 1
+        blocks: 0
+        footprint: {x: 0.8, y: 0.4}
+      - sprite: prop_chest
+        position: {x: -6, y: 0}
+        role: 2
+        blocks: 0
+        footprint: {x: 1, y: 0.5}
+    - id: volcano_Foundry
+      theme: volcano
+      displayName: "\uC2DD\uC5B4\uBC84\uB9B0 \uC8FC\uC870\uC7A5"
+      kind: 9
+      halfSize: {x: 14, y: 11}
+      cornerCut: 3
+      story: "\uAD11\uC11D \uC218\uB808\uC640 \uC2DD\uC5B4\uAC00\uB294 \uD654\uB85C\uAC00
+        \uBC84\uB824\uC838 \uC788\uB2E4. \uC791\uC5C5\uC7A5 \uC591\uC606\uC758 \uBCF4\uAE09\uD488\uC744
+        \uC0B4\uD53C\uBA74 \uB9C8\uC9C0\uB9C9 \uC791\uC5C5\uC790\uB4E4\uC774 \uB5A0\uB09C
+        \uC774\uC720\uB97C \uC54C \uC218 \uC788\uC744 \uAC83\uC774\uB2E4."
+      grounds:
+      - center: {x: 0, y: 0.5}
+        halfSize: {x: 10, y: 6.5}
+        cornerCut: 0
+        shape: 0
+        material: 0
+        ground: 17
+      props:
+      - sprite: explore_anchor_volcano
+        position: {x: 0, y: 4}
+        role: 0
+        blocks: 1
+        footprint: {x: 4.5, y: 1.6}
+      - sprite: explore_volcano_3
+        position: {x: -7, y: 4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1.4, y: 0.8}
+      - sprite: explore_volcano_3
+        position: {x: 7, y: 4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1.4, y: 0.8}
+      - sprite: explore_volcano_2
+        position: {x: -7, y: -4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_crate
+        position: {x: 7, y: -4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_volcano_1
+        position: {x: -10, y: 0}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_volcano_0
+        position: {x: 10, y: 0}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_board
+        position: {x: 0, y: -7}
+        role: 1
+        blocks: 0
+        footprint: {x: 0.8, y: 0.4}
+      - sprite: prop_chest
+        position: {x: 5, y: 0}
+        role: 2
+        blocks: 0
+        footprint: {x: 1, y: 0.5}
+    - id: volcano_Gorge
+      theme: volcano
+      displayName: "\uC7BF\uBE5B \uC6A9\uC554 \uD611\uACE1"
+      kind: 4
+      halfSize: {x: 14, y: 11}
+      cornerCut: 3
+      story: "\uAD73\uC740 \uC6A9\uC554\uC774 \uB450 \uC904\uAE30\uC758 \uB192\uC740
+        \uB2A5\uC120\uC73C\uB85C \uB0A8\uC558\uB2E4. \uC544\uB798\uB85C \uC774\uC5B4\uC9C4
+        \uAE38 \uC911\uAC04\uC5D0\uB294 \uC591\uCABD \uBC14\uC704\uB97C \uAC00\uB85C\uC9C0\uB974\uB294
+        \uC881\uC740 \uD2C8\uC774 \uC788\uB2E4."
+      grounds:
+      - center: {x: 0, y: 0}
+        halfSize: {x: 14, y: 11}
+        cornerCut: 0
+        shape: 0
+        material: 2
+        ground: 0
+      - center: {x: -9, y: 0}
+        halfSize: {x: 5, y: 8}
+        cornerCut: 1.5
+        shape: 0
+        material: 0
+        ground: 11
+      - center: {x: 9, y: 0}
+        halfSize: {x: 5, y: 8}
+        cornerCut: 1.5
+        shape: 0
+        material: 0
+        ground: 11
+      - center: {x: -12, y: 0}
+        halfSize: {x: 2, y: 8}
+        cornerCut: 1.5
+        shape: 0
+        material: 0
+        ground: 12
+      - center: {x: 12, y: 0}
+        halfSize: {x: 2, y: 8}
+        cornerCut: 1.5
+        shape: 0
+        material: 0
+        ground: 12
+      - center: {x: 0, y: -1}
+        halfSize: {x: 14, y: 1.8}
+        cornerCut: 0
+        shape: 0
+        material: 2
+        ground: 0
+      props:
+      - sprite: explore_anchor_volcano
+        position: {x: 0, y: 6}
+        role: 0
+        blocks: 1
+        footprint: {x: 4.5, y: 1.3}
+      - sprite: explore_volcano_3
+        position: {x: -7, y: -5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_volcano_1
+        position: {x: 7, y: -5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_volcano_2
+        position: {x: -7, y: 4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_volcano_0
+        position: {x: 7, y: 4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_board
+        position: {x: 0, y: -7}
+        role: 1
+        blocks: 0
+        footprint: {x: 0.8, y: 0.4}
+      - sprite: prop_chest
+        position: {x: -7, y: -1}
+        role: 2
+        blocks: 0
+        footprint: {x: 1, y: 0.5}
+    - id: crystal_Observatory
+      theme: crystal
+      displayName: "\uACB0\uC815 \uAD00\uCE21\uC18C"
+      kind: 10
+      halfSize: {x: 14, y: 11}
+      cornerCut: 3
+      story: "\uAC70\uB300\uD55C \uC218\uC815 \uB80C\uC988\uAC00 \uBCC4\uC774 \uC5C6\uB294
+        \uB0AE\uC5D0\uB3C4 \uD76C\uBBF8\uD558\uAC8C \uBE5B\uB09C\uB2E4. \uB80C\uC988\uB97C
+        \uC9C0\uD0F1\uD558\uB358 \uC7A5\uCE58\uC640 \uAE30\uB85D\uD310\uC774 \uD769\uC5B4\uC838
+        \uC788\uB2E4."
+      grounds:
+      - center: {x: 0, y: 0}
+        halfSize: {x: 13, y: 13}
+        cornerCut: 0
+        shape: 2
+        material: 4
+        ground: 0
+      props:
+      - sprite: explore_anchor_crystal
+        position: {x: 0, y: 5}
+        role: 0
+        blocks: 1
+        footprint: {x: 4.5, y: 1.4}
+      - sprite: explore_crystal_1
+        position: {x: -6, y: 4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_crystal_1
+        position: {x: 6, y: 4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_crystal_2
+        position: {x: -6, y: -4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_crystal_2
+        position: {x: 6, y: -4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_crystal_0
+        position: {x: -10, y: -2}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_crystal_3
+        position: {x: 10, y: -2}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_board
+        position: {x: 0, y: -7}
+        role: 1
+        blocks: 0
+        footprint: {x: 0.8, y: 0.4}
+      - sprite: prop_chest
+        position: {x: -6, y: 0}
+        role: 2
+        blocks: 0
+        footprint: {x: 1, y: 0.5}
+    - id: crystal_Quarry
+      theme: crystal
+      displayName: "\uC218\uC815 \uCC44\uC11D\uC7A5"
+      kind: 6
+      halfSize: {x: 14, y: 11}
+      cornerCut: 3
+      story: "\uCE35\uCE35\uC774 \uD30C\uB0B8 \uB3CC\uBCBD \uC544\uB798\uC5D0 \uAD11\uB9E5\uC758
+        \uD754\uC801\uC774 \uB0A8\uC544 \uC788\uB2E4. \uC791\uC5C5 \uD1B5\uB85C\uB97C
+        \uB530\uB77C \uB4E4\uC5B4\uAC00\uBA74 \uC67C\uCABD \uBCF4\uAD00 \uAD6C\uC5ED\uC744
+        \uC0B4\uD3B4\uBCFC \uC218 \uC788\uB2E4."
+      grounds:
+      - center: {x: 0, y: 0}
+        halfSize: {x: 14, y: 11}
+        cornerCut: 0
+        shape: 0
+        material: 0
+        ground: 17
+      - center: {x: 0, y: 0}
+        halfSize: {x: 2, y: 11}
+        cornerCut: 0
+        shape: 0
+        material: 2
+        ground: 0
+      - center: {x: 0, y: 9}
+        halfSize: {x: 14, y: 2}
+        cornerCut: 1.5
+        shape: 0
+        material: 0
+        ground: 11
+      - center: {x: -12, y: 3.5}
+        halfSize: {x: 2, y: 7.5}
+        cornerCut: 1.5
+        shape: 0
+        material: 0
+        ground: 11
+      - center: {x: 12, y: 3.5}
+        halfSize: {x: 2, y: 7.5}
+        cornerCut: 1.5
+        shape: 0
+        material: 0
+        ground: 11
+      props:
+      - sprite: explore_anchor_crystal
+        position: {x: 0, y: 4}
+        role: 0
+        blocks: 1
+        footprint: {x: 4.5, y: 1.3}
+      - sprite: explore_crystal_0
+        position: {x: -11, y: -5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_crystal_1
+        position: {x: 11, y: -5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_crystal_2
+        position: {x: -11, y: 2}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_crystal_3
+        position: {x: 11, y: 3}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_crystal_0
+        position: {x: -6, y: 4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_crystal_1
+        position: {x: 6, y: 4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_crystal_2
+        position: {x: 5, y: -4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_crate
+        position: {x: -5, y: -4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_board
+        position: {x: 0, y: -7}
+        role: 1
+        blocks: 0
+        footprint: {x: 0.8, y: 0.4}
+      - sprite: prop_chest
+        position: {x: -6, y: 0}
+        role: 2
+        blocks: 0
+        footprint: {x: 1, y: 0.5}
+    - id: glacier_Cavern
+      theme: glacier
+      displayName: "\uD478\uB978 \uC5BC\uC74C \uB3D9\uAD74"
+      kind: 2
+      halfSize: {x: 14, y: 11}
+      cornerCut: 3
+      story: "\uC5BC\uC74C\uC5D0 \uAC07\uD78C \uC5B4\uB450\uC6B4 \uACF5\uAC04\uC5D0\uC11C
+        \uC624\uB798\uB41C \uBC14\uB78C\uC774 \uD758\uB7EC\uB098\uC628\uB2E4. \uC5F4\uB9B0
+        \uB0A8\uCABD \uC785\uAD6C \uB108\uBA38, \uC67C\uD3B8 \uBCBD \uC544\uB798\uC5D0
+        \uC791\uC740 \uC0C1\uC790\uAC00 \uBCF4\uC778\uB2E4."
+      grounds:
+      - center: {x: 0, y: 0}
+        halfSize: {x: 14, y: 11}
+        cornerCut: 0
+        shape: 0
+        material: 0
+        ground: 15
+      - center: {x: 0, y: 8}
+        halfSize: {x: 14, y: 3}
+        cornerCut: 1.5
+        shape: 0
+        material: 0
+        ground: 11
+      - center: {x: -11.5, y: 3}
+        halfSize: {x: 2.5, y: 8}
+        cornerCut: 1.5
+        shape: 0
+        material: 0
+        ground: 11
+      - center: {x: 11.5, y: 3}
+        halfSize: {x: 2.5, y: 8}
+        cornerCut: 1.5
+        shape: 0
+        material: 0
+        ground: 11
+      - center: {x: 0, y: 9.5}
+        halfSize: {x: 14, y: 1.5}
+        cornerCut: 1.5
+        shape: 0
+        material: 0
+        ground: 12
+      - center: {x: -13, y: 3}
+        halfSize: {x: 1, y: 8}
+        cornerCut: 1.5
+        shape: 0
+        material: 0
+        ground: 12
+      - center: {x: 13, y: 3}
+        halfSize: {x: 1, y: 8}
+        cornerCut: 1.5
+        shape: 0
+        material: 0
+        ground: 12
+      - center: {x: -6, y: -4}
+        halfSize: {x: 2.5, y: 2.5}
+        cornerCut: 1.5
+        shape: 0
+        material: 0
+        ground: 11
+      - center: {x: 6, y: -4}
+        halfSize: {x: 2.5, y: 2.5}
+        cornerCut: 1.5
+        shape: 0
+        material: 0
+        ground: 11
+      props:
+      - sprite: explore_anchor_glacier
+        position: {x: 0, y: 4}
+        role: 0
+        blocks: 1
+        footprint: {x: 4.5, y: 1.3}
+      - sprite: explore_glacier_0
+        position: {x: -7, y: 3}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_glacier_1
+        position: {x: 7, y: 3}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_glacier_2
+        position: {x: 6, y: -3}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_glacier_3
+        position: {x: -7, y: -4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_glacier_0
+        position: {x: -5, y: 3}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_glacier_2
+        position: {x: 5, y: 1}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_glacier_1
+        position: {x: -8, y: -7}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_glacier_3
+        position: {x: 8, y: -7}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_lamp
+        position: {x: -3, y: -6}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_lamp
+        position: {x: 3, y: -6}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_board
+        position: {x: 0, y: -5}
+        role: 1
+        blocks: 0
+        footprint: {x: 0.8, y: 0.4}
+      - sprite: prop_chest
+        position: {x: -6, y: 0}
+        role: 2
+        blocks: 0
+        footprint: {x: 1, y: 0.5}
+    - id: glacier_FrozenCamp
+      theme: glacier
+      displayName: "\uB208\uC5D0 \uBB3B\uD78C \uD0D0\uC0AC\uB300"
+      kind: 8
+      halfSize: {x: 14, y: 11}
+      cornerCut: 3
+      story: "\uC370\uB9E4\uC640 \uBCF4\uAE09 \uC0C1\uC790\uAC00 \uB208\uC5D0 \uBB3B\uD614\uB2E4.
+        \uBAA8\uB2E5\uBD88 \uC790\uB9AC\uC640 \uCC9C\uB9C9 \uC0AC\uC774\uC5D0\uB294
+        \uD0D0\uC0AC\uB300\uAC00 \uB2E4\uC2DC \uBAA8\uC774\uAE30\uB85C \uD55C \uD45C\uC2DD\uC774
+        \uB0A8\uC544 \uC788\uB2E4."
+      grounds:
+      - center: {x: 0, y: 0}
+        halfSize: {x: 2, y: 11}
+        cornerCut: 0
+        shape: 0
+        material: 0
+        ground: 2
+      - center: {x: 0, y: 0}
+        halfSize: {x: 14, y: 2}
+        cornerCut: 0
+        shape: 0
+        material: 0
+        ground: 2
+      props:
+      - sprite: explore_anchor_glacier
+        position: {x: 0, y: 5}
+        role: 0
+        blocks: 1
+        footprint: {x: 4.5, y: 1.3}
+      - sprite: prop_tent
+        position: {x: -7, y: 2}
+        role: 0
+        blocks: 1
+        footprint: {x: 2.2, y: 1.2}
+      - sprite: prop_tent
+        position: {x: 7, y: 2}
+        role: 0
+        blocks: 1
+        footprint: {x: 2.2, y: 1.2}
+      - sprite: prop_campfire
+        position: {x: 0, y: -1}
+        role: 0
+        blocks: 0
+        footprint: {x: 0, y: 0}
+      - sprite: explore_glacier_3
+        position: {x: -7, y: -5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1.4, y: 0.6}
+      - sprite: explore_glacier_1
+        position: {x: 7, y: -5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_glacier_0
+        position: {x: -11, y: -5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_glacier_1
+        position: {x: 11, y: -5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_glacier_2
+        position: {x: -11, y: 2}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_glacier_3
+        position: {x: 11, y: 3}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_board
+        position: {x: 0, y: -7}
+        role: 1
+        blocks: 0
+        footprint: {x: 0.8, y: 0.4}
+      - sprite: prop_chest
+        position: {x: 5, y: -3}
+        role: 2
+        blocks: 0
+        footprint: {x: 1, y: 0.5}
+    - id: canyon_Gorge
+      theme: canyon
+      displayName: "\uBC14\uB78C \uAE4E\uC778 \uD611\uACE1"
+      kind: 4
+      halfSize: {x: 14, y: 11}
+      cornerCut: 3
+      story: "\uB450 \uACB9\uC758 \uBC14\uC704 \uBCBD \uC0AC\uC774\uB85C \uBC14\uB78C\uAE38\uC774
+        \uC5F4\uB9B0\uB2E4. \uAC00\uC6B4\uB370 \uAC08\uB9BC\uAE38\uC5D0\uC11C \uC11C\uCABD
+        \uD2C8\uC744 \uD655\uC778\uD574 \uBCF4\uC790."
+      grounds:
+      - center: {x: 0, y: 0}
+        halfSize: {x: 14, y: 11}
+        cornerCut: 0
+        shape: 0
+        material: 2
+        ground: 0
+      - center: {x: -9, y: 0}
+        halfSize: {x: 5, y: 8}
+        cornerCut: 1.5
+        shape: 0
+        material: 0
+        ground: 11
+      - center: {x: 9, y: 0}
+        halfSize: {x: 5, y: 8}
+        cornerCut: 1.5
+        shape: 0
+        material: 0
+        ground: 11
+      - center: {x: -12, y: 0}
+        halfSize: {x: 2, y: 8}
+        cornerCut: 1.5
+        shape: 0
+        material: 0
+        ground: 12
+      - center: {x: 12, y: 0}
+        halfSize: {x: 2, y: 8}
+        cornerCut: 1.5
+        shape: 0
+        material: 0
+        ground: 12
+      - center: {x: 0, y: -1}
+        halfSize: {x: 14, y: 1.8}
+        cornerCut: 0
+        shape: 0
+        material: 2
+        ground: 0
+      props:
+      - sprite: explore_anchor_canyon
+        position: {x: 0, y: 6}
+        role: 0
+        blocks: 1
+        footprint: {x: 4.5, y: 1.3}
+      - sprite: explore_canyon_3
+        position: {x: -7, y: -5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_canyon_1
+        position: {x: 7, y: -5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_canyon_2
+        position: {x: -7, y: 4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_canyon_0
+        position: {x: 7, y: 4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_board
+        position: {x: 0, y: -7}
+        role: 1
+        blocks: 0
+        footprint: {x: 0.8, y: 0.4}
+      - sprite: prop_chest
+        position: {x: -7, y: -1}
+        role: 2
+        blocks: 0
+        footprint: {x: 1, y: 0.5}
+    - id: canyon_Oasis
+      theme: canyon
+      displayName: "\uBAA8\uB798\uBC14\uB78C \uC27C\uD130"
+      kind: 7
+      halfSize: {x: 14, y: 11}
+      cornerCut: 3
+      story: "\uC791\uC740 \uBB3C\uC6C5\uB369\uC774\uC640 \uADF8\uB298\uC744 \uC911\uC2EC\uC73C\uB85C
+        \uB300\uC0C1\uB4E4\uC774 \uC26C\uC5B4 \uAC14\uB2E4. \uBB3C\uAC00\uB97C \uD55C
+        \uBC14\uD034 \uB3CC\uC544 \uB0A8\uC11C\uCABD\uC758 \uBCF4\uAE09\uD488\uC744
+        \uCC3E\uC544\uBCF4\uC790."
+      grounds:
+      - center: {x: -6, y: 3}
+        halfSize: {x: 3, y: 3}
+        cornerCut: 0
+        shape: 1
+        material: 3
+        ground: 0
+      props:
+      - sprite: prop_tent
+        position: {x: 6, y: 3}
+        role: 0
+        blocks: 1
+        footprint: {x: 2.2, y: 1.2}
+      - sprite: prop_tent
+        position: {x: 6, y: -5}
+        role: 0
+        blocks: 1
+        footprint: {x: 2.2, y: 1.2}
+      - sprite: explore_canyon_1
+        position: {x: -10, y: 5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_canyon_0
+        position: {x: -10, y: -2}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_canyon_3
+        position: {x: 2, y: 5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_barrel
+        position: {x: 9, y: -2}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: npc_villager3_0
+        position: {x: 3, y: -3}
+        role: 4
+        blocks: 0
+        footprint: {x: 0.6, y: 0.4}
+      - sprite: prop_board
+        position: {x: 0, y: -7}
+        role: 1
+        blocks: 0
+        footprint: {x: 0.8, y: 0.4}
+      - sprite: prop_chest
+        position: {x: -8, y: -5}
+        role: 2
+        blocks: 0
+        footprint: {x: 1, y: 0.5}
+    - id: fortress_RuinedCourt
+      theme: fortress
+      displayName: "\uBB34\uB108\uC9C4 \uC131\uBB38 \uC9C0\uAD6C"
+      kind: 1
+      halfSize: {x: 14, y: 11}
+      cornerCut: 3
+      story: "\uC131\uBB38\uC740 \uBB34\uB108\uC84C\uC9C0\uB9CC \uC548\uB730\uC758
+        \uAE30\uB465\uACFC \uBCF4\uAE09\uD488\uC740 \uB0A8\uC544 \uC788\uB2E4. \uD0D1
+        \uC0AC\uC774\uB85C \uB4E4\uC5B4\uC11C\uBA74 \uC61B \uC218\uBE44\uB300\uC758
+        \uAE30\uB85D\uC744 \uC77D\uC744 \uC218 \uC788\uB2E4."
+      grounds:
+      - center: {x: 0, y: 0}
+        halfSize: {x: 10, y: 7}
+        cornerCut: 0
+        shape: 0
+        material: 0
+        ground: 17
+      props:
+      - sprite: explore_anchor_fortress
+        position: {x: 0, y: 5}
+        role: 0
+        blocks: 1
+        footprint: {x: 5, y: 1.6}
+      - sprite: prop_pillar
+        position: {x: -7, y: -4}
+        role: 0
+        blocks: 1
+        footprint: {x: 0.8, y: 0.6}
+      - sprite: prop_pillar_broken
+        position: {x: -7, y: 1}
+        role: 0
+        blocks: 1
+        footprint: {x: 0.8, y: 0.6}
+      - sprite: prop_pillar
+        position: {x: -7, y: 5}
+        role: 0
+        blocks: 1
+        footprint: {x: 0.8, y: 0.6}
+      - sprite: prop_pillar
+        position: {x: 7, y: -4}
+        role: 0
+        blocks: 1
+        footprint: {x: 0.8, y: 0.6}
+      - sprite: prop_pillar_broken
+        position: {x: 7, y: 1}
+        role: 0
+        blocks: 1
+        footprint: {x: 0.8, y: 0.6}
+      - sprite: prop_pillar
+        position: {x: 7, y: 5}
+        role: 0
+        blocks: 1
+        footprint: {x: 0.8, y: 0.6}
+      - sprite: prop_wall
+        position: {x: -3, y: -5}
+        role: 0
+        blocks: 1
+        footprint: {x: 2, y: 0.5}
+      - sprite: prop_wall
+        position: {x: 4, y: -5}
+        role: 0
+        blocks: 1
+        footprint: {x: 2, y: 0.5}
+      - sprite: explore_fortress_0
+        position: {x: -11, y: -5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_fortress_1
+        position: {x: 11, y: -5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_fortress_2
+        position: {x: -11, y: 2}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_fortress_3
+        position: {x: 11, y: 3}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_board
+        position: {x: 0, y: -7}
+        role: 1
+        blocks: 0
+        footprint: {x: 0.8, y: 0.4}
+      - sprite: prop_chest
+        position: {x: -5, y: 1}
+        role: 2
+        blocks: 0
+        footprint: {x: 1, y: 0.5}
+    - id: fortress_Hamlet
+      theme: fortress
+      displayName: "\uC131\uBCBD \uBC16 \uBCF4\uAE09 \uB9C8\uC744"
+      kind: 0
+      halfSize: {x: 14, y: 11}
+      cornerCut: 3
+      story: "\uAE43\uBC1C \uC544\uB798 \uBAA8\uC778 \uC791\uC740 \uC9D1\uB4E4\uC740
+        \uBA3C \uC804\uC7C1 \uB4A4\uC5D0\uB3C4 \uC5EC\uD589\uC790\uB97C \uB9DE\uB294\uB2E4.
+        \uC0C1\uC778\uACFC \uC8FC\uBBFC\uC774 \uB0A8\uC740 \uBB3C\uC790\uB97C \uB098\uB204\uBA70
+        \uC0B4\uC544\uAC04\uB2E4."
+      grounds:
+      - center: {x: 0, y: 0}
+        halfSize: {x: 2, y: 11}
+        cornerCut: 0
+        shape: 0
+        material: 2
+        ground: 0
+      - center: {x: 0, y: -1}
+        halfSize: {x: 14, y: 1.5}
+        cornerCut: 0
+        shape: 0
+        material: 2
+        ground: 0
+      props:
+      - sprite: house_0_c2603e
+        position: {x: -7, y: 3}
+        role: 0
+        blocks: 1
+        footprint: {x: 3.6, y: 1.8}
+      - sprite: house_1_4f7bd9
+        position: {x: 7, y: 3}
+        role: 0
+        blocks: 1
+        footprint: {x: 3.6, y: 1.8}
+      - sprite: explore_anchor_fortress
+        position: {x: -7, y: -6}
+        role: 0
+        blocks: 1
+        footprint: {x: 4.5, y: 1.8}
+      - sprite: prop_well
+        position: {x: 0, y: 4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1.3, y: 0.8}
+      - sprite: prop_stall
+        position: {x: 7, y: -6}
+        role: 0
+        blocks: 1
+        footprint: {x: 2.5, y: 1}
+      - sprite: npc_cat_0
+        position: {x: 6, y: -7.5}
+        role: 3
+        blocks: 0
+        footprint: {x: 0.7, y: 0.4}
+      - sprite: npc_villager0_0
+        position: {x: -5, y: -0.5}
+        role: 4
+        blocks: 0
+        footprint: {x: 0.7, y: 0.4}
+      - sprite: explore_fortress_2
+        position: {x: -10.5, y: -0.5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_fortress_3
+        position: {x: 10.5, y: -0.5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_fortress_0
+        position: {x: -2.5, y: 6.5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_lamp
+        position: {x: -2.5, y: -4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_lamp
+        position: {x: 2.5, y: -4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_barrel
+        position: {x: -10.5, y: -5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_crate
+        position: {x: 10.5, y: 4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_fortress_1
+        position: {x: -11, y: 5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_board
+        position: {x: 0, y: -8}
+        role: 1
+        blocks: 0
+        footprint: {x: 0.8, y: 0.4}
+      - sprite: prop_chest
+        position: {x: 10, y: -8}
+        role: 2
+        blocks: 0
+        footprint: {x: 1, y: 0.5}
+    - id: mirror_Observatory
+      theme: mirror
+      displayName: "\uAE68\uC9C4 \uAC70\uC6B8 \uC815\uC6D0"
+      kind: 10
+      halfSize: {x: 14, y: 11}
+      cornerCut: 3
+      story: "\uAC70\uC6B8\uC740 \uC11C\uB85C \uB2E4\uB978 \uBC29\uD5A5\uC758 \uD558\uB298\uC744
+        \uBE44\uCD98\uB2E4. \uAE68\uC9C4 \uAE30\uB465 \uC8FC\uBCC0\uC744 \uB3CC\uC544
+        \uAE30\uB85D\uD310\uACFC \uB0A8\uACA8\uC9C4 \uBB3C\uAC74\uC744 \uC870\uC0AC\uD574
+        \uBCF4\uC790."
+      grounds:
+      - center: {x: 0, y: 0}
+        halfSize: {x: 13, y: 13}
+        cornerCut: 0
+        shape: 2
+        material: 4
+        ground: 0
+      props:
+      - sprite: explore_anchor_mirror
+        position: {x: 0, y: 5}
+        role: 0
+        blocks: 1
+        footprint: {x: 4.5, y: 1.4}
+      - sprite: explore_mirror_1
+        position: {x: -6, y: 4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_mirror_1
+        position: {x: 6, y: 4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_mirror_2
+        position: {x: -6, y: -4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_mirror_2
+        position: {x: 6, y: -4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_mirror_0
+        position: {x: -10, y: -2}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_mirror_3
+        position: {x: 10, y: -2}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_board
+        position: {x: 0, y: -7}
+        role: 1
+        blocks: 0
+        footprint: {x: 0.8, y: 0.4}
+      - sprite: prop_chest
+        position: {x: -6, y: 0}
+        role: 2
+        blocks: 0
+        footprint: {x: 1, y: 0.5}
+    - id: mirror_Sanctuary
+      theme: mirror
+      displayName: "\uC78A\uD78C \uBC18\uC0AC\uC758 \uC131\uC18C"
+      kind: 5
+      halfSize: {x: 14, y: 11}
+      cornerCut: 3
+      story: "\uBE44\uC5B4 \uC788\uB294 \uBC1B\uCE68\uB300\uB4E4\uC774 \uC791\uC740
+        \uAD11\uC7A5\uC744 \uB458\uB7EC\uC2FC\uB2E4. \uC131\uC18C \uC11C\uCABD\uC5D0
+        \uC21C\uB840\uC790\uB4E4\uC774 \uB0A8\uACA8 \uB193\uC740 \uBCF4\uBB3C\uC774
+        \uC788\uB2E4\uB294 \uAE00\uADC0\uAC00 \uC0C8\uACA8\uC838 \uC788\uB2E4."
+      grounds:
+      - center: {x: 0, y: 0}
+        halfSize: {x: 7, y: 7}
+        cornerCut: 0
+        shape: 1
+        material: 0
+        ground: 7
+      props:
+      - sprite: explore_anchor_mirror
+        position: {x: 0, y: 5}
+        role: 0
+        blocks: 1
+        footprint: {x: 4.5, y: 1.4}
+      - sprite: explore_mirror_1
+        position: {x: -6, y: 4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_mirror_1
+        position: {x: 6, y: 4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_mirror_2
+        position: {x: -6, y: -4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_mirror_2
+        position: {x: 6, y: -4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_mirror_0
+        position: {x: -10, y: -2}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_mirror_3
+        position: {x: 10, y: -2}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_board
+        position: {x: 0, y: -7}
+        role: 1
+        blocks: 0
+        footprint: {x: 0.8, y: 0.4}
+      - sprite: prop_chest
+        position: {x: -6, y: 0}
+        role: 2
+        blocks: 0
+        footprint: {x: 1, y: 0.5}
+    - id: swamp_Wetland
+      theme: swamp
+      displayName: "\uB2AA\uC9C0 \uB098\uBB34\uAE38"
+      kind: 11
+      halfSize: {x: 14, y: 11}
+      cornerCut: 3
+      story: "\uC2B5\uC9C0\uB97C \uAC00\uB85C\uC9C0\uB974\uB294 \uB098\uBB34\uAE38
+        \uB05D\uC5D0 \uC18D\uC774 \uBE48 \uACE0\uBAA9\uC774 \uC11C \uC788\uB2E4.
+        \uD310\uC790\uAE38\uC744 \uB530\uB77C\uAC00\uBA70 \uBB3C \uBC16\uC758 \uC791\uC740
+        \uBE48\uD130\uB97C \uC0B4\uD3B4\uBCF4\uC790."
+      grounds:
+      - center: {x: 7, y: -1}
+        halfSize: {x: 3, y: 5}
+        cornerCut: 0
+        shape: 0
+        material: 3
+        ground: 0
+      - center: {x: 0, y: -2}
+        halfSize: {x: 14, y: 1.5}
+        cornerCut: 0
+        shape: 0
+        material: 0
+        ground: 10
+      - center: {x: 0, y: 0}
+        halfSize: {x: 1.5, y: 11}
+        cornerCut: 0
+        shape: 0
+        material: 0
+        ground: 10
+      props:
+      - sprite: explore_anchor_swamp
+        position: {x: 0, y: 5}
+        role: 0
+        blocks: 1
+        footprint: {x: 4.5, y: 1.4}
+      - sprite: explore_swamp_0
+        position: {x: -11, y: -5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_swamp_1
+        position: {x: 11, y: -5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_swamp_2
+        position: {x: -11, y: 2}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_swamp_3
+        position: {x: 11, y: 3}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_swamp_2
+        position: {x: 6, y: 1}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_swamp_2
+        position: {x: 8, y: -4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_swamp_0
+        position: {x: -6, y: 3}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_swamp_1
+        position: {x: -8, y: -3}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_board
+        position: {x: 0, y: -6}
+        role: 1
+        blocks: 0
+        footprint: {x: 0.8, y: 0.4}
+      - sprite: prop_chest
+        position: {x: -6, y: -6}
+        role: 2
+        blocks: 0
+        footprint: {x: 1, y: 0.5}
+    - id: swamp_Jungle
+      theme: swamp
+      displayName: "\uBC84\uC12F \uACE0\uBAA9 \uAD70\uB77D"
+      kind: 3
+      halfSize: {x: 14, y: 11}
+      cornerCut: 3
+      story: "\uAC70\uB300\uD55C \uBFCC\uB9AC\uC640 \uBC84\uC12F \uC0AC\uC774\uB85C
+        \uCC44\uC9D1\uAFBC\uC758 \uAE38\uC774 \uAD6C\uBD88\uAD6C\uBD88 \uC774\uC5B4\uC9C4\uB2E4.
+        \uD76C\uADC0 \uC57D\uCD08\uAC00 \uC790\uB77C\uB294 \uC791\uC740 \uACF5\uD130\uAC00
+        \uC788\uB2E4."
+      grounds:
+      - center: {x: 0, y: 0}
+        halfSize: {x: 14, y: 11}
+        cornerCut: 0
+        shape: 0
+        material: 0
+        ground: 1
+      - center: {x: 0, y: -7}
+        halfSize: {x: 1.3, y: 4}
+        cornerCut: 0
+        shape: 0
+        material: 2
+        ground: 0
+      - center: {x: -3, y: -3}
+        halfSize: {x: 4.3, y: 1.3}
+        cornerCut: 0
+        shape: 0
+        material: 2
+        ground: 0
+      - center: {x: -6, y: 0}
+        halfSize: {x: 1.3, y: 3.1}
+        cornerCut: 0
+        shape: 0
+        material: 2
+        ground: 0
+      - center: {x: -3, y: 3}
+        halfSize: {x: 4.3, y: 1.3}
+        cornerCut: 0
+        shape: 0
+        material: 2
+        ground: 0
+      - center: {x: 0, y: 5}
+        halfSize: {x: 1.3, y: 2.1}
+        cornerCut: 0
+        shape: 0
+        material: 2
+        ground: 0
+      - center: {x: 3, y: -3}
+        halfSize: {x: 3.1, y: 1.1}
+        cornerCut: 0
+        shape: 0
+        material: 2
+        ground: 0
+      props:
+      - sprite: explore_anchor_swamp
+        position: {x: 0, y: 5}
+        role: 0
+        blocks: 1
+        footprint: {x: 5, y: 1.6}
+      - sprite: tree_Marsh_0
+        position: {x: -10, y: 5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1.2, y: 0.8}
+      - sprite: tree_Marsh_0
+        position: {x: 10, y: 5}
+        role: 0
+        blocks: 1
+        footprint: {x: 1.2, y: 0.8}
+      - sprite: tree_Marsh_0
+        position: {x: -10, y: -1}
+        role: 0
+        blocks: 1
+        footprint: {x: 1.2, y: 0.8}
+      - sprite: tree_Marsh_0
+        position: {x: 9, y: -1}
+        role: 0
+        blocks: 1
+        footprint: {x: 1.2, y: 0.8}
+      - sprite: tree_Marsh_0
+        position: {x: -11, y: -6}
+        role: 0
+        blocks: 1
+        footprint: {x: 1.2, y: 0.8}
+      - sprite: tree_Marsh_0
+        position: {x: 10, y: -6}
+        role: 0
+        blocks: 1
+        footprint: {x: 1.2, y: 0.8}
+      - sprite: tree_Marsh_0
+        position: {x: -4, y: -7}
+        role: 0
+        blocks: 1
+        footprint: {x: 1.2, y: 0.8}
+      - sprite: tree_Marsh_0
+        position: {x: 4, y: -7}
+        role: 0
+        blocks: 1
+        footprint: {x: 1.2, y: 0.8}
+      - sprite: tree_Marsh_0
+        position: {x: 5, y: 3}
+        role: 0
+        blocks: 1
+        footprint: {x: 1.2, y: 0.8}
+      - sprite: explore_swamp_0
+        position: {x: -5, y: -1}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_swamp_1
+        position: {x: 5, y: -1}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_swamp_2
+        position: {x: -6, y: 4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_swamp_3
+        position: {x: 6, y: 4}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_swamp_0
+        position: {x: -5, y: -7}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_swamp_3
+        position: {x: 5, y: -7}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: prop_board
+        position: {x: 0, y: -7}
+        role: 1
+        blocks: 0
+        footprint: {x: 0.8, y: 0.4}
+      - sprite: prop_chest
+        position: {x: -6, y: -4}
+        role: 2
+        blocks: 0
+        footprint: {x: 1, y: 0.5}
+      - sprite: explore_swamp_0
+        position: {x: 6, y: -4}
+        role: 5
+        blocks: 0
+        footprint: {x: 0.6, y: 0.4}
+    sceneryCell: 2
+    sceneryGap: 0.15
+    sceneryRoadMargin: 1.3
+    sceneryGroupCell: 44
+    riverFrequency: 0.006
+    riverWidth: 0.012
+    lakeFrequency: 0.018
+    lakeLevel: 0.73
+    roadWidth: 2
+    roadWander: 9
+    roadExits: 3
+    roadBranchDistance: {x: 48, y: 72}
+    roadSegmentLength: 12
+    roadTerrainAvoidance: 10
+    roadBranchWidth: 1.35
+    roadLoopWidth: 1.05
+    roadLoops: 2
+    maxAlive: 12
+    maxAlivePerRing: 2
+    spawnRadius: {x: 15, y: 24}
+    despawnRadius: 38
+    spawnInterval: 0.9
+    packSize: {x: 1, y: 3}
+    eliteChancePerRing: 0.07
+    safeRadius: 26

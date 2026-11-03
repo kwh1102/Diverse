@@ -13,7 +13,7 @@ namespace Diverse
     ///   Trigger    : event → [conditions] → operations           (Effect / Accumulation / Threshold rules)
     ///   Continuous : [conditions] → passive modifiers/conversions  (Modifier / Scaling / Conversion / Spatial rules)
     ///   Replace    : an existing player action is replaced         (Replacement rules: Dash → Blink, …)
-    ///   Constrain  : the player gives something up                  (Constraint rules: no potions, one dash, …) — always a price
+    ///   Constrain  : the player gives something up                  (Constraint rules: no dash, no regen, …) — always a price
     ///   Meta       : modifies OTHER owned abilities/rules selected by tag / element / trigger
     ///   System     : modifies game systems (evolution offers, rerolls, rewards, generation bias)
     /// Ops carry a Relation (how the effect links to things: Echo, Chain, Bounce, Return, Orbit…) and a Temporal
@@ -107,7 +107,7 @@ namespace Diverse
         public List<CondDef> when = new List<CondDef>();
         public List<OpDef> ops = new List<OpDef>();
         public float cooldown;               // internal cooldown (seconds)
-        public string replaces;              // Replace rules: the player action replaced (Dash | Potion | ComboFinisher)
+        public string replaces;              // Replace rules: the player action replaced (Dash | ComboFinisher)
         public string select;                // Meta rules: selector over abilities/rules (ByTag | ByElement | ByTrigger | Strongest | Newest | All)
         public string selectArg;             // tag / element / trigger for the selector
     }

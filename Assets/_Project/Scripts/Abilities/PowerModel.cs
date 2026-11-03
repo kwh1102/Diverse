@@ -688,7 +688,6 @@ namespace Diverse
                     }
                     case "GainGold": Put(Eco, 0.8f * M * f * 60); cost = 1; break;     // per minute-ish worth
                     case "GainXp": Put(Eco, 1.2f * M * f * 60); cost = 1; break;
-                    case "GainPotion": Put(Sus, 900 * cnt * f); cost = 1; break;
                     case "DropPickup": Put(o.mode == "heart" ? Sus : Eco, (o.mode == "heart" ? 8 : 0.8f) * M * f * 60 / (o.mode == "heart" ? 100 : 1)); cost = 1; break;
                 }
                 rep.cost[r] = (rep.cost.TryGetValue(r, out var c) ? c : 0) + cost * f * TemporalMul(o) * RelationExtra(o);
@@ -741,7 +740,7 @@ namespace Diverse
             /// <summary>Replacement: value of the new action minus the value of what it replaces.</summary>
             void ReplaceRule(AbilityDef a, RuleDef r)
             {
-                float rate = r.replaces switch { "Dash" => Rate("Dash", null), "Potion" => 1f / 60, "ComboFinisher" => Rate("ComboFinish", null), _ => 0 };
+                float rate = r.replaces switch { "Dash" => Rate("Dash", null), "ComboFinisher" => Rate("ComboFinish", null), _ => 0 };
                 foreach (var o in r.ops)
                 {
                     float gain = o.mode switch
@@ -753,8 +752,8 @@ namespace Diverse
                         "Projectile" => o.amount * Mathf.Max(1, o.count) * 0.6f * U * rate,
                         _ => 0,
                     };
-                    float lost = r.replaces switch { "Dash" => 10, "Potion" => 12, _ => 0 };      // the old action's own value (i-frames / heal)
-                    Put(r.replaces == "Potion" ? Sus : Off, gain - lost);
+                    float lost = r.replaces == "Dash" ? 10 : 0;      // the old action's own value (i-frames)
+                    Put(Off, gain - lost);
                 }
             }
 
@@ -764,11 +763,10 @@ namespace Diverse
                 switch (o.op)
                 {
                     case "Forbid":
-                        // the price is what the action is actually worth to this build (potions: ~2 × 40% HP per life;
-                        // regen: the build's regen stat; dash: i-frames + mobility; skills: their share of damage)
-                        Put(o.mode switch { "Dash" => Mob, "Potion" or "Regen" => Sus, _ => Uti }, -(o.mode switch
+                        // the price is what the action is actually worth to this build (regen: the build's regen stat; dash: i-frames + mobility; skills: their share of damage)
+                        Put(o.mode switch { "Dash" => Mob, "Regen" => Sus, _ => Uti }, -(o.mode switch
                         {
-                            "Dash" => 35f, "Potion" => 4f, "Regen" => 6f * 0.3f + 3f, "Skill" => 40f, _ => 10f,
+                            "Dash" => 35f, "Regen" => 6f * 0.3f + 3f, "Skill" => 40f, _ => 10f,
                         }));
                         break;
                     case "CapStat":

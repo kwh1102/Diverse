@@ -4,14 +4,14 @@ using UnityEngine;
 namespace Diverse
 {
     /// <summary>
-    /// Interactable objects in the world (NPCs, chests, graves, statues, shrines, cages, the tower door...).
+    /// Interactable objects in the world (NPCs, chests, graves, statues, shrines, cages...).
     /// Interact by right-clicking or with the F key when close.
     /// </summary>
     public class Interactable : MonoBehaviour
     {
         public static readonly List<Interactable> All = new List<Interactable>();
         public string id;
-        public string kind;              // npc_storyteller, npc_merchant, npc_smith, npc_villager, chest, grave, statue, shrine, cage, tower, board, wanderer, well, bank
+        public string kind;              // npc_storyteller, npc_merchant, npc_smith, npc_villager, chest, grave, statue, shrine, cage, board, wanderer, well, bank
         public string label;
         public float range = 1.4f;
         public SpriteRenderer sr;
@@ -30,6 +30,8 @@ namespace Diverse
             it.basePos = pos;
             Art.Setup(it.sr, sprite, Art.SortY(pos.y));
             Art.Setup(it.shadow, Art.Shadow(Mathf.Max(10, Mathf.RoundToInt(sprite.rect.width * 0.6f))), -30000);
+            if (WorldStreamer.I != null && WorldStreamer.I.Gen != null)
+                WorldStreamer.I.Environment?.Register(it.sr, sprite.name, WorldStreamer.I.Gen.ThemeAt(pos.x, pos.y));
             All.Add(it);
             chunk?.Register(it);
             return it;
@@ -42,9 +44,10 @@ namespace Diverse
             if (idleFrames != null && idleFrames.Length > 1)
             {
                 animT += Time.deltaTime;
-                sr.sprite = idleFrames[(int)(animT * 2) % idleFrames.Length];
+                int frame = kind is "npc_villager" or "wanderer" ? (int)Player.IdlePose(animT) : (int)(animT * 2) % idleFrames.Length;
+                sr.sprite = idleFrames[frame % idleFrames.Length];
             }
-            if (kind == "shrine" || kind == "tower_gate")
+            if (kind == "shrine")
                 transform.position = basePos + Vector2.up * Mathf.Sin(Time.time * 2) * 0.03f;
         }
 

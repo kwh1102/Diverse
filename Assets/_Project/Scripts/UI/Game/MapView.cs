@@ -20,18 +20,21 @@ namespace Diverse
         [SerializeField] Color playerHighlight = new Color(1f, 0.92f, 0.3f, 1f);
         [Tooltip("How close (canvas px) a click must be to a warp stone icon to pick it.")]
         [SerializeField] float warpPickRadius = 10f;
-        [SerializeField] Color frontierColor = new Color(1f, 0.35f, 0.45f, 1f);
-        [SerializeField] Color frontierOutline = new Color(0.13f, 0.08f, 0.15f, 1f);
-        [SerializeField, Min(1)] int frontierMarkerSize = 6, frontierOutlineSize = 9;
 
         float zoom = 3f;
         bool dragging, dragMoved;
         Vector2 dragStart, dragCenter;
         Game g;
-        readonly HashSet<string> explored = new HashSet<string>();
+        readonly HashSet<Vector2Int> explored = new HashSet<Vector2Int>();
+        readonly HashSet<Vector2Int> exploredRegions = new HashSet<Vector2Int>();
+        readonly Dictionary<Vector2Int, List<StructureSpec>> regionSites = new Dictionary<Vector2Int, List<StructureSpec>>();
+        readonly Queue<Vector2Int> pendingRegions = new Queue<Vector2Int>();
         int exploredCount = -1;
 
-        public void Init(Game game) => g = game;
+        public void Init(Game game)
+        {
+            g = game; exploredCount = -1; explored.Clear(); exploredRegions.Clear(); regionSites.Clear(); pendingRegions.Clear();
+        }
 
         public void Opened() { if (g.Player != null) map.Center = g.Player.Pos; }
 
@@ -75,26 +78,37 @@ namespace Diverse
             if (exploredCount != g.World.exploredChunks.Count)
             {
                 explored.Clear();
-                foreach (var k in g.World.exploredChunks) explored.Add(k);
+                foreach (var k in g.World.exploredChunks)
+                {
+                    var parts = k.Split(',');
+                    if (parts.Length != 2 || !int.TryParse(parts[0], out int x) || !int.TryParse(parts[1], out int y)) continue;
+                    explored.Add(new Vector2Int(x, y));
+                    var region = new Vector2Int(MathX.FloorDiv(x, WorldGen.RegionChunks), MathX.FloorDiv(y, WorldGen.RegionChunks));
+                    if (exploredRegions.Add(region)) pendingRegions.Enqueue(region);
+                }
                 exploredCount = g.World.exploredChunks.Count;
             }
-            map.Paint((cx, cy) => explored.Contains(cx + "," + cy));
+            map.Paint(IncludeChunk, exploredCount, g.Player != null ? g.Player.Bound : 0);
             map.DrawRoute(g.Player);
             Markers();
 
             UIKit.Set(closeHint, $"{Controls.KeyName(Act.Map)}/Esc 닫기");
             var mw = map.LocalToWorld(mouse);
             var hoverWarp = inside ? WarpAt(mouse) : null;
+            bool locked = g.Player != null && g.Player.Bound > 0 && mw.sqrMagnitude >= g.Player.Bound * g.Player.Bound;
             string hint = hoverWarp != null ? $"<color=#8fe3ff>워프 스톤: {hoverWarp.name}</color> — 클릭해 이동"
+                        : inside && locked ? "<color=#b8b4d4>망각의 안개 — 아직 갈 수 없는 곳</color>"
                         : inside ? (IsExplored(mw) ? "우클릭: 여기로 이동" : "<color=#8c7aa8>밝혀지지 않은 곳</color>") : "";
             UIKit.Set(footerLeft, $"확대 ×{zoom:0.0} · ({mw.x:0}, {mw.y:0}) · {hint}");
-            UIKit.Set(footerRight, g.Player != null ? $"<color=#ff8a9a>— 안개 경계</color>  <color=#c9bcd8>{g.FrontierHint()}</color>" : "");
+            UIKit.Set(footerRight, g.Player != null ? $"<color=#b8b4d4>≈ 망각의 안개</color>  <color=#c9bcd8>{g.FrontierHint()}</color>" : "");
         }
+
+        bool IncludeChunk(int x, int y) => explored.Contains(new Vector2Int(x, y));
 
         bool IsExplored(Vector2 world)
         {
             int N = WorldGen.Chunk;
-            return explored.Contains(MathX.FloorDiv(Mathf.FloorToInt(world.x), N) + "," + MathX.FloorDiv(Mathf.FloorToInt(world.y), N));
+            return IncludeChunk(MathX.FloorDiv(Mathf.FloorToInt(world.x), N), MathX.FloorDiv(Mathf.FloorToInt(world.y), N));
         }
 
         WarpStone WarpAt(Vector2 local)
@@ -120,6 +134,8 @@ namespace Diverse
             }
             if (!right) return;
             var world = map.LocalToWorld(local);
+            if (g.Player.Bound > 0 && world.magnitude >= g.Player.Bound)
+            { g.Ui.Toast("망각의 안개 너머로는 갈 수 없다. " + g.FrontierHint()); return; }
             if (!IsExplored(world)) { g.Ui.Toast("아직 밝혀지지 않은 곳이다"); Sfx.Play("ui", 0.4f, 0.7f); return; }
             g.Player.SetTravelTarget(world);
             g.InputConsumedFrame = Time.frameCount;   // the same right-click must not also act in the world
@@ -130,48 +146,49 @@ namespace Diverse
         void Markers()
         {
             var w = g.World;
-            // Frontier rings as dotted circles: open ones faint, the mist boundary red
-            if (g.Player != null)
-            {
-                int open = WorldGen.OpenRing(g.Player.Level, w.bossKills);
-                for (int i = 0; i < WorldGen.Rings.Length - 1; i++)
-                {
-                    float radius = WorldGen.Rings[i].radius;
-                    if (radius <= 0) continue;
-                    var col = i == open ? frontierColor : i < open ? new Color(0.8f, 0.75f, 1f, 0.25f) : new Color(0.6f, 0.55f, 0.7f, 0.35f);
-                    int n = Mathf.Clamp(Mathf.RoundToInt(radius * zoom / 6f), 24, 360);
-                    for (int k = 0; k < n; k++)
-                    {
-                        var pos = MathX.Dir(k * 360f / n) * radius;
-                        if (i == open) map.Marker(pos, "●", frontierOutline, null, false, frontierOutlineSize);
-                        map.Marker(pos, i == open ? "●" : "·", col, null, false, i == open ? frontierMarkerSize : 0);
-                    }
-                }
-            }
-
-            map.Marker(WorldGen.TowerPos, "▲", Pal.Hex("c9b8ff"), "기억의 탑", true);
-
             var view = map.Rect.rect;
             var a = map.LocalToWorld(view.min); var b = map.LocalToWorld(view.max);
             int N = WorldGen.Chunk, R = WorldGen.RegionChunks;
             var disc = new HashSet<string>(w.discovered);
-            for (int ry = MathX.FloorDiv(Mathf.FloorToInt(a.y / N), R); ry <= MathX.FloorDiv(Mathf.FloorToInt(b.y / N), R); ry++)
-                for (int rx = MathX.FloorDiv(Mathf.FloorToInt(a.x / N), R); rx <= MathX.FloorDiv(Mathf.FloorToInt(b.x / N), R); rx++)
-                    foreach (var s in World.I.Gen.StructuresInRegion(rx, ry))
+            // Keep immutable site lists locally instead of repeatedly thrashing WorldGen's region cache while panning.
+            if (pendingRegions.Count > 0)
+            {
+                var key = pendingRegions.Dequeue();
+                regionSites[key] = World.I.Gen.StructuresInRegion(key.x, key.y);
+            }
+            // Generate ordinary sites only in explored regions. Fixed world goals are already authored by ZoneMap.
+            foreach (var entry in regionSites)
+            {
+                var region = entry.Key;
+                if (region.x < MathX.FloorDiv(Mathf.FloorToInt(a.x / N), R) || region.x > MathX.FloorDiv(Mathf.FloorToInt(b.x / N), R) ||
+                    region.y < MathX.FloorDiv(Mathf.FloorToInt(a.y / N), R) || region.y > MathX.FloorDiv(Mathf.FloorToInt(b.y / N), R)) continue;
+                    foreach (var s in entry.Value)
                     {
-                        if (!disc.Contains(s.id)) continue;
-                        bool cleared = w.clearedCamps.Contains(s.id);
+                        // The zones' landmarks and border sites are the world's goals: always on the map
+                        if (s.kind is StructKind.Landmark or StructKind.Border) continue;
+                        if (!disc.Contains(s.id) &&
+                            (g.Player == null || Vector2.Distance(g.Player.Pos, s.center) > s.radius + 6)) continue;
+                        bool cleared = w.clearedCamps.Contains(s.id) || s.kind == StructKind.Exploration && w.Flag("investigate:" + s.id);
                         // Only glyphs that exist in Galmuri: a missing glyph falls back to an OS font with other metrics
                         // and is drawn off-center from its spot
                         string icon = s.kind switch
                         {
-                            StructKind.Town => "◘", StructKind.Camp => cleared ? "○" : "×", StructKind.Ruins => "▥", StructKind.Shrine => "◇", StructKind.Lair => cleared ? "○" : "♠",
+                            StructKind.Town => "◘", StructKind.Camp => "○", StructKind.Ruins => "▥", StructKind.Shrine => "◇", StructKind.Lair => cleared ? "○" : "♠",
                             StructKind.Graveyard => "†", StructKind.Chest => "▣", StructKind.Wanderer => "?",
-                            StructKind.Ferry => "≈", StructKind.Obelisk => cleared ? "○" : "◆", StructKind.Fortress => cleared ? "○" : "▦", _ => "•",
+                            StructKind.Ferry => "≈", StructKind.Landmark => cleared ? "○" : "▲", StructKind.Border => cleared ? "○" : "◆", StructKind.Exploration => "◇", _ => "•",
                         };
-                        Color32 col = cleared ? Pal.Hex("8bff9a") : s.kind is StructKind.Camp or StructKind.Lair or StructKind.Graveyard or StructKind.Obelisk or StructKind.Fortress ? Pal.Hex("ff8a8a") : Pal.Hex("fff2b3");
-                        map.Marker(s.center, icon, col, zoom > 2.5f ? s.name : null, false);
+                        Color32 col = cleared ? Pal.Hex("8bff9a") : s.kind is StructKind.Lair or StructKind.Landmark or StructKind.Border ? Pal.Hex("ff8a8a") : Pal.Hex("fff2b3");
+                        if (s.kind == StructKind.Exploration && World.I.Gen.Exploration.Definition(s)?.kind == ExplorationKind.Hamlet) icon = "◘";
+                        map.Marker(s.center, icon, col, zoom > 2.5f || s.kind is StructKind.Landmark or StructKind.Exploration ? s.name : null, false);
                     }
+            }
+            if (World.I.Gen.Zones != null)
+                foreach (var s in World.I.Gen.Zones.sites)
+                {
+                    bool cleared = w.clearedCamps.Contains(s.id);
+                    map.Marker(s.center, cleared ? "○" : s.kind == StructKind.Border ? "◆" : "▲",
+                        cleared ? Pal.Hex("8bff9a") : Pal.Hex("ff8a8a"), s.name, false);
+                }
             foreach (var gr in w.graves)
                 map.Marker(new Vector2(gr.x, gr.y), gr.statue ? "Ω" : "†", gr.recovered ? Pal.Hex("8c7aa8") : Pal.Hex("e6dcff"), zoom > 4 ? gr.heroName : null, false);
             foreach (var q in w.quests.Where(x => x.status == 1 && x.kind != "hunt"))

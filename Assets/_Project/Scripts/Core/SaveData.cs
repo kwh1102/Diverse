@@ -16,9 +16,9 @@ namespace Diverse
         public int seed;
         public int lifeCount;                 // which life this is
         public int gold;                      // shared coffer (inherited through the town bank)
-        public int memoryShards;              // tower-opening currency
-        public int towerFloor;                // highest tower floor reached
         public int bossKills;                 // bosses defeated across all lives (opens farther exploration rings)
+        public List<string> zones = new List<string>();        // normal mode: the 5 zones' build types (CombatType names), counter-clockwise; chosen once per world
+        public List<string> zoneThemes = new List<string>();   // optional theme id per zone (empty = the build type's default theme)
         public List<string> flags = new List<string>();          // per-structure state ("chest:12:-3:0")
         public List<string> clearedCamps = new List<string>();
         public List<string> discovered = new List<string>();     // discovered structure ids (shown on the map)
@@ -57,13 +57,12 @@ namespace Diverse
         public float weaponDamage;
         public int level = 1;
         public float xp, xpToNext = 60;
-        public int gold, kills, potions;
+        public int gold, kills;
         public int[] attrs = new int[4];
         public int unspentAttr, pendingEvolutions;
         public float hp;
         public int dashMax = 2;
         public float x, y;
-        public bool raft;
         public int warpStones;                                // warp stones carried (not yet placed)
         public int skillsLearned = -1;                        // QWER slots learned, in order (-1 = old save: all 4)
         public List<AbilityRecord> abilities = new List<AbilityRecord>();
@@ -115,12 +114,9 @@ namespace Diverse
         public float tx, ty;          // target coordinates
         public int need, have;
         public int status;            // 0 offered, 1 in progress, 2 done (ready to report), 3 complete
-        public int rewardGold, rewardShards;
+        public int rewardGold;
         public string enemy;
     }
-
-    /// <summary>Normal: the hand-made world and enemies, only the hero and weapon are designed. Custom: everything can be designed.</summary>
-    public enum GameMode { Normal, Custom }
 
     /// <summary>A save slot as the slot screen sees it.</summary>
     public class SlotInfo
@@ -148,7 +144,7 @@ namespace Diverse
         public string imageModel = "gpt-image-2.5-flare";   // design studio pictures (Images API)
         public string imageQuality = "low";                 // low | medium: pictures are shrunk to a few dozen pixels, low is usually enough
         public int modelsVersion;                           // settings migrations (2 = gpt-6-luna / gpt-image-2.5)
-        public int lastMode = (int)GameMode.Custom, lastSlot = 1;   // the save slot opened last (the Game scene opened from the editor uses it)
+        public int lastSlot = 1;   // the save slot opened last (the Game scene opened from the editor uses it)
         public bool aiEnabled = true;
     }
 
@@ -160,21 +156,21 @@ namespace Diverse
         public static string DesignDir => Path.Combine(Dir, "designs");
         static string SettingsPath => Path.Combine(Dir, "settings.json");
 
-        // ───────── Save slots: each mode keeps up to SlotCount worlds (slots/normal_1 … custom_3) ─────────
+        // Keep the existing normal_* paths so established worlds remain available.
+        // Former custom_* saves are left on disk, outside the active slot list.
         public const int SlotCount = 3;
         /// <summary>The slot that LoadWorld / SaveRun… read and write (Session.OpenSlot sets it).</summary>
-        public static GameMode Mode = GameMode.Custom;
         public static int Slot = 1;
 
-        static string SlotDir(GameMode m, int slot) => Path.Combine(Dir, "slots", (m == GameMode.Normal ? "normal_" : "custom_") + slot);
-        static string WorldPath => Path.Combine(SlotDir(Mode, Slot), "world.json");
-        static string RunPath => Path.Combine(SlotDir(Mode, Slot), "run.json");
-        static void EnsureSlotDir() { try { Directory.CreateDirectory(SlotDir(Mode, Slot)); } catch { } }
+        static string SlotDir(int slot) => Path.Combine(Dir, "slots", "normal_" + slot);
+        static string WorldPath => Path.Combine(SlotDir(Slot), "world.json");
+        static string RunPath => Path.Combine(SlotDir(Slot), "run.json");
+        static void EnsureSlotDir() { try { Directory.CreateDirectory(SlotDir(Slot)); } catch { } }
 
         /// <summary>What the slot screen shows about a slot (null = empty).</summary>
-        public static SlotInfo Peek(GameMode m, int slot)
+        public static SlotInfo Peek(int slot)
         {
-            var path = Path.Combine(SlotDir(m, slot), "world.json");
+            var path = Path.Combine(SlotDir(slot), "world.json");
             try
             {
                 if (!File.Exists(path)) return null;
@@ -182,33 +178,33 @@ namespace Diverse
                 if (w == null || w.seed == 0) return null;
                 return new SlotInfo
                 {
-                    world = w, hasRun = File.Exists(Path.Combine(SlotDir(m, slot), "run.json")),
+                    world = w, hasRun = File.Exists(Path.Combine(SlotDir(slot), "run.json")),
                     lastPlayed = File.GetLastWriteTime(path),
                 };
             }
             catch { return null; }
         }
 
-        public static void DeleteSlot(GameMode m, int slot)
+        public static void DeleteSlot(int slot)
         {
-            try { var d = SlotDir(m, slot); if (Directory.Exists(d)) Directory.Delete(d, true); }
+            try { var d = SlotDir(slot); if (Directory.Exists(d)) Directory.Delete(d, true); }
             catch (Exception e) { Debug.LogWarning("Slot delete failed: " + e.Message); }
         }
 
-        /// <summary>Saves from before slots (world.json / run.json in the save root) become custom slot 1 — they could already use designs.</summary>
+        /// <summary>Saves from before slots (world.json / run.json in the save root) become slot 1.</summary>
         public static void MigrateLegacySaves()
         {
             try
             {
                 var oldWorld = Path.Combine(Dir, "world.json");
                 if (!File.Exists(oldWorld)) return;
-                var target = SlotDir(GameMode.Custom, 1);
+                var target = SlotDir(1);
                 if (File.Exists(Path.Combine(target, "world.json"))) return;
                 Directory.CreateDirectory(target);
                 File.Move(oldWorld, Path.Combine(target, "world.json"));
                 var oldRun = Path.Combine(Dir, "run.json");
                 if (File.Exists(oldRun)) File.Move(oldRun, Path.Combine(target, "run.json"));
-                Debug.Log("[Save] moved the old world into custom slot 1");
+                Debug.Log("[Save] moved the old world into slot 1");
             }
             catch (Exception e) { Debug.LogWarning("Save migration failed: " + e.Message); }
         }
@@ -230,7 +226,7 @@ namespace Diverse
         public static WorldSave NewWorld()
         {
             var w = new WorldSave { seed = UnityEngine.Random.Range(1000, int.MaxValue / 4) };
-            w.Log("세계가 깨어났다. 멀리 기억의 탑이 희미하게 빛난다.", "world");
+            w.Log("세계가 깨어났다.", "world");
             return w;
         }
 

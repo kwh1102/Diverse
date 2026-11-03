@@ -1,0 +1,321 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4daca7ae967f1b344872deceda26c0b3, type: 3}
+  m_Name: overgrowth
+  m_EditorClassIdentifier:
+  def:
+    id: overgrowth
+    displayName: "\uC99D\uC2DD\uC758 \uC232"
+    prefix: "\uC232"
+    biome: 1
+    mapColor: {r: 0.18431373, g: 0.47843137, b: 0.23529412, a: 1}
+    ground: 1
+    groundAlt: 0
+    cliffTop: 1
+    altShare: 0.2
+    liquid: 8
+    road: 2
+    mountainBias: 0.05
+    waterBias: 0.05
+    mesas: 0
+    density: 1.35
+    decor:
+    - sprite: explore_overgrowth_0
+      variants: 1
+      chance: 0.04
+      block: 1
+      width: 0.8
+      depth: 0.5
+      flat: 0
+      clustered: 1
+      onCliffs: 1
+      role: 2
+      visualScale: 1.6
+      scaleVariation: 0.12
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
+    - sprite: explore_overgrowth_1
+      variants: 1
+      chance: 0.06
+      block: 1
+      width: 0.8
+      depth: 0.5
+      flat: 0
+      clustered: 1
+      onCliffs: 1
+      role: 1
+      visualScale: 1.9
+      scaleVariation: 0.12
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
+    - sprite: explore_overgrowth_2
+      variants: 1
+      chance: 0.04
+      block: 1
+      width: 1.2
+      depth: 0.5
+      flat: 0
+      clustered: 1
+      onCliffs: 0
+      role: 2
+      visualScale: 1.5
+      scaleVariation: 0.12
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
+    - sprite: explore_overgrowth_3
+      variants: 1
+      chance: 0.04
+      block: 1
+      width: 0.8
+      depth: 0.5
+      flat: 0
+      clustered: 1
+      onCliffs: 0
+      role: 2
+      visualScale: 1.4
+      scaleVariation: 0.12
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
+    - sprite: deco_overgrowth_0
+      variants: 1
+      chance: 0.055
+      block: 1
+      width: 0.8
+      depth: 0.5
+      flat: 0
+      clustered: 1
+      onCliffs: 0
+      role: 1
+      visualScale: 1.9
+      scaleVariation: 0.12
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
+    - sprite: deco_overgrowth_1
+      variants: 1
+      chance: 0.025
+      block: 1
+      width: 1.8
+      depth: 0.5
+      flat: 0
+      clustered: 1
+      onCliffs: 0
+      role: 3
+      visualScale: 1.3
+      scaleVariation: 0.12
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
+    - sprite: deco_overgrowth_2
+      variants: 1
+      chance: 0.055
+      block: 1
+      width: 0.8
+      depth: 0.5
+      flat: 0
+      clustered: 1
+      onCliffs: 0
+      role: 1
+      visualScale: 1.9
+      scaleVariation: 0.12
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
+    - sprite: deco_overgrowth_3
+      variants: 1
+      chance: 0.025
+      block: 0
+      width: 0.8
+      depth: 0.5
+      flat: 0
+      clustered: 1
+      onCliffs: 1
+      role: 3
+      visualScale: 1.3
+      scaleVariation: 0.12
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
+    - sprite: tree_Forest_{v}
+      variants: 4
+      chance: 0.22
+      block: 1
+      width: 1.2
+      depth: 0.8
+      flat: 0
+      clustered: 1
+      onCliffs: 0
+      role: 1
+      visualScale: 2.05
+      scaleVariation: 0.22
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
+    - sprite: rock_Forest_{v}
+      variants: 3
+      chance: 0.025
+      block: 1
+      width: 0.85
+      depth: 0.55
+      flat: 0
+      clustered: 0
+      onCliffs: 1
+      role: 3
+      visualScale: 1.4
+      scaleVariation: 0.12
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
+    - sprite: bush_Forest_{v}
+      variants: 2
+      chance: 0.055
+      block: 0
+      width: 0.8
+      depth: 0.5
+      flat: 0
+      clustered: 0
+      onCliffs: 1
+      role: 2
+      visualScale: 1.45
+      scaleVariation: 0.12
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
+    - sprite: tuft_Forest_{v}
+      variants: 2
+      chance: 0.07
+      block: 0
+      width: 0.8
+      depth: 0.5
+      flat: 1
+      clustered: 0
+      onCliffs: 1
+      role: 2
+      visualScale: 1.25
+      scaleVariation: 0.12
+      mediumScale: 0
+      rareScale: 0
+      mediumChance: 0.22
+      rareChance: 0.04
+      mediumPatchThreshold: 0.5
+      rarePatchThreshold: 0.75
+      spacingScale: 0
+    scenery:
+      enabled: 1
+      patchSize: 36
+      patchThreshold: 0.43
+      patchFeather: 0.16
+      clearingSize: 22
+      clearingThreshold: 0.66
+      isolatedChance: 0.025
+      canopySpacing: 0.5
+      footGap: 0.65
+      groundStrength: 0.75
+      occlusionHeight: 2.5
+      occludedAlpha: 0.38
+      fadeSpeed: 8
+      buildingScale: 1.5
+      anchorScale: 1.5
+      landmarkScale: 1.4
+      groupChance: 0.65
+      groupRadius: 6
+      groupName: mossy fallen-log clearing
+      group:
+      - sprite: explore_overgrowth_2
+        position: {x: -2.3, y: 1}
+        role: 0
+        blocks: 1
+        footprint: {x: 1.6, y: 0.6}
+      - sprite: explore_overgrowth_3
+        position: {x: 2.1, y: -0.8}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_overgrowth_0
+        position: {x: -2, y: -2}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+      - sprite: explore_overgrowth_1
+        position: {x: 2.4, y: 2}
+        role: 0
+        blocks: 1
+        footprint: {x: 1, y: 0.6}
+    environment:
+      wind: 1.2
+      cloth: 1.5
+      glint: 0.12
+      accent: {r: 0.55, g: 0.85, b: 0.85, a: 1}
+      dust: {r: 0.6, g: 0.75, b: 0.3, a: 0.35}
+      weatherRate: 1
+      weatherSize: 0.08
+      weatherLife: 3
+      weatherVelocity: {x: 0.35, y: -0.3}
+    landmarkName: "\uD0DC\uACE0\uC758 \uACE0\uBAA9"
+    landmarkSprite: landmark_overgrowth
+    landmarkFootprint: {x: 5, y: 2.5}
+    arenaRadius: 18
+    arenaGround: 0
+    enemies:
+    - fox
+    - shroom
+    - raccoon
+    - bat
+    boss: boss_fox

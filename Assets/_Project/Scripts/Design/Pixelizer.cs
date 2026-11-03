@@ -201,7 +201,7 @@ namespace Diverse
 
         static PixelCanvas MajorityDownsample(Color32[] px, int w, RectInt box, float scale, Vector3[] pal)
         {
-            int ow = Mathf.Clamp(Mathf.RoundToInt(box.width * scale), 1, 128), oh = Mathf.Clamp(Mathf.RoundToInt(box.height * scale), 1, 128);
+            int ow = Mathf.Clamp(Mathf.RoundToInt(box.width * scale), 1, 256), oh = Mathf.Clamp(Mathf.RoundToInt(box.height * scale), 1, 256);   // up to landmark size
             var cv = new PixelCanvas(ow + 2, oh + 2);
             var votes = new int[pal.Length];
             for (int oy = 0; oy < oh; oy++)
@@ -247,7 +247,7 @@ namespace Diverse
         }
 
         /// <summary>Opaque texture swatch (ground): the whole cell shrunk to size×size, few colours, no outline.</summary>
-        public static PixelCanvas Swatch(Texture2D src, RectInt r, int size, int colors = 6)
+        public static PixelCanvas Swatch(Texture2D src, RectInt r, int size, int colors = 6, float calm = 0.45f)
         {
             var all = src.GetPixels32();
             var cv = new PixelCanvas(size, size);
@@ -263,11 +263,11 @@ namespace Diverse
                     cv.Px[oy * size + ox] = new Color32((byte)(cr / n), (byte)(cg / n), (byte)(cb / n), 255);
                 }
             Quantize(new[] { cv }, colors);
-            // Ground sits under everything: pull every colour 45% toward the average so the floor stays calm and readable
+            // Ground sits under everything: pull every colour toward the average (45% by default) so the floor stays calm and readable
             float mr = 0, mg = 0, mb = 0;
             foreach (var c in cv.Px) { mr += c.r; mg += c.g; mb += c.b; }
             var mean = new Color32((byte)(mr / cv.Px.Length), (byte)(mg / cv.Px.Length), (byte)(mb / cv.Px.Length), 255);
-            for (int i = 0; i < cv.Px.Length; i++) cv.Px[i] = Pal.Lerp(cv.Px[i], mean, 0.45f);
+            for (int i = 0; i < cv.Px.Length; i++) cv.Px[i] = Pal.Lerp(cv.Px[i], mean, calm);
             return cv;
         }
 

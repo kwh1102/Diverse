@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Diverse
 {
     /// <summary>
-    /// Warp stones: bought from the merchant like the raft, set up anywhere in the field, shown on the map.
+    /// Warp stones: bought from the merchant, set up anywhere in the field, shown on the map.
     /// Standing near one, click another on the map to travel there instantly.
     /// The town has a stone of its own from the start, so a single placed stone is already a round trip.
     /// </summary>
@@ -119,7 +119,7 @@ namespace Diverse
             yield return null;
             var dst = to.Pos + Vector2.down * 1.2f;
             WorldStreamer.I.Warm(dst);
-            p.Pos = WorldStreamer.I.NearestWalkable(dst, p.radius, 6, p.HasRaft);
+            p.Pos = WorldStreamer.I.NearestWalkable(dst, p.radius, 6);
             CameraRig.I?.Snap(p.Pos);
             Fx.I?.Play(Art.Shockwave(Pal.Hex("8fe3ff"), 22), p.Pos, 0, 18, 1, null, true);
             Fx.I?.Burst(p.Pos + Vector2.up * 0.5f, Pal.Hex("8fe3ff"), 20, 5, 0.5f, -4);

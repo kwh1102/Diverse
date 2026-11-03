@@ -16,9 +16,9 @@ namespace Diverse
         [SerializeField] Text hpText;
         [SerializeField] Image dashTemplate;           // child "Fill" is the recharge bar
         [Header("Top right")]
-        [SerializeField] Image goldIcon, shardIcon, potionIcon, raftIcon;
-        [SerializeField] Text goldText, shardText, potionText, regionText, coordText;
-        [SerializeField] RectTransform goldHover, shardHover, potionHover;
+        [SerializeField] Image goldIcon;
+        [SerializeField] Text goldText, regionText, coordText;
+        [SerializeField] RectTransform goldHover;
         [SerializeField] MinimapView minimap;
         [SerializeField] Text questsText;
         [Header("Bottom")]
@@ -56,9 +56,6 @@ namespace Diverse
             g = game;
             if (bossBar != null) bossBase = bossBar.anchoredPosition;
             UIKit.Sprite(goldIcon, Art.Item("gold"));
-            UIKit.Sprite(shardIcon, Art.Item("shard"));
-            UIKit.Sprite(potionIcon, Art.Item("potion"));
-            UIKit.Sprite(raftIcon, Art.Item("raft"));
         }
 
         /// <summary>Average FPS and the slowest frame of the last half second (a stutter shows as a long worst frame).</summary>
@@ -113,8 +110,6 @@ namespace Diverse
             if (slow)
             {
                 UIKit.Set(goldText, p.Gold.ToString());
-                UIKit.Set(shardText, w.memoryShards.ToString());
-                UIKit.Set(potionText, $"{p.Potions} [{Controls.KeyName(Act.Potion)}]");
                 UIKit.Set(regionText, World.I.Gen.RegionName(p.Pos));
                 UIKit.Set(coordText, $"({p.Pos.x:0}, {p.Pos.y:0})  {Controls.KeyName(Act.Map)} 지도");
                 UIKit.Set(moveHint, $"<color=#8c7aa8>{Controls.KeyName(Act.Move)}</color> 이동/공격");
@@ -127,7 +122,6 @@ namespace Diverse
                 });
                 UIKit.Set(questsText, string.Join("\n", qs));
             }
-            UIKit.Show(raftIcon, p.HasRaft);
             if (minimap != null) minimap.Tick(g);
 
             var levels = DB.Progression.skillLevels;
@@ -183,14 +177,6 @@ namespace Diverse
                 if (UIKit.Hovered(goldHover))
                     tooltip.Show("<b><color=#fff2b3>골드</color></b>",
                         $"몬스터·상자·의뢰에서 얻는다. 상점, 대장간, 여관, 진화 다시 뽑기({g.RerollCost}G)와 이야기꾼과의 대화({g.ChatCost}G)에 쓴다.\n죽으면 절반이 기억의 금고로 가고, 금고의 골드는 다음 삶에 일부 전해진다. (금고: {w.gold}G)");
-                else if (UIKit.Hovered(shardHover))
-                    tooltip.Show("<b><color=#c9b8ff>기억의 조각</color></b>",
-                        $"세계가 기억하는 재화 — 죽어도 사라지지 않는다. 보스, 제단, 유적, 의뢰에서 얻는다.\n기억의 탑 다음 층을 여는 데 {Dialogue.TowerCost(w.towerFloor)}개가 필요하다. 층이 열릴 때마다 모든 삶의 최대 체력이 오른다.");
-                else if (UIKit.Hovered(potionHover))
-                    tooltip.Show("<b><color=#ff8a8a>회복약</color></b>",
-                        $"[{Controls.KeyName(Act.Potion)}] 최대 체력의 40%를 회복한다. 최대 5개.\n마을 상인에게 30골드에 살 수 있고, 상자에서도 나온다.");
-                else if (p.HasRaft && UIKit.Hovered(raftIcon.rectTransform))
-                    tooltip.Show("<b><color=#c4936a>뗏목</color></b>", "강과 호수 위를 건널 수 있다. 물 위에서도 평소처럼 이동하면 된다.");
             }
         }
     }
