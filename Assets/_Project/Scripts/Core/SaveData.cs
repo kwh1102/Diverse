@@ -29,6 +29,7 @@ namespace Diverse
         public List<WarpStone> warpStones = new List<WarpStone>();                // placed warp stones (shared by every life)
         public string lastCostume = "white";
         public int lastWeapon;
+        public List<TravelType> unlockedTravelTypes = new List<TravelType>();
         public string designId;               // this world's look (designs/<id>.json); empty = the built-in art
         public int designCalls;               // AI design generations in this world (shown in the studio)
         public float designCostUsd;           // their estimated API cost

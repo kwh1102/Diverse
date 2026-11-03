@@ -113,7 +113,7 @@ namespace Diverse
                 UIKit.Set(regionText, World.I.Gen.RegionName(p.Pos));
                 UIKit.Set(coordText, $"({p.Pos.x:0}, {p.Pos.y:0})  {Controls.KeyName(Act.Map)} 지도");
                 UIKit.Set(moveHint, $"<color=#8c7aa8>{Controls.KeyName(Act.Move)}</color> 이동/공격");
-                UIKit.Set(dashHint, $"<color=#8c7aa8>{Controls.KeyName(Act.Dash)}</color> 대시");
+                UIKit.Set(dashHint, $"<color=#8c7aa8>{Controls.KeyName(Act.Dash)}</color> {TravelTypes.Name(p.MovementType)}");
                 var qs = w.quests.Where(x => x.status == 1 || x.status == 2).Take(3).Select(q =>
                 {
                     string st = q.status == 2 ? "<color=#8bff9a>✔ 보고</color> " : q.kind == "hunt" ? $"<color=#c9b8ff>{q.have}/{q.need}</color> " : "";

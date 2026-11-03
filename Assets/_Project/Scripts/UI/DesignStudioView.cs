@@ -30,26 +30,15 @@ namespace Diverse
         [SerializeField] Button startButton, backButton, classicButton;
         [SerializeField] Color selectedTint = new Color(1f, 0.95f, 0.7f);
 
-        static readonly string[] Hints =
-        {
-            "어떤 캐릭터로 살고 싶은지 자유롭게 적어 주세요. 토끼가 아니어도 돼요.",
-            "무기와 싸우는 방식을 적어 주세요. 공격 동작과 스킬이 새로 정해져요.",
-        };
-        static readonly string[] Examples =
-        {
-            "예) 마법사 모자를 쓴 보라색 문어",
-            "예) 은색 권총을 들고 총알을 빠르게 발사",
-        };
-
         MenuUI menu;
         Game game;
         bool InGame => game != null;
 
-        DesignPack working, original;
+        DesignPack working;
         readonly Stack<DesignPack> history = new Stack<DesignPack>();
-        readonly string[] drafts = { "", "" };
-        readonly string[] sent = { "", "" };
-        int tab;
+        GameObject typeWindow;
+        Text typeBalance;
+        readonly List<Button> typeRows = new List<Button>();
         bool busy;
         string statusText = "";
         InputField prevTyping;
@@ -76,7 +65,9 @@ namespace Diverse
 
         void BindCommon()
         {
-            for (int i = 0; i < tabs.Length; i++) { int k = i; UIKit.Bind(tabs[i], () => SelectTab(k)); }
+            UIKit.Bind(tabs[0], OpenTypes);
+            UIKit.Show(tabs[1], false);
+            UIKit.Show(resetTab, false);
             UIKit.Bind(generate, Generate);
             UIKit.Bind(flipEffects, () =>
             {
@@ -87,24 +78,12 @@ namespace Diverse
             });
             UIKit.Bind(flipWeapon, () =>
             {
-                if (busy || working.weapon.image == null) return;
+                if (InGame || busy || working.weapon.image == null) return;
                 Push();
                 working.weapon.image = DesignStore.Mirrored(working.weapon.image);
                 Preview();
             });
             UIKit.Bind(undo, () => { if (history.Count > 0 && !busy) { working = history.Pop(); Preview(); } });
-            UIKit.Bind(resetTab, () =>
-            {
-                if (busy) return;
-                Push();
-                working.CopySection(DesignPack.Default(), tab);
-                if (tab == 1 && InGame) working.weapon.baseWeapon = original.weapon.baseWeapon;
-                drafts[tab] = sent[tab] = "";
-                prompt.SetTextWithoutNotify("");
-                Preview();
-            });
-            prompt.onValueChanged.RemoveAllListeners();
-            prompt.onValueChanged.AddListener(v => drafts[tab] = DesignGuard.CleanPrompt(v));
             prompt.characterLimit = DesignGuard.MaxPrompt;
             // Designs are made from scratch: no preset character / weapon / perk pickers
             UIKit.Show(classicButton, false);
@@ -130,6 +109,7 @@ namespace Diverse
 
         void OnDisable()
         {
+            UIKit.Show(typeWindow, false);
             if (Controls.TypingField == prompt) Controls.TypingField = prevTyping;
         }
 
@@ -147,15 +127,18 @@ namespace Diverse
 
         void Begin(DesignPack pack)
         {
-            original = pack.Clone();
+
             working = pack;
             history.Clear();
-            for (int i = 0; i < 2; i++) drafts[i] = sent[i] = working.prompts[i] ?? "";
+            prompt.SetTextWithoutNotify("");
+            UIKit.Show(typeWindow, false);
             statusText = DesignAi.Available ? $"AI 디자인: {AiClient.ModelLabel(Game.Settings.aiModel)}" : "AI 꺼짐 — 무료 로컬 해석으로 만들어요";
             busy = false;
             UIKit.Label(startButton, InGame ? "적용하고 닫기" : "삶을 시작하기");
             UIKit.Label(backButton, InGame ? "취소" : "뒤로");
-            SelectTab(tab);
+            UIKit.Set(tabHint, InGame ? "이번 삶에서는 캐릭터 외형만 수정할 수 있어요." : "유형을 고르고 캐릭터 외형과 공격을 한 번에 설명해 주세요.");
+            if (prompt.placeholder is Text ph)
+                ph.text = InGame ? "예) 망토를 보라색으로 바꿔줘" : "예) 검은 거미 괴물. 입에서 독을 뱉고 앞다리로 후려쳐.";
             Preview();
         }
 
@@ -173,62 +156,132 @@ namespace Diverse
             UIKit.Show(gameObject, false);
         }
 
-        void SelectTab(int k)
+        void OpenTypes()
         {
-            tab = Mathf.Clamp(k, 0, 1);
-            prompt.SetTextWithoutNotify(drafts[tab]);
-            if (prompt.placeholder is Text ph) ph.text = Examples[tab];
-            UIKit.Set(tabHint, Hints[tab]);
-            Sfx.Play("ui");
+            if (busy || working == null) return;
+            prompt.DeactivateInputField();
+            if (typeWindow == null) BuildTypes();
+            typeWindow.SetActive(true);
+            typeWindow.transform.SetAsLastSibling();
+            RefreshTypes();
         }
 
-        // ───────────────────────── Generate ─────────────────────────
+        void BuildTypes()
+        {
+            var overlay = new GameObject("Travel types", typeof(RectTransform), typeof(Image));
+            overlay.transform.SetParent(transform, false);
+            var rect = (RectTransform)overlay.transform;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
+            overlay.GetComponent<Image>().color = new Color(0.09f, 0.07f, 0.13f, 0.96f);
+            typeWindow = overlay;
+
+            var heading = Instantiate(tabHint, rect);
+            Place(heading.rectTransform, new Vector2(0, 109), new Vector2(420, 24));
+            heading.alignment = TextAnchor.MiddleCenter;
+            heading.text = "이동 유형 · 스페이스";
+            typeBalance = Instantiate(heading, rect);
+            Place(typeBalance.rectTransform, new Vector2(0, 86), new Vector2(420, 20));
+
+            foreach (var type in TravelTypes.All)
+            {
+                var row = TypeButton(rect, new Vector2(0, 62 - typeRows.Count * 25), 432, () => ChooseType(type));
+                row.name = "Travel " + type;
+                typeRows.Add(row);
+            }
+            UIKit.Label(TypeButton(rect, new Vector2(0, -97), 100, () => UIKit.Show(typeWindow, false)), "닫기");
+        }
+
+        Button TypeButton(RectTransform parent, Vector2 position, float width, System.Action click)
+        {
+            var button = Instantiate(generate, parent);
+            button.onClick = new Button.ButtonClickedEvent();
+            Place((RectTransform)button.transform, position, new Vector2(width, 22));
+            UIKit.Bind(button, click);
+            return button;
+        }
+
+        static void Place(RectTransform rect, Vector2 position, Vector2 size)
+        {
+            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = position;
+            rect.sizeDelta = size;
+        }
+
+        void RefreshTypes()
+        {
+            var world = Session.World;
+            UIKit.Set(typeBalance, InGame ? "현재 삶의 유형은 고정돼요." : $"기억의 금고 · {world.gold} 골드");
+            for (int i = 0; i < typeRows.Count; i++)
+            {
+                var type = TravelTypes.All[i];
+                bool unlocked = TravelTypes.Unlocked(world, type);
+                string state = working.travelType == type ? "선택됨" : unlocked ? "선택" : $"해금 {TravelTypes.Price} G";
+                UIKit.Label(typeRows[i], $"{TravelTypes.Name(type)} · {TravelTypes.Description(type)}  [{state}]");
+                typeRows[i].interactable = !InGame && (unlocked || world.gold >= TravelTypes.Price);
+            }
+        }
+
+        void ChooseType(TravelType type)
+        {
+            if (InGame || busy) return;
+            var world = Session.World;
+            if (!TravelTypes.Unlocked(world, type))
+            {
+                if (world.gold < TravelTypes.Price) return;
+                world.gold -= TravelTypes.Price;
+                (world.unlockedTravelTypes ??= new List<TravelType>()).Add(type);
+                SaveSystem.SaveWorld(world);
+                RefreshTypes();
+                return;
+            }
+            if (working.travelType != type)
+            {
+                Push();
+                working.travelType = type;
+                working.travelEffect = null;
+                Preview();
+            }
+            UIKit.Show(typeWindow, false);
+        }
 
         void Push() => history.Push(working.Clone());
 
         void Generate()
         {
             if (busy) return;
-            // Every tab whose prompt changed goes into ONE request; with nothing changed, the current tab is redone
-            var sections = Enumerable.Range(0, 2).Select(i => drafts[i].Length > 0 && drafts[i] != sent[i]).ToArray();
-            if (!sections.Any(s => s))
-            {
-                if (drafts[tab].Length == 0) { statusText = "<color=#ffb36b>먼저 원하는 모습을 적어 주세요.</color>"; return; }
-                sections[tab] = true;
-            }
+            string request = DesignGuard.CleanPrompt(prompt.text);
+            if (string.IsNullOrWhiteSpace(request)) { statusText = "원하는 캐릭터나 변경 사항을 적어 주세요."; return; }
+            bool initial = !InGame && working.source == "default";
+            var power = DesignGuard.PowerRequests(request).ToList();
             Push();
-            for (int i = 0; i < 2; i++) if (sections[i]) working.prompts[i] = drafts[i];
-            var power = Enumerable.Range(0, 2).Where(i => sections[i]).SelectMany(i => DesignGuard.PowerRequests(drafts[i])).ToList();
-
-            if (DesignAi.Available)
+            if (!DesignAi.Available)
             {
-                busy = true;
-                statusText = "AI가 디자인하는 중…";
-                StartCoroutine(DesignAi.Generate(this, working, sections, InGame, s => statusText = s, (result, why) =>
-                {
-                    busy = false;
-                    if (result == null)
-                    {
-                        result = DesignLocal.Generate(working, sections, InGame);
-                        why = $"<color=#ffb36b>{why}</color> → 로컬 해석으로 대신 만들었어요";
-                    }
-                    else
-                    {
-                        Session.World.designCalls++;
-                        Session.World.designCostUsd += DesignAi.LastCostUsd;
-                    }
-                    Done(result, sections, power, why);
-                }));
+                Done(DesignLocal.Generate(working, request, initial, InGame), power, "로컬 해석 완료 (무료)");
+                return;
             }
-            else Done(DesignLocal.Generate(working, sections, InGame), sections, power, "로컬 해석 완료 (무료)");
+            busy = true;
+            statusText = "AI가 디자인하는 중…";
+            StartCoroutine(DesignAi.Generate(this, working, request, initial, InGame, s => statusText = s, (result, why) =>
+            {
+                busy = false;
+                if (result == null)
+                    result = DesignLocal.Generate(working, request, initial, InGame);
+                else
+                {
+                    Session.World.designCalls++;
+                    Session.World.designCostUsd += DesignAi.LastCostUsd;
+                }
+                Done(result, power, why);
+            }));
         }
 
-        void Done(DesignPack result, bool[] sections, List<string> power, string why)
+        void Done(DesignPack result, List<string> power, string why)
         {
-            // The local detector and the AI flag the same request in different words: keep one list
             result.ignored = (power.Count > 0 ? power : result.ignored ?? new List<string>()).Distinct().Take(6).ToList();
             working = result;
-            for (int i = 0; i < 2; i++) if (sections[i]) sent[i] = drafts[i];
+            prompt.SetTextWithoutNotify("");
             statusText = why;
             Preview();
             Sfx.Play("ui_select");
@@ -279,8 +332,8 @@ namespace Diverse
             UIKit.Sprite(hero, Art.Rabbit(previewCostume, pose));
             var kind = DesignRuntime.Chassis(working);
             UIKit.Sprite(heroWeapon, DesignRuntime.WeaponHidden ? null : Art.Weapon(kind));
-            UIKit.Show(flipWeapon, working.weapon.image != null && !DesignRuntime.WeaponHidden);
-            UIKit.Show(flipEffects, working.attack.effectImages != null);
+            UIKit.Show(flipWeapon, !InGame && working.weapon.image != null && !DesignRuntime.WeaponHidden);
+            UIKit.Show(flipEffects, !InGame && working.attack.effectImages != null);
             var shot = working.attack.projectile;
             var b = DesignCombat.For(working) ?? DB.W(kind);
             bool shoots = shot.image != null || shot.shape != "builtin" || shot.pixels != null || b.combo.Any(s => s.projectile) || kind == WeaponKind.Dagger;
@@ -289,15 +342,11 @@ namespace Diverse
             var swing = Art.Slash(b.slashColor, b.slashCore, 14, 160, 1);
             UIKit.Sprite(slash, swing[Mathf.Min(swing.Length - 1, swing.Length / 2 + (int)(t * 5) % Mathf.Max(1, swing.Length - swing.Length / 2))]);
 
-            for (int i = 0; i < tabs.Length; i++)
-            {
-                tabs[i].image.color = i == tab ? selectedTint : Color.white;
-                bool dirty = drafts[i].Length > 0 && drafts[i] != sent[i];
-                UIKit.Label(tabs[i], TabNames[i] + (dirty ? " *" : ""));
-            }
+            tabs[0].interactable = !busy;
+            UIKit.Label(tabs[0], $"유형 · {TravelTypes.Name(working.travelType)}");
             generate.interactable = !busy;
             undo.interactable = !busy && history.Count > 0;
-            UIKit.Label(generate, busy ? "만드는 중…" : Enumerable.Range(0, 2).Any(i => drafts[i].Length > 0 && drafts[i] != sent[i]) ? "디자인 만들기" : "다시 만들기");
+            UIKit.Label(generate, busy ? "만드는 중…" : "요청 적용");
 
             UIKit.Set(info, Describe());
             var w = Session.World;
@@ -312,7 +361,6 @@ namespace Diverse
                 : "시작 능력 <color=#8c7aa8>삶을 시작하면 캐릭터 설명으로 만들어져요 (밸런스 검증)</color>");
         }
 
-        static readonly string[] TabNames = { "캐릭터", "무기·공격" };
 
         static string Ko(string v) => v switch
         {
@@ -329,14 +377,9 @@ namespace Diverse
         string Describe()
         {
             var p = working;
-            string body = tab == 0
-                ? p.hero.image != null
-                    ? $"<b>{p.hero.name ?? "이름 없는 영웅"}</b> · {p.hero.species ?? "새 캐릭터"} <color=#8c7aa8>(새로 그림)</color>"
-                    : $"<b>{p.hero.name ?? "이름 없는 토끼"}</b> · 머리: {Ko(p.hero.hat)} <color=#8c7aa8>(기본 도트)</color>"
-                : $"<b>{(DesignCombat.For(p) ?? DB.W(DesignRuntime.Chassis(p))).name}</b> · {Ko(p.weapon.hold)}에 들기"
-                     + (p.weapon.image != null ? " <color=#8c7aa8>(새로 그림)</color>" : p.weapon.pixels != null ? " (도트 직접 그림)" : $" · {Ko(p.weapon.shape)}")
-                     + $"\n발사: {Ko(p.attack.origin)}에서" + (p.attack.projectile.image != null ? " · 투사체 새로 그림" : $" · 투사체 {Ko(p.attack.projectile.shape)}");
-            var lines = new List<string> { body };
+            string body = $"<b>{p.hero.name ?? "이름 없는 영웅"}</b> · {TravelTypes.Name(p.travelType)}";
+            string combat = $"{(DesignCombat.For(p) ?? DB.W(DesignRuntime.Chassis(p))).name} · {Ko(p.attack.origin)}에서 발사";
+            var lines = new List<string> { body, combat };
             if (!string.IsNullOrEmpty(p.summary)) lines.Add($"<color=#c9bcd8>{p.summary}</color>");
             foreach (var s in p.ignored) lines.Add($"<color=#ffb36b>✕ {s}</color>");
             return string.Join("\n", lines);

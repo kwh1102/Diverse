@@ -20,6 +20,8 @@ namespace Diverse
         public long created;
         public string summary;            // one line shown in the studio
         public string source;             // "ai" | "local" | "default"
+        public TravelType travelType;
+        public string travelEffect;
         public HeroLook hero = new HeroLook();
         public WeaponLook weapon = new WeaponLook();
         public AttackLook attack = new AttackLook();

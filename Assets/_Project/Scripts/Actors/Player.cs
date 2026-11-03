@@ -357,6 +357,8 @@ namespace Diverse
             if (CameraRig.I != null)
                 CameraRig.I.lookAhead = Vector2.ClampMagnitude((AimPoint - Pos) * 0.12f, 1.2f);
 
+            if (activeTravel != TravelType.Dash) return;
+
             // Right-click: move / target
             if (Controls.Held(Act.Move) && !Controls.Down(Act.Move) && !TravelTarget.HasValue)
             {
@@ -387,6 +389,7 @@ namespace Diverse
                 (AimPoint - (Pos + Vector2.up * 0.4f)).SafeNormal(Facing));
 
             if (Controls.Down(Act.Dash)) TryDash((AimPoint - Pos).SafeNormal(Facing));
+            if (activeTravel != TravelType.Dash) return;
             if (Controls.Down(Act.SkillQ)) CastSkill(0);
             if (Controls.Down(Act.SkillW)) CastSkill(1);
             if (Controls.Down(Act.SkillE)) CastSkill(2);
@@ -495,11 +498,12 @@ namespace Diverse
             Moving = false;
             if (dashT > 0)
             {
+                float moveTime = Mathf.Min(dt, dashT);
                 dashT -= dt;
-                Pos = WorldStreamer.I.Move(Pos, dashVel * dt, radius, false, Bound);
+                MoveTravel(moveTime);
                 ghostT -= dt;
                 if (ghostT <= 0) { ghostT = 0.03f; Fx.I?.Afterimage(body, new Color(0.7f, 0.85f, 1f, 0.7f), 0.22f); }
-                if (dashT <= 0) { RepathMovement(); GameEvents.Raise(new CombatEvent { type = Trig.DashEnd, source = this, position = Pos }); Telemetry.Record("DashEnd"); }
+                if (dashT <= 0) { FinishTravel(); RepathMovement(); GameEvents.Raise(new CombatEvent { type = Trig.DashEnd, source = this, position = Pos }); Telemetry.Record("DashEnd"); }
                 return;
             }
             if (lungeT > 0)
@@ -718,20 +722,36 @@ namespace Diverse
 
         public void TryDash(Vector2 dir)
         {
-            if (DashCharges <= 0) return;
+            var type = MovementType;
+            bool followup = type == TravelType.Bounce && bounceAgainUntil > Time.time;
+            if ((!followup && DashCharges <= 0) || activeTravel != TravelType.Dash) return;
             if (Abilities != null && Abilities.Forbids("Dash")) return;
             // Replacement rules (e.g. "dash becomes blink") take the input instead of the normal dash
-            if (Abilities != null && Abilities.ReplaceDash(dir)) { DashCharges--; dashRecharge = 0; return; }
-            DashCharges--;
-            dashRecharge = 0;
+            if (type == TravelType.Dash && Abilities != null && Abilities.ReplaceDash(dir)) { DashCharges--; dashRecharge = 0; return; }
+            if (!followup) { DashCharges--; dashRecharge = 0; }
+            bounceFollowup = followup;
+            bounceAgainUntil = 0;
             actionLock = 0; queuedAttack = false;
             LastDashOrigin = Pos;
-            dashT = 0.16f;
-            dashVel = dir * 22f;
+            bool prepared = PrepareTravel(type, ref dir);
+            dashT = travelDuration = type switch
+            {
+                TravelType.Flight => 0.78f, TravelType.Burrow => 0.40f, TravelType.Swim when prepared => 0.88f,
+                TravelType.Blink => 0.07f, TravelType.Bounce => followup ? 0.19f : 0.32f, _ => 0.16f
+            };
+            dashVel = dir * (type switch
+            {
+                TravelType.Flight => 15f, TravelType.Burrow => 16f, TravelType.Swim when prepared => 18f,
+                TravelType.Swim => 12f, TravelType.Blink => 0f, TravelType.Bounce => 14f, _ => 22f
+            });
             Facing = dir;
-            invulnUntil = Time.time + 0.22f;
-            Fx.I?.DustPuff(Pos, dir.x > 0);
-            Fx.I?.Burst(Pos, Pal.Hex("e8dcc8"), 6, 4, 0.35f, 0, 2, 70, (-dir).Angle(), true);
+            invulnUntil = Time.time + dashT + 0.06f;
+            if (type == TravelType.Dash)
+            {
+                Fx.I?.DustPuff(Pos, dir.x > 0);
+                Fx.I?.Burst(Pos, Pal.Hex("e8dcc8"), 6, 4, 0.35f, 0, 2, 70, (-dir).Angle(), true);
+            }
+            else if (type != TravelType.Blink) PlayTravelFx(type);
             Sfx.Play("dash", 0.6f);
             squash = -0.5f;
             Telemetry.Record("Dash");
@@ -790,6 +810,7 @@ namespace Diverse
         public void SetLunge(Vector2 vel, float time) { lungeVel = vel; lungeT = time; }
         public void SetDash(Vector2 vel, float time, bool invuln = true)
         {
+            FinishTravel();
             dashVel = vel; dashT = time; LastDashOrigin = Pos;
             if (invuln) invulnUntil = Time.time + time + 0.05f;
         }
@@ -942,6 +963,7 @@ namespace Diverse
             raftSr.enabled = OnWater;
             raftSr.sortingOrder = body.sortingOrder - 1;
             raftSr.transform.localPosition = new Vector3(0, 0.1f + Mathf.Sin(animT * 2.5f) * 0.03f, 0);
+            if (dashT > 0) visual.localPosition += Vector3.up * TravelLift;
             if (OnWater) visual.localPosition += new Vector3(0, 0.12f + Mathf.Sin(animT * 2.5f) * 0.03f, 0);
         }
 
@@ -979,6 +1001,8 @@ namespace Diverse
         public void DebugTeleport(Vector2 target)
         {
             StopMoving();
+            activeTravel = TravelType.Dash;
+            bounceAgainUntil = 0;
             dashT = lungeT = actionLock = 0; queuedAttack = false;
             Pos = WorldStreamer.I.NearestWalkable(target, radius, 12);
         }
