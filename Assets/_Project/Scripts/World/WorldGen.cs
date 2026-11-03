@@ -172,8 +172,6 @@ namespace Diverse
             return LiquidThemeAt(p);
         }
 
-        public Biome BiomeAt(float x, float y) => ThemeAt(x, y).biome;
-
         /// <summary>Custom-mode biomes: temperature / moisture noise (harsh biomes farther out).</summary>
         Biome NoiseBiome(float x, float y)
         {
@@ -277,9 +275,7 @@ namespace Diverse
             }
             if (road || approach) return theme.road;
 
-            // A designed world can lay its own roads / lanes / paving over open land (never right next to the town)
-            var open = OpenGround(theme, x, y, pos);
-            return nearTown ? open : DesignLayout.Ground(tx, ty, open, seed);
+            return OpenGround(theme, x, y, pos);
         }
 
         Ground OpenGround(ThemeDef t, float x, float y, Vector2 pos)

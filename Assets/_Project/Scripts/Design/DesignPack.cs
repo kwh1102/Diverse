@@ -1,12 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace Diverse
 {
     /// <summary>
-    /// A world's look, written by the player's prompts (AI or the local keyword parser) and drawn locally by DesignArt.
+    /// A custom hero and weapon look, written by the player's prompts (AI or the local keyword parser) and drawn locally by DesignArt.
     /// It holds ONLY appearance: colors, closed-set shapes, optional tiny pixel grids and names.
     /// Gameplay comes from an existing chassis (baseWeapon / basePerk), so a prompt can never change balance.
     /// Self-contained JSON (designs/&lt;id&gt;.json) so it can later be uploaded to a server as-is.
@@ -24,9 +23,7 @@ namespace Diverse
         public HeroLook hero = new HeroLook();
         public WeaponLook weapon = new WeaponLook();
         public AttackLook attack = new AttackLook();
-        public WorldLook world = new WorldLook();
-        public EnemyLook enemies = new EnemyLook();
-        public List<string> prompts = new List<string> { "", "", "", "" };   // per studio tab
+        public List<string> prompts = new List<string> { "", "" };           // per studio tab
         public List<string> ignored = new List<string>();                     // power requests that were not applied
 
         public static DesignPack Default() => new DesignPack { source = "default", summary = "기본 디자인" };
@@ -38,17 +35,12 @@ namespace Diverse
             return c;
         }
 
-        /// <summary>Copy one studio section from another pack (0 hero, 1 weapon+attack, 2 world, 3 enemies).</summary>
+        /// <summary>Copy one studio section from another pack (0 hero, 1 weapon+attack).</summary>
         public void CopySection(DesignPack from, int section)
         {
             var src = from.Clone();
-            switch (section)
-            {
-                case 0: hero = src.hero; break;
-                case 1: weapon = src.weapon; attack = src.attack; break;
-                case 2: world = src.world; break;
-                case 3: enemies = src.enemies; break;
-            }
+            if (section == 0) hero = src.hero;
+            else { weapon = src.weapon; attack = src.attack; }
             prompts[section] = src.prompts[section];
         }
     }
@@ -125,77 +117,5 @@ namespace Diverse
         public string[] effectPrompts;             // English: swing, impact, trail, muzzle (one 2x2 effect sheet)
         public string[] effectImages;              // DesignStore image ids in the same order
         public bool flipEffects;                   // player's manual left/right flip of the swing and muzzle effects
-    }
-
-    /// <summary>Whole-palette transform (world vegetation/ground, enemies).</summary>
-    [Serializable]
-    public class PaletteShift
-    {
-        public float hueShift;                     // degrees
-        public float saturation = 1;
-        public float brightness = 1;
-        public string tint;
-        public float tintAmount;
-
-        public bool Identity => Mathf.Abs(hueShift) < 0.5f && Mathf.Abs(saturation - 1) < 0.01f && Mathf.Abs(brightness - 1) < 0.01f
-                                && (string.IsNullOrEmpty(tint) || tintAmount <= 0.001f);
-    }
-
-    [Serializable]
-    public class WorldLook : PaletteShift
-    {
-        public string mood;                        // one Korean word for the studio summary
-        public string themePrompt;                 // English, short: what this world is made of (keeps every picture in one theme)
-        public string grass, path, water, rough, foliage; // hex overrides (rough = sand/snow/swamp/ash; empty = shifted original)
-        public string layout = "wild";             // DesignLayout.Styles: how roads, buildings and scenery are arranged
-        public string[] tilePrompts;               // English ground textures, 2 variants each: ground A/B, path A/B, liquid A/B, rough A/B (two opaque sheets)
-        public string[] tileImages;                // 32x32 swatches (8), tiled mirrored, variants mixed in patches
-        public string[] decorPrompts;              // English, 12 scenery objects of this world
-        public string[] decorSizes;                // per object: large | medium | small | tiny
-        public string[] decorPlaces;               // per object: road | cluster | scatter | rows | rare (DesignLayout)
-        public string[] decorImages;
-        public string[] townPrompts;               // English: house A, house B, street light, landmark (well)
-        public string[] townImages;
-        public string ambient = "none";            // DesignArt.Ambients: drifting particles over the world
-        public string ambientColor;
-
-        static bool Full(string[] a, int n) => a != null && a.Length == n && a.All(s => !string.IsNullOrEmpty(s));
-        public bool HasTiles => Full(tileImages, 8);
-        public bool HasDecor => decorImages != null && decorImages.Length == 12 && decorImages.Count(s => !string.IsNullOrEmpty(s)) >= 6;
-        public bool HasTown => Full(townImages, 4);
-        public bool IsDefault => Identity && string.IsNullOrEmpty(grass) && string.IsNullOrEmpty(path) && string.IsNullOrEmpty(rough)
-                                 && string.IsNullOrEmpty(water) && string.IsNullOrEmpty(foliage) && !HasTiles && !HasDecor && !HasTown && ambient == "none";
-    }
-
-    [Serializable]
-    public class NameEntry { public string id, name; }
-
-    /// <summary>A redrawn enemy: same behaviour and hitbox, new picture (drawn at the original sprite height).</summary>
-    [Serializable]
-    public class EnemyArt { public string id, imagePrompt, image, image2, image3, image4; }   // standing, step A, attacking, step B
-
-    /// <summary>A kind of enemy in the theme; the engine turns families into one design per enemy id by role.</summary>
-    [Serializable]
-    public class EnemyFamily { public string name, imagePrompt; }
-
-    [Serializable]
-    public class EnemyLook : PaletteShift
-    {
-        public string theme;
-        public List<EnemyFamily> families = new List<EnemyFamily>();
-        public List<NameEntry> names = new List<NameEntry>();
-        public List<EnemyArt> art = new List<EnemyArt>();
-
-        public string ImageOf(string id)
-        {
-            foreach (var a in art) if (a != null && a.id == id && !string.IsNullOrEmpty(a.image)) return a.image;
-            return null;
-        }
-
-        public string NameOf(string id)
-        {
-            foreach (var n in names) if (n != null && n.id == id && !string.IsNullOrWhiteSpace(n.name)) return n.name;
-            return null;
-        }
     }
 }

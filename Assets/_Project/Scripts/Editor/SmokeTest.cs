@@ -225,7 +225,6 @@ namespace Diverse.EditorTools
                     Fail($"toothpick prompt not understood ({pack.weapon.shape}/{pack.weapon.hold}/{pack.attack.origin}/{pack.weapon.baseWeapon})");
                 if (pack.ignored.Count == 0) Fail("power request was not reported as ignored");
                 if (pack.hero.hat != "wizard") Fail("hero prompt not applied");
-                if (!pack.world.IsDefault || !pack.enemies.Identity) Fail("design changed the built-in world or enemies");
                 if (Art.Bolt() == null || Art.Weapon(WeaponKind.Crossbow) == null) Fail("designed sprites missing");
                 Click(studio, "Undo");
                 yield return Frames(1);
@@ -686,22 +685,17 @@ namespace Diverse.EditorTools
                 if (Visible<DesignStudioView>()) Fail("design studio did not close after applying");
                 if (!g.Player.Costume.id.StartsWith(DesignStore.CostumePrefix)) Fail("in-game design did not redraw the hero");
                 if (g.Player.Weapon.kind != kindBefore || g.Player.Weapon.baseDamage != damageBefore) Fail("in-game design changed the weapon chassis/numbers");
-                if (!DesignRuntime.Active.world.IsDefault || !DesignRuntime.Active.enemies.Identity) Fail("in-game design changed the world or enemies");
                 g.CloseOverlay();
                 yield return Frames(30);
 
-                // 4c) An older fully pictured pack keeps hero/weapon effects while world/enemy overrides are ignored.
+                // 4c) A fully pictured pack draws the hero/weapon effects; the built-in enemies keep their own pictures.
                 step = "pictured design";
                 var pictured = DesignTestData.Pictured(g.Player);
                 g.ApplyDesign(DesignStore.Commit(pictured));
                 yield return Frames(40);
-                if (!DesignRuntime.Active.world.IsDefault || !DesignRuntime.Active.enemies.Identity
-                    || DesignRuntime.Active.enemies.art.Count > 0 || DesignRuntime.Active.enemies.names.Count > 0)
-                    Fail("an older pack replaced the built-in world or enemies");
                 if (Art.Enemy("shroom", 1).rect.height < 10) Fail("enemy moving pose missing");
                 var designed = DesignCombat.For(DesignRuntime.Active);
                 if (designed == null || Art.Slash(designed.slashColor, designed.slashCore, 20, 140, 1).Length != 5) Fail("designed swing effect not used");
-                if (DesignRuntime.GroundTexel(Ground.Grass, 3, 5, out _)) Fail("an older pack replaced the ground texture");
                 if (g.Player.Weapon.kind != kindBefore) Fail("pictured design changed the weapon chassis");
                 yield return Frames(20);
 
@@ -766,7 +760,6 @@ namespace Diverse.EditorTools
                 foreach (Pose pose in System.Enum.GetValues(typeof(Pose)))
                     if (DesignArt.HeroPose(frames, pose, false) == null) return "hero pose missing: " + pose;
                 if (DesignArt.Effect(frames[0], DesignArt.EffectKind.Swing, 40).Length != 5) return "swing effect frames wrong";
-                if (DesignArt.EnemyFrame(frames[0], frames[1], frames[2], 2) == null || DesignArt.EnemyFrame(frames[0], null, null, 3) == null) return "enemy frame missing";
                 var mirrored = DesignStore.Image(DesignStore.Mirrored(DesignStore.SaveImage(cells[0])));
                 if (mirrored == null || mirrored.width != cells[0].W) return "mirroring a picture failed";
                 Object.DestroyImmediate(sheet);

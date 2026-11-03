@@ -83,7 +83,7 @@ namespace Diverse
             GameTime.Tick();
             float dt = Time.deltaTime;
 
-            if (Player != null) { WorldStreamer.I.Tick(Player.Pos); DesignRuntime.TickAmbient(Player.Pos, dt); }
+            if (Player != null) WorldStreamer.I.Tick(Player.Pos);
 
             if (State == GameState.Playing && Player != null && Player.Alive)
             {

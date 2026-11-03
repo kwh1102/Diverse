@@ -97,8 +97,6 @@ namespace Diverse
         }
         public static string Eul(string w) => w + (HasBatchim(w) ? "을" : "를");
         public static string I(string w) => w + (HasBatchim(w) ? "이" : "가");
-        public static string Eun(string w) => w + (HasBatchim(w) ? "은" : "는");
-        public static string Wa(string w) => w + (HasBatchim(w) ? "과" : "와");
         public static string Ro(string w) => w + (HasBatchim(w) && !RieulBatchim(w) ? "으로" : "로");
     }
 
@@ -112,9 +110,7 @@ namespace Diverse
         public static float Angle(this Vector2 v) => Mathf.Atan2(v.y, v.x) * Mathf.Rad2Deg;
         public static Vector2 Dir(float deg) => new Vector2(Mathf.Cos(deg * Mathf.Deg2Rad), Mathf.Sin(deg * Mathf.Deg2Rad));
         public static Vector2 SafeNormal(this Vector2 v, Vector2 fallback) => v.sqrMagnitude > 1e-6f ? v.normalized : fallback;
-        public static Vector3 V3(this Vector2 v) => new Vector3(v.x, v.y, 0);
         public static int FloorDiv(int a, int b) => a >= 0 ? a / b : -((-a + b - 1) / b);
-        public static int FloorToTile(float v) => Mathf.FloorToInt(v);
         public static float EaseOutCubic(float t) { t = 1 - Mathf.Clamp01(t); return 1 - t * t * t; }
         public static float EaseOutBack(float t) { t = Mathf.Clamp01(t); float c1 = 1.70158f, c3 = c1 + 1; return 1 + c3 * Mathf.Pow(t - 1, 3) + c1 * Mathf.Pow(t - 1, 2); }
     }

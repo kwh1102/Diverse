@@ -11,6 +11,8 @@ namespace Diverse.EditorTools
 {
     public static class CompositionChecks
     {
+        static readonly string[] Themes = { "overgrowth", "volcano", "crystal", "glacier", "canyon", "fortress", "mirror", "swamp" };
+
         static void Require(bool valid, string why) { if (!valid) throw new InvalidOperationException(why); }
 
         [MenuItem("Diverse/World/Check Regional Composition")]
@@ -22,7 +24,7 @@ namespace Diverse.EditorTools
             try
             {
                 var world = go.AddComponent<WorldStreamer>(); world.EditorRegister();
-                foreach (string id in WorldCompositionDefaults.Themes)
+                foreach (string id in Themes)
                 {
                     var theme = DB.Theme(id);
                     Require(theme.scenery.enabled && theme.scenery.group.Count >= 4, id + " missing composition/group");

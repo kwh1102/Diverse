@@ -13,15 +13,15 @@ namespace Diverse
 
         // GroundColors runs for every tile and every border pixel of every chunk bake (and the minimap): parsing hex strings
         // there made thousands of short-lived strings per chunk, and the garbage collections showed up as hitches.
-        // The colours are resolved once per look (DesignRuntime.Version) into a table.
+        // The colours are resolved once (again after Art.ResetLooks) into a table.
         static readonly Color32[] groundTable = new Color32[3 * 32];   // 3 colours per Ground (room to grow)
-        static int groundTableFor = -1;
+        static bool groundTableReady;
 
         public static void GroundColors(Ground g, out Color32 a, out Color32 b, out Color32 c)
         {
-            if (groundTableFor != DesignRuntime.Version)
+            if (!groundTableReady)
             {
-                groundTableFor = DesignRuntime.Version;
+                groundTableReady = true;
                 foreach (Ground k in System.Enum.GetValues(typeof(Ground)))
                 {
                     ResolveGroundColors(k, out var ka, out var kb, out var kc);
@@ -64,7 +64,6 @@ namespace Diverse
                 int last = look.ramp.Length - 1;
                 a = TileBaker.PaletteColor(look.ramp[Mathf.Min(1, last)]); b = TileBaker.PaletteColor(look.ramp[0]); c = TileBaker.PaletteColor(look.ramp[Mathf.Min(2, last)]);
             }
-            DesignRuntime.Ground(g, ref a, ref b, ref c);
         }
 
         /// <summary>Theme scenery by sprite key (painted art in Resources/Sprites; code-drawn fallbacks for the nature sets).</summary>

@@ -275,14 +275,6 @@ namespace Diverse
             return cv.ToSpriteCentered();
         });
 
-        public static Sprite Disc(int radiusPx) => Get($"disc_{radiusPx}", () =>
-        {
-            int S = radiusPx * 2 + 2;
-            var cv = new PixelCanvas(S, S);
-            cv.Circle(S / 2f, S / 2f, radiusPx, Color.white);
-            return cv.ToSpriteCentered();
-        });
-
         /// <summary>둥근 빛 번짐 (가산 셰이더용, 알파 그라데이션을 도트 단계로).</summary>
         public static Sprite Glow(int radiusPx) => Get($"glow_{radiusPx}", () =>
         {

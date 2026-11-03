@@ -115,11 +115,6 @@ namespace Diverse
             SaveSystem.SaveWorld(World);
         }
 
-#if UNITY_EDITOR
-        /// <summary>Editor tools: build world objects in edit mode against a throwaway save (null restores normal loading).</summary>
-        public static void UseWorldForBake(WorldSave w) => World = w;
-#endif
-
         public static void ResetWorld()
         {
             SaveSystem.DeleteWorld();

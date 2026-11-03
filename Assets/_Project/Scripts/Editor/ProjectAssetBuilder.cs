@@ -26,6 +26,12 @@ namespace Diverse.EditorTools
         internal const string ResDir = Root + "/Resources";
         internal const string SpriteDir = ResDir + "/Sprites";
 
+        /// <summary>Sprites from the first reference art pass that are still in use; generic redraws must keep them.</summary>
+        static readonly HashSet<string> KeptReferenceSprites = new HashSet<string>
+        {
+            "flower_0", "flower_1", "flower_2", "flower_3", "flower_4", "prop_campfire", "prop_reference_bridge", "prop_reference_pond",
+        };
+
         [MenuItem("Diverse/빠진 에셋 채우기 (데이터·프리팹·씬)", priority = 80)]
         public static void BuildAllMenu()
         {
@@ -321,8 +327,6 @@ namespace Diverse.EditorTools
             Add("shield", Art.Shield);
             Add("bolt", Art.Bolt);
             Add("knife", Art.Knife);
-            foreach (var key in DefaultData.Enemies.Values.Select(e => e.sprite).Distinct())
-                for (int f = 0; f < 5; f++) { var ff = f; var kk = key; Add($"enemy_{kk}_{ff}", () => Art.Enemy(kk, ff)); }
             foreach (Biome b in System.Enum.GetValues(typeof(Biome)))
             {
                 var bb = b;
@@ -354,7 +358,7 @@ namespace Diverse.EditorTools
                 string path = $"{SpriteDir}/{key}.png";
                 bool again = redraw.Any(p => key.StartsWith(p));
                 // Reviewed reference sprites have their own source sheets and importer. Generic redraws must keep them.
-                if (ReferenceArtImport.IsManaged(key) || WorldArtOverhaul.IsManaged(key)) continue;
+                if (KeptReferenceSprites.Contains(key) || WorldArtOverhaul.IsManaged(key)) continue;
                 if (File.Exists(path) && !again) continue;
                 Art.DrawOnly = again;
                 Sprite s;

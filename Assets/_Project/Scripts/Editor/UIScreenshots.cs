@@ -158,15 +158,10 @@ namespace Diverse.EditorTools
                     g.Ui.OpenTab("settings"); yield return F(3); Shot("09_pause_settings");
                     g.Ui.OpenTab("graphics"); yield return F(3); Shot("09b_pause_graphics");
                     Click(Find<PauseView>(), "Design"); yield return F(3); Shot("09b_pause_design");
-                    g.CloseOverlay(); yield return F(30); Shot("09c_world_designed");
-                    // A pictured city (local stand-in pictures): street grid, buildings along the streets, two-variant ground
-                    var home = g.Player.Pos;
+                    g.CloseOverlay(); yield return F(30); Shot("09c_after_design");
+                    // A pictured hero and weapon (local stand-in pictures) in the built-in world
                     g.ApplyDesign(DesignStore.Commit(DesignTestData.Pictured(g.Player)));
-                    var spot = WorldStreamer.I.NearestWalkable(new Vector2(42, -42), g.Player.radius, 8, false);
-                    g.Player.Pos = spot; WorldStreamer.I.Warm(spot); CameraRig.I.Snap(spot);
-                    yield return F(60); Shot("09d_city_layout");
-                    g.Player.Pos = home; WorldStreamer.I.Warm(home); CameraRig.I.Snap(home);
-                    yield return F(10);
+                    yield return F(30); Shot("09d_pictured_design");
                     var npc = Interactable.All.Where(i => i != null && i.kind == "npc_storyteller").FirstOrDefault()
                               ?? Interactable.All.FirstOrDefault(i => i != null && i.kind.StartsWith("npc_"));
                     if (npc != null) { Dialogue.Open(g, npc); yield return F(3); Shot("10_dialogue"); g.CloseOverlay(); yield return F(2); }

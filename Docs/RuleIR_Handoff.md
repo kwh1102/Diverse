@@ -2,7 +2,6 @@
 
 > ✅ **2026-10-06 2차 작업으로 마이그레이션 완료.** 컴파일 OK, `DiverseTools.ValidatePipelineBatch` PASS, `SmokeTest.RunBatch` PASS. 커밋하지 않았다.
 > 아래 4·5절은 1차 중단 시점 기록이다. 맨 아래 "7. 2차 작업 결과"를 먼저 볼 것.
-> 원본 대화: `Docs/gpt_rule_language_conversation.txt` (ChatGPT 공유 링크에서 추출, 4턴).
 
 ## 1. 목표 (GPT 대화 결론)
 

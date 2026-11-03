@@ -5,7 +5,7 @@ namespace Diverse
 {
     /// <summary>
     /// Free, offline prompt reader (no API key, AI off, or the call failed): Korean keywords → the same closed-set spec
-    /// the AI writes. Rougher than the AI, but every prompt still changes the world and nothing here can touch balance.
+    /// the AI writes. Rougher than the AI, but every prompt still changes the hero or weapon and nothing here can touch balance.
     /// </summary>
     public static class DesignLocal
     {
@@ -74,10 +74,8 @@ namespace Diverse
             var p = current.Clone();
             if (sections[0]) Hero(p, p.prompts[0], lockChassis);
             if (sections[1]) Weapon(p, p.prompts[1], lockChassis);
-            if (sections[2]) World(p.world, p.prompts[2]);
-            if (sections[3]) Enemies(p.enemies, p.prompts[3]);
             p.source = "local";
-            p.summary = "로컬 해석: " + string.Join(" / ", Enumerable.Range(0, 4).Where(i => sections[i] && p.prompts[i].Length > 0)
+            p.summary = "로컬 해석: " + string.Join(" / ", Enumerable.Range(0, 2).Where(i => sections[i] && p.prompts[i].Length > 0)
                 .Select(i => p.prompts[i].Length > 14 ? p.prompts[i].Substring(0, 14) + "…" : p.prompts[i]));
             DesignGuard.Sanitize(p);
             return p;
@@ -162,56 +160,6 @@ namespace Diverse
                 w.weight = "medium";
                 w.skills = style.skills;
             }
-        }
-
-        static void World(WorldLook w, string s)
-        {
-            var colors = FindColors(s);
-            void Preset(string grass, string path, string water, string foliage, float sat = 1, float bright = 1, string tint = null, float amt = 0)
-            { w.grass = grass; w.path = path; w.water = water; w.foliage = foliage; w.saturation = sat; w.brightness = bright; w.tint = tint; w.tintAmount = amt; w.hueShift = 0; }
-
-            if (Any(s, "사탕", "과자", "디저트", "케이크")) { Preset("#ffc8dd", "#fff2b3", "#9fe0ff", "#ff9ec4"); w.mood = "과자 나라"; }
-            else if (Any(s, "겨울", "눈 내", "설원", "눈밭")) { Preset("#eaf2fb", "#c9d6e6", "#8fc6f2", "#cfe0f0"); w.mood = "겨울"; }
-            else if (Any(s, "가을", "단풍")) { Preset("#c9a24f", "#d8b47e", "#5a92dc", "#e0823d"); w.mood = "가을"; }
-            else if (Any(s, "사막", "모래")) { Preset("#e3c685", "#d8b47e", "#5aa0e0", "#9aa05a"); w.mood = "사막"; }
-            else if (Any(s, "화산", "용암", "지옥")) { Preset("#6e6372", "#8a5a4a", "#ff7a3d", "#8a4a3a", 1, 0.9f, "#ff5a3d", 0.12f); w.mood = "화산"; }
-            else if (Any(s, "네온", "사이버", "미래")) { Preset("#2b2a4a", "#3d3d6b", "#39f2ff", "#ff4fd8"); w.mood = "네온"; }
-            else if (Any(s, "늪", "독")) { Preset("#6f7f5a", "#7a6a4a", "#7aa05a", "#4a5a33"); w.mood = "늪"; }
-            else if (Any(s, "벚꽃", "봄")) { Preset("#8fd67a", "#e5c793", "#8cc6f2", "#f2a7c3"); w.mood = "봄"; }
-            else if (Any(s, "흑백", "모노", "옛날 영화")) { Preset(null, null, null, null, 0.35f); w.mood = "흑백"; }
-            else if (Any(s, "우주", "별빛")) { Preset("#2a2340", "#4a3d6b", "#1a1a3a", "#7b5cff", 1, 0.85f); w.mood = "우주"; }
-            if (Any(s, "밤", "어두운", "달빛")) { w.brightness = 0.72f; w.tint = "#2a2a5a"; w.tintAmount = 0.25f; w.mood ??= "밤"; }
-
-            w.foliage = ColorBefore(s, colors, "숲", "나무", "잎") ?? w.foliage;
-            w.water = ColorBefore(s, colors, "물", "바다", "강", "호수") ?? w.water;
-            w.path = ColorBefore(s, colors, "길") ?? w.path;
-            w.grass = ColorBefore(s, colors, "풀", "땅", "들판", "잔디", "초원") ?? w.grass;
-            if (w.IsDefault && colors.Count > 0) { w.tint = colors[0].hex; w.tintAmount = 0.3f; }
-        }
-
-        static void Enemies(EnemyLook e, string s)
-        {
-            var colors = FindColors(s);
-            (string[] words, string theme, string tint, float amt, float sat, float bright)[] themes =
-            {
-                (new[] { "과자", "사탕", "디저트" }, "과자", "#ff9ec4", 0.4f, 1, 1.05f),
-                (new[] { "좀비", "언데드", "해골" }, "좀비", "#7aa05a", 0.4f, 0.7f, 0.9f),
-                (new[] { "유령", "귀신" }, "유령", "#c9d6ff", 0.35f, 0.45f, 1.15f),
-                (new[] { "악마", "지옥", "불" }, "지옥", "#ff5a3d", 0.35f, 1.1f, 1),
-                (new[] { "얼음", "눈", "겨울" }, "얼음", "#8fe3ff", 0.35f, 0.9f, 1.05f),
-                (new[] { "기계", "로봇", "강철" }, "기계", "#9aa7b8", 0.35f, 0.45f, 1),
-                (new[] { "황금", "보물" }, "황금", "#f4c95d", 0.4f, 1, 1.05f),
-                (new[] { "그림자", "어둠" }, "그림자", "#3a2a5a", 0.35f, 0.8f, 0.75f),
-                (new[] { "독", "늪" }, "독", "#9be05a", 0.35f, 1, 1),
-            };
-            var t = themes.FirstOrDefault(x => Any(s, x.words));
-            if (t.theme != null)
-            {
-                e.theme = t.theme; e.tint = t.tint; e.tintAmount = t.amt; e.saturation = t.sat; e.brightness = t.bright; e.hueShift = 0;
-                // Rename every enemy with the theme as a prefix ("과자 버섯 꼬마")
-                e.names = DB.Enemies.Values.Select(d => new NameEntry { id = d.id, name = (t.theme + " " + d.name).Length <= DesignGuard.MaxName ? t.theme + " " + d.name : t.theme + " " + d.name.Split(' ').Last() }).ToList();
-            }
-            else if (colors.Count > 0) { e.tint = colors[0].hex; e.tintAmount = 0.35f; }
         }
     }
 }

@@ -60,19 +60,8 @@ namespace Diverse
             return p;
         }
 
-        /// <summary>The world's current look (default when it never had one).</summary>
+        /// <summary>The design last committed in this world: the studio starts from it (default when there is none).</summary>
         public static DesignPack OfWorld(WorldSave w) => (w != null ? Load(w.designId) : null) ?? DesignPack.Default();
-
-        /// <summary>Only the world + enemy sections (a classic hero picked from the old character select).</summary>
-        public static DesignPack WorldOnly(DesignPack p)
-        {
-            var c = DesignPack.Default();
-            if (p == null) return c;
-            c.CopySection(p, 2);
-            c.CopySection(p, 3);
-            c.summary = p.summary;
-            return c;
-        }
 
         public static DesignPack PackOfCostume(string costumeId) =>
             costumeId != null && costumeId.StartsWith(CostumePrefix) ? Load(costumeId.Substring(CostumePrefix.Length)) : null;

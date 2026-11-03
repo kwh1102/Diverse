@@ -77,7 +77,6 @@
 - **Diverse → Art → Apply Cute World Overhaul**: 원본에서 현재 아트와 규칙 재적용. 명시적으로 실행하는 초기화 명령이므로 Inspector에서 조정한 해당 아트 설정은 재설정된다.
 - **Diverse → Art → Check World Overhaul**: 에셋, 청크 접합, 장식 간격/결정성, 시간 분할 결과 검사.
 - **Diverse → Art → Capture All Terrain Regions**: 실제 Game 씬의 9개 지형, 마을, 8개 보스 랜드마크를 `Logs/AllTerrain/`에 촬영.
-- 이전 첫 아트 패스와 비스듬한 절벽 복원 명령은 **Art → Legacy** 아래에 둔다.
 
 검증 명령 (`Unity.exe`는 설치된 6000.0.62f1 사용):
 

@@ -10,7 +10,7 @@ All source art is deliberately cute, simple and chunky: broad pixel clusters and
 
 The following is the production prompt specification. Tool mode: **built-in ImageGen**, actual transparent background for every sheet. The supplied game screenshot is always a **style reference only**, never a sheet to crop/extract.
 
-The supplied village/terrain screenshots are preserved under `References/` for reproducible art direction. The first fantasy reference remains in the earlier `ArtSource/ReferenceRedesign/reference.png` archive.
+The supplied village/terrain screenshots are preserved under `References/` for reproducible art direction.
 
 ### Shared direction
 
@@ -70,6 +70,6 @@ Row 2: broad ochre mesa with a little ruined wind tower, simple strata and cave 
 
 ## Import and review
 
-Run **Diverse → Art → Apply Cute World Overhaul** to reproduce the native assets. **Check World Overhaul** writes contracts/spacing/seam checks and a native asset preview to `Logs/Redesign`. **Capture All Terrain Regions** writes actual gameplay screenshots to `Logs/AllTerrain` using scratch saves. The earlier source sheets under `ArtSource/ReferenceRedesign` document past work and are superseded by this folder.
+Run **Diverse → Art → Apply Cute World Overhaul** to reproduce the native assets. **Check World Overhaul** writes contracts/spacing/seam checks and a native asset preview to `Logs/Redesign`. **Capture All Terrain Regions** writes actual gameplay screenshots to `Logs/AllTerrain` using scratch saves.
 
 The follow-up background material pass is drawn by the native `TileBaker` renderer; these five approved source sheets remain unchanged. It adds clustered surfaces, soft intermediate colours, finished land/water edges and wooden deck detail. **Apply Background Material Pass** updates only background settings. The full importer keeps the original 66-colour sprite palette while background intermediate colours are appended to the game palette. See `Docs/WorldArt.md` for rules and validation.

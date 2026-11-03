@@ -130,7 +130,7 @@
 - **타격감 조정**: `Data/Weapons/<무기>.asset` → `Combo` 항목 (`hitstop`, `shake`, `kick`, `lunge`, `knockback`)
 - **적·코스튬 수치**: `Data/Enemies/*.asset`, `Data/Costumes/*.asset` (코스튬 특화 능력치는 `Mods`: 스탯 / 곱연산 여부 / 값)
 - **스킬 추가**: `Combat/Skills.cs` → `SkillDB`에 정의 + `Run()`에 `case` 추가 + 무기 에셋의 `Skills` 변경
-- **새 적**: `Data/Enemies`에서 **Create → Diverse → Enemy**로 만들고 `GameDatabase`의 `Enemies`에 추가 + `Art/ArtEnemies.cs`에 그리기 함수(또는 `Resources/Sprites/enemy_<sprite>_0~2.png`) + `WorldGen.FillSpec` 등장 목록에 추가
+- **새 적**: `Data/Enemies`에서 **Create → Diverse → Enemy**로 만들고 `GameDatabase`의 `Enemies`에 추가 + `Resources/Sprites/enemy_<sprite>_0~4.png` 그림(코드 대체 그림 없음) + `WorldGen.FillSpec` 등장 목록에 추가
 - **새 구조물**: `StructKind` + `WorldGen.PickKind/FillSpec` + `World.BuildStructure`
 - **도트 그림 교체**: `Resources/Sprites/`의 PNG를 고치면 된다. 키 이름 규칙은 `Art.Get` 호출부 참고 (예: `rabbit_white_Idle0`, `enemy_fox_0`, `prop_well`)
 

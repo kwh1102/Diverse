@@ -37,7 +37,7 @@
 
 `DecorEntry`의 `visualScale`, `mediumScale`, `rareScale`, 크기별 확률/문턱을 Inspector에서 편집한다. `spacingScale`은 이전 간격을 예약하므로 작은 개체가 늘어나거나 빈터가 메워지지 않는다. 크기 선택은 월드 좌표와 시드로 고정된다. 건축물·랜드마크·도로는 이 보정의 대상이 아니다.
 
-**Diverse → World → Apply Cactus and Crystal Sizes**는 협곡/수정의 대상 항목만 보정한다. 전체 지역 설정을 다시 설치해도 이 크기 보정을 유지한다. 컴파일 및 기존 8테마 역순/간격/청크 검사 통과, 고밀도 표본 1,000개당 거대 크기 40개·군집 밖 큰 개체 없음 확인. 기존 표본의 협곡/수정 배치 개수 71/69개도 동일하다. 두 지역 실제 Game 씬 촬영과 필드→도로/소품 묶음 길찾기도 통과했다. 최신 실행 기록은 `Logs/NaturalSizesChecks.log`, `Logs/NaturalSizesCapture.log`다.
+협곡/수정의 크기 보정은 각 테마 에셋에 저장되어 있다. 컴파일 및 기존 8테마 역순/간격/청크 검사 통과, 고밀도 표본 1,000개당 거대 크기 40개·군집 밖 큰 개체 없음 확인. 기존 표본의 협곡/수정 배치 개수 71/69개도 동일하다. 두 지역 실제 Game 씬 촬영과 필드→도로/소품 묶음 길찾기도 통과했다. 최신 실행 기록은 `Logs/NaturalSizesChecks.log`, `Logs/NaturalSizesCapture.log`다.
 
 소품 묶음은 전역 셀에서 결정하고 구성원 전체가 지형/도로/구조물 여유 검사에 통과한 경우에만 배치한다. 묶음 주변은 일반 장식을 비우며, 구성원은 각자의 밑동이 속한 청크에서 한 번씩 만든다. 청크 로딩 순서나 아직 로딩되지 않은 이웃 청크가 결과에 영향을 주지 않는다.
 
@@ -53,7 +53,6 @@
 
 `Assets/_Project/Scenes/Game.unity`를 열고 Play. 기존 실행 중인 월드는 종료 후 다시 시작해야 새 캐시와 생성 규칙이 적용된다. 개별 테마의 수치와 소품 묶음은 `Assets/_Project/Data/Themes/*.asset`의 Scenery에서 편집한다.
 
-- `Diverse → World → Apply Regional Composition`: 8개 테마와 공통 길/배치 설정을 명시적으로 재설치한다. 사용자 조정값을 초기값으로 바꾸므로 일반 확인을 위해 실행할 필요는 없다.
 - `Diverse → World → Check Regional Composition`: 8개 테마의 역할/스케일/소품 묶음, 역순 생성, 접지/간격, 길 여유와 여러 시드의 목적지 연결을 검사한다. 기존 아트/청크 경계/시간 분할 렌더 검사도 포함한다.
 - `CompositionCapture.RunBatch`: 별도 임시 저장으로 실제 Game 씬의 테마별 필드/소품 묶음/랜드마크를 촬영하고 청크 경계와 소품 묶음 중앙 길찾기를 검사한다. 출력은 `Logs/Composition/`.
 - `WorldOverview.RunBatch`: 전체 지형의 시작점 연결성 및 보스/탐험 장소 접근, 역순 타일 생성과 미니맵 크기 지형 그림을 확인한다. 출력은 `Logs/World/`.

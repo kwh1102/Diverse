@@ -30,7 +30,7 @@
 - `Data/Themes/*.asset → decor`: 필드에 추가되는 지역 소품. 기존 장식 간격과 실루엣 검사를 따른다.
 - `Data/ArtStyle.asset → Hero idle`: 기본값 4.8초마다 0.08초 깜빡임. 대기 이미지는 6개 코스튬과 토끼 주민에 맞춰 가져온다.
 
-**Diverse → World → Apply Exploration Expansion**은 기본 배치 데이터를 다시 설치하는 명시적인 메뉴다. Inspector에서 조정한 장소 데이터를 다시 기본값으로 바꾸므로, 단순 이미지 재가져오기는 **Art → Import Exploration Art and Corrected States**를 사용한다. 원본·생성 프롬프트는 `ArtSource/Exploration/README.md`에 있다.
+장소 데이터는 `Data/WorldRules.asset`의 Inspector에서 편집한다. 이미지 재가져오기는 **Art → Import Exploration Art and Corrected States**를 사용한다. 원본·생성 프롬프트는 `ArtSource/Exploration/README.md`에 있다.
 
 ## 생성·연결 규칙
 

@@ -360,16 +360,6 @@ namespace Diverse
             bakedOrder.Clear();
         }
 
-        public Ground[,] GroundOf(Vector2Int k)
-        {
-            var g = GroundEntry(k);
-            int N = WorldGen.Chunk;
-            for (int y = -1; y <= N; y++)
-                for (int x = -1; x <= N; x++)
-                    GroundSample(g, k, x + 1, y + 1);
-            return g.tiles;
-        }
-
         GroundChunk GroundEntry(Vector2Int key)
         {
             if (groundCache.TryGetValue(key, out var entry)) return entry;

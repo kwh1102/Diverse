@@ -21,8 +21,6 @@ namespace Diverse.EditorTools
         {
             "마법사 모자를 쓴 보라색 문어",
             "은색 권총을 들고 총알을 빠르게 발사하는 공격. 데미지는 100배로!",
-            "사탕으로 만든 숲과 우유가 흐르는 강",
-            "모든 적이 태엽 장난감 병정과 로봇",
         };
 
         [InitializeOnLoadMethod]
@@ -91,9 +89,6 @@ namespace Diverse.EditorTools
                 Save("weapon", Art.Weapon(kind));
                 Save("projectile", Art.Bolt());
                 Save("hero", Art.Rabbit(DesignStore.PreviewCostume(p), Pose.Idle0));
-                Save("tree", Art.Tree(Biome.Meadow, 1));
-                Save("rock", Art.Rock(Biome.Meadow, 0));
-                foreach (var e in DB.Enemies.Values) Save("enemy_" + e.id, Art.Enemy(e.sprite, 0));
                 log.AppendLine($"power={DesignCombat.Power(DesignCombat.For(p) ?? DB.W(kind)):0.0} budget={DesignCombat.Budget:0.0}");
                 File.WriteAllText(Path.Combine(OutDir, "result.txt"), log.ToString());
                 EditorApplication.ExitPlaymode();

@@ -797,9 +797,6 @@ namespace Diverse
     {
         static AbilityRulesDef fallback, applied;
 
-        /// <summary>Re-apply the asset tuning after it was edited in the Inspector.</summary>
-        public static void Reload() => applied = null;
-
         public static AbilityRulesDef Def
         {
             get
