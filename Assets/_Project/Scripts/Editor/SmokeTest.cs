@@ -207,15 +207,16 @@ namespace Diverse.EditorTools
                     Fail("preset character/weapon/perk pickers are still shown");
                 int oldBalance = Session.World.gold;
                 Session.World.gold = TravelTypes.Price;
-                Click(studio, "Tab 0");
+                Click(studio, "Generate");
+                if (DesignRuntime.Active.travelSelected) Fail("new design had a travel type selected before the player chose one");
                 Click(studio, "Travel Flight");
                 if (Session.World.gold != 0 || !TravelTypes.Unlocked(Session.World, TravelType.Flight))
                     Fail("travel type purchase did not unlock the type or charge the coffer");
                 Click(studio, "Travel Flight");
                 if (DesignRuntime.Active.travelType != TravelType.Flight)
                     Fail("unlocked travel type was not selected");
-                Click(studio, "Tab 0");
                 Click(studio, "Travel Dash");
+                Click(studio, "Close Travel Types");
                 Session.World.gold = oldBalance;
                 var promptField = studio.GetComponentInChildren<InputField>();
                 string[] prompts =

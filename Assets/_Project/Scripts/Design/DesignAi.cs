@@ -86,6 +86,7 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
         /// </summary>
         public static IEnumerator Generate(MonoBehaviour host, DesignPack current, string request, bool initial, bool lockChassis, Action<string> progress, Action<DesignPack, string> done)
         {
+            if (!current.travelSelected) { done(null, "먼저 이동 유형을 골라 주세요."); yield break; }
             var user = new StringBuilder();
             user.AppendLine("MODE: " + (lockChassis ? "APPEARANCE ONLY" : initial ? "INITIAL" : "EDIT"));
             user.AppendLine("TRAVEL TYPE (chosen by player): " + TravelTypes.Name(current.travelType));
@@ -143,7 +144,7 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
             var jobs = new List<IEnumerator>();
             // The hero sheet holds the attack poses too: a new way of attacking (bare fists, a different weapon) redraws it
             bool newAttack = sections[1] && result.weapon.attackPose != current.weapon.attackPose;
-            if ((sections[0] || newAttack) && result.hero.imagePrompt != null) jobs.Add(HeroJob(result));
+            if ((sections[0] || newAttack || (!lockChassis && current.hero.frames?.Length != 12)) && result.hero.imagePrompt != null) jobs.Add(HeroJob(result));
             if (sections[1])
             {
                 if (result.weapon.imagePrompt != null || result.attack.projectile.imagePrompt != null) jobs.Add(WeaponJob(result));
@@ -238,21 +239,23 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
             string attack = w.attackPose ?? (w.hold == "Hidden" ? "throwing a punch" : "swinging its arm");
             string hands = w.hold == "Hidden" ? "" : " Do not draw any weapon or held item; hands empty.";
             Texture2D tex = null;
-            yield return ImageClient.Generate(Style + "A sprite sheet in a grid of 4 columns and 2 rows: the SAME character drawn eight times with identical " +
+            yield return ImageClient.Generate(Style + "A sprite sheet in an exact grid of 4 columns and 3 rows: the SAME character drawn twelve times with identical " +
                 "design, colours and size, full body, side view facing right, each pose centered in its own cell with empty space around it. " +
                 "Top row, a smooth walk cycle: front foot touching down; passing (legs together, body slightly raised); back foot touching down; passing again. " +
-                $"Bottom row: standing idle; winding up to attack ({attack}, pulled back); the attack striking forward ({attack}, fully extended); flinching backward after being hit." +
+                $"Middle row: standing idle; winding up to attack ({attack}, pulled back); the attack striking forward ({attack}, fully extended); flinching backward after being hit." +
+                $" Bottom row, exactly these four {p.travelType} poses in order: {TravelTypes.MotionRow(p.travelType)}. Leave all other movement abilities out." +
                 hands + " Character: " + p.hero.imagePrompt, t => tex = t, size: ImageClient.WideSize);
             if (tex == null) { p.hero.image = null; p.hero.frames = null; yield return false; yield break; }
             // The idle pose (cell 4) goes first: it sets the scale every other pose keeps
-            int[] order = { 4, 0, 1, 2, 3, 5, 6, 7 };
-            var converted = Pixelizer.ConvertSet(tex, order.Select(i => Cell(tex, i % 4, i / 4, 4, 2)).ToArray(), 28, byHeight: true, alignFacing: true);
-            var cells = new PixelCanvas[8];
-            for (int k = 0; k < 8; k++) cells[order[k]] = converted[k];
+            int[] order = { 4, 0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11 };
+            var converted = Pixelizer.ConvertSet(tex, order.Select(i => Cell(tex, i % 4, i / 4, 4, 3)).ToArray(), 28, byHeight: true, alignFacing: true);
+            var cells = new PixelCanvas[order.Length];
+            for (int k = 0; k < order.Length; k++) cells[order[k]] = converted[k];
             UnityEngine.Object.Destroy(tex);
             p.hero.frames = cells.Select(Save).ToArray();
             p.hero.image = p.hero.frames[4];
-            if (p.hero.frames.Any(f => f == null)) p.hero.frames = null;
+            if (p.hero.frames.Take(8).Any(f => f == null)) p.hero.frames = null;
+            else if (p.hero.frames.Skip(8).Any(f => f == null)) p.hero.frames = p.hero.frames.Take(8).ToArray();
             yield return p.hero.image != null;
         }
 

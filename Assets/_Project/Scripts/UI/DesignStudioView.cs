@@ -37,7 +37,8 @@ namespace Diverse
         DesignPack working;
         readonly Stack<DesignPack> history = new Stack<DesignPack>();
         GameObject typeWindow;
-        Text typeBalance;
+        Text typeBalance, typeDescription;
+        Image modalSilhouette, studioSilhouette;
         readonly List<Button> typeRows = new List<Button>();
         bool busy;
         string statusText = "";
@@ -66,6 +67,15 @@ namespace Diverse
         void BindCommon()
         {
             UIKit.Bind(tabs[0], OpenTypes);
+            if (studioSilhouette == null)
+            {
+                studioSilhouette = SilhouetteImage(hero.transform.parent);
+                var rect = studioSilhouette.rectTransform;
+                rect.anchorMin = rect.anchorMax = new Vector2(0, 1);
+                rect.pivot = new Vector2(0, 1);
+                rect.anchoredPosition = new Vector2(15, -118);
+                rect.sizeDelta = new Vector2(190, 102);
+            }
             UIKit.Show(tabs[1], false);
             UIKit.Show(resetTab, false);
             UIKit.Bind(generate, Generate);
@@ -129,6 +139,7 @@ namespace Diverse
         {
 
             working = pack;
+            if (InGame || !string.IsNullOrEmpty(pack.id)) working.travelSelected = true;
             history.Clear();
             prompt.SetTextWithoutNotify("");
             UIKit.Show(typeWindow, false);
@@ -186,11 +197,28 @@ namespace Diverse
 
             foreach (var type in TravelTypes.All)
             {
-                var row = TypeButton(rect, new Vector2(0, 62 - typeRows.Count * 25), 432, () => ChooseType(type));
+                int index = typeRows.Count;
+                var row = TypeButton(rect, new Vector2((index % 3 - 1) * 114, 61 - index / 3 * 33), 106, () => ChooseType(type));
+                ((RectTransform)row.transform).sizeDelta = new Vector2(106, 28);
                 row.name = "Travel " + type;
                 typeRows.Add(row);
             }
-            UIKit.Label(TypeButton(rect, new Vector2(0, -97), 100, () => UIKit.Show(typeWindow, false)), "닫기");
+            modalSilhouette = SilhouetteImage(rect);
+            Place(modalSilhouette.rectTransform, new Vector2(0, -25), new Vector2(140, 78));
+            typeDescription = Instantiate(heading, rect);
+            Place(typeDescription.rectTransform, new Vector2(0, -72), new Vector2(420, 18));
+            var close = TypeButton(rect, new Vector2(0, -101), 100, () => UIKit.Show(typeWindow, false));
+            close.name = "Close Travel Types";
+            UIKit.Label(close, "닫기");
+        }
+
+        static Image SilhouetteImage(Transform parent)
+        {
+            var node = new GameObject("Travel silhouette", typeof(RectTransform), typeof(Image));
+            node.transform.SetParent(parent, false);
+            var image = node.GetComponent<Image>();
+            image.raycastTarget = false;
+            return image;
         }
 
         Button TypeButton(RectTransform parent, Vector2 position, float width, System.Action click)
@@ -217,8 +245,8 @@ namespace Diverse
             {
                 var type = TravelTypes.All[i];
                 bool unlocked = TravelTypes.Unlocked(world, type);
-                string state = working.travelType == type ? "선택됨" : unlocked ? "선택" : $"해금 {TravelTypes.Price} G";
-                UIKit.Label(typeRows[i], $"{TravelTypes.Name(type)} · {TravelTypes.Description(type)}  [{state}]");
+                string state = working.travelSelected && working.travelType == type ? "선택됨" : unlocked ? "선택" : $"해금 {TravelTypes.Price} G";
+                UIKit.Label(typeRows[i], $"{TravelTypes.Name(type)} · {state}");
                 typeRows[i].interactable = !InGame && (unlocked || world.gold >= TravelTypes.Price);
             }
         }
@@ -236,14 +264,17 @@ namespace Diverse
                 RefreshTypes();
                 return;
             }
-            if (working.travelType != type)
+            if (!working.travelSelected || working.travelType != type)
             {
                 Push();
+                working.travelSelected = true;
+                if (working.travelType != type && working.hero.frames?.Length == 12)
+                    working.hero.frames = working.hero.frames.Take(8).ToArray();
                 working.travelType = type;
                 working.travelEffect = null;
                 Preview();
             }
-            UIKit.Show(typeWindow, false);
+            RefreshTypes();
         }
 
         void Push() => history.Push(working.Clone());
@@ -251,6 +282,8 @@ namespace Diverse
         void Generate()
         {
             if (busy) return;
+            if (!RequireType()) return;
+            if (typeWindow != null && typeWindow.activeSelf) return;
             string request = DesignGuard.CleanPrompt(prompt.text);
             if (string.IsNullOrWhiteSpace(request)) { statusText = "원하는 캐릭터나 변경 사항을 적어 주세요."; return; }
             bool initial = !InGame && working.source == "default";
@@ -289,9 +322,17 @@ namespace Diverse
 
         // ───────────────────────── Commit ─────────────────────────
 
+        bool RequireType()
+        {
+            if (working.travelSelected) return true;
+            statusText = "먼저 이동 유형을 골라 주세요.";
+            OpenTypes();
+            return false;
+        }
+
         void StartLife()
         {
-            if (busy) return;
+            if (busy || !RequireType() || (typeWindow != null && typeWindow.activeSelf)) return;
             var committed = DesignStore.Commit(working);
             Session.World.designId = committed.id;
             SaveSystem.SaveWorld(Session.World);
@@ -324,6 +365,13 @@ namespace Diverse
             if (InGame && (game.State != GameState.Paused || game.Player == null)) { Close(); return; }
 
             float t = Time.unscaledTime;
+            var silhouette = working.travelSelected ? TravelSilhouette.Frame(working.travelType, t) : null;
+            UIKit.Sprite(studioSilhouette, silhouette);
+            if (typeWindow != null && typeWindow.activeSelf)
+            {
+                UIKit.Sprite(modalSilhouette, silhouette);
+                UIKit.Set(typeDescription, working.travelSelected ? TravelTypes.Description(working.travelType) : "미리 볼 유형을 골라 주세요.");
+            }
             // The hero loops through what it does in play: walk, breathe, wind up and strike
             float phase = t % 4f;
             var pose = phase < 2f ? (Pose)((int)Pose.Run0 + (int)(t * 8) % 4)
@@ -343,7 +391,7 @@ namespace Diverse
             UIKit.Sprite(slash, swing[Mathf.Min(swing.Length - 1, swing.Length / 2 + (int)(t * 5) % Mathf.Max(1, swing.Length - swing.Length / 2))]);
 
             tabs[0].interactable = !busy;
-            UIKit.Label(tabs[0], $"유형 · {TravelTypes.Name(working.travelType)}");
+            UIKit.Label(tabs[0], working.travelSelected ? $"유형 · {TravelTypes.Name(working.travelType)}" : "유형 선택 · 미선택");
             generate.interactable = !busy;
             undo.interactable = !busy && history.Count > 0;
             UIKit.Label(generate, busy ? "만드는 중…" : "요청 적용");
@@ -377,7 +425,7 @@ namespace Diverse
         string Describe()
         {
             var p = working;
-            string body = $"<b>{p.hero.name ?? "이름 없는 영웅"}</b> · {TravelTypes.Name(p.travelType)}";
+            string body = $"<b>{p.hero.name ?? "이름 없는 영웅"}</b> · {(p.travelSelected ? TravelTypes.Name(p.travelType) : "유형 미선택")}";
             string combat = $"{(DesignCombat.For(p) ?? DB.W(DesignRuntime.Chassis(p))).name} · {Ko(p.attack.origin)}에서 발사";
             var lines = new List<string> { body, combat };
             if (!string.IsNullOrEmpty(p.summary)) lines.Add($"<color=#c9bcd8>{p.summary}</color>");

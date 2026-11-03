@@ -99,11 +99,17 @@ namespace Diverse
             UIKit.Show(shieldFill, p.Shield > 0);
             UIKit.Fill(shieldFill, p.Shield / p.maxHp);
             UIKit.Fill(xpFill, p.Xp / p.XpToNext);
-            UIKit.Pool(dashTemplate, dashes, p.DashChargesMax);
+            UIKit.Pool(dashTemplate, dashes, p.UsesTravelGauge ? 1 : p.DashChargesMax);
             while (dashFills.Count < dashes.Count) dashFills.Add(dashes[dashFills.Count].transform.Find("Fill")?.GetComponent<Image>());
             for (int i = 0; i < dashes.Count; i++)
             {
-                float k = i < p.DashCharges ? 1 : i == p.DashCharges ? p.DashRechargeProgress : 0;
+                float k = p.UsesTravelGauge ? p.TravelGaugeFill : i < p.DashCharges ? 1 : i == p.DashCharges ? p.DashRechargeProgress : 0;
+                if (i == 0)
+                {
+                    var bar = (RectTransform)dashes[i].transform;
+                    float width = ((RectTransform)dashTemplate.transform).rect.width;
+                    bar.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, width * (p.UsesTravelGauge ? p.DashChargesMax : 1));
+                }
                 UIKit.Fill(dashFills[i], k);
             }
 

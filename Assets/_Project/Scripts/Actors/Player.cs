@@ -329,7 +329,7 @@ namespace Diverse
             if (comboTimer <= 0) comboIndex = 0;
             actionLock -= dt;
             dashCd -= dt;
-            if (DashCharges < DashChargesMax)
+            if (DashCharges < DashChargesMax && !TravelTypes.UsesGauge(activeTravel))
             {
                 dashRecharge += dt;
                 if (dashRecharge >= DashRechargeTime) { dashRecharge = 0; DashCharges++; }
@@ -498,11 +498,21 @@ namespace Diverse
             Moving = false;
             if (dashT > 0)
             {
-                float moveTime = Mathf.Min(dt, dashT);
-                dashT -= dt;
-                MoveTravel(moveTime);
+                float moveTime = TravelStep(dt);
+                dashT = moveTime <= 0 ? 0 : dashT - moveTime;
+                if (moveTime > 0) MoveTravel(moveTime);
                 ghostT -= dt;
-                if (ghostT <= 0) { ghostT = 0.03f; Fx.I?.Afterimage(body, new Color(0.7f, 0.85f, 1f, 0.7f), 0.22f); }
+                if (ghostT <= 0)
+                {
+                    ghostT = 0.06f;
+                    if (SubmergedTravel)
+                    {
+                        if (!BuriedInTerrain)
+                            Fx.I?.Burst(Pos, TravelTypes.Color(activeTravel), 3, 1.8f, 0.22f, 0, 1, 75, (-Facing).Angle(), true);
+                    }
+                    else if (!TravelTypes.UsesGauge(activeTravel))
+                        Fx.I?.Afterimage(body, new Color(0.7f, 0.85f, 1f, 0.7f), 0.22f);
+                }
                 if (dashT <= 0) { FinishTravel(); RepathMovement(); GameEvents.Raise(new CombatEvent { type = Trig.DashEnd, source = this, position = Pos }); Telemetry.Record("DashEnd"); }
                 return;
             }
@@ -724,20 +734,23 @@ namespace Diverse
         {
             var type = MovementType;
             bool followup = type == TravelType.Bounce && bounceAgainUntil > Time.time;
-            if ((!followup && DashCharges <= 0) || activeTravel != TravelType.Dash) return;
+            bool gauge = TravelTypes.UsesGauge(type);
+            if ((!followup && (gauge ? GaugeUnits < 0.15f : DashCharges <= 0)) || activeTravel != TravelType.Dash) return;
             if (Abilities != null && Abilities.Forbids("Dash")) return;
             // Replacement rules (e.g. "dash becomes blink") take the input instead of the normal dash
             if (type == TravelType.Dash && Abilities != null && Abilities.ReplaceDash(dir)) { DashCharges--; dashRecharge = 0; return; }
-            if (!followup) { DashCharges--; dashRecharge = 0; }
+            if (!followup && !gauge) { DashCharges--; dashRecharge = 0; }
             bounceFollowup = followup;
             bounceAgainUntil = 0;
             actionLock = 0; queuedAttack = false;
             LastDashOrigin = Pos;
             bool prepared = PrepareTravel(type, ref dir);
+            showTravelPose = true;
+            travelExitUntil = 0;
             dashT = travelDuration = type switch
             {
-                TravelType.Flight => 0.78f, TravelType.Burrow => 0.40f, TravelType.Swim when prepared => 0.88f,
-                TravelType.Blink => 0.07f, TravelType.Bounce => followup ? 0.19f : 0.32f, _ => 0.16f
+                TravelType.Flight => 0.78f, TravelType.Burrow => GaugeUnits * SecondsPerCharge(type), TravelType.Swim when prepared => GaugeUnits * SecondsPerCharge(type),
+                TravelType.Blink => 0.20f, TravelType.Bounce => followup ? 0.19f : 0.32f, _ => 0.16f
             };
             dashVel = dir * (type switch
             {
@@ -745,7 +758,7 @@ namespace Diverse
                 TravelType.Swim => 12f, TravelType.Blink => 0f, TravelType.Bounce => 14f, _ => 22f
             });
             Facing = dir;
-            invulnUntil = Time.time + dashT + 0.06f;
+            invulnUntil = Time.time + (gauge ? 0 : dashT) + 0.06f;
             if (type == TravelType.Dash)
             {
                 Fx.I?.DustPuff(Pos, dir.x > 0);
@@ -811,6 +824,7 @@ namespace Diverse
         public void SetDash(Vector2 vel, float time, bool invuln = true)
         {
             FinishTravel();
+            travelExitUntil = 0;
             dashVel = vel; dashT = time; LastDashOrigin = Pos;
             if (invuln) invulnUntil = Time.time + time + 0.05f;
         }
@@ -901,7 +915,7 @@ namespace Diverse
             else if (dashT > 0) pose = Pose.Run1;
             else if (Moving) pose = (Pose)((int)Pose.Run0 + (int)(walkStride / (Mathf.PI * 0.5f)) % 4);   // 4 frames per two steps, in step with the stride
             else pose = IdlePose(animT);
-            body.sprite = Art.Rabbit(Costume, pose);
+            body.sprite = pose == Pose.Hurt ? Art.Rabbit(Costume, pose) : TravelSprite() ?? Art.Rabbit(Costume, pose);
             UpdateRaft();
             bool left = Facing.x < -0.05f;
             // Turning around squashes the body for a beat; starting to walk stretches it, stopping settles it
@@ -950,8 +964,21 @@ namespace Diverse
                 shieldSr.transform.localPosition = guarding ? (Vector3)(Facing * 0.35f + Vector2.up * 0.4f) : new Vector3(body.flipX ? 0.15f : -0.15f, 0.42f, 0);
             }
             if (Shield > 0) body.color = Color.Lerp(body.color, new Color(0.7f, 0.95f, 1f), 0.3f + Mathf.Sin(Time.time * 10) * 0.1f);
-            if (Time.time < invulnUntil && dashT <= 0 && Alive) body.enabled = (int)(Time.time * 20) % 2 == 0;
+            float opacity = BuriedInTerrain ? 0f : Mathf.Lerp(1f, activeTravel == TravelType.Burrow || exitingTravel == TravelType.Burrow ? 0.20f : 0.55f, TravelDepth);
+            var tint = body.color;
+            tint.a *= opacity;
+            body.color = tint;
+            if (weaponSr != null) SetTravelOpacity(weaponSr, opacity * (1f - TravelDepth));
+            if (shieldSr != null) SetTravelOpacity(shieldSr, opacity * (1f - TravelDepth));
+            if (Time.time < invulnUntil && dashT <= 0 && TravelDepth <= 0 && Alive) body.enabled = (int)(Time.time * 20) % 2 == 0;
             else body.enabled = true;
+        }
+
+        static void SetTravelOpacity(SpriteRenderer renderer, float opacity)
+        {
+            var color = renderer.color;
+            color.a = opacity;
+            renderer.color = color;
         }
 
         /// <summary>Show the raft under the hero while on water.</summary>
@@ -963,7 +990,8 @@ namespace Diverse
             raftSr.enabled = OnWater;
             raftSr.sortingOrder = body.sortingOrder - 1;
             raftSr.transform.localPosition = new Vector3(0, 0.1f + Mathf.Sin(animT * 2.5f) * 0.03f, 0);
-            if (dashT > 0) visual.localPosition += Vector3.up * TravelLift;
+            if (dashT > 0 || TravelDepth > 0) visual.localPosition += Vector3.up * TravelLift;
+            AnimateTravelFallback();
             if (OnWater) visual.localPosition += new Vector3(0, 0.12f + Mathf.Sin(animT * 2.5f) * 0.03f, 0);
         }
 
@@ -1002,7 +1030,8 @@ namespace Diverse
         {
             StopMoving();
             activeTravel = TravelType.Dash;
-            bounceAgainUntil = 0;
+            bounceAgainUntil = travelExitUntil = 0;
+            showTravelPose = false;
             dashT = lungeT = actionLock = 0; queuedAttack = false;
             Pos = WorldStreamer.I.NearestWalkable(target, radius, 12);
         }

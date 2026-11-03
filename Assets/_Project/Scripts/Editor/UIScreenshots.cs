@@ -122,6 +122,9 @@ namespace Diverse.EditorTools
                 Click(Find<TitleView>(), "ChangeSlot"); yield return F(3); Shot("00_slots");
                 Click(Find<SaveSelectView>().transform.Find("Panel/Slots/Slot 0"), "Play"); yield return F(3); Shot("04_design");
                 var studio = Find<DesignStudioView>();
+                Click(studio, "Tab 0");
+                Click(studio, "Travel Dash");
+                Click(studio, "Close Travel Types");
                 var promptField = studio.GetComponentInChildren<InputField>();
                 string[] prompts = { "민트색 털에 남색 망토, 마법사 모자를 쓴 토끼", "이쑤시개를 입에 물고 있다가 퉤 하고 발사, 공격력 10배", "가을 단풍 숲", "모든 적이 과자로 만들어진 세계" };
                 promptField.text = prompts[0] + ". " + prompts[1];

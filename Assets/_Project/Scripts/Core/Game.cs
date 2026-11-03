@@ -222,6 +222,7 @@ namespace Diverse
             var p = Player;
             var w = p.Weapon;
             foreach (Pose pose in System.Enum.GetValues(typeof(Pose))) Art.Rabbit(p.Costume, pose);
+            RabbitTravelArt.Prewarm(p.Costume);
             foreach (var step in w.combo)
             {
                 if (step.projectile) { Art.Bolt(); continue; }
