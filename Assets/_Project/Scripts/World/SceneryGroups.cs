@@ -111,13 +111,6 @@ namespace Diverse
             }
         }
 
-        public float GroundCover(Vector2 p, ThemeDef theme)
-        {
-            float cover = 0;
-            foreach (float value in GroundCoverSteps(p,theme)) if (value >= 0) cover = value;
-            return cover;
-        }
-
         /// <summary>Negative samples are progress checkpoints; the last nonnegative value is the final cover.</summary>
         public IEnumerable<float> GroundCoverSteps(Vector2 p, ThemeDef theme)
         {

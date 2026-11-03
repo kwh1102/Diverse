@@ -26,7 +26,6 @@ namespace Diverse
         public List<ChronicleEntry> chronicle = new List<ChronicleEntry>();
         public List<QuestState> quests = new List<QuestState>();
         public List<string> exploredChunks = new List<string>();
-        public List<AbilityRecord> legacyAbilities = new List<AbilityRecord>(); // abilities recovered from graves
         public List<WarpStone> warpStones = new List<WarpStone>();                // placed warp stones (shared by every life)
         public string lastCostume = "white";
         public int lastWeapon;

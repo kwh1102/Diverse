@@ -286,7 +286,6 @@ namespace Diverse
 
         static int Pattern(GroundLook look, Ground t, int gx, int gy)
         {
-            if (DesignRuntime.GroundTexel(t, gx, gy, out var texel)) return Snap(texel);
             return SurfacePattern(look, t, gx, gy);
         }
         /// <summary>Nearest palette colour (cached).</summary>

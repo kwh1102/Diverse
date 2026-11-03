@@ -44,8 +44,8 @@ namespace Diverse.EditorTools
         }
 
         /// <summary>
-        /// Re-lay the studio's preview box into a tidy grid (character | weapon · shot · effect / ground · two scenery objects /
-        /// enemies). Patches the existing prefabs in place: positions only, plus the cells added since (labels, second scenery).
+        /// Re-lay the studio's preview box into a tidy grid (character | weapon · shot · effect). Patches the existing prefabs
+        /// in place: positions only, plus the cells added since (labels, flip buttons); the old world / enemy cells are removed.
         /// </summary>
         [MenuItem("Diverse/디자인 스튜디오 미리보기 정리 (기존 프리팹에)")]
         public static void UpdateDesignPreviewLayout()
@@ -68,6 +68,12 @@ namespace Diverse.EditorTools
 
         static void LayoutPreview(Transform pv, DesignStudioView v)
         {
+            // Custom mode designs only the hero and weapon: the world / enemy previews are gone
+            foreach (var name in new[] { "WorldHeading", "Ground", "Tree", "Decor2", "EnemyHeading", "FixEnemies", "Enemy 0", "Enemy 1", "Enemy 2", "EnemyNames" })
+            {
+                var obsolete = pv.Find(name);
+                if (obsolete != null) Object.DestroyImmediate(obsolete.gameObject);
+            }
             void Place(string name, float x, float y, float w, float h)
             {
                 var rt = pv.Find(name) as RectTransform;
@@ -84,14 +90,6 @@ namespace Diverse.EditorTools
             }
             Heading("PreviewHeading", "캐릭터");
             Heading("AttackHeading", "무기 · 발사 · 효과");
-            Heading("WorldHeading", "세계");
-            Heading("EnemyHeading", "적");
-            if (pv.Find("Decor2") == null)
-            {
-                var d2 = Pic(pv, "Decor2", TL, Vector2.zero, new Vector2(10, 10), null);
-                d2.enabled = false;
-                Wire(v, "decor2", d2);
-            }
             Place("PreviewHeading", 6, 4, 96, 12);
             Place("Rabbit", 6, 16, 96, 96);
             Place("AttackHeading", 110, 4, 106, 12);
@@ -102,15 +100,6 @@ namespace Diverse.EditorTools
             Place("Slash", 162, 60, 52, 40);
             if (pv.Find("FlipEffects") == null) Wire(v, "flipEffects", Btn(pv, "FlipEffects", "효과 반전", TL, Vector2.zero, new Vector2(10, 10), 8));
             Place("FlipEffects", 162, 101, 52, 13);
-            Place("WorldHeading", 6, 116, 96, 12);
-            Place("Ground", 6, 130, 104, 58);
-            Place("Tree", 114, 118, 48, 72);
-            Place("Decor2", 166, 132, 46, 58);
-            if (pv.Find("FixEnemies") == null) Wire(v, "fixEnemies", Btn(pv, "FixEnemies", "적 방향·잘림 고치기", TL, Vector2.zero, new Vector2(10, 10), 8));
-            Place("EnemyHeading", 6, 194, 96, 12);
-            Place("FixEnemies", 110, 193, 104, 13);
-            for (int i = 0; i < 3; i++) Place("Enemy " + i, 14 + i * 70, 206, 40, 34);
-            Place("EnemyNames", 4, 242, 212, 12);
         }
 
         /// <summary>Save slot screen (SaveSelectView) and the title's world selection button, added to the existing MenuCanvas.</summary>
@@ -298,13 +287,6 @@ namespace Diverse.EditorTools
             var projectile = Pic(pv, "Projectile", TL, new Vector2(112, 32), new Vector2(40, 24), Baked("bolt"));
             var slash = Pic(pv, "Slash", TL, new Vector2(156, 28), new Vector2(56, 56), null);
             slash.enabled = false;               // filled at runtime (UIKit.Sprite enables it)
-            Label(pv, "WorldHeading", "<color=#8c7aa8>세계</color>", TL, new Vector2(6, 118), new Vector2(100, 12), 8);
-            var ground = Pic(pv, "Ground", TL, new Vector2(6, 132), new Vector2(136, 68), null);
-            ground.enabled = false;
-            var tree = Pic(pv, "Tree", TL, new Vector2(140, 116), new Vector2(72, 84), Baked("tree_Meadow_1"));
-            var enemies = new Image[3];
-            for (int i = 0; i < 3; i++) enemies[i] = Pic(pv, "Enemy " + i, TL, new Vector2(10 + i * 70, 204), new Vector2(36, 36), Baked($"enemy_{(i == 0 ? "shroom" : i == 1 ? "fox" : "wisp")}_0"));
-            var enemyNames = Label(pv, "EnemyNames", "버섯 꼬마 · 여우 산적 · 떠도는 넋", TL, new Vector2(4, 242), new Vector2(212, 12), 8, TextAnchor.MiddleCenter, Pal.Hex("c9bcd8"));
 
             // Tabs + prompt
             const float x0 = 246, cw = 338;
@@ -348,9 +330,6 @@ namespace Diverse.EditorTools
             Wire(v, "generate", gen); Wire(v, "undo", undo); Wire(v, "resetTab", reset);
             Wire(v, "info", info); Wire(v, "status", status);
             Wire(v, "hero", hero); Wire(v, "heroWeapon", heroWeapon); Wire(v, "projectile", projectile); Wire(v, "slash", slash);
-            Wire(v, "ground", ground); Wire(v, "tree", tree);
-            WireArray(v, "enemies", enemies);
-            Wire(v, "enemyNames", enemyNames);
             LayoutPreview(pv, v);
             Wire(v, "chassisRow", row.gameObject);
             Wire(v, "weaponBase", wb); Wire(v, "perkBase", pb);

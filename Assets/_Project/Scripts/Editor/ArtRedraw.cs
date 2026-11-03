@@ -18,19 +18,6 @@ namespace Diverse.EditorTools
             ProjectAssetBuilder.BakeSprites(Characters);
         }
 
-        [MenuItem("Diverse/Art/Redraw Enemies")]
-        public static void RedrawEnemies()
-        {
-            Art.ResetLooks();
-            ProjectAssetBuilder.BakeSprites("enemy_");
-        }
-
-        public static void RunBatchEnemies()
-        {
-            try { RedrawEnemies(); EditorApplication.Exit(0); }
-            catch (System.Exception e) { UnityEngine.Debug.LogException(e); EditorApplication.Exit(1); }
-        }
-
         static readonly string[] Objects = { "tree_", "rock_", "bush_", "tuft_", "flower_", "prop_", "house_", "deco_", "landmark_" };
 
         [MenuItem("Diverse/Art/Redraw Objects (nature, props, houses, landmarks)")]

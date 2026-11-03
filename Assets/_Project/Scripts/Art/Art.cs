@@ -44,12 +44,7 @@ namespace Diverse
             Sprite custom = null;
             if (!DrawOnly) Hand().TryGetValue(key, out custom);
             HitchLog.SpritesMade++;
-            using (SpriteMarker.Auto())
-            {
-                var drawn = custom != null ? custom : make();
-                s = DesignRuntime.Restyle(key, drawn);
-                if (s != null && s != drawn) s = KeepPalette(s);     // a custom-mode recolour or picture still uses only the palette
-            }
+            using (SpriteMarker.Auto()) s = custom != null ? custom : make();
             if (s != null) s.name = key;
             cache[key] = s;
             return s;
@@ -84,37 +79,12 @@ namespace Diverse
         /// <summary>A new design pack was activated: drop every cached sprite and override so they are drawn again with its look.</summary>
         public static void ResetLooks()
         {
-            groundTableFor = -1;
+            groundTableReady = false;
             cache.Clear();
             anims.Clear();
             overrides.Clear();
             enemyFrames.Clear();
             rabbitPoses.Clear();
-        }
-
-        /// <summary>Snap a sprite's colours to the art rules' palette (DB.ArtStyle), keeping its rect and pivot.</summary>
-        public static Sprite KeepPalette(Sprite s)
-        {
-            var tex = s.texture;
-            if (tex == null || !tex.isReadable || DB.ArtStyle.palette.Length == 0) return s;
-            var r = s.rect;
-            var px = tex.GetPixels32();
-            int x0 = (int)r.x, y0 = (int)r.y, w = (int)r.width, h = (int)r.height;
-            var outPx = new Color32[w * h];
-            for (int y = 0; y < h; y++)
-                for (int x = 0; x < w; x++)
-                {
-                    var c = px[(y0 + y) * tex.width + x0 + x];
-                    if (c.a < 128) { outPx[y * w + x] = default; continue; }
-                    var p = TileBaker.PaletteColor(TileBaker.Snap(c));
-                    outPx[y * w + x] = new Color32(p.r, p.g, p.b, 255);
-                }
-            var t = new Texture2D(w, h, TextureFormat.RGBA32, false) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };
-            t.SetPixels32(outPx);
-            t.Apply(false, false);
-            var o = Sprite.Create(t, new Rect(0, 0, w, h), new Vector2(s.pivot.x / w, s.pivot.y / h), s.pixelsPerUnit, 0, SpriteMeshType.FullRect);
-            o.name = s.name;
-            return o;
         }
 
         public static Sprite[] GetAnim(string key, System.Func<Sprite[]> make)
@@ -238,6 +208,29 @@ namespace Diverse
             cv.Set((int)c - 1, (int)c + 1, Pi(10));
             return cv.ToSpriteCentered();
         });
+
+        // ───────────────────────────── 적 ─────────────────────────────
+
+        // Called every frame by every enemy: a per-key frame array so no lookup string is built per call
+        static readonly Dictionary<string, Sprite[]> enemyFrames = new Dictionary<string, Sprite[]>();
+
+        /// <summary>
+        /// Enemy sprite from Resources/Sprites/enemy_&lt;key&gt;_&lt;frame&gt;.png: 0 idle, 1·4 the two steps, 2 wind-up, 3 hurt.
+        /// Enemies have no code-drawn fallback: a missing frame shows the idle frame.
+        /// </summary>
+        public static Sprite Enemy(string key, int frame)
+        {
+            if (!enemyFrames.TryGetValue(key, out var f)) enemyFrames[key] = f = new Sprite[8];
+            if (frame < 0 || frame >= f.Length) return EnemyPng(key, frame);
+            return f[frame] != null ? f[frame] : f[frame] = EnemyPng(key, frame);
+        }
+
+        static Sprite EnemyPng(string key, int frame)
+        {
+            if (Hand().TryGetValue($"enemy_{key}_{frame}", out var s) || Hand().TryGetValue($"enemy_{key}_0", out s)) return s;
+            Debug.LogWarning($"[Art] Resources/Sprites/enemy_{key}_{frame}.png is missing");
+            return null;
+        }
 
         public static Sprite EnemyShot(Color32 col) => Get($"eshot_{col}", () =>
         {

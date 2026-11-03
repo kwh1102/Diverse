@@ -439,29 +439,7 @@ namespace Diverse
             return cv.ToSprite(new Vector2(cv.W / 2f, 1));
         }
 
-        /// <summary>
-        /// Enemy frames, as the hand-made enemies use them: 0 = standing, 1 / 4 = the two walking steps, 2 = attacking (wind-up), 3 = hit
-        /// (standing, flashed and knocked back). Missing poses fall back to a squashed / tinted standing picture.
-        /// </summary>
-        public static Sprite EnemyFrame(Texture2D idle, Texture2D move, Texture2D attack, int frame, Texture2D move2 = null)
-        {
-            int W = idle.width, H = idle.height;
-            foreach (var t in new[] { move, attack, move2 }) if (t != null) { W = Mathf.Max(W, t.width); H = Mathf.Max(H, t.height); }
-            var cv = new PixelCanvas(W + 2, H + 2);
-            switch (frame)
-            {
-                case 1: Draw(cv, move ?? idle, 0, move == null ? 1 : 0, null); break;
-                case 2: Draw(cv, attack ?? move ?? idle, 0, 0, attack == null ? c => Pal.Lerp(c, new Color32(255, 90, 90, 255), 0.3f) : null, 1); break;
-                case 3: Draw(cv, idle, 1, 1, c => Pal.Lerp(c, Pal.White, 0.4f), -1); break;
-                case 4: Draw(cv, move2 ?? idle, 0, 0, null); break;   // the other step
-                default: Draw(cv, idle, 0, 0, null); break;
-            }
-            return cv.ToSprite(new Vector2(cv.W / 2f, 1));
-        }
-
         // ───────────────────────── Generated effects ─────────────────────────
-
-        public static readonly string[] Ambients = { "none", "snow", "petals", "leaves", "bubbles", "embers", "sparkles", "rain", "dust", "notes" };
 
         /// <summary>(scale, alpha, reveal) per frame. reveal sweeps the picture from top to bottom (a swing being drawn).</summary>
         static readonly (float s, float a, float r)[] SwingKeys = { (0.85f, 1, 0.35f), (0.95f, 1, 0.7f), (1, 1, 1), (1.06f, 0.7f, 1), (1.1f, 0.35f, 1) };
@@ -523,69 +501,5 @@ namespace Diverse
             }
             return frames;
         }
-
-        // ───────────────────────── Palette transforms ─────────────────────────
-
-        public static Color32 Shift(Color32 c, PaletteShift s)
-        {
-            if (c.a == 0 || s == null || s.Identity) return c;
-            Color.RGBToHSV(c, out float h, out float sat, out float v);
-            h = Mathf.Repeat(h + s.hueShift / 360f, 1f);
-            sat = Mathf.Clamp01(sat * s.saturation);
-            v = Mathf.Clamp01(v * s.brightness);
-            var r = Color.HSVToRGB(h, sat, v);
-            if (!string.IsNullOrEmpty(s.tint) && s.tintAmount > 0) r = Color.Lerp(r, (Color)Pal.Hex(s.tint), s.tintAmount);
-            var o = (Color32)r;
-            o.a = c.a;
-            return o;
-        }
-
-        /// <summary>Move greenish pixels to another hue (foliage recolor that keeps trunks, flowers and outlines).</summary>
-        public static Color32 Foliage(Color32 c, Color32 target)
-        {
-            if (c.a == 0) return c;
-            Color.RGBToHSV(c, out float h, out float s, out float v);
-            if (h < 0.18f || h > 0.5f || s < 0.2f) return c;
-            Color.RGBToHSV(target, out float th, out float ts, out float tv);
-            var o = (Color32)Color.HSVToRGB(th, Mathf.Clamp01(ts * s / 0.55f), Mathf.Clamp01(v * Mathf.Max(0.25f, tv) / 0.65f));
-            o.a = c.a;
-            return o;
-        }
-
-        /// <summary>Copy a sprite with every pixel mapped (outline kept). Unreadable textures (imported PNGs) come back unchanged.</summary>
-        public static Sprite Recolor(Sprite src, System.Func<Color32, Color32> map)
-        {
-            if (src == null || !src.texture.isReadable) return src;
-            var r = src.textureRect;
-            int w = (int)r.width, h = (int)r.height;
-            var px = src.texture.GetPixels32();
-            var cv = new PixelCanvas(w, h);
-            int tw = src.texture.width;
-            for (int y = 0; y < h; y++)
-                for (int x = 0; x < w; x++)
-                {
-                    var c = px[((int)r.y + y) * tw + (int)r.x + x];
-                    bool outline = c.r == Pal.Outline.r && c.g == Pal.Outline.g && c.b == Pal.Outline.b;
-                    cv.Px[y * w + x] = outline ? c : map(c);
-                }
-            return cv.ToSprite(src.pivot, src.border);
-        }
-
-        /// <summary>Small strip of grass / path / water + a tree for the studio preview (uses the active world look).</summary>
-        public static Sprite GroundSample() => Art.Get("design_ground_sample", () =>
-        {
-            var cv = new PixelCanvas(48, 24);
-            Ground[] rows = { Ground.Grass, Ground.Grass, Ground.Path, Ground.Grass, Ground.Water, Ground.DeepWater };
-            for (int y = 0; y < 24; y++)
-            {
-                Art.GroundColors(rows[Mathf.Min(rows.Length - 1, (23 - y) / 4)], out var a, out var b, out var c);
-                for (int x = 0; x < 48; x++)
-                {
-                    int n = (x * 7 + y * 13) % 11;
-                    cv.Set(x, y, n == 0 ? b : n == 5 ? c : a);
-                }
-            }
-            return cv.ToSpriteCentered();
-        });
     }
 }

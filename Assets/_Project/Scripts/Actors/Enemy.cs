@@ -13,7 +13,7 @@ namespace Diverse
         [System.NonSerialized] public EnemyDef def;
         public string campId;               // 소속 군집 (전부 처치하면 군집 해결)
         public Vector2 home;
-        enum S { Idle, Chase, Windup, Strike, Recover, Stunned, Dying }
+        enum S { Idle, Chase, Windup, Strike, Recover, Stunned }
         S state;
         float stateT, attackCd, wanderT, animT, stunT;
 

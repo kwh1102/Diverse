@@ -93,14 +93,6 @@ namespace Diverse
             }
         }
 
-        /// <summary>Recolor every filled pixel in the y range (vertical gradient/shading).</summary>
-        public void ShadeRows(int y0, int y1, Color32 c)
-        {
-            for (int y = y0; y <= y1; y++)
-                for (int x = 0; x < W; x++)
-                    if (Solid(x, y)) Px[y * W + x] = c;
-        }
-
         /// <summary>Copy another canvas onto this one (transparent pixels are skipped).</summary>
         public void Stamp(PixelCanvas src, int ox, int oy, bool flipX = false)
         {
@@ -174,7 +166,6 @@ namespace Diverse
         }
 
         public Sprite ToSpriteCentered() => ToSprite(new Vector2(W / 2f, H / 2f));
-        public Sprite ToSpriteFeet() => ToSprite(new Vector2(W / 2f, 1));
     }
 
     public static class Pal

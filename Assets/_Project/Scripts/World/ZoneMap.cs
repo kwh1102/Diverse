@@ -126,19 +126,6 @@ namespace Diverse
             return new Sample { a = a, b = b, t = 0.5f * (1 - k * k * (3 - 2 * k)) };
         }
 
-        /// <summary>
-        /// The zone that wins at p for a roll (0~1). The roll is compared with the share of the zone that comes NEXT
-        /// (counter-clockwise) of the pair; that share is 0.5 on both sides of the border, so the same roll gives the same
-        /// zone across the line and patches flow over it instead of every tile flipping there.
-        /// </summary>
-        public int ZoneAt(Vector2 p, float roll)
-        {
-            var s = At(p);
-            bool bNext = s.b == (s.a + 1) % Count;
-            float nextShare = bNext ? s.t : 1 - s.t;
-            return roll < nextShare ? (bNext ? s.b : s.a) : (bNext ? s.a : s.b);
-        }
-
         /// <summary>Spawn share at p: 1 in the spawn's own land, fading to 0 over 30 tiles.</summary>
         public static float SpawnShare(Vector2 p) => 1 - Mathf.Clamp01((p.magnitude - Rules.centerRadius) / 30f);
 

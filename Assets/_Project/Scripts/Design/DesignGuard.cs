@@ -10,7 +10,7 @@ namespace Diverse
     /// Deterministic gate between a prompt/AI answer and the game.
     /// 1) Balance: a pack has no stat fields at all (unknown JSON fields are dropped by JsonUtility); the chassis must be an
     ///    existing weapon/costume; power requests in the prompt are listed back to the player as "not applied".
-    /// 2) Readability: sizes, palette shifts and tints are clamped so enemies, telegraphs and the ground stay legible.
+    /// 2) Readability: sizes and colours are clamped so weapons and shots stay legible.
     /// 3) Safety: names lose rich-text tags and are length-limited.
     /// </summary>
     public static class DesignGuard
@@ -37,11 +37,6 @@ namespace Diverse
             }
             return found;
         }
-
-        /// <summary>Exactly n picture prompts (or null). A missing entry stays null and that picture is skipped.</summary>
-        static string[] Prompts(string[] a, int n) => a == null || a.Length == 0 ? null : Enumerable.Range(0, n).Select(i => i < a.Length ? CleanImagePrompt(a[i]) : null).ToArray();
-
-        static string[] Ids(string[] a, int n) => a != null && a.Length == n ? a : null;
 
         static readonly Regex BareHandWords = new Regex(@"맨손|주먹|무기\s?없|발차기|박치기|몸통\s?박치기|맨몸|촉수|꼬리로|입김|브레스|불을 뿜|날개로", RegexOptions.Compiled);
         static readonly Regex TweakWords = new Regex(@"^.{0,30}(더\s|조금|약간|살짝|색만|색깔만|크게|작게|길게|짧게|진하게|연하게|밝게|어둡게|그대로)", RegexOptions.Compiled);
@@ -102,15 +97,10 @@ namespace Diverse
 
         static string[] Palette(string[] p) => p == null ? null : p.Select(Hex).Where(h => h != null).Take(9).ToArray();
 
-        static void Shift(PaletteShift s, float maxTint, float minSat, float minBright, float maxBright)
-        {
-            s.hueShift = Mathf.Repeat(s.hueShift + 180f, 360f) - 180f;
-            if (float.IsNaN(s.hueShift)) s.hueShift = 0;
-            s.saturation = s.saturation <= 0 || float.IsNaN(s.saturation) ? 1 : Mathf.Clamp(s.saturation, minSat, 1.6f);
-            s.brightness = s.brightness <= 0 || float.IsNaN(s.brightness) ? 1 : Mathf.Clamp(s.brightness, minBright, maxBright);
-            s.tint = Hex(s.tint);
-            s.tintAmount = s.tint == null || float.IsNaN(s.tintAmount) ? 0 : Mathf.Clamp(s.tintAmount, 0, maxTint);
-        }
+        /// <summary>Exactly n picture prompts (or null). A missing entry stays null and that picture is skipped.</summary>
+        static string[] Prompts(string[] a, int n) => a == null || a.Length == 0 ? null : Enumerable.Range(0, n).Select(i => i < a.Length ? CleanImagePrompt(a[i]) : null).ToArray();
+
+        static string[] Ids(string[] a, int n) => a != null && a.Length == n ? a : null;
 
         /// <summary>Bring any pack (AI answer, local parse, old file) into the allowed space. Never throws.</summary>
         public static void Sanitize(DesignPack p)
@@ -119,11 +109,9 @@ namespace Diverse
             p.weapon ??= new WeaponLook();
             p.attack ??= new AttackLook();
             p.attack.projectile ??= new ProjectileLook();
-            p.world ??= new WorldLook();
-            p.enemies ??= new EnemyLook();
-            p.enemies.names ??= new List<NameEntry>();
             p.prompts ??= new List<string>();
-            while (p.prompts.Count < 4) p.prompts.Add("");
+            while (p.prompts.Count < 2) p.prompts.Add("");
+            if (p.prompts.Count > 2) p.prompts.RemoveRange(2, p.prompts.Count - 2);   // older packs had world / enemy tabs
             for (int i = 0; i < p.prompts.Count; i++) p.prompts[i] = CleanPrompt(p.prompts[i]);
             p.ignored ??= new List<string>();
             p.ignored = p.ignored.Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => Regex.Replace(s, "<[^>]*>", "")).Distinct().Take(6).ToList();
@@ -173,47 +161,10 @@ namespace Diverse
             pr.imagePrompt = CleanImagePrompt(pr.imagePrompt);
             if (pr.pixels != null && (pr.palette == null || pr.palette.Length == 0)) pr.pixels = null;
 
-            // Ground must stay walkable-looking and enemies must stay readable against it
-            Shift(p.world, 0.55f, 0.35f, 0.6f, 1.25f);
-            p.world.grass = Hex(p.world.grass); p.world.path = Hex(p.world.path); p.world.water = Hex(p.world.water); p.world.foliage = Hex(p.world.foliage);
-            p.world.mood = CleanName(p.world.mood);
-            p.world.themePrompt = CleanImagePrompt(p.world.themePrompt);
-            p.world.rough = Hex(p.world.rough);
-            var wl = p.world;
-            // Older packs (4 tiles / 8 objects) are widened to today's layout so their pictures keep working
-            if (wl.tileImages != null && wl.tileImages.Length == 4) wl.tileImages = wl.tileImages.SelectMany(t => new[] { t, t }).ToArray();
-            if (wl.decorImages != null && wl.decorImages.Length == 8)
-            {
-                wl.decorSizes = new[] { "large", "large", "medium", "medium", "small", "small", "tiny", "tiny", null, null, null, null };
-                wl.decorImages = wl.decorImages.Concat(new string[4]).ToArray();
-            }
-            wl.tilePrompts = Prompts(wl.tilePrompts, 8); wl.tileImages = Ids(wl.tileImages, 8);
-            wl.layout = OneOf(wl.layout, DesignLayout.Styles, "wild");
-            wl.decorPrompts = Prompts(wl.decorPrompts, 12); wl.decorImages = Ids(wl.decorImages, 12);
-            wl.decorSizes = wl.decorSizes == null ? null : Enumerable.Range(0, 12).Select(i => i < wl.decorSizes.Length ? OneOf(wl.decorSizes[i], DesignLayout.Sizes, null) : null).ToArray();
-            wl.decorPlaces = wl.decorPlaces == null ? null : Enumerable.Range(0, 12).Select(i => i < wl.decorPlaces.Length ? OneOf(wl.decorPlaces[i], DesignLayout.Places, null) : null).ToArray();
-            wl.townPrompts = Prompts(wl.townPrompts, 4); wl.townImages = Ids(wl.townImages, 4);
-            wl.ambient = OneOf(wl.ambient, DesignArt.Ambients, "none");
-            wl.ambientColor = Hex(wl.ambientColor);
             p.attack.effectPrompts = Prompts(p.attack.effectPrompts, 4);
             p.attack.effectImages = Ids(p.attack.effectImages, 4);
             if (p.hero.frames != null && p.hero.frames.Length != 4 && p.hero.frames.Length != 6 && p.hero.frames.Length != 8) p.hero.frames = null;
             p.weapon.attackPose = CleanImagePrompt(p.weapon.attackPose);
-            Shift(p.enemies, 0.5f, 0.45f, 0.7f, 1.2f);
-            p.enemies.theme = CleanName(p.enemies.theme);
-            p.enemies.families = (p.enemies.families ?? new List<EnemyFamily>())
-                .Where(f => f != null && CleanImagePrompt(f.imagePrompt) != null)
-                .Select(f => new EnemyFamily { name = CleanName(f.name), imagePrompt = CleanImagePrompt(f.imagePrompt) })
-                .Take(4).ToList();
-            p.enemies.art = (p.enemies.art ?? new List<EnemyArt>())
-                .Where(a => a != null && DB.Enemies.ContainsKey(a.id ?? ""))
-                .Select(a => new EnemyArt { id = a.id, imagePrompt = CleanImagePrompt(a.imagePrompt), image = a.image, image2 = a.image2, image3 = a.image3, image4 = a.image4 })
-                .GroupBy(a => a.id).Select(g => g.First()).ToList();
-            p.enemies.names = p.enemies.names
-                .Where(n => n != null && DB.Enemies.ContainsKey(n.id ?? ""))
-                .Select(n => new NameEntry { id = n.id, name = CleanName(n.name) })
-                .Where(n => n.name != null)
-                .GroupBy(n => n.id).Select(g => g.First()).ToList();
         }
     }
 }

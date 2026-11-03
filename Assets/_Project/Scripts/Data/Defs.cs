@@ -240,7 +240,7 @@ namespace Diverse
             float hpMul = 1f + tier * 0.35f, dmgMul = 1f + tier * 0.18f;
             return new EnemyDef
             {
-                id = b.id, name = DesignRuntime.EnemyName(b.id, b.name), brain = b.brain, attack = b.attack, hp = b.hp * hpMul, damage = b.damage * dmgMul, speed = b.speed * (1 + Mathf.Min(tier, 10) * 0.02f), radius = b.radius,
+                id = b.id, name = b.name, brain = b.brain, attack = b.attack, hp = b.hp * hpMul, damage = b.damage * dmgMul, speed = b.speed * (1 + Mathf.Min(tier, 10) * 0.02f), radius = b.radius,
                 attackRange = b.attackRange, attackWindup = b.attackWindup, attackCooldown = b.attackCooldown, aggroRange = b.aggroRange,
                 xp = b.xp * (1 + tier * 0.25f), gold = b.gold * (1 + tier * 0.25f), mass = b.mass, sprite = b.sprite, projectileColor = b.projectileColor,
                 hopInterval = b.hopInterval, strafe = b.strafe, attackParam = b.attackParam, attackCount = b.attackCount,
