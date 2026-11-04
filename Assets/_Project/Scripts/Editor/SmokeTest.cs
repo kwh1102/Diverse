@@ -205,6 +205,19 @@ namespace Diverse.EditorTools
                 var studio = Find<DesignStudioView>();
                 if (studio.GetComponentsInChildren<Button>().Any(b => b.name is "Classic" or "WeaponBaseButton" or "PerkBaseButton"))
                     Fail("preset character/weapon/perk pickers are still shown");
+                int oldBalance = Session.World.gold;
+                Session.World.gold = TravelTypes.Price;
+                Click(studio, "Generate");
+                if (DesignRuntime.Active.travelSelected) Fail("new design had a travel type selected before the player chose one");
+                Click(studio, "Travel Flight");
+                if (Session.World.gold != 0 || !TravelTypes.Unlocked(Session.World, TravelType.Flight))
+                    Fail("travel type purchase did not unlock the type or charge the coffer");
+                Click(studio, "Travel Flight");
+                if (DesignRuntime.Active.travelType != TravelType.Flight)
+                    Fail("unlocked travel type was not selected");
+                Click(studio, "Travel Dash");
+                Click(studio, "Close Travel Types");
+                Session.World.gold = oldBalance;
                 var promptField = studio.GetComponentInChildren<InputField>();
                 string[] prompts =
                 {
@@ -213,11 +226,7 @@ namespace Diverse.EditorTools
                     "눈 내린 겨울 숲, 하늘색 호수",
                     "모든 적이 과자로 만들어진 세계",
                 };
-                for (int i = 0; i < 2; i++)
-                {
-                    Click(studio, "Tab " + i);
-                    promptField.text = prompts[i];
-                }
+                promptField.text = prompts[0] + ". " + prompts[1];
                 Click(studio, "Generate");
                 yield return Frames(3);
                 var pack = DesignRuntime.Active;
@@ -229,9 +238,7 @@ namespace Diverse.EditorTools
                 Click(studio, "Undo");
                 yield return Frames(1);
                 if (DesignRuntime.Active.weapon.shape == "needle") Fail("undo did not restore the previous look");
-                Click(studio, "Generate");          // nothing changed → redo the current tab
-                yield return Frames(1);
-                for (int i = 0; i < 2; i++) { Click(studio, "Tab " + i); promptField.text = prompts[i] + " 좋아"; }
+                promptField.text = prompts[0] + ". " + prompts[1];
                 Click(studio, "Generate");
                 yield return Frames(2);
 
@@ -676,8 +683,8 @@ namespace Diverse.EditorTools
                 var gameStudio = Find<DesignStudioView>();
                 if (gameStudio.GetComponentsInChildren<Button>().Any(b => b.name is "Tab 2" or "Tab 3"))
                     Fail("in-game studio still offers world/enemy design");
-                Click(gameStudio, "Tab 1");
-                gameStudio.GetComponentInChildren<InputField>().text = "보라색 몽둥이, 묵직하게";
+
+                gameStudio.GetComponentInChildren<InputField>().text = "보라색 망토로 바꿔줘. 무기는 묵직한 몽둥이로 바꿔줘";
                 Click(gameStudio, "Generate");
                 yield return Frames(2);
                 Click(gameStudio, "StartLife");     // "적용하고 닫기"

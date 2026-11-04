@@ -122,10 +122,19 @@ namespace Diverse.EditorTools
                 Click(Find<TitleView>(), "ChangeSlot"); yield return F(3); Shot("00_slots");
                 Click(Find<SaveSelectView>().transform.Find("Panel/Slots/Slot 0"), "Play"); yield return F(3); Shot("04_design");
                 var studio = Find<DesignStudioView>();
+                Click(studio, "Tab 0");
+                foreach (var type in TravelTypes.All)
+                {
+                    Click(studio, "Travel " + type); // unlock if necessary, then select
+                    Click(studio, "Travel " + type);
+                    yield return F(8);
+                    Shot("04a_travel_" + type.ToString().ToLowerInvariant());
+                }
+                Click(studio, "Travel Dash");
+                Click(studio, "Close Travel Types");
                 var promptField = studio.GetComponentInChildren<InputField>();
                 string[] prompts = { "민트색 털에 남색 망토, 마법사 모자를 쓴 토끼", "이쑤시개를 입에 물고 있다가 퉤 하고 발사, 공격력 10배", "가을 단풍 숲", "모든 적이 과자로 만들어진 세계" };
-                for (int i = 0; i < 2; i++) { Click(studio, "Tab " + i); promptField.text = prompts[i]; }
-                Click(studio, "Tab 1");
+                promptField.text = prompts[0] + ". " + prompts[1];
                 Click(studio, "Generate"); yield return F(3); Shot("04b_design_generated");
                 Click(studio, "StartLife"); yield return F(60);
                 var g = Game.I;

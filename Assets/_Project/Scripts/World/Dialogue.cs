@@ -159,7 +159,9 @@ namespace Diverse
         {
             var p = g.Player;
             var page = new DialoguePage { speaker = "상인 냥냥", portrait = Art.Npc("cat", 0), text = $"어서 오라냥! 골드는 있냥? 지금 {p.Gold} 골드 있다냥." };
-            page.options.Add(new DialogueOption("대시 신발 (80 골드) — 대시 횟수 +1", () =>
+            var movement = p.MovementType;
+            string shoes = $"{TravelTypes.CapacityUpgradeName(movement)} (80 골드) — {TravelTypes.CapacityUpgradeDescription(movement)}";
+            page.options.Add(new DialogueOption(shoes, () =>
             {
                 if (p.Gold >= 80 && p.DashChargesMax < 4) { p.Gold -= 80; p.DashChargesMax++; p.DashCharges++; Sfx.Play("coin"); }
                 Merchant(g);

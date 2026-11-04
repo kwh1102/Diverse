@@ -399,7 +399,7 @@ namespace Diverse
         /// attacks wind up then strike (a punch / kick for bare hands); getting hit uses the hurt pose knocked back a pixel.
         /// All frames share one canvas so the feet never jump.
         /// </summary>
-        public static Sprite HeroPose(Texture2D[] f, Pose pose, bool elder)
+        public static Sprite HeroPose(Texture2D[] f, Pose pose, bool elder, int travelFrame = -1)
         {
             Texture2D Pick(int i) => i < f.Length && f[i] != null ? f[i] : f[0];
             int W = 0, H = 0;
@@ -412,6 +412,11 @@ namespace Diverse
             if (f.Length >= 8)
             {
                 // 8-cell sheet: a real 4-frame walk cycle (contact, passing, contact, passing), then idle / wind-up / strike / hurt
+                if (travelFrame >= 0 && f.Length == 12)
+                {
+                    Draw(cv, Pick(8 + travelFrame), 0, 0, tint);
+                    return GeneratedHeroSprite(cv);
+                }
                 switch (pose)
                 {
                     case Pose.Run0: case Pose.Run1: case Pose.Run2: case Pose.Run3: Draw(cv, Pick(pose - Pose.Run0), 0, 0, tint); break;
@@ -421,7 +426,7 @@ namespace Diverse
                     case Pose.Hurt: Draw(cv, Pick(7), 1, 0, hurt, -1); break;
                     default: Draw(cv, Pick(4), 0, elder ? 1 : 0, tint); break;
                 }
-                return cv.ToSprite(new Vector2(cv.W / 2f, 1));
+                return GeneratedHeroSprite(cv);
             }
             switch (pose)
             {
@@ -436,7 +441,15 @@ namespace Diverse
                 case Pose.Hurt: Draw(cv, six ? Pick(5) : Pick(0), 1, six ? 0 : 1, hurt, -1); break;
                 default: Draw(cv, Pick(0), 0, elder ? 1 : 0, tint); break;
             }
-            return cv.ToSprite(new Vector2(cv.W / 2f, 1));
+            return GeneratedHeroSprite(cv);
+        }
+
+        static Sprite GeneratedHeroSprite(PixelCanvas canvas)
+        {
+            // Preserve the pixel grid and feet pivot; increase pixels per unit uniformly.
+            var texture = canvas.ToTexture();
+            return Sprite.Create(texture, new Rect(0, 0, canvas.W, canvas.H),
+                new Vector2(0.5f, 1f / canvas.H), 18f, 0, SpriteMeshType.FullRect);
         }
 
         // ───────────────────────── Generated effects ─────────────────────────

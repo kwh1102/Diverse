@@ -170,9 +170,10 @@ namespace Diverse
 
         // ───────── 잔상 ─────────
 
-        public void Afterimage(SpriteRenderer src, Color col, float life = 0.25f, bool silhouette = true)
+        public void Afterimage(SpriteRenderer src, Color col, float life = 0.25f, bool silhouette = true,
+            Vector3? position = null, Sprite sprite = null, bool essential = false)
         {
-            if (src == null || src.sprite == null || !GraphicsQuality.KeepOptional()) return;
+            if (src == null || (sprite == null && src.sprite == null) || !essential && !GraphicsQuality.KeepOptional()) return;
             Ghost g = null;
             foreach (var x in ghosts) if (!x.active) { g = x; break; }
             if (g == null)
@@ -185,9 +186,10 @@ namespace Diverse
             }
             g.active = true;
             g.go.SetActive(true);
-            g.go.transform.SetPositionAndRotation(src.transform.position, src.transform.rotation);
+            g.go.transform.SetPositionAndRotation(position ?? src.transform.position, src.transform.rotation);
             g.go.transform.localScale = src.transform.lossyScale;
-            g.sr.sprite = silhouette ? Art.Silhouette(src.sprite) : src.sprite;
+            var picture = sprite ?? src.sprite;
+            g.sr.sprite = silhouette ? Art.Silhouette(picture) : picture;
             g.sr.flipX = src.flipX;
             g.sr.flipY = src.flipY;
             g.sr.sharedMaterial = Art.AddMat;

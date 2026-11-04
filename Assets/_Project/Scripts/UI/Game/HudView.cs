@@ -99,11 +99,17 @@ namespace Diverse
             UIKit.Show(shieldFill, p.Shield > 0);
             UIKit.Fill(shieldFill, p.Shield / p.maxHp);
             UIKit.Fill(xpFill, p.Xp / p.XpToNext);
-            UIKit.Pool(dashTemplate, dashes, p.DashChargesMax);
+            UIKit.Pool(dashTemplate, dashes, p.UsesTravelGauge ? 1 : p.DashChargesMax);
             while (dashFills.Count < dashes.Count) dashFills.Add(dashes[dashFills.Count].transform.Find("Fill")?.GetComponent<Image>());
             for (int i = 0; i < dashes.Count; i++)
             {
-                float k = i < p.DashCharges ? 1 : i == p.DashCharges ? p.DashRechargeProgress : 0;
+                float k = p.UsesTravelGauge ? p.TravelGaugeFill : i < p.DashCharges ? 1 : i == p.DashCharges ? p.DashRechargeProgress : 0;
+                if (i == 0)
+                {
+                    var bar = (RectTransform)dashes[i].transform;
+                    float width = ((RectTransform)dashTemplate.transform).rect.width;
+                    bar.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, width * (p.UsesTravelGauge ? p.DashChargesMax : 1));
+                }
                 UIKit.Fill(dashFills[i], k);
             }
 
@@ -113,7 +119,7 @@ namespace Diverse
                 UIKit.Set(regionText, World.I.Gen.RegionName(p.Pos));
                 UIKit.Set(coordText, $"({p.Pos.x:0}, {p.Pos.y:0})  {Controls.KeyName(Act.Map)} 지도");
                 UIKit.Set(moveHint, $"<color=#8c7aa8>{Controls.KeyName(Act.Move)}</color> 이동/공격");
-                UIKit.Set(dashHint, $"<color=#8c7aa8>{Controls.KeyName(Act.Dash)}</color> 대시");
+                UIKit.Set(dashHint, $"<color=#8c7aa8>{Controls.KeyName(Act.Dash)}</color> {TravelTypes.Name(p.MovementType)}");
                 var qs = w.quests.Where(x => x.status == 1 || x.status == 2).Take(3).Select(q =>
                 {
                     string st = q.status == 2 ? "<color=#8bff9a>✔ 보고</color> " : q.kind == "hunt" ? $"<color=#c9b8ff>{q.have}/{q.need}</color> " : "";

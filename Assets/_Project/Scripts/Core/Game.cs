@@ -222,6 +222,7 @@ namespace Diverse
             var p = Player;
             var w = p.Weapon;
             foreach (Pose pose in System.Enum.GetValues(typeof(Pose))) Art.Rabbit(p.Costume, pose);
+            RabbitTravelArt.Prewarm(p.Costume);
             foreach (var step in w.combo)
             {
                 if (step.projectile) { Art.Bolt(); continue; }
@@ -248,12 +249,13 @@ namespace Diverse
         {
             var p = Player;
             if (p == null || !p.Alive || State == GameState.Dead) return;
+            var position = p.SavePosition;
             var r = new RunSave
             {
                 life = World.lifeCount, heroName = HeroName, costume = p.Costume.id, weapon = (int)p.Weapon.kind, weaponDamage = p.Weapon.baseDamage,
                 level = p.Level, xp = p.Xp, xpToNext = p.XpToNext, gold = p.Gold, kills = p.Kills,
                 attrs = (int[])p.Attrs.Clone(), unspentAttr = p.UnspentAttr, pendingEvolutions = p.PendingEvolutions,
-                hp = p.hp, dashMax = p.DashChargesMax, x = p.Pos.x, y = p.Pos.y,
+                hp = p.hp, dashMax = p.DashChargesMax, x = position.x, y = position.y,
                 warpStones = p.WarpStones, skillsLearned = p.LearnedSkills,
             };
             foreach (var a in p.Abilities.Owned) r.abilities.Add(AbilityRecord.From(a));

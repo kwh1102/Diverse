@@ -69,9 +69,13 @@ namespace Diverse
             return null;
         }
 
-        public static DesignPack Generate(DesignPack current, bool[] sections, bool lockChassis)
+        public static DesignPack Generate(DesignPack current, string request, bool initial, bool lockChassis)
         {
             var p = current.Clone();
+            bool combat = Any(request, "공격", "무기", "뱉", "쏘", "발사", "후려", "때려", "때림", "스킬", "attack", "weapon");
+            bool appearance = initial || !combat || Any(request, "외형", "색으로", "모양", "길쭉", "날씬", "망토", "괴물", "캐릭터");
+            bool[] sections = { appearance, !lockChassis && (initial || combat) };
+            for (int i = 0; i < sections.Length; i++) if (sections[i]) p.prompts[i] = request;
             if (sections[0]) Hero(p, p.prompts[0], lockChassis);
             if (sections[1]) Weapon(p, p.prompts[1], lockChassis);
             p.source = "local";
@@ -147,8 +151,9 @@ namespace Diverse
 
             if (!lockChassis)
             {
-                w.baseWeapon = Any(s, "마법", "주문", "마력") || w.shape == "wand" ? nameof(WeaponKind.Staff)
+                w.baseWeapon = w.shape == "wand" ? nameof(WeaponKind.Staff)
                     : shoots || w.shape == "bow" ? nameof(WeaponKind.Crossbow)
+                    : Any(s, "마법", "주문", "마력") ? nameof(WeaponKind.Staff)
                     : Any(s, "방패") ? nameof(WeaponKind.SwordShield)
                     : w.shape is "axe" or "hammer" or "club" || Any(s, "묵직", "대검", "거대") ? nameof(WeaponKind.Greatsword)
                     : w.shape == "curved" || Any(s, "베기", "베어") ? nameof(WeaponKind.Katana)

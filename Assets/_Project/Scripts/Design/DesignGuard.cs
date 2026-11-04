@@ -163,7 +163,7 @@ namespace Diverse
 
             p.attack.effectPrompts = Prompts(p.attack.effectPrompts, 4);
             p.attack.effectImages = Ids(p.attack.effectImages, 4);
-            if (p.hero.frames != null && p.hero.frames.Length != 4 && p.hero.frames.Length != 6 && p.hero.frames.Length != 8) p.hero.frames = null;
+            if (p.hero.frames != null && p.hero.frames.Length != 4 && p.hero.frames.Length != 6 && p.hero.frames.Length != 8 && p.hero.frames.Length != 12) p.hero.frames = null;
             p.weapon.attackPose = CleanImagePrompt(p.weapon.attackPose);
         }
     }

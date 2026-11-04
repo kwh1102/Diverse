@@ -136,6 +136,15 @@ namespace Diverse
             return f;
         }
 
+        public static Sprite[] TravelFx(DesignPack pack)
+        {
+            if (string.IsNullOrEmpty(pack?.travelEffect)) return null;
+            var key = "travel_" + pack.travelEffect;
+            if (effects.TryGetValue(key, out var frames)) return frames;
+            var tex = DesignStore.Image(pack.travelEffect);
+            return tex == null ? null : effects[key] = DesignArt.Effect(tex, DesignArt.EffectKind.Impact, 24);
+        }
+
         public static Sprite[] SwingFx(Color32 col, int radiusPx) => Mine(col) ? EffectOf(0, DesignArt.EffectKind.Swing, radiusPx * 2) : null;
         public static Sprite[] ThrustFx(Color32 col, int lengthPx) => Mine(col) ? EffectOf(0, DesignArt.EffectKind.Swing, lengthPx / 2, 2f) : null;
         public static Sprite[] ImpactFx(Color32 col, int sizePx) => Mine(col) ? EffectOf(1, DesignArt.EffectKind.Impact, sizePx * 2) : null;

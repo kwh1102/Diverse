@@ -18,6 +18,7 @@ namespace Diverse
     public class Terrain
     {
         readonly int seed;
+        readonly bool denseTerrain;
         readonly ZoneMap zones;
         readonly List<Road> roads = new List<Road>();
         public ExplorationLayout Exploration;
@@ -34,9 +35,15 @@ namespace Diverse
         public readonly List<Vector2Int> Connections = new List<Vector2Int>();
         public int ExitCount { get; private set; }
 
-        public Terrain(int seed, ZoneMap zones)
+        float RangeMaskThreshold => denseTerrain ? Mathf.Max(0, R.rangeMaskThreshold - 0.025f) : R.rangeMaskThreshold;
+        float CliffLevel => denseTerrain ? Mathf.Max(0.5f, R.cliffLevel - 0.025f) : R.cliffLevel;
+        float RiverWidth => denseTerrain ? R.riverWidth * (4f / 3f) : R.riverWidth;
+        float LakeLevel => denseTerrain ? Mathf.Max(0.5f, R.lakeLevel - 0.03f) : R.lakeLevel;
+
+        public Terrain(int seed, ZoneMap zones, int generationVersion = WorldGen.CurrentGenerationVersion)
         {
             this.seed = seed;
+            denseTerrain = generationVersion >= 2;
             this.zones = zones;
             if (zones != null) BuildRoadNetwork();
         }
@@ -127,7 +134,7 @@ namespace Diverse
                     {
                         var candidate = desired + side * option * R.roadTerrainAvoidance * Mathf.Sin(t * Mathf.PI) * .5f;
                         float ridge = Ridge(candidate, Bias(candidate, theme => theme.mountainBias), false);
-                        float cost = Mathf.Max(0, ridge - R.cliffLevel + .03f) * 80 + Water(candidate) * 2 + Mathf.Abs(option) * .25f;
+                        float cost = Mathf.Max(0, ridge - CliffLevel + .03f) * 80 + Water(candidate) * 2 + Mathf.Abs(option) * .25f;
                         if (i > 1) cost += Mathf.Abs(Vector2.Dot(candidate - pts[i - 1], side)) * .06f;
                         if (candidate.magnitude < WorldGen.TownRadius + width && from.magnitude > WorldGen.TownRadius) cost += 100;
                         if (cost < best) { best = cost; pts[i] = candidate; }
@@ -148,6 +155,30 @@ namespace Diverse
             => RoadFrame(p, out direction, out _, true);
 
         public Vector2 NearestRoadPoint(Vector2 p) { RoadFrame(p, out _, out var nearest, false); return nearest; }
+
+        /// <summary>Nearest road point inside an unlocked ring, clipping segments against the circular frontier.</summary>
+        public Vector2 NearestRoadPoint(Vector2 p, float bound)
+        {
+            float best = float.MaxValue;
+            var nearest = Vector2.zero;
+            foreach (var road in roads) for (int i = 1; i < road.pts.Length; i++)
+            {
+                var a = road.pts[i - 1]; var delta = road.pts[i] - a;
+                float length = delta.sqrMagnitude;
+                if (length < 0.001f) continue;
+                float b = Vector2.Dot(a, delta);
+                float discriminant = b * b - length * (a.sqrMagnitude - bound * bound);
+                if (discriminant < 0) continue;
+                float root = Mathf.Sqrt(discriminant);
+                float enter = Mathf.Max(0, (-b - root) / length), exit = Mathf.Min(1, (-b + root) / length);
+                if (enter > exit) continue;
+                float t = Mathf.Clamp(Vector2.Dot(p - a, delta) / length, enter, exit);
+                var point = a + delta * t;
+                float distance = (point - p).sqrMagnitude;
+                if (distance < best) { best = distance; nearest = point; }
+            }
+            return nearest;
+        }
 
         float RoadFrame(Vector2 p, out Vector2 direction, out Vector2 nearest, bool local)
         {
@@ -218,7 +249,7 @@ namespace Diverse
             float ridge = 1 - Mathf.Abs(2 * n - 1) + (Noise.Perlin(p.x, p.y, seed + 1205, 0.09f) - 0.5f) * 0.05f;
             // Where ranges exist at all (wide plains elsewhere): a range thins out and ends where the mask falls
             float mask = Noise.Fractal(p.x, p.y, seed + 1211, r.rangeMaskFrequency, 2) + bias;
-            float m = Mathf.SmoothStep(0, 1, Mathf.Clamp01((mask - r.rangeMaskThreshold + 0.06f) / 0.12f));
+            float m = Mathf.SmoothStep(0, 1, Mathf.Clamp01((mask - RangeMaskThreshold + 0.06f) / 0.12f));
             float e = ridge - (1 - m) * 0.45f;
             // The crest rises and sinks along its length; deep dips are the natural saddles
             e *= Mathf.Lerp(0.93f, 1.03f, Noise.Perlin(q.x, q.y, seed + 1221, 0.025f));
@@ -240,7 +271,7 @@ namespace Diverse
             float e = Crest(p, bias);
             var r = R;
             if (e > r.peakLevel) return 2;
-            if (e > r.cliffLevel) return 1;
+            if (e > CliffLevel) return 1;
             // Mesas (flat rock islands) where the theme wants them
             float mesas = Bias(p, t => t.mesas);
             if (mesas > 0.01f)
@@ -259,18 +290,19 @@ namespace Diverse
         /// <summary>0 dry, 1 river or lake, 2 deep. Rivers run along one noise contour; lakes gather in another field's highs.</summary>
         public int Water(Vector2 p)
         {
+            if (denseTerrain && Exploration != null && Exploration.ReservedGround(p)) return 0;
             var r = R;
             float bias = Bias(p, t => t.waterBias);
             float lake = Noise.Fractal(p.x, p.y, seed + 51, r.lakeFrequency, 3);
             float river = Mathf.Abs(Noise.Fractal(p.x, p.y, seed + 77, r.riverFrequency, 2) - 0.5f);
-            float width = r.riverWidth * Mathf.Max(0, 1 + bias * 2.5f);
-            float lakeLevel = r.lakeLevel - bias * 0.12f;
+            float width = RiverWidth * Mathf.Max(0, 1 + bias * 2.5f);
+            float lakeLevel = LakeLevel - bias * 0.12f;
             if (lake > lakeLevel) return lake > lakeLevel + 0.06f ? 2 : 1;
-            if (river < width) return river < width * 0.35f && width > r.riverWidth ? 2 : 1;
+            if (river < width) return river < width * 0.35f && width > RiverWidth ? 2 : 1;
             return 0;
         }
 
         /// <summary>The shore where lakes meet the land (sandy edges).</summary>
-        public bool Shore(Vector2 p) => Noise.Fractal(p.x, p.y, seed + 51, R.lakeFrequency, 3) > R.lakeLevel - 0.06f;
+        public bool Shore(Vector2 p) => Noise.Fractal(p.x, p.y, seed + 51, R.lakeFrequency, 3) > LakeLevel - 0.06f;
     }
 }
