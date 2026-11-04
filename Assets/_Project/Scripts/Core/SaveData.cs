@@ -13,6 +13,8 @@ namespace Diverse
     public class WorldSave
     {
         public int version = 1;
+        // Missing in old saves: zero selects the original terrain and place layout.
+        public int generationVersion;
         public int seed;
         public int lifeCount;                 // which life this is
         public int gold;                      // shared coffer (inherited through the town bank)
@@ -225,7 +227,7 @@ namespace Diverse
 
         public static WorldSave NewWorld()
         {
-            var w = new WorldSave { seed = UnityEngine.Random.Range(1000, int.MaxValue / 4) };
+            var w = new WorldSave { seed = UnityEngine.Random.Range(1000, int.MaxValue / 4), generationVersion = WorldGen.CurrentGenerationVersion };
             w.Log("세계가 깨어났다.", "world");
             return w;
         }

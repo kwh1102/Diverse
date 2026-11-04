@@ -121,7 +121,7 @@ namespace Diverse
             blockCache.Clear();
             DropBakedGround();
             // Every world uses the five built-in zones (build type + theme each).
-            Gen = new WorldGen(seed, ZoneMap.ForWorld(Session.World, seed));
+            Gen = new WorldGen(seed, ZoneMap.ForWorld(Session.World, seed), Session.World?.generationVersion ?? WorldGen.CurrentGenerationVersion);
             Scenery = new SceneryLayout(this);
             InitEnvironment();
         }

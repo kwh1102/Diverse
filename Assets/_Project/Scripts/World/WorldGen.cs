@@ -37,6 +37,8 @@ namespace Diverse
     /// </summary>
     public class WorldGen
     {
+        public const int CurrentGenerationVersion = 2;
+        public readonly int GenerationVersion;
         public const int Chunk = 16;            // tiles per chunk
         public const int RegionChunks = 3;      // one structure candidate per region
         public const float TownRadius = 15f;
@@ -87,13 +89,15 @@ namespace Diverse
         readonly Queue<Vector2Int> groundSampleOrder = new Queue<Vector2Int>();
         static readonly Vector2Int[] cliffNeighbours = { Vector2Int.left, Vector2Int.right, Vector2Int.up, Vector2Int.down };
 
-        public WorldGen(int seed, ZoneMap zones = null)
+        public WorldGen(int seed, ZoneMap zones = null, int generationVersion = CurrentGenerationVersion)
         {
             this.seed = seed;
+            GenerationVersion = generationVersion;
             Zones = zones;
-            Terrain = new Terrain(seed, zones);
+            Terrain = new Terrain(seed, zones, generationVersion);
             Exploration = new ExplorationLayout(this);
             Terrain.Exploration = Exploration;
+            if (generationVersion >= 2) Exploration.ReserveRequiredSites();
         }
 
         // ───────────── Themes ─────────────

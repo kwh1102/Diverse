@@ -454,6 +454,7 @@ namespace Diverse
 
         /// <summary>A far destination picked on the map. Followed leg by leg, re-planning as chunks stream in.</summary>
         public Vector2? TravelTarget { get; private set; }
+        bool spaceTravelActive;
         float travelRepathT;
         int travelStuck;
         Vector2 travelProgress;
@@ -482,6 +483,7 @@ namespace Diverse
 
         void UpdateTravel(float dt)
         {
+            if (dashT > 0) return;
             if (!TravelTarget.HasValue) return;
             if (Vector2.Distance(Pos, TravelTarget.Value) < 0.1f) { TravelTarget = null; path.Clear(); return; }
             travelRepathT -= dt;
@@ -737,8 +739,16 @@ namespace Diverse
             bool gauge = TravelTypes.UsesGauge(type);
             if ((!followup && (gauge ? GaugeUnits < 0.15f : DashCharges <= 0)) || activeTravel != TravelType.Dash) return;
             if (Abilities != null && Abilities.Forbids("Dash")) return;
+            // A space ability replaces a local click-to-move order. Keep only an explicit world-map destination.
+            spaceTravelActive = true;
+            path.Clear(); attackTarget = null; repathT = 0;
             // Replacement rules (e.g. "dash becomes blink") take the input instead of the normal dash
-            if (type == TravelType.Dash && Abilities != null && Abilities.ReplaceDash(dir)) { DashCharges--; dashRecharge = 0; return; }
+            if (type == TravelType.Dash && Abilities != null && Abilities.ReplaceDash(dir))
+            {
+                DashCharges--; dashRecharge = 0;
+                if (dashT <= 0 && spaceTravelActive) RepathMovement();
+                return;
+            }
             if (!followup && !gauge) { DashCharges--; dashRecharge = 0; }
             bounceFollowup = followup;
             bounceAgainUntil = 0;
@@ -1016,6 +1026,22 @@ namespace Diverse
 
         void RepathMovement()
         {
+            if (spaceTravelActive)
+            {
+                spaceTravelActive = false;
+                path.Clear(); attackTarget = null; Moving = false;
+                if (TravelTarget.HasValue)
+                {
+                    travelStuck = 0; travelProgress = Pos;
+                    TravelLeg();
+                }
+                else if (Controls.Held(Act.Move))
+                {
+                    heldAim = AimPoint; repathT = 0.12f;
+                    SetDestination(AimPoint, false, 1200);
+                }
+                return;
+            }
             if (path.Count > 0) SetDestination(path[path.Count - 1], false);
         }
 

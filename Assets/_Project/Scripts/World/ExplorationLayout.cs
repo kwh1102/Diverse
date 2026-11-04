@@ -5,7 +5,7 @@ namespace Diverse
 {
     /// <summary>Large, named exploration places. Candidate choice never reads GroundAt or terrain height, avoiding
     /// generation recursion and making place reservations independent of chunk loading order.</summary>
-    public sealed class ExplorationLayout
+    public sealed partial class ExplorationLayout
     {
         readonly WorldGen world;
         readonly Dictionary<Vector2Int, StructureSpec> cells = new Dictionary<Vector2Int, StructureSpec>();
@@ -45,10 +45,14 @@ namespace Diverse
                 new Vector2((Hash.F(cx, cy, world.seed + 9812) * 2 - 1) * jitter,
                     (Hash.F(cx, cy, world.seed + 9813) * 2 - 1) * jitter);
             center = new Vector2(Mathf.Round(center.x), Mathf.Round(center.y));
+            // The first two rings are authored by the guaranteed plan, not random duplicate rolls.
+            if (world.GenerationVersion >= 2 && center.magnitude < WorldGen.Rings[1].radius) return null;
             var theme = world.ThemeAt(center.x, center.y);
             if (!pools.TryGetValue(theme.id, out var pool) || pool.Count == 0) return null;
             var def = pool[(int)(hash % (uint)pool.Count)];
             float radius = def.halfSize.magnitude + 1;
+            foreach (var required in requiredSites)
+                if (Vector2.Distance(center, required.center) < radius + required.radius + Rules.explorationClearance) return null;
             if (center.magnitude < WorldGen.TownRadius + radius + Rules.explorationClearance) return null;
             if (world.Terrain.RoadDistance(center) < radius + Rules.roadWidth + 2) return null;
             if (world.Zones != null) foreach (var fixedSite in world.Zones.sites)
@@ -66,6 +70,9 @@ namespace Diverse
 
         public IEnumerable<StructureSpec> Near(Vector2 point, float extra = 0)
         {
+            foreach (var site in requiredSites)
+                if ((site.center - point).sqrMagnitude <= (site.radius + extra) * (site.radius + extra) ||
+                    extra > 0 && TrailDistance(point, site, out _) <= extra) yield return site;
             int cx = Mathf.FloorToInt(point.x / Cell), cy = Mathf.FloorToInt(point.y / Cell);
             int reach = Mathf.Max(1, Mathf.CeilToInt((extra + Cell * .5f) / Cell));
             for (int y = cy - reach; y <= cy + reach; y++) for (int x = cx - reach; x <= cx + reach; x++)
@@ -114,6 +121,20 @@ namespace Diverse
             // Authored places enter from the south. Bend outside the footprint before approaching a road to the north.
             var entrance = site.center + Vector2.down * (def.halfSize.y - .5f);
             var lead = site.center + Vector2.down * (def.halfSize.y + Rules.explorationTrailBend);
+            if (requiredBounds.TryGetValue(site.id, out float bound))
+            {
+                var road = world.Terrain.NearestRoadPoint(lead, bound - 2);
+                var requiredPath = new List<Vector2> { entrance, lead };
+                if (road.y > lead.y)
+                {
+                    float side = road.x < site.center.x ? -1 : 1;
+                    var corner = new Vector2(site.center.x + side * (def.halfSize.x + Rules.explorationTrailBend), lead.y);
+                    requiredPath.Add(corner); requiredPath.Add(new Vector2(corner.x, road.y));
+                }
+                requiredPath.Add(road);
+                for (int i = 0; i < requiredPath.Count; i++) requiredPath[i] = Vector2.ClampMagnitude(requiredPath[i], bound - 2);
+                return trails[site.id] = requiredPath.ToArray();
+            }
             var target = world.Terrain.NearestRoadPoint(lead);
             float roadDistance = Vector2.Distance(lead, target);
             bool connected = roadDistance <= Rules.explorationTrailConnectDistance;
