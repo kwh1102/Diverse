@@ -145,7 +145,7 @@ namespace Diverse
             UIKit.Label(backButton, InGame ? "취소" : "뒤로");
             UIKit.Set(tabHint, InGame ? "이번 삶에서는 캐릭터 외형만 수정할 수 있어요." : "유형을 고르고 캐릭터 외형과 공격을 한 번에 설명해 주세요.");
             if (prompt.placeholder is Text ph)
-                ph.text = InGame ? "예) 망토를 보라색으로 바꿔줘" : "예) 검은 거미 괴물. 입에서 독을 뱉고 앞다리로 후려쳐.";
+                ph.text = InGame ? "예) 망토를 보라색으로 바꿔줘" : "예) 마법사 모자를 쓴 보라색 문어. 다리로 적을 공격한다.";
             Preview();
         }
 

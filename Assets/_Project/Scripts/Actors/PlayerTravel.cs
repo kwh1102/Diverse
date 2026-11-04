@@ -31,7 +31,39 @@ namespace Diverse
         public bool UsesTravelGauge => TravelTypes.UsesGauge(MovementType);
         float GaugeUnits => Mathf.Clamp(DashCharges + (DashCharges >= DashChargesMax ? 0 : DashRechargeProgress), 0, DashChargesMax);
         public float TravelGaugeFill => GaugeUnits / Mathf.Max(1, DashChargesMax);
-        static float SecondsPerCharge(TravelType type) => type == TravelType.Swim ? 0.88f : 0.4f;
+        static float SecondsPerCharge(TravelType type) => TravelTypes.GaugeSecondsPerUnit(type);
+
+        bool SpendTravelCharge()
+        {
+            if (DashCharges <= 0) return false;
+            // A full pool has no pending recovery. Otherwise spending one completed charge
+            // must preserve the partial charge already being recovered.
+            if (DashCharges >= DashChargesMax) dashRecharge = 0;
+            DashCharges--;
+            return true;
+        }
+
+        void ExtendFlight(Vector2 direction)
+        {
+            if (Abilities != null && Abilities.Forbids("Dash")) return;
+            if (!SpendTravelCharge()) return;
+            float elapsed = TravelElapsed;
+            // The automatic exit route is not purchased flight time. Replace it with a fresh
+            // paid segment; during normal flight append the segment to the remaining time.
+            dashT = (completingTravel ? 0 : Mathf.Max(0, dashT)) + TravelTypes.FlightDuration;
+            travelDuration = elapsed + dashT;
+            completingTravel = false;
+            travelExitPath.Clear(); travelExitWaypoint = 0;
+            direction = direction.SafeNormal(Facing);
+            dashVel = direction * 15f;
+            Facing = direction;
+            showTravelPose = true; travelExitUntil = 0;
+            // Keep the original landing position and animation phase. No landing/takeoff
+            // reset, and extending flight does not grant another invulnerability window.
+            PlayTravelFx(TravelType.Flight);
+            Sfx.Play("dash", 0.45f);
+            Telemetry.Record("FlightExtend");
+        }
 
         float TravelStep(float dt)
         {
@@ -302,7 +334,8 @@ namespace Diverse
 
         float TravelLift => activeTravel switch
         {
-            TravelType.Flight => Mathf.Sin(Mathf.Clamp01(dashT / travelDuration) * Mathf.PI) * 0.75f,
+            TravelType.Flight => Mathf.SmoothStep(0, 0.75f,
+                Mathf.Min(Mathf.Clamp01(TravelElapsed / 0.1f), Mathf.Clamp01(dashT / 0.12f))),
             TravelType.Bounce => Mathf.Sin(Mathf.Clamp01(dashT / travelDuration) * Mathf.PI) * 1.05f,
             TravelType.Burrow => -0.32f * TravelDepth,
             TravelType.Swim when enteredWater => -0.24f * TravelDepth,

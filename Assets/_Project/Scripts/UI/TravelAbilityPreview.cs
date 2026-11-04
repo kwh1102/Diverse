@@ -18,7 +18,7 @@ namespace Diverse
 
         public static float Duration(TravelType type) => type switch
         {
-            TravelType.Dash => 0.16f, TravelType.Flight => 0.78f, TravelType.Blink => 0.20f,
+            TravelType.Dash => 0.16f, TravelType.Flight => TravelTypes.FlightDuration * 2, TravelType.Blink => 0.20f,
             TravelType.Bounce => 0.32f, TravelType.Burrow => 0.9f, _ => 1.1f
         };
 
@@ -64,7 +64,8 @@ namespace Diverse
             bool moving = phase >= 0.45f && phase < 0.45f + duration;
             if (spaceKey != null)
             {
-                spaceKey.text = moving ? "SPACE · 이동" : "SPACE · 시연";
+                spaceKey.text = !moving ? "SPACE · 시연" : type != TravelType.Flight ? "SPACE · 이동"
+                    : phase < 0.45f + TravelTypes.FlightDuration ? "SPACE · 비행 1/2" : "SPACE · 비행 2/2";
                 spaceKey.color = moving ? UIKit.Highlight : UIKit.Muted;
             }
             float distance = Vector2.Distance(previousPosition, position);

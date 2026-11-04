@@ -9,6 +9,7 @@ namespace Diverse
     public static class TravelTypes
     {
         public const int Price = 0;
+        public const float FlightDuration = 0.4f;
         // Match the dash before movement types were introduced. Shared with the UI demonstration.
         public const float AfterimageInterval = 0.03f;
         public const float AfterimageLifetime = 0.22f;
@@ -33,7 +34,7 @@ namespace Diverse
 
         public static string Description(TravelType type) => type switch
         {
-            TravelType.Flight => "빠르게 날아서 강·늪·용암 위를 건너요.",
+            TravelType.Flight => "강·늪·용암 위를 날아요. 다시 누르면 충전 1회를 써 더 날아요.",
             TravelType.Burrow => "스페이스를 누르는 동안 잠복해 벽을 지나가요.",
             TravelType.Swim => "강과 늪에서 스페이스를 누르는 동안 헤엄쳐요. 용암은 건널 수 없어요.",
             TravelType.Blink => "조준 방향의 가까운 빈자리로 순간이동해요.",
@@ -42,6 +43,29 @@ namespace Diverse
         };
 
         public static bool UsesGauge(TravelType type) => type is TravelType.Swim or TravelType.Burrow;
+
+        // One shop capacity upgrade adds one internal charge, expressed as seconds for continuous abilities.
+        public static float GaugeSecondsPerUnit(TravelType type) => type switch
+        {
+            TravelType.Swim => 0.88f, TravelType.Burrow => 0.4f, _ => 0
+        };
+
+        public static string CapacityUpgradeName(TravelType type) => type switch
+        {
+            TravelType.Flight => "날개 신발", TravelType.Burrow => "굴파기 신발", TravelType.Swim => "물살 신발",
+            TravelType.Blink => "순간이동 신발", TravelType.Bounce => "도약 신발", _ => "대시 신발"
+        };
+
+        public static string CapacityUpgradeDescription(TravelType type)
+        {
+            if (UsesGauge(type))
+                return $"최대 {(type == TravelType.Swim ? "수영" : "잠복")} 게이지 +{GaugeSecondsPerUnit(type):0.##}초";
+            return type switch
+            {
+                TravelType.Flight => "비행 횟수 +1", TravelType.Blink => "순간이동 횟수 +1",
+                TravelType.Bounce => "도약 횟수 +1", _ => "대시 횟수 +1"
+            };
+        }
 
         public static string MotionRow(TravelType type) => type switch
         {

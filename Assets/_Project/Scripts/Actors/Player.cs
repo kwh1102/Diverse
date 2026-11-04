@@ -331,10 +331,16 @@ namespace Diverse
             if (comboTimer <= 0) comboIndex = 0;
             actionLock -= dt;
             dashCd -= dt;
-            if (DashCharges < DashChargesMax && !TravelTypes.UsesGauge(activeTravel))
+            if (DashCharges >= DashChargesMax) dashRecharge = 0;
+            else if (!TravelTypes.UsesGauge(activeTravel) && activeTravel != TravelType.Flight)
             {
                 dashRecharge += dt;
-                if (dashRecharge >= DashRechargeTime) { dashRecharge = 0; DashCharges++; }
+                while (DashCharges < DashChargesMax && dashRecharge >= DashRechargeTime)
+                {
+                    dashRecharge -= DashRechargeTime;
+                    DashCharges++;
+                }
+                if (DashCharges >= DashChargesMax) dashRecharge = 0;
             }
             foreach (var s in Skills) if (s.cd > 0) s.cd -= dt;
             if (Shield > 0 && Time.time > shieldUntil) Shield = 0;
@@ -361,6 +367,8 @@ namespace Diverse
 
             if (activeTravel != TravelType.Dash)
             {
+                if (activeTravel == TravelType.Flight && Controls.Down(Act.Dash))
+                    TryDash((AimPoint - Pos).SafeNormal(Facing));
                 HandleAttackInput(Controls.Down(Act.Attack), Controls.Held(Act.Attack), (AimPoint - Pos).SafeNormal(Facing));
                 return;
             }
@@ -734,6 +742,11 @@ namespace Diverse
 
         public void TryDash(Vector2 dir)
         {
+            if (activeTravel == TravelType.Flight)
+            {
+                ExtendFlight(dir);
+                return;
+            }
             var type = MovementType;
             bool followup = type == TravelType.Bounce && bounceAgainUntil > Time.time;
             bool gauge = TravelTypes.UsesGauge(type);
@@ -745,11 +758,11 @@ namespace Diverse
             // Replacement rules (e.g. "dash becomes blink") take the input instead of the normal dash
             if (type == TravelType.Dash && Abilities != null && Abilities.ReplaceDash(dir))
             {
-                DashCharges--; dashRecharge = 0;
+                SpendTravelCharge();
                 if (dashT <= 0 && spaceTravelActive) RepathMovement();
                 return;
             }
-            if (!followup && !gauge) { DashCharges--; dashRecharge = 0; }
+            if (!followup && !gauge) SpendTravelCharge();
             bounceFollowup = followup;
             bounceAgainUntil = 0;
             if (attackStrikePending)
@@ -769,7 +782,7 @@ namespace Diverse
             travelExitUntil = 0;
             dashT = travelDuration = type switch
             {
-                TravelType.Flight => 0.78f, TravelType.Burrow => GaugeUnits * SecondsPerCharge(type), TravelType.Swim when prepared => GaugeUnits * SecondsPerCharge(type),
+                TravelType.Flight => TravelTypes.FlightDuration, TravelType.Burrow => GaugeUnits * SecondsPerCharge(type), TravelType.Swim when prepared => GaugeUnits * SecondsPerCharge(type),
                 TravelType.Blink => 0.20f, TravelType.Bounce => followup ? 0.19f : 0.32f, _ => 0.16f
             };
             dashVel = dir * (type switch
@@ -854,7 +867,8 @@ namespace Diverse
 
         public override float TakeDamage(DamageInfo d)
         {
-            if (!Alive || Time.time < invulnUntil || dashT > 0) return 0;
+            // Flight extensions keep the original timed dodge window; staying airborne is not permanent immunity.
+            if (!Alive || Time.time < invulnUntil || dashT > 0 && activeTravel != TravelType.Flight) return 0;
             float amount = d.amount * (1 - Stats[StatId.Armor]);
             if (Abilities != null) amount *= Abilities.IncomingMultiplier(d.source, amount);
             if (guarding && Vector2.Dot(-d.direction.normalized, Facing) > 0.2f)
