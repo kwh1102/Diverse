@@ -38,7 +38,9 @@ namespace Diverse
         readonly Stack<DesignPack> history = new Stack<DesignPack>();
         GameObject typeWindow;
         Text typeBalance, typeDescription;
-        Image modalSilhouette, studioSilhouette;
+        Image modalMotion;
+        TravelAbilityPreview abilityPreview;
+        float typePreviewStartedAt;
         readonly List<Button> typeRows = new List<Button>();
         bool busy;
         string statusText = "";
@@ -67,18 +69,12 @@ namespace Diverse
         void BindCommon()
         {
             UIKit.Bind(tabs[0], OpenTypes);
-            if (studioSilhouette == null)
-            {
-                studioSilhouette = SilhouetteImage(hero.transform.parent);
-                var rect = studioSilhouette.rectTransform;
-                rect.anchorMin = rect.anchorMax = new Vector2(0, 1);
-                rect.pivot = new Vector2(0, 1);
-                rect.anchoredPosition = new Vector2(15, -118);
-                rect.sizeDelta = new Vector2(190, 102);
-            }
+            GameButtonStyle.Apply(tabs[0], ButtonRole.Category);
             UIKit.Show(tabs[1], false);
             UIKit.Show(resetTab, false);
             UIKit.Bind(generate, Generate);
+            GameButtonStyle.Apply(generate, ButtonRole.Craft);
+            GameButtonStyle.Apply(startButton, ButtonRole.Primary);
             UIKit.Bind(flipEffects, () =>
             {
                 if (busy) return;
@@ -173,6 +169,7 @@ namespace Diverse
             prompt.DeactivateInputField();
             if (typeWindow == null) BuildTypes();
             typeWindow.SetActive(true);
+            typePreviewStartedAt = Time.unscaledTime;
             typeWindow.transform.SetAsLastSibling();
             RefreshTypes();
         }
@@ -203,18 +200,27 @@ namespace Diverse
                 row.name = "Travel " + type;
                 typeRows.Add(row);
             }
-            modalSilhouette = SilhouetteImage(rect);
-            Place(modalSilhouette.rectTransform, new Vector2(0, -25), new Vector2(140, 78));
+            var stage = new GameObject("Space ability demonstration", typeof(RectTransform), typeof(RectMask2D), typeof(TravelAbilityPreview));
+            stage.transform.SetParent(rect, false);
+            Place((RectTransform)stage.transform, new Vector2(0, -41), new Vector2(276, 92));
+            modalMotion = MotionImage(stage.transform);
+            Place(modalMotion.rectTransform, Vector2.zero, new Vector2(56, 44));
+            abilityPreview = stage.GetComponent<TravelAbilityPreview>();
+            var spaceKey = Instantiate(heading, stage.transform);
+            Place(spaceKey.rectTransform, new Vector2(0, 32), new Vector2(110, 12));
+            spaceKey.fontSize = 8; spaceKey.text = "SPACE";
+            abilityPreview.Init(modalMotion, spaceKey);
             typeDescription = Instantiate(heading, rect);
-            Place(typeDescription.rectTransform, new Vector2(0, -72), new Vector2(420, 18));
-            var close = TypeButton(rect, new Vector2(0, -101), 100, () => UIKit.Show(typeWindow, false));
+            Place(typeDescription.rectTransform, new Vector2(0, -99), new Vector2(420, 18));
+            var close = TypeButton(rect, new Vector2(0, -128), 100, () => UIKit.Show(typeWindow, false));
             close.name = "Close Travel Types";
             UIKit.Label(close, "닫기");
+            GameButtonStyle.UseOriginal(close, backButton);
         }
 
-        static Image SilhouetteImage(Transform parent)
+        static Image MotionImage(Transform parent)
         {
-            var node = new GameObject("Travel silhouette", typeof(RectTransform), typeof(Image));
+            var node = new GameObject("Travel motion preview", typeof(RectTransform), typeof(Image));
             node.transform.SetParent(parent, false);
             var image = node.GetComponent<Image>();
             image.raycastTarget = false;
@@ -248,6 +254,7 @@ namespace Diverse
                 string state = working.travelSelected && working.travelType == type ? "선택됨" : unlocked ? "선택" : $"해금 {TravelTypes.Price} G";
                 UIKit.Label(typeRows[i], $"{TravelTypes.Name(type)} · {state}");
                 typeRows[i].interactable = !InGame && (unlocked || world.gold >= TravelTypes.Price);
+                GameButtonStyle.Apply(typeRows[i], ButtonRole.Choice, working.travelSelected && working.travelType == type, TravelTypes.Color(type));
             }
         }
 
@@ -272,6 +279,7 @@ namespace Diverse
                     working.hero.frames = working.hero.frames.Take(8).ToArray();
                 working.travelType = type;
                 working.travelEffect = null;
+                typePreviewStartedAt = Time.unscaledTime;
                 Preview();
             }
             RefreshTypes();
@@ -365,11 +373,14 @@ namespace Diverse
             if (InGame && (game.State != GameState.Paused || game.Player == null)) { Close(); return; }
 
             float t = Time.unscaledTime;
-            var silhouette = working.travelSelected ? TravelSilhouette.Frame(working.travelType, t) : null;
-            UIKit.Sprite(studioSilhouette, silhouette);
             if (typeWindow != null && typeWindow.activeSelf)
             {
-                UIKit.Sprite(modalSilhouette, silhouette);
+                if (Controls.Down(Act.Dash)) typePreviewStartedAt = t - 0.45f;
+                float elapsed = t - typePreviewStartedAt;
+                float demoPhase = Mathf.Repeat(elapsed, 2.8f);
+                float motionTime = Mathf.Clamp01((demoPhase - 0.45f) / TravelAbilityPreview.Duration(working.travelType)) * 1.79f;
+                var motion = working.travelSelected ? TravelMotionPreview(working.travelType, motionTime) : null;
+                abilityPreview?.Draw(working.travelType, motion, elapsed);
                 UIKit.Set(typeDescription, working.travelSelected ? TravelTypes.Description(working.travelType) : "미리 볼 유형을 골라 주세요.");
             }
             // The hero loops through what it does in play: walk, breathe, wind up and strike
@@ -407,6 +418,18 @@ namespace Diverse
             UIKit.Set(perkBase, perk != null && !string.IsNullOrEmpty(perk.name)
                 ? $"시작 능력 <color=#fff2b3>{perk.name}</color>"
                 : "시작 능력 <color=#8c7aa8>삶을 시작하면 캐릭터 설명으로 만들어져요 (밸런스 검증)</color>");
+        }
+
+        Sprite TravelMotionPreview(TravelType type, float elapsed)
+        {
+            float phase = Mathf.Repeat(elapsed, 1.8f);
+            int frame = phase < 0.2f ? 0 : phase < 1.3f ? 1 + Mathf.FloorToInt((phase - 0.2f) * 8f) % 2 : 3;
+            int rabbitFrame = phase < 0.2f ? Mathf.FloorToInt(phase * 10) : phase < 1.3f ? 2 + Mathf.FloorToInt((phase - 0.2f) * 12f) % 4 : 6 + Mathf.Min(1, Mathf.FloorToInt((phase - 1.3f) * 4f));
+            if (previewCostume.frames == null) return RabbitTravelArt.Frame(previewCostume, type, rabbitFrame);
+            if (previewCostume.frames.Length == 12)
+                return Art.Get($"travel_{previewCostume.id}_{frame}", () => DesignArt.HeroPose(previewCostume.frames, Pose.Idle0, false, frame));
+            // Until the selected motion is generated, demonstrate the ability with the original rabbit.
+            return RabbitTravelArt.Frame(DB.Costumes[0], type, rabbitFrame);
         }
 
 

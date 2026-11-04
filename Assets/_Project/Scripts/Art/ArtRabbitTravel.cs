@@ -2,60 +2,125 @@ using UnityEngine;
 
 namespace Diverse
 {
+    /// <summary>Eight articulated poses from the original PNG pixels. The face is never resampled or redrawn.</summary>
     internal static class RabbitTravelArt
     {
-        // Four fixed poses per type: entry, two movement poses, and exit.
-        static readonly (Pose pose, float angle, float width, float height)[][] Poses =
-        {
-            new[] { (Pose.Run0, -12f, 1.04f, 0.9f), (Pose.Run1, -22f, 1.08f, 0.93f), (Pose.Run3, -18f, 1.10f, 0.93f), (Pose.Idle0, 7f, 1f, 0.94f) },
-            new[] { (Pose.Run0, -20f, 0.93f, 1.08f), (Pose.Run1, -31f, 1.04f, 1.02f), (Pose.Run3, -16f, 1.1f, 0.92f), (Pose.Idle0, 8f, 1.06f, 0.9f) },
-            new[] { (Pose.AttackHit, -44f, 1.05f, 0.75f), (Pose.Run1, -12f, 1.14f, 0.24f), (Pose.Run3, 8f, 1.15f, 0.30f), (Pose.Run0, 24f, 0.92f, 0.84f) },
-            new[] { (Pose.Run0, -55f, 0.95f, 1.02f), (Pose.Run1, -65f, 0.92f, 1.04f), (Pose.Run3, -56f, 0.92f, 0.96f), (Pose.Run0, 14f, 0.96f, 0.89f) },
-            new[] { (Pose.Idle0, -8f, 1.08f, 0.9f), (Pose.Run0, -10f, 0.38f, 1.14f), (Pose.Run1, 8f, 0.63f, 1.05f), (Pose.Idle0, 8f, 1.08f, 0.92f) },
-            new[] { (Pose.Idle0, 0f, 1.16f, 0.71f), (Pose.Run0, -12f, 0.85f, 1.15f), (Pose.Run2, 8f, 1.02f, 0.85f), (Pose.Idle0, 0f, 1.18f, 0.70f) },
-        };
-
+        public const int FrameCount = 8;
         public static void Prewarm(CostumeDef costume)
         {
             if (costume.frames != null) return;
             foreach (var type in TravelTypes.All)
-                for (int frame = 0; frame < 4; frame++)
-                    Frame(costume, type, frame);
+                for (int frame = 0; frame < FrameCount; frame++) Frame(costume, type, frame);
         }
 
         public static Sprite Frame(CostumeDef costume, TravelType type, int frame) =>
-            Art.Get($"rabbit_travel_{costume.id}_{type}_{frame}", () => Draw(costume, type, frame));
+            Art.Get($"rabbit_motion_{costume.id}_{type}_{frame}", () => Draw(costume, type, Mathf.Clamp(frame, 0, FrameCount - 1)));
 
         static Sprite Draw(CostumeDef costume, TravelType type, int frame)
         {
-            var pose = Poses[(int)type][frame];
-            var sprite = Art.Rabbit(costume, pose.pose);
-            if (!sprite.texture.isReadable || sprite.packed) return sprite;
-            var rect = sprite.rect;
-            int w = (int)rect.width, h = (int)rect.height;
-            var pixels = sprite.texture.GetPixels((int)rect.x, (int)rect.y, w, h);
-            var canvas = new PixelCanvas(w * 2, h * 2);
-            var pivot = new Vector2(canvas.W / 2f, 3f);
-            if (type == TravelType.Flight && frame != 3)
+            var source = Art.Rabbit(costume, Pose.Idle0);
+            if (!source.texture.isReadable || source.packed) return source;
+            var rect = source.rect;
+            int width = (int)rect.width, height = (int)rect.height;
+            if (width != 36 || height != 34) return Art.Rabbit(costume, (Pose)((int)Pose.Run0 + frame % 4));
+            var src = source.texture.GetPixels((int)rect.x, (int)rect.y, width, height);
+            var cv = new PixelCanvas(56, 44);
+            bool moving = frame >= 2 && frame <= 5;
+            int stride = frame % 4;
+            int hx = 0, hy = 0;
+            Vector2Int lf = Vector2Int.zero, rf = Vector2Int.zero, paw = Vector2Int.zero;
+            switch (type)
             {
-                var root = pivot + new Vector2(-4, h * 0.37f);
-                var tip = root + new Vector2(-12, frame == 1 ? 11 : frame == 2 ? -4 : 5);
-                canvas.ThickLine(root, tip, 3.1f, Pal.Outline);
-                canvas.ThickLine(root, tip, 1.9f, Pal.Hex("ead9b8"));
+                case TravelType.Dash:
+                    hx = moving ? 2 : frame < 2 ? 1 : 0;
+                    hy = moving ? -2 + stride % 2 : frame < 2 ? -1 : 0;
+                    lf = new Vector2Int(moving ? (stride < 2 ? -3 : 2) : 0, stride % 2);
+                    rf = new Vector2Int(moving ? (stride < 2 ? 3 : -2) : 0, (stride + 1) % 2);
+                    paw = new Vector2Int(moving ? (stride < 2 ? 3 : -1) : 0, 1);
+                    break;
+                case TravelType.Flight:
+                    hy = moving ? 1 + stride % 2 : frame < 2 ? -1 : 0;
+                    lf = new Vector2Int(moving ? -2 : 0, moving ? 3 : 0);
+                    rf = new Vector2Int(moving ? -1 : 0, moving ? 2 : 0);
+                    paw = new Vector2Int(moving ? -1 : 0, moving ? 3 + stride % 2 : 0);
+                    break;
+                case TravelType.Burrow:
+                    if (moving)
+                    {
+                        cv.Ellipse(29, 5, 9, 3, Pal.Hex("28313b"));
+                        cv.Ellipse(29, 6, 8, 3, Pal.Hex("ac875a"));
+                        cv.Rect(24 + frame % 2, 7, 5, 1, Pal.Hex("dec491"));
+                        cv.Set(18 + frame, 4, Pal.Hex("ac875a"));
+                        Copy(13, 24, 15, 5, -1 + stride, -19);
+                        return cv.ToSprite(new Vector2(28, 3));
+                    }
+                    hy = frame < 2 ? -2 - frame * 2 : frame == 6 ? -3 : 0;
+                    paw = new Vector2Int(2, -1);
+                    break;
+                case TravelType.Swim:
+                    hx = moving ? 4 : 1; hy = moving ? -5 + stride % 2 : frame < 2 ? -2 : -1;
+                    lf = new Vector2Int(moving ? -5 : 0, moving ? 2 + stride % 2 : 0);
+                    rf = new Vector2Int(moving ? -4 : 0, moving ? 3 - stride % 2 : 0);
+                    paw = new Vector2Int(moving ? (stride < 2 ? 5 : -1) : 2, moving ? 0 : -1);
+                    break;
+                case TravelType.Blink:
+                    hy = frame < 2 ? -1 : 0;
+                    if (moving) hx = stride % 2 == 0 ? -1 : 1;
+                    break;
+                case TravelType.Bounce:
+                    hy = frame < 2 || frame == 6 ? -3 : moving ? 1 : 0;
+                    lf = new Vector2Int(-1, moving ? 3 : 0);
+                    rf = new Vector2Int(moving ? -1 : 1, moving ? 3 : 0);
+                    paw = new Vector2Int(moving ? 1 : 0, moving ? 2 : -1);
+                    break;
             }
-            var center = new Vector2(w / 2f, h * 0.40f) - sprite.pivot;
-            float radians = -pose.angle * Mathf.Deg2Rad;
-            float cos = Mathf.Cos(radians), sin = Mathf.Sin(radians);
-            for (int y = 0; y < canvas.H; y++)
-                for (int x = 0; x < canvas.W; x++)
-                {
-                    var delta = new Vector2(x + 0.5f, y + 0.5f) - pivot - center;
-                    int sx = Mathf.FloorToInt((delta.x * cos - delta.y * sin) / pose.width + center.x + sprite.pivot.x);
-                    int sy = Mathf.FloorToInt((delta.x * sin + delta.y * cos) / pose.height + center.y + sprite.pivot.y);
-                    if ((uint)sx < (uint)w && (uint)sy < (uint)h && pixels[sy * w + sx].a > 0)
-                        canvas.Px[y * canvas.W + x] = pixels[sy * w + sx];
-                }
-            return canvas.ToSprite(pivot);
+
+            // Head, neck/scarf fastening and torso are ONE original pixel layer. Moving these independently
+            // exposed outline pixels and tore the neck seam. Only the loose fabric and limbs articulate.
+            if (frame == 7) { hx = hy = 0; lf = rf = paw = Vector2Int.zero; }
+            if (type == TravelType.Flight && frame is >= 1 and <= 6) Cape(cv, src[9 * width + 11], frame, hx, hy);
+            else Copy(7, 7, 6, 7, hx, hy);
+            Copy(16, 1, 5, 3, hx + lf.x, hy + lf.y);
+            Copy(21, 1, 4, 3, hx + rf.x, hy + rf.y);
+            Copy(24, 5, 2, 3, hx + paw.x, hy + paw.y);
+            Copy(13, 4, 16, 30, hx, hy, omitPaw: true);
+            if (type == TravelType.Swim && moving)
+            {
+                cv.Set(16 - stride, 5 + stride % 2, TravelTypes.Color(type));
+                cv.Set(14 - stride, 4, TravelTypes.Color(type));
+            }
+            if (type == TravelType.Blink && moving)
+            {
+                cv.Set(16 + stride, 12, TravelTypes.Color(type));
+                cv.Set(43 - stride % 2, 20, TravelTypes.Color(type));
+                cv.Set(17 - stride, 25, TravelTypes.Color(type));
+            }
+            return cv.ToSprite(new Vector2(28, 3));
+
+            void Copy(int x0, int y0, int w, int h, int dx, int dy, bool omitPaw = false)
+            {
+                for (int y = y0; y < Mathf.Min(height, y0 + h); y++)
+                    for (int x = x0; x < Mathf.Min(width, x0 + w); x++)
+                    {
+                        Color32 c = src[y * width + x];
+                        if (c.a == 0 || omitPaw && x >= 24 && y >= 5 && y <= 7) continue;
+                        cv.Set(10 + x + dx, 2 + y + dy, c);
+                    }
+            }
+        }
+
+        static void Cape(PixelCanvas cv, Color32 red, int frame, int dx, int dy)
+        {
+            // The existing scarf unfolds into a fabric cape in the SAME colour; no added costume.
+            int lift = frame switch { 1 => 2, 2 => 6, 3 => 3, 4 => -1, 5 => 3, _ => 0 };
+            for (int x = 13; x <= 30; x++)
+            {
+                float t = (30 - x) / 17f;
+                int upper = Mathf.RoundToInt(12 + (1 + lift) * t);
+                int lower = Mathf.RoundToInt(11 - Mathf.Sin(t * Mathf.PI) * 5 + lift * t);
+                cv.Rect(x + dx, lower + dy, 1, Mathf.Max(1, upper - lower + 1), Pal.Hex("28313b"));
+                if (upper - lower > 1) cv.Rect(x + dx, lower + 1 + dy, 1, upper - lower - 1, red);
+            }
         }
     }
 }

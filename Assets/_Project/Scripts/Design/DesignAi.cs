@@ -90,6 +90,8 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
             var user = new StringBuilder();
             user.AppendLine("MODE: " + (lockChassis ? "APPEARANCE ONLY" : initial ? "INITIAL" : "EDIT"));
             user.AppendLine("TRAVEL TYPE (chosen by player): " + TravelTypes.Name(current.travelType));
+            user.AppendLine("REQUIRED TRAVEL ANIMATION: " + current.travelType + ": " + TravelTypes.MotionRow(current.travelType));
+            user.AppendLine("Preserve the hero's identity and outfit in all animation poses. The chosen travel type is fixed; adapt its movement to the hero's anatomy.");
             user.AppendLine("CURRENT HERO: " + Previous(current, 0));
             user.AppendLine("CURRENT COMBAT: " + Previous(current, 1));
             user.AppendLine("PLAYER REQUEST: " + request);
@@ -144,7 +146,8 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
             var jobs = new List<IEnumerator>();
             // The hero sheet holds the attack poses too: a new way of attacking (bare fists, a different weapon) redraws it
             bool newAttack = sections[1] && result.weapon.attackPose != current.weapon.attackPose;
-            if ((sections[0] || newAttack || (!lockChassis && current.hero.frames?.Length != 12)) && result.hero.imagePrompt != null) jobs.Add(HeroJob(result));
+            bool redrawHero = NeedsHeroSheet(current, sections[0], newAttack);
+            if (redrawHero && result.hero.imagePrompt != null) jobs.Add(HeroJob(result));
             if (sections[1])
             {
                 if (result.weapon.imagePrompt != null || result.attack.projectile.imagePrompt != null) jobs.Add(WeaponJob(result));
@@ -163,7 +166,7 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
             // The image model often ignores "facing right": one cheap look at all new sprites, then flip the ones facing left
             progress("방향 확인 중…");
             float visionCost = 0;
-            yield return FixFacing(result, sections, c => visionCost = c);
+            yield return FixFacing(result, new[] { redrawHero, sections[1] }, c => visionCost = c);
 
             var textCost = (AiClient.CostUsd(Game.Settings.aiModel, textIn, textOut) ?? 0) + visionCost;
             // The hero sheet is drawn on a wide canvas: about 1.5x a square picture
@@ -232,20 +235,33 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
 
         static string Save(PixelCanvas cv) => cv == null ? null : DesignStore.SaveImage(cv);
 
-        static IEnumerator HeroJob(DesignPack p)
+        public static bool NeedsHeroSheet(DesignPack current, bool changedHero, bool changedAttack) =>
+            changedHero || changedAttack || current.hero.frames?.Length != 12;
+
+        /// <summary>The selected movement is part of the hero sheet, never just a separate particle effect.</summary>
+        public static string HeroSheetPrompt(DesignPack p)
         {
             // Held weapons are drawn separately (on the hand): the sheet shows empty hands; bare-handed heroes show the strike itself
             var w = p.weapon;
             string attack = w.attackPose ?? (w.hold == "Hidden" ? "throwing a punch" : "swinging its arm");
             string hands = w.hold == "Hidden" ? "" : " Do not draw any weapon or held item; hands empty.";
-            Texture2D tex = null;
-            yield return ImageClient.Generate(Style + "A sprite sheet in an exact grid of 4 columns and 3 rows: the SAME character drawn twelve times with identical " +
+            return Style + "A sprite sheet in an exact grid of 4 columns and 3 rows: the SAME character drawn twelve times with identical " +
                 "design, colours and size, full body, side view facing right, each pose centered in its own cell with empty space around it. " +
+                "Keep identical face, eye shape and spacing, body proportions, markings and outfit in ALL cells. Do not introduce a new costume for the movement. " +
+                "Animate the actual limbs, joints and existing fabric; do not substitute rotated or scaled copies of the idle pose. " +
                 "Top row, a smooth walk cycle: front foot touching down; passing (legs together, body slightly raised); back foot touching down; passing again. " +
                 $"Middle row: standing idle; winding up to attack ({attack}, pulled back); the attack striking forward ({attack}, fully extended); flinching backward after being hit." +
-                $" Bottom row, exactly these four {p.travelType} poses in order: {TravelTypes.MotionRow(p.travelType)}. Leave all other movement abilities out." +
-                hands + " Character: " + p.hero.imagePrompt, t => tex = t, size: ImageClient.WideSize);
-            if (tex == null) { p.hero.image = null; p.hero.frames = null; yield return false; yield break; }
+                $" Bottom row, exactly these four {p.travelType} poses in order: {TravelTypes.MotionRow(p.travelType)}. The middle two movement poses must form a readable alternating loop. Leave all other movement abilities out." +
+                " Exactly one full pose per cell; all twelve cells must contain visible nonempty artwork, including every travel pose. No grid lines, no duplicated figures in a cell." +
+                hands + " Character: " + p.hero.imagePrompt;
+        }
+
+        static IEnumerator HeroJob(DesignPack p)
+        {
+            Texture2D tex = null;
+            yield return ImageClient.Generate(HeroSheetPrompt(p), t => tex = t, size: ImageClient.WideSize);
+            // Keep the prior appearance if regeneration fails; the UI reports this as a failed sheet.
+            if (tex == null) { yield return false; yield break; }
             // The idle pose (cell 4) goes first: it sets the scale every other pose keeps
             int[] order = { 4, 0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11 };
             var converted = Pixelizer.ConvertSet(tex, order.Select(i => Cell(tex, i % 4, i / 4, 4, 3)).ToArray(), 28, byHeight: true, alignFacing: true);
@@ -256,7 +272,7 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
             p.hero.image = p.hero.frames[4];
             if (p.hero.frames.Take(8).Any(f => f == null)) p.hero.frames = null;
             else if (p.hero.frames.Skip(8).Any(f => f == null)) p.hero.frames = p.hero.frames.Take(8).ToArray();
-            yield return p.hero.image != null;
+            yield return p.hero.image != null && p.hero.frames?.Length == 12;
         }
 
         static IEnumerator TravelJob(DesignPack p)

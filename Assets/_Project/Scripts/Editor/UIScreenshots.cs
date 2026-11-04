@@ -123,6 +123,13 @@ namespace Diverse.EditorTools
                 Click(Find<SaveSelectView>().transform.Find("Panel/Slots/Slot 0"), "Play"); yield return F(3); Shot("04_design");
                 var studio = Find<DesignStudioView>();
                 Click(studio, "Tab 0");
+                foreach (var type in TravelTypes.All)
+                {
+                    Click(studio, "Travel " + type); // unlock if necessary, then select
+                    Click(studio, "Travel " + type);
+                    yield return F(8);
+                    Shot("04a_travel_" + type.ToString().ToLowerInvariant());
+                }
                 Click(studio, "Travel Dash");
                 Click(studio, "Close Travel Types");
                 var promptField = studio.GetComponentInChildren<InputField>();

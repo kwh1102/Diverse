@@ -9,6 +9,17 @@ namespace Diverse
     public static class TravelTypes
     {
         public const int Price = 0;
+        // Match the dash before movement types were introduced. Shared with the UI demonstration.
+        public const float AfterimageInterval = 0.03f;
+        public const float AfterimageLifetime = 0.22f;
+        public const float AfterimageOpacity = 0.7f;
+
+        public static Color AfterimageColor(TravelType type)
+        {
+            Color color = type == TravelType.Dash ? new Color(0.7f, 0.85f, 1f) : Color(type);
+            color.a = AfterimageOpacity;
+            return color;
+        }
         public static readonly TravelType[] All = (TravelType[])Enum.GetValues(typeof(TravelType));
 
         public static bool Unlocked(WorldSave world, TravelType type) =>
@@ -22,9 +33,9 @@ namespace Diverse
 
         public static string Description(TravelType type) => type switch
         {
-            TravelType.Flight => "빠르게 날아서 물 위를 건너요.",
+            TravelType.Flight => "빠르게 날아서 강·늪·용암 위를 건너요.",
             TravelType.Burrow => "스페이스를 누르는 동안 잠복해 벽을 지나가요.",
-            TravelType.Swim => "가까운 물로 뛰어들고, 스페이스를 누르는 동안 헤엄쳐요.",
+            TravelType.Swim => "강과 늪에서 스페이스를 누르는 동안 헤엄쳐요. 용암은 건널 수 없어요.",
             TravelType.Blink => "조준 방향의 가까운 빈자리로 순간이동해요.",
             TravelType.Bounce => "크게 뛰고 착지 직후 한 번 더 튈 수 있어요.",
             _ => "조준 방향으로 짧게 돌진해요."
@@ -34,7 +45,7 @@ namespace Diverse
 
         public static string MotionRow(TravelType type) => type switch
         {
-            TravelType.Flight => "takeoff with wings spread; wings raised on upstroke; wings lowered on downstroke; settling with wings folded",
+            TravelType.Flight => "taking off with its own wings, fins, or existing cloak opening; gliding with those surfaces raised; gliding with them lowered; landing and folding them back, preserving the exact same character and outfit",
             TravelType.Burrow => "crouching and digging headfirst; mostly underground with only a low mound and small hints of the character visible; a second low mound with shifted dirt; climbing back out of the soil",
             TravelType.Swim => "diving headfirst; horizontal swimming with limbs reaching forward; horizontal swimming with limbs pulling backward and kicking; surfacing",
             TravelType.Blink => "bracing to blink; dissolving into a narrow fading silhouette; reappearing from a narrow silhouette; fully reformed with a settling pose",

@@ -52,6 +52,8 @@ namespace Diverse
         float lungeT; Vector2 lungeVel;
         float weaponSwingT, weaponSwingDur; float weaponFrom, weaponTo;
         bool queuedAttack; Vector2 queuedDir;
+        Coroutine basicAttackRoutine;
+        bool attackStrikePending;
 
         // Dash
         float dashT, dashCd;
@@ -357,7 +359,11 @@ namespace Diverse
             if (CameraRig.I != null)
                 CameraRig.I.lookAhead = Vector2.ClampMagnitude((AimPoint - Pos) * 0.12f, 1.2f);
 
-            if (activeTravel != TravelType.Dash) return;
+            if (activeTravel != TravelType.Dash)
+            {
+                HandleAttackInput(Controls.Down(Act.Attack), Controls.Held(Act.Attack), (AimPoint - Pos).SafeNormal(Facing));
+                return;
+            }
 
             // Right-click: move / target
             if (Controls.Held(Act.Move) && !Controls.Down(Act.Move) && !TravelTarget.HasValue)
@@ -498,22 +504,13 @@ namespace Diverse
             Moving = false;
             if (dashT > 0)
             {
+                var trailOrigin = Pos;
                 float moveTime = TravelStep(dt);
                 dashT = moveTime <= 0 ? 0 : dashT - moveTime;
                 if (moveTime > 0) MoveTravel(moveTime);
-                ghostT -= dt;
-                if (ghostT <= 0)
-                {
-                    ghostT = 0.06f;
-                    if (SubmergedTravel)
-                    {
-                        if (!BuriedInTerrain)
-                            Fx.I?.Burst(Pos, TravelTypes.Color(activeTravel), 3, 1.8f, 0.22f, 0, 1, 75, (-Facing).Angle(), true);
-                    }
-                    else if (!TravelTypes.UsesGauge(activeTravel))
-                        Fx.I?.Afterimage(body, new Color(0.7f, 0.85f, 1f, 0.7f), 0.22f);
-                }
-                if (dashT <= 0) { FinishTravel(); RepathMovement(); GameEvents.Raise(new CombatEvent { type = Trig.DashEnd, source = this, position = Pos }); Telemetry.Record("DashEnd"); }
+                EmitTravelAfterimages(trailOrigin, Pos, dt);
+                if (dashT <= 0) CompleteNearTravelExit();
+                if (dashT <= 0) { FinishTravel(); RepathMovement(); GameEvents.Raise(new CombatEvent { type = Trig.DashEnd, source = this, position = Pos }); Telemetry.Record("DashEnd"); TryQueuedAttack(); }
                 return;
             }
             if (lungeT > 0)
@@ -588,6 +585,7 @@ namespace Diverse
         void BasicAttack(Vector2 dir)
         {
             if (actionLock > 0 || dashT > 0) return;
+            travelExitUntil = 0; exitingTravel = TravelType.Dash; enteredWater = false;
             var steps = Weapon.combo;
             var step = steps[comboIndex % steps.Length];
             int stepIndex = comboIndex % steps.Length;
@@ -608,7 +606,8 @@ namespace Diverse
             else { weaponFrom = baseAngle + step.arc * 0.5f * step.swingDir; weaponTo = baseAngle - step.arc * 0.5f * step.swingDir; }
             weaponSwingT = 0; weaponSwingDur = Mathf.Max(0.08f, step.windup / aspd + 0.08f);
 
-            StartCoroutine(AttackRoutine(step, dir, finisher, aspd, stepIndex));
+            attackStrikePending = true;
+            basicAttackRoutine = StartCoroutine(AttackRoutine(step, dir, finisher, aspd, stepIndex));
             foreach (var c in Clone.Active.ToArray()) if (c != null) c.Mimic(dir, step);
         }
 
@@ -618,6 +617,7 @@ namespace Diverse
             squash = -0.25f;
             if (step.windup > 0.1f) Sfx.Play("charge", 0.25f, 1.6f);
             yield return new WaitForSeconds(step.windup / aspd);
+            attackStrikePending = false;
             if (!Alive) yield break;
 
             // Lunge forward
@@ -742,7 +742,17 @@ namespace Diverse
             if (!followup && !gauge) { DashCharges--; dashRecharge = 0; }
             bounceFollowup = followup;
             bounceAgainUntil = 0;
-            actionLock = 0; queuedAttack = false;
+            if (attackStrikePending)
+            {
+                if (basicAttackRoutine != null) StopCoroutine(basicAttackRoutine);
+                attackStrikePending = false;
+                comboIndex = Mathf.Max(0, comboIndex - 1);
+                queuedAttack = true; queuedDir = Facing;
+                actionLock = 0;
+            }
+            lungeT = 0; lungeVel = Vector2.zero;
+            weaponSwingT = weaponSwingDur;
+            ghostT = 0;
             LastDashOrigin = Pos;
             bool prepared = PrepareTravel(type, ref dir);
             showTravelPose = true;
@@ -911,7 +921,7 @@ namespace Diverse
             if (!Alive) pose = Pose.Hurt;
             else if (flash > 0.5f) pose = Pose.Hurt;
             // A drawn hero has wind-up / strike poses (a punch or kick when bare-handed)
-            else if (Costume.frames != null && weaponSwingT < weaponSwingDur) pose = weaponSwingT < weaponSwingDur * 0.45f ? Pose.AttackWind : Pose.AttackHit;
+            else if (dashT <= 0 && weaponSwingT < weaponSwingDur) pose = weaponSwingT < weaponSwingDur * 0.45f ? Pose.AttackWind : Pose.AttackHit;
             else if (dashT > 0) pose = Pose.Run1;
             else if (Moving) pose = (Pose)((int)Pose.Run0 + (int)(walkStride / (Mathf.PI * 0.5f)) % 4);   // 4 frames per two steps, in step with the stride
             else pose = IdlePose(animT);
@@ -990,7 +1000,9 @@ namespace Diverse
             raftSr.enabled = OnWater;
             raftSr.sortingOrder = body.sortingOrder - 1;
             raftSr.transform.localPosition = new Vector3(0, 0.1f + Mathf.Sin(animT * 2.5f) * 0.03f, 0);
-            if (dashT > 0 || TravelDepth > 0) visual.localPosition += Vector3.up * TravelLift;
+            float targetLift = dashT > 0 || TravelDepth > 0 ? TravelLift : 0;
+            travelVisualLift = Mathf.Lerp(travelVisualLift, targetLift, 1f - Mathf.Exp(-24f * Time.deltaTime));
+            visual.localPosition += Vector3.up * travelVisualLift;
             AnimateTravelFallback();
             if (OnWater) visual.localPosition += new Vector3(0, 0.12f + Mathf.Sin(animT * 2.5f) * 0.03f, 0);
         }
