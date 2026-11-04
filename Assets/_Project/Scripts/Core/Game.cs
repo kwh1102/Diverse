@@ -122,11 +122,6 @@ namespace Diverse
         {
             if (DeveloperMode.CapturingInput) return;
             if (Controls.Down(Act.Inventory)) OpenOverlay(GameState.Inventory);
-            else if (Controls.Down(Act.Potion))
-            {
-                var potion = Player.Inventory.items.FirstOrDefault(i => i.Placed && i.consumable == "heal");
-                if (potion != null) Player.UseItem(potion.id);
-            }
             else if (Controls.Down(Act.Map)) OpenOverlay(GameState.Map);
             else if (Controls.Down(Act.Pause)) OpenOverlay(GameState.Paused);
             else if (Controls.Down(Act.Abilities))

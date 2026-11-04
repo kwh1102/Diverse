@@ -27,7 +27,7 @@ namespace Diverse
         [SerializeField] Button reroll, skip;
         [Header("Panel height with / without the chat row")]
         [SerializeField] RectTransform panel;
-        [SerializeField] float heightWithChat = 330, heightWithoutChat = 246;
+        [SerializeField] float heightWithChat = 350, heightWithoutChat = 266;
 
         bool showPipeline;
         int lastChat = -1;

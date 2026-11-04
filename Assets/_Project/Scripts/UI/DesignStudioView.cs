@@ -22,6 +22,7 @@ namespace Diverse
         [SerializeField] Image hero, heroWeapon, projectile, slash;
         [SerializeField] InventoryShapePreview inventoryPreview;
         [SerializeField] Button flipWeapon;            // mirror the weapon picture when the image model drew it backwards
+        [SerializeField] Button flipHero;
         [SerializeField] Button flipEffects;           // turn the swing / muzzle effect around when it still plays backwards
         [Header("Chassis (new life only)")]
         [SerializeField] GameObject chassisRow;
@@ -89,6 +90,11 @@ namespace Diverse
                 Push();
                 working.weapon.image = DesignStore.Mirrored(working.weapon.image);
                 Preview();
+            });
+            UIKit.Bind(flipHero,()=>
+            {
+                if(InGame || busy || working?.hero?.image==null) return;
+                Push();DesignStore.MirrorHero(working.hero);Preview();
             });
             UIKit.Bind(undo, () => { if (history.Count > 0 && !busy) { working = history.Pop(); Preview(); } });
             prompt.characterLimit = DesignGuard.MaxPrompt;
@@ -395,6 +401,8 @@ namespace Diverse
             var kind = DesignRuntime.Chassis(working);
             UIKit.Sprite(heroWeapon, DesignRuntime.WeaponHidden ? null : Art.Weapon(kind));
             UIKit.Show(flipWeapon, !InGame && working.weapon.image != null && !DesignRuntime.WeaponHidden);
+            UIKit.Show(flipHero,!InGame && working.hero.image!=null);
+            if(flipHero!=null) flipHero.interactable=!busy;
             UIKit.Show(flipEffects, !InGame && working.attack.effectImages != null);
             var shot = working.attack.projectile;
             var b = DesignCombat.For(working) ?? DB.W(kind);

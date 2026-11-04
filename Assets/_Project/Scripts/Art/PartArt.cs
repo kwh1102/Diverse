@@ -7,6 +7,7 @@ namespace Diverse
     public static class PartArt
     {
         static readonly Dictionary<string, Sprite> cache=new Dictionary<string, Sprite>();
+        static readonly Dictionary<Sprite,Sprite> centered=new Dictionary<Sprite,Sprite>();
         public static void InvalidateWeapon(string id)=>cache.Remove("weapon:"+id);
         public static uint Hash(string value) { uint h=2166136261; foreach(char c in value??"") h=(h^c)*16777619; return h; }
         public static void Describe(InventoryItem item)
@@ -14,7 +15,31 @@ namespace Diverse
             item.name=PartPresentation.DisplayName(item.Ability);
             item.iconKey=item.Ability?.partImage;
         }
-        public static Sprite For(InventoryItem item)
+        public static Sprite For(InventoryItem item)=>CenterIcon(Raw(item));
+
+        static Sprite CenterIcon(Sprite source)
+        {
+            if(source==null) return null;
+            if(centered.TryGetValue(source,out var icon) && icon!=null) return icon;
+            var texture=source.texture;var region=source.rect;
+            if(!texture.isReadable)
+                return centered[source]=Sprite.Create(texture,region,new Vector2(.5f,.5f),source.pixelsPerUnit,0,SpriteMeshType.FullRect);
+            var pixels=texture.GetPixels32();
+            int x0=Mathf.RoundToInt(region.x),y0=Mathf.RoundToInt(region.y),width=Mathf.RoundToInt(region.width),height=Mathf.RoundToInt(region.height);
+            int left=width,bottom=height,right=-1,top=-1;
+            for(int y=0;y<height;y++) for(int x=0;x<width;x++)
+            {
+                if(pixels[(y0+y)*texture.width+x0+x].a<16) continue;
+                left=Mathf.Min(left,x);right=Mathf.Max(right,x);bottom=Mathf.Min(bottom,y);top=Mathf.Max(top,y);
+            }
+            if(right<left || top<bottom) return source;
+            int w=right-left+1,h=top-bottom+1,side=Mathf.Max(w,h)+4;
+            var canvas=new PixelCanvas(side,side);int dx=(side-w)/2,dy=(side-h)/2;
+            for(int y=0;y<h;y++) for(int x=0;x<w;x++) canvas.Set(dx+x,dy+y,pixels[(y0+bottom+y)*texture.width+x0+left+x]);
+            return centered[source]=canvas.ToSpriteCentered();
+        }
+
+        static Sprite Raw(InventoryItem item)
         {
             if(item==null || item.kind==ItemKind.Skill) return null;
             string key=item.kind==ItemKind.Weapon?"weapon:"+item.id:item.kind==ItemKind.Part?"part:"+item.Ability?.partImage:"consumable:"+item.consumable;

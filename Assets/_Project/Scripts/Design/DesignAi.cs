@@ -18,6 +18,7 @@ namespace Diverse
     /// </summary>
     public static class DesignAi
     {
+        public static string LastFacingStatus { get; private set; }
 
 
         /// <summary>Added to every sprite prompt so all pictures share one look.</summary>
@@ -176,6 +177,7 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
             var imageCost = (ImageClient.PriceUsd(ImageClient.Model) ?? 0) * (jobs.Count - failed + wide * 0.5f);
             LastCostUsd = textCost + imageCost;
             string status = $"새 디자인 완성 (글 {textIn}+{textOut}토큰, 그림 {jobs.Count - failed}장 · 약 ${LastCostUsd:0.000})";
+            if(!string.IsNullOrEmpty(LastFacingStatus)) status+="\n"+LastFacingStatus;
             if (failed > 0) status += $"\n<color=#ffb36b>그림 {failed}장 실패: {ImageClient.LastStatus} — 그 부분은 기본 도트로 표시</color>";
             done(result, status);
         }
@@ -250,6 +252,7 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
             return Style + "A sprite sheet in an exact grid of 4 columns and 3 rows: the SAME character drawn twelve times with identical " +
                 "design, colours and size, full body, side view facing right, each pose centered in its own cell with empty space around it. " +
                 "Keep identical face, eye shape and spacing, body proportions, markings and outfit in ALL cells. Do not introduce a new costume for the movement. " +
+                "The character's nose, face and gaze must point toward SCREEN RIGHT in EVERY cell, including attack wind-up, flinching and travel. Never mirror individual poses or turn the character around when moving backward. " +
                 "Animate the actual limbs, joints and existing fabric; do not substitute rotated or scaled copies of the idle pose. " +
                 "Top row, a smooth walk cycle: front foot touching down; passing (legs together, body slightly raised); back foot touching down; passing again. " +
                 $"Middle row: standing idle; winding up to attack ({attack}, pulled back); the attack striking forward ({attack}, fully extended); flinching backward after being hit." +
@@ -266,7 +269,8 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
             if (tex == null) { yield return false; yield break; }
             // The idle pose (cell 4) goes first: it sets the scale every other pose keeps
             int[] order = { 4, 0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11 };
-            var converted = Pixelizer.ConvertSet(tex, order.Select(i => Cell(tex, i % 4, i / 4, 4, 3)).ToArray(), 28, byHeight: true, alignFacing: true);
+            // Limb motion changes the silhouette; silhouette overlap must not decide whether a pose gets mirrored.
+            var converted = Pixelizer.ConvertSet(tex, order.Select(i => Cell(tex, i % 4, i / 4, 4, 3)).ToArray(), 28, byHeight: true, alignFacing: false);
             var cells = new PixelCanvas[order.Length];
             for (int k = 0; k < order.Length; k++) cells[order[k]] = converted[k];
             UnityEngine.Object.Destroy(tex);
@@ -328,15 +332,23 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
         [Serializable] class Dirs { public List<string> dirs; }
 
         /// <summary>
-        /// Every sprite in the game faces / points / flies to the right (Unity flips it for the left). Put the new hero, weapon,
-        /// shot and swing effect on one contact sheet, ask the text model (low-detail vision, ~$0.0005) which way each
-        /// one faces, and mirror the ones that face left (all poses of a subject together).
+        /// Assess each character pose independently from its face, then normalize definite left-facing poses.
+        /// Symmetric/front-facing/unclear pictures are kept as drawn instead of forcing a binary guess.
         /// </summary>
         static IEnumerator FixFacing(DesignPack p, bool[] sections, Action<float> cost)
         {
+            LastFacingStatus=null;
             var subjects = new List<(string what, string id, Action<Func<string, string>> flip)>();
             if (sections[0] && p.hero.frames != null)
-                subjects.Add(("a character: which way it faces", p.hero.image, f => { p.hero.frames = p.hero.frames.Select(f).ToArray(); p.hero.image = p.hero.frames[p.hero.frames.Length >= 8 ? 4 : 0]; }));
+            {
+                for(int i=0;i<p.hero.frames.Length;i++)
+                {
+                    int pose=i;if(string.IsNullOrEmpty(p.hero.frames[pose])) continue;
+                    subjects.Add(($"character pose {pose}: anatomical facing from eyes, nose, beak or muzzle; ignore the direction of limbs, clothing, tail and movement",p.hero.frames[pose],f=>p.hero.frames[pose]=f(p.hero.frames[pose])));
+                }
+            }
+            else if(sections[0] && p.hero.image!=null)
+                subjects.Add(("character: facing from face/gaze",p.hero.image,f=>p.hero.image=f(p.hero.image)));
             if (sections[1])
             {
                 var w = p.weapon; var a = p.attack;
@@ -346,7 +358,7 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
             if (subjects.Count == 0) { cost(0); yield break; }
 
             const int cell = 96;   // big enough that a gun's barrel and grip are clearly different
-            int cols = Mathf.Min(8, subjects.Count), rows = Mathf.CeilToInt(subjects.Count / (float)cols);
+            int cols = Mathf.Min(4, subjects.Count), rows = Mathf.CeilToInt(subjects.Count / (float)cols);
             var sheet = new PixelCanvas(cols * cell, rows * cell);
             sheet.Rect(0, 0, sheet.W, sheet.H, new Color32(205, 205, 205, 255));
             for (int i = 0; i < subjects.Count; i++)
@@ -367,18 +379,29 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
             var png = sheetTex.EncodeToPNG();
             UnityEngine.Object.Destroy(sheetTex);
             var question = $"This image is a grid of {subjects.Count} cells ({cols} per row), read left to right, then top to bottom. " +
-                           "For each cell answer \"left\" or \"right\":\n" + string.Join("\n", subjects.Select((s, i) => $"cell {i}: {s.what}")) +
+                           "For each cell answer \"left\", \"right\", \"front\" or \"unclear\". Only use left/right when the face or working end is unambiguous. A backward-leaning body or extended arm does not change the direction of the face. Do not infer a cell's facing from a neighboring cell:\n" + string.Join("\n", subjects.Select((s, i) => $"cell {i}: {s.what}")) +
                            $"\nReturn JSON {{\"dirs\":[...]}} with exactly {subjects.Count} entries.";
             string json = null;
             yield return AiClient.CompleteVision("You look at pixel-art game sprites and say which way they face or point. Look carefully at each cell. Output JSON only.", question, png, 400, r => json = r, "high");
             cost(AiClient.CostUsd(Game.Settings.aiModel, AiClient.LastPromptTokens, AiClient.LastCompletionTokens) ?? 0);
-            if (json == null) yield break;
             List<string> dirs = null;
-            try { dirs = JsonUtility.FromJson<Dirs>(json)?.dirs; } catch { }
-            if (dirs == null) yield break;
-            for (int i = 0; i < subjects.Count && i < dirs.Count; i++)
+            try { if(json!=null) dirs = JsonUtility.FromJson<Dirs>(json)?.dirs; } catch { }
+            if (dirs == null || dirs.Count!=subjects.Count)
+            {
+                LastFacingStatus=sections[0]?"자동 방향 판정을 완료하지 못했어요. 필요하면 미리보기의 캐릭터 좌우 반전을 사용해 주세요.":"자동 방향 판정을 완료하지 못했어요.";
+                yield break;
+            }
+            var mirrored=new Dictionary<string,string>();
+            string Mirror(string id)
+            {
+                if(!mirrored.TryGetValue(id,out string value)) mirrored[id]=value=DesignStore.Mirrored(id);
+                return value;
+            }
+            for (int i = 0; i < subjects.Count; i++)
                 if (string.Equals(dirs[i]?.Trim(), "left", StringComparison.OrdinalIgnoreCase))
-                    subjects[i].flip(DesignStore.Mirrored);
+                    subjects[i].flip(Mirror);
+            if(sections[0] && p.hero.frames!=null)
+                p.hero.image=p.hero.frames[p.hero.frames.Length>=8?4:0];
             Debug.Log("[AI design] facing: " + string.Join(",", dirs));
         }
 

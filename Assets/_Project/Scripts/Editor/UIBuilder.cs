@@ -480,7 +480,9 @@ namespace Diverse.EditorTools
             // Key bindings page
             var kp = Stretch(body, "KeysPage");
             Box(kp, slotSpr);
-            var grid = Node(kp, "Bindings", TL, new Vector2(8, 6), new Vector2(430, 150));
+            float bindingsHeight = Mathf.CeilToInt(Controls.Defaults.Length / 2f) * 21 - 3;
+            float keysFooterY = 6 + bindingsHeight + 15;
+            var grid = Node(kp, "Bindings", TL, new Vector2(8, 6), new Vector2(430, bindingsHeight));
             var gl = grid.gameObject.AddComponent<GridLayoutGroup>();
             gl.cellSize = new Vector2(211, 18); gl.spacing = new Vector2(8, 3); gl.constraint = GridLayoutGroup.Constraint.FixedColumnCount; gl.constraintCount = 2;
             // Row = button on the right with a "Label" text on its left
@@ -491,8 +493,8 @@ namespace Diverse.EditorTools
             var lbl = Label(row.transform, "Label", "동작", BL, Vector2.zero, new Vector2(130, 18), 9, TextAnchor.MiddleLeft);
             lbl.rectTransform.anchorMin = new Vector2(0, 0); lbl.rectTransform.anchorMax = new Vector2(0, 1);
             lbl.rectTransform.pivot = new Vector2(0, 0.5f); lbl.rectTransform.anchoredPosition = new Vector2(6, 0);
-            var reset = Btn(kp, "ResetKeys", "기본값으로", TL, new Vector2(8, 160), new Vector2(120, 18), 9);
-            Label(kp, "KeysHint", "<color=#8c7aa8>빨간색 = 다른 동작과 키가 겹침. Esc로 취소.</color>", TL, new Vector2(138, 162), new Vector2(300, 14), 9);
+            var reset = Btn(kp, "ResetKeys", "기본값으로", TL, new Vector2(8, keysFooterY), new Vector2(120, 18), 9);
+            Label(kp, "KeysHint", "<color=#8c7aa8>빨간색 = 다른 동작과 키가 겹침. Esc로 취소.</color>", TL, new Vector2(138, keysFooterY + 2), new Vector2(300, 14), 9);
             UIKit.Show(kp, false);
 
             Wire(v, "settingsPage", sp.gameObject);

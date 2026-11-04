@@ -4,7 +4,7 @@ using UnityEngine.InputSystem;
 
 namespace Diverse
 {
-    public enum Act { Move, Attack, Stop, Dash, SkillQ, SkillW, SkillE, SkillR, Interact, Map, Pause, Abilities, Chronicle, Inventory, Potion }
+    public enum Act { Move, Attack, Stop, Dash, SkillQ, SkillW, SkillE, SkillR, Interact, Map, Pause, Abilities, Chronicle, Inventory }
 
     /// <summary>
     /// Input. Builds InputActions in code, and saves user changes as override JSON.
@@ -30,7 +30,6 @@ namespace Diverse
             (Act.Map, "지도", "<Keyboard>/tab"),
             (Act.Abilities, "능력 목록", "<Keyboard>/c"),
             (Act.Inventory, "인벤토리", "<Keyboard>/i"),
-            (Act.Potion, "회복약 사용", "<Keyboard>/1"),
             (Act.Chronicle, "연대기", "<Keyboard>/j"),
             (Act.Pause, "일시정지 / 메뉴", "<Keyboard>/escape"),
         };

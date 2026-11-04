@@ -27,11 +27,12 @@ namespace Diverse.EditorTools
                 var bagButton=hud.transform.Find("InventoryButton")?.GetComponent<Button>()??Btn(hud.transform,"InventoryButton","가방 [I]",TR,new Vector2(-8,180),new Vector2(76,20),10);
                 Wire(ui,"inventoryButton",bagButton);
                 LayoutPartCards(root);
+                LayoutInventoryPolish(root);
                 InstallLegacyChoice(root);
                 AddStudioInventoryPreview(root);
                 return true;
             });
-            Patch(UIPrefabDir+"/MenuCanvas.prefab",root=>{AddStudioInventoryPreview(root);return true;});
+            Patch(UIPrefabDir+"/MenuCanvas.prefab",root=>{AddStudioInventoryPreview(root);InstallHeroFacingButton(root);return true;});
             var db=GameDatabase.Load();db.inventory??=new InventoryRules();
             if(db.inventory.partIconPixels<=0) db.inventory.partIconPixels=32;
             if(db.inventory.partIconColors<=0) db.inventory.partIconColors=16;
@@ -116,7 +117,8 @@ namespace Diverse.EditorTools
             panel.anchorMin=panel.anchorMax=panel.pivot=C;panel.anchoredPosition=Vector2.zero;panel.sizeDelta=new Vector2(640,340);
             var outer=panel.GetComponent<Image>();if(outer!=null) outer.enabled=false;
             foreach(string obsolete in new[]{"MaterialA","MaterialB","Fuse","Confirm","Cancel","WeaponPrompt","Help"}) UIKit.Show(InventoryFind<RectTransform>(host,obsolete),false);
-            InventoryText(panel,"Heading","인벤토리",8,5,400,20,15);
+            var inventoryHeading=panel.Find("Heading")?.GetComponent<Text>()??panel.Find("HeaderBar/Heading")?.GetComponent<Text>();
+            if(inventoryHeading==null) InventoryText(panel,"Heading","인벤토리",8,5,400,20,15);
             var title=InventoryFind<Text>(host,"Title")??InventoryText(panel,"Title","대시형 · 7×7",146,30,304,15,10,TextAnchor.MiddleCenter);
             var close=InventoryButton(host,panel,"Close","닫기",572,6,60,20);
             var left=InventoryBox(panel,"EquipmentBox",6,60,132,180);
@@ -287,7 +289,7 @@ namespace Diverse.EditorTools
             {
                 var so=new SerializedObject(card);var title=so.FindProperty("title").objectReferenceValue as Text;var header=so.FindProperty("header").objectReferenceValue as Text;var tags=so.FindProperty("tags").objectReferenceValue as Text;var body=so.FindProperty("desc").objectReferenceValue as Text;
                 var rt=(RectTransform)card.transform;float width=rt.rect.width>0?rt.rect.width:rt.sizeDelta.x;float height=rt.rect.height>0?rt.rect.height:rt.sizeDelta.y;
-                var icon=InventoryPicture(card.transform,"PartIcon",6,22,32,32);Wire(card,"partIcon",icon);
+                var icon=InventoryFind<Image>(card.transform,"PartIcon")??InventoryPicture(card.transform,"PartIcon",6,22,32,32);Wire(card,"partIcon",icon);
                 InventoryRect(header.rectTransform,card.transform,6,4,width-12,12);header.fontSize=8;
                 InventoryRect(title.rectTransform,card.transform,44,20,width-50,36);title.alignment=TextAnchor.MiddleLeft;title.resizeTextForBestFit=true;title.resizeTextMinSize=8;title.resizeTextMaxSize=11;title.verticalOverflow=VerticalWrapMode.Truncate;
                 var scroll=body.GetComponentInParent<ScrollRect>();if(scroll!=null) InventoryRect(scroll.GetComponent<RectTransform>(),card.transform,6,62,width-12,height-96);

@@ -134,6 +134,20 @@ namespace Diverse
             return SaveImage(cv);
         }
 
+        public static void MirrorHero(HeroLook hero)
+        {
+            if(hero==null) return;
+            var changed=new Dictionary<string,string>();
+            string Flip(string id)
+            {
+                if(string.IsNullOrEmpty(id)) return id;
+                if(!changed.TryGetValue(id,out string result)) changed[id]=result=Mirrored(id);
+                return result;
+            }
+            if(hero.frames!=null) hero.frames=hero.frames.Select(Flip).ToArray();
+            hero.image=Flip(hero.image);
+        }
+
         /// <summary>Sprite from a stored picture. pivot is normalized (0..1).</summary>
         public static Sprite Sprite(string id, Vector2 pivot)
         {

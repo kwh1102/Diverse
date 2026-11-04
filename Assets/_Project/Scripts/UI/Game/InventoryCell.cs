@@ -20,9 +20,8 @@ namespace Diverse
             var item = bag.At(x,y); var w = bag.Owner(x,y);
             ItemIcons.Bind(icon,skillGlyph,item);
             if(contents!=null) contents.alpha=owner!=null && item!=null && owner.Dragged==item.id ? .25f : 1;
-            UIKit.Show(skillKey,item?.kind==ItemKind.Skill);
-            if(item?.kind==ItemKind.Skill) UIKit.Set(skillKey,"QWER"[item.skillSlot].ToString());
-            string text = item?.kind == ItemKind.Part ? "T" + item.complexity : item?.kind == ItemKind.Consumable ? item.count.ToString() : "";
+            UIKit.Show(skillKey,false);
+            string text = item?.kind==ItemKind.Skill ? "QWER"[item.skillSlot].ToString() : item?.kind == ItemKind.Part ? "T" + item.complexity : item?.kind == ItemKind.Consumable ? item.count.ToString() : "";
             if (item == null && w != null)
             {
                 int slot = System.Array.IndexOf(InventoryState.Slots, new Vector2Int(x-w.x,y-w.y));

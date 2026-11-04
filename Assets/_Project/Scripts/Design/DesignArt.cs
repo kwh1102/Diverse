@@ -21,13 +21,17 @@ namespace Diverse
 
         // ───────────────────────── Weapon ─────────────────────────
 
-        public static bool HasWeapon(WeaponLook w) => w != null && (w.pixels != null || w.shape != "builtin");
+        static bool HasGrid(string[] rows, string[] palette) => rows != null && rows.Length > 0
+            && palette != null && palette.Length > 0 && rows.Any(r => !string.IsNullOrEmpty(r));
+
+        public static bool HasWeapon(WeaponLook w) => w != null && (HasGrid(w.pixels, w.palette) || w.shape != "builtin");
 
         /// <summary>Weapon sprite pointing right, pivot at the grip. null = keep the chassis' original art.</summary>
         public static Sprite Weapon(WeaponLook w, int maxLength = DesignGuard.MaxWeaponLength, bool centered = false)
         {
             if (!HasWeapon(w)) return null;
             var cv = w.pixels != null ? Grid(w.pixels, w.palette, maxLength) : null;
+            if (cv == null && w.shape == "builtin") return null;
             Vector2 pivot;
             if (cv != null) pivot = new Vector2(Mathf.Min(2, cv.W / 2f), cv.H / 2f);
             else cv = DrawWeapon(w, maxLength, out pivot);
@@ -193,13 +197,15 @@ namespace Diverse
         /// <summary>Pixel grid ('.' clear, '1'..'9' palette) → canvas, cropped, optionally downscaled, outlined.</summary>
         static PixelCanvas Grid(string[] rows, string[] palette, int maxW)
         {
-            int h = rows.Length, w = rows.Max(r => r.Length);
+            // JsonUtility can restore absent optional grids as empty arrays; use the normal art fallback.
+            if (!HasGrid(rows, palette)) return null;
+            int h = rows.Length, w = rows.Max(r => r?.Length ?? 0);
             var cols = palette.Select(Pal.Hex).ToArray();
             int step = Mathf.Max(1, Mathf.CeilToInt(w / (float)maxW));   // nearest-neighbour shrink for small copies
             int cw = Mathf.CeilToInt(w / (float)step), ch = Mathf.CeilToInt(h / (float)step);
             var cv = new PixelCanvas(cw + 2, ch + 2);
             for (int y = 0; y < h; y += step)
-                for (int x = 0; x < rows[y].Length; x += step)
+                for (int x = 0; x < (rows[y]?.Length ?? 0); x += step)
                 {
                     int idx = rows[y][x] - '1';
                     if (idx < 0 || idx >= cols.Length) continue;
@@ -230,7 +236,8 @@ namespace Diverse
         public static Sprite Projectile(ProjectileLook p, WeaponLook weapon)
         {
             if (p == null) return null;
-            if (p.pixels != null) return Grid(p.pixels, p.palette, DesignGuard.MaxProjectile).ToSpriteCentered();
+            var grid = Grid(p.pixels, p.palette, DesignGuard.MaxProjectile);
+            if (grid != null) return grid.ToSpriteCentered();
             if (p.shape == "builtin") return null;
             if (p.shape == "weapon") return Weapon(weapon, 16, centered: true);
 

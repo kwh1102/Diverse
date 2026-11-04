@@ -16,6 +16,9 @@ namespace Diverse
         AbilityDef shownAbility;
         InventoryItem shownPart;
         string shownVisual;
+        bool resetDescription;
+        ScrollRect descriptionScroll;
+        void OnEnable() => resetDescription=true;
 
         public void Init(System.Action onClick)
         {
@@ -39,15 +42,7 @@ namespace Diverse
             bool flavor = a.source == "ai" && !string.IsNullOrEmpty(a.desc) && a.desc != rule;
             string details = flavor ? $"{rule}\n\n<color=#8c7aa8><i>{a.desc}</i></color>" : rule;
             if (!string.IsNullOrEmpty(a.semanticReason)) details += $"\n\n<color=#8c7aa8><i>\"{a.semanticReason}\"</i></color>";
-            if (desc != null && desc.text != details)
-            {
-                var scroll = desc.GetComponentInParent<ScrollRect>();
-                if (scroll != null)
-                {
-                    scroll.StopMovement();
-                    scroll.content.anchoredPosition = Vector2.zero;
-                }
-            }
+            if (desc != null && desc.text != details) resetDescription=true;
             UIKit.Set(desc, details);
             UIKit.Show(reason, false);
             UIKit.Set(tags, $"<color=#6b5c8a>{string.Join(" ", a.tags.Take(4))}</color>");
@@ -55,6 +50,18 @@ namespace Diverse
             if (group != null) group.alpha = locked ? 0.55f + 0.45f * Mathf.Max(0, lockK) : 1;
             UIKit.Show(lockBar, lockK >= 0);
             if (lockK >= 0) UIKit.Fill(lockBar, lockK);
+        }
+
+        void LateUpdate()
+        {
+            if(!resetDescription || desc==null) return;
+            if(descriptionScroll==null) descriptionScroll=desc.GetComponentInParent<ScrollRect>();
+            if(descriptionScroll==null || descriptionScroll.content==null) return;
+            resetDescription=false;
+            // Text and its padding must finish layout before ScrollRect calculates the top bound.
+            LayoutRebuilder.ForceRebuildLayoutImmediate(descriptionScroll.content);
+            Canvas.ForceUpdateCanvases();
+            descriptionScroll.StopMovement();descriptionScroll.verticalNormalizedPosition=1;
         }
     }
 }

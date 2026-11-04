@@ -41,7 +41,12 @@ namespace Diverse
             foreach (var i in Inventory.items)
             {
                 i.cooldownUntil = Time.time + i.cooldownRemaining;
-                if (i.kind == ItemKind.Weapon && i.design != null) i.weapon.origin = DesignCombat.For(i.design);
+                if (i.kind == ItemKind.Weapon && i.design != null)
+                {
+                    // Inventory JSON bypasses DesignStore.Load/DesignPack.Clone: normalize optional arrays here too.
+                    DesignGuard.Sanitize(i.design);
+                    i.weapon.origin = DesignCombat.For(i.design);
+                }
             }
             Inventory.Changed = SyncInventory;
             shownWeapon = null; inventorySkills.Clear(); equippedParts.Clear();
