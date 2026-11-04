@@ -15,6 +15,8 @@ namespace Diverse
         public List<EnemyData> enemies = new List<EnemyData>();
         [Tooltip("XP curve, evolution frequency, skill unlock levels, warp stones.")]
         public ProgressionDef progression = new ProgressionDef();
+        [Header("Inventory, fusion, inheritance and weapon discoveries")]
+        public InventoryRules inventory = new InventoryRules();
 
         [Tooltip("Hit-stop limits: how hits feel (a short slow-down, never a hard freeze).")]
         public FeelDef feel = new FeelDef();

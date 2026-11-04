@@ -35,6 +35,7 @@ namespace Diverse
         public string designId;               // this world's look (designs/<id>.json); empty = the built-in art
         public int designCalls;               // AI design generations in this world (shown in the studio)
         public float designCostUsd;           // their estimated API cost
+        public InventoryItem legacyPart;
 
         public bool Flag(string key) => flags.Contains(key);
         public void SetFlag(string key) { if (!flags.Contains(key)) flags.Add(key); }
@@ -67,6 +68,7 @@ namespace Diverse
         public float x, y;
         public int warpStones;                                // warp stones carried (not yet placed)
         public int skillsLearned = -1;                        // QWER slots learned, in order (-1 = old save: all 4)
+        public InventoryState inventory;
         public List<AbilityRecord> abilities = new List<AbilityRecord>();
         public List<string> intent = new List<string>();      // "TAG=count"
     }
@@ -87,6 +89,7 @@ namespace Diverse
         public int kills;
         public string epitaph;        // written by the storyteller
         public string forgottenBy;    // whether the storyteller recorded or forgot them
+        public List<InventoryItem> parts = new List<InventoryItem>();
     }
 
     /// <summary>A warp stone set up in the world. Travel between any two from the map while standing near one.</summary>

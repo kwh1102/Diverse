@@ -15,13 +15,15 @@ namespace Diverse
         [SerializeField] DeathView death;
         [SerializeField] EvolveView evolve;
         [SerializeField] MapView map;
+        [SerializeField] InventoryView inventory;
+        [SerializeField] UnityEngine.UI.Button inventoryButton;
         [SerializeField] ToastView toasts;
         [SerializeField] GameObject dim;            // full-screen shade behind overlays
 
         Game g;
 
         /// <summary>Esc is being used by a text field or key rebinding, so it must not close the overlay.</summary>
-        public bool ConsumesEscape => pause.Rebinding || evolve.Typing;
+        public bool ConsumesEscape => pause.Rebinding || evolve.Typing || inventory != null && (inventory.Typing || inventory.Busy);
 
         public void Init(Game game)
         {
@@ -33,6 +35,8 @@ namespace Diverse
             death.Init(game);
             evolve.Init(game);
             map.Init(game);
+            inventory?.Init(game);
+            UIKit.Bind(inventoryButton,()=>g.OpenOverlay(GameState.Inventory));
             Refresh();
         }
 
@@ -42,6 +46,7 @@ namespace Diverse
         {
             Refresh();
             if (s == GameState.Map) map.Opened();
+            if (s == GameState.Inventory) inventory?.Opened();
             if (s == GameState.Paused) pause.Open(tab ?? "abilities");
         }
 
@@ -59,7 +64,8 @@ namespace Diverse
             UIKit.Show(death, s == GameState.Dead && death.HasRecord);
             UIKit.Show(evolve, s == GameState.Evolving);
             UIKit.Show(map, s == GameState.Map);
-            UIKit.Show(dim, s == GameState.Paused || s == GameState.Evolving || s == GameState.Map || (s == GameState.Dead && death.HasRecord));
+            UIKit.Show(inventory, s == GameState.Inventory);
+            UIKit.Show(dim, s == GameState.Paused || s == GameState.Evolving || s == GameState.Map || s == GameState.Inventory || (s == GameState.Dead && death.HasRecord));
         }
 
         void Update()

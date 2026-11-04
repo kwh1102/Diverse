@@ -14,11 +14,12 @@ namespace Diverse
     public static class DesignRuntime
     {
         public static DesignPack Active { get; private set; } = DesignPack.Default();
+        public static DesignPack CombatPack { get; private set; } = DesignPack.Default();
         static string activeJson;
         static readonly Dictionary<string, SkillDef> skillNames = new Dictionary<string, SkillDef>();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() { Active = DesignPack.Default(); activeJson = null; skillNames.Clear(); effects.Clear(); activeWeapon = null; }
+        static void ResetStatics() { Active = DesignPack.Default(); CombatPack = DesignPack.Default(); activeJson = null; skillNames.Clear(); effects.Clear(); activeWeapon = null; }
 
         /// <summary>The WeaponKind this pack plays as: its designed weapon's internal kind, or the classic fallback.</summary>
         public static WeaponKind Chassis(DesignPack p)
@@ -35,6 +36,7 @@ namespace Diverse
             var json = JsonUtility.ToJson(p);
             if (json == activeJson) return false;
             Active = p;
+            CombatPack = p;
             activeJson = json;
             Art.ResetLooks();
             skillNames.Clear();
@@ -54,6 +56,19 @@ namespace Diverse
         /// Game scene: the look for this life (the hero's own pack, or the default look for a classic hero) + the weapon skin.
         /// Returns true when the look changed, so already-built chunks must be rebuilt.
         /// </summary>
+        public static void EquipWeapon(DesignPack pack, WeaponDef weapon)
+        {
+            CombatPack = pack ?? DesignPack.Default();
+            Art.ResetLooks(); skillNames.Clear(); effects.Clear();
+            activeWeapon = pack != null ? DesignCombat.For(pack) : null;
+            if (pack == null) return;
+            var tex = DesignStore.Image(pack.weapon.image);
+            var sprite = tex != null ? DesignStore.Sprite(pack.weapon.image, new Vector2(2f / tex.width, .5f)) : DesignArt.Weapon(pack.weapon);
+            if (sprite != null) Art.Override("weapon_" + weapon.kind, sprite);
+            var shot = DesignStore.Sprite(pack.attack.projectile.image, new Vector2(.5f,.5f)) ?? DesignArt.Projectile(pack.attack.projectile, pack.weapon);
+            if (shot != null) { Art.Override("bolt", shot); Art.Override("knife", shot); }
+        }
+
         public static bool BeginRun(CostumeDef costume, WeaponDef weapon)
         {
             var pack = DesignStore.PackOfCostume(costume.id) ?? DesignPack.Default();
@@ -68,7 +83,7 @@ namespace Diverse
         /// </summary>
         public static void Skin(WeaponDef w)
         {
-            var src = w.origin != null ? DesignCombat.For(Active) ?? w.origin : DB.W(w.kind);
+            var src = w.origin != null ? DesignCombat.For(CombatPack) ?? w.origin : DB.W(w.kind);
             w.name = src.name;
             w.slashColor = src.slashColor;
             w.slashCore = src.slashCore;
@@ -78,7 +93,7 @@ namespace Diverse
         public static SkillDef RenameSkill(SkillDef d)
         {
             if (d == null) return null;
-            var w = Active.weapon;
+            var w = CombatPack.weapon;
             if (w.skills == null || w.skillNames == null) return d;
             int i = Array.IndexOf(w.skills, d.id);
             if (i < 0 || i >= w.skillNames.Length || string.IsNullOrEmpty(w.skillNames[i])) return d;
@@ -90,7 +105,7 @@ namespace Diverse
         // ───────────────────────── Attack / hold points (visual) ─────────────────────────
 
         /// <summary>Where attacks visually come out, relative to the feet. Default = the old Pos + up * 0.45.</summary>
-        public static Vector2 AttackOrigin(Vector2 dir) => Active.attack.origin switch
+        public static Vector2 AttackOrigin(Vector2 dir) => CombatPack.attack.origin switch
         {
             "Mouth" => new Vector2(dir.x < -0.05f ? -0.28f : 0.28f, 0.72f),
             "Eyes" => new Vector2(dir.x < -0.05f ? -0.3f : 0.3f, 0.9f),
@@ -98,16 +113,16 @@ namespace Diverse
             _ => new Vector2(0, 0.45f),
         };
 
-        public static bool HoldInMouth => Active.weapon.hold == "Mouth" && (DesignArt.HasWeapon(Active.weapon) || !string.IsNullOrEmpty(Active.weapon.image));
-        public static bool WeaponHidden => Active.weapon.hold == "Hidden";
+        public static bool HoldInMouth => CombatPack.weapon.hold == "Mouth" && (DesignArt.HasWeapon(CombatPack.weapon) || !string.IsNullOrEmpty(CombatPack.weapon.image));
+        public static bool WeaponHidden => CombatPack.weapon.hold == "Hidden";
 
         /// <summary>Mouth position on the hero sprite (a generated picture is any shape: roughly the front of the head).</summary>
         public static Vector2 MouthAnchor(CostumeDef c) => c?.frames != null
             ? new Vector2(c.frames[0].width * 0.3f / Art.PPU, c.frames[0].height * 0.62f / Art.PPU)
             : new Vector2(6f / Art.PPU, 9.5f / Art.PPU);
 
-        public static Color32? Trail => string.IsNullOrEmpty(Active.attack.trail) ? null : Pal.Hex(Active.attack.trail);
-        public static bool ShotSpins => Active.attack.projectile.spin;
+        public static Color32? Trail => string.IsNullOrEmpty(CombatPack.attack.trail) ? null : Pal.Hex(CombatPack.attack.trail);
+        public static bool ShotSpins => CombatPack.attack.projectile.spin;
 
         // ───────────────────────── Generated effects (called by Art / Player / Projectile) ─────────────────────────
 
@@ -125,12 +140,12 @@ namespace Diverse
 
         static Sprite[] EffectOf(int slot, DesignArt.EffectKind kind, int widthPx, float stretch = 1)
         {
-            var ids = Active.attack.effectImages;
+            var ids = CombatPack.attack.effectImages;
             if (ids == null || ids.Length != 4) return null;
             var tex = DesignStore.Image(ids[slot]);
             if (tex == null) return null;
             widthPx = Mathf.Clamp(widthPx, 6, 96);
-            bool flip = Active.attack.flipEffects;
+            bool flip = CombatPack.attack.flipEffects;
             var key = $"{ids[slot]}_{widthPx}_{stretch}_{flip}";
             if (!effects.TryGetValue(key, out var f)) effects[key] = f = DesignArt.Effect(tex, kind, widthPx, stretch, flip);
             return f;

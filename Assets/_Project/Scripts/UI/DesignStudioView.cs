@@ -381,7 +381,8 @@ namespace Diverse
                 float motionTime = Mathf.Clamp01((demoPhase - 0.45f) / TravelAbilityPreview.Duration(working.travelType)) * 1.79f;
                 var motion = working.travelSelected ? TravelMotionPreview(working.travelType, motionTime) : null;
                 abilityPreview?.Draw(working.travelType, motion, elapsed);
-                UIKit.Set(typeDescription, working.travelSelected ? TravelTypes.Description(working.travelType) : "미리 볼 유형을 골라 주세요.");
+                var shape=InventoryState.Rules.Shape(working.travelType);
+                UIKit.Set(typeDescription, working.travelSelected ? TravelTypes.Description(working.travelType)+$"\n가방 {shape.width}×{shape.height}" : "미리 볼 유형을 골라 주세요.");
             }
             // The hero loops through what it does in play: walk, breathe, wind up and strike
             float phase = t % 4f;

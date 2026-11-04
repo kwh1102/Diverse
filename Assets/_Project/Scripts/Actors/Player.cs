@@ -100,6 +100,7 @@ namespace Diverse
             p.SetupVisual();
             // A new hero starts with only the weapon's basic attack; QWER skills are learned by leveling or at the smith
             for (int i = 0; i < 4; i++) p.Skills[i] = new SkillState { id = weapon.skills[i] };
+            p.InitializeInventory();
             p.XpToNext = DB.Progression.XpFor(1);
             p.RecalcStats();
             p.hp = p.maxHp;
@@ -122,7 +123,7 @@ namespace Diverse
             RefreshLook();
             // The shield child is always in the prefab; only sword & shield shows it
             if (Weapon.kind == WeaponKind.SwordShield) shieldSr.sprite = Art.Shield();
-            else { shieldSr.gameObject.SetActive(false); shieldSr = null; }
+            else shieldSr.gameObject.SetActive(false);
         }
 
         /// <summary>Re-read the sprites after a design pack change (the body re-reads its sprite every frame).</summary>
@@ -130,7 +131,7 @@ namespace Diverse
         {
             weaponSr.sprite = Art.Weapon(Weapon.kind);
             weaponSr.enabled = !DesignRuntime.WeaponHidden;
-            if (shieldSr != null) shieldSr.sprite = Art.Shield();
+            if (shieldSr != null) { shieldSr.gameObject.SetActive(Weapon.kind == WeaponKind.SwordShield); shieldSr.sprite = Art.Shield(); }
         }
 
         // ───────────────────────── Stats ─────────────────────────
@@ -235,7 +236,7 @@ namespace Diverse
             Sfx.Play("levelup");
             Abilities?.Raise("LevelUp");
             var learned = LearnSkillsForLevel();
-            if (learned != null) GameEvents.Notify($"레벨 {Level}! 새 기술 [{learned.def.name}]{(Ko.HasBatchim(learned.def.name) ? "을" : "를")} 익혔다 ({Controls.KeyName(SkillAct(learned))})");
+            if (learned != null) GameEvents.Notify($"레벨 {Level}! [{learned.def.name}] 스킬 아이템을 얻었다.");
             else if (evolve) GameEvents.Notify($"레벨 {Level}! 진화가 준비되었다 ({Controls.KeyName(Act.Abilities)} 또는 자동)");
             else GameEvents.Notify($"레벨 {Level}! 능력치 포인트 +1 (다음 진화: 레벨 {NextEvolveLevel})");
             if (evolve) Game.I?.RequestPrefetch();
@@ -257,6 +258,7 @@ namespace Diverse
         /// <summary>Learn the next QWER skill of this weapon (in slot order). Returns it, or null when all are known.</summary>
         public SkillState LearnNextSkill()
         {
+            if (Inventory != null) return AcquireNextSkill();
             foreach (var s in Skills)
             {
                 if (s == null || s.def != null || string.IsNullOrEmpty(s.id)) continue;
@@ -276,7 +278,7 @@ namespace Diverse
         {
             var levels = DB.Progression.skillLevels;
             SkillState last = null;
-            while (LearnedSkills < Skills.Length && LearnedSkills < levels.Length && Level >= levels[LearnedSkills])
+            while (AcquiredSkills < Skills.Length && AcquiredSkills < levels.Length && Level >= levels[AcquiredSkills])
             {
                 var s = LearnNextSkill();
                 if (s == null) break;
@@ -288,6 +290,7 @@ namespace Diverse
         /// <summary>Restore learned skills from a save (count of slots learned, in order).</summary>
         public void RestoreSkills(int learned)
         {
+            if (Inventory != null) { while (AcquiredSkills < learned) if (AcquireNextSkill() == null) break; return; }
             for (int i = 0; i < Skills.Length; i++)
             {
                 var s = Skills[i];
@@ -651,6 +654,7 @@ namespace Diverse
             }
 
             Vector2 origin = Pos + Vector2.up * 0.45f;
+            if (Game.I != null && Game.I.TryStrikeRelic(origin,dir,step.range,step.arc)) yield break;
             Vector2 fxOrigin = Combat.MeleeFxOrigin(origin, dir);   // the swing picture sits a little in front of the body
             Color32 col = Weapon.slashColor;
             var w = Weapon;

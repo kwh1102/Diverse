@@ -19,6 +19,15 @@ namespace Diverse
         [SerializeField] SpriteRenderer weapon;   // prefab child (visual/weapon); hidden for the phantom weapon
         Color tint;
         public static readonly List<Clone> Active = new List<Clone>();
+        public static void Revoke(Player player,string abilityTag)
+        {
+            for(int i=Active.Count-1;i>=0;i--)
+            {
+                var clone=Active[i];
+                if(clone==null || clone.owner!=player || !(clone.tags??"").Contains(abilityTag)) continue;
+                clone.gameObject.SetActive(false); Destroy(clone.gameObject);
+            }
+        }
         public void Extend(float seconds) => life += seconds;
 
         /// <summary>DetonateEntities: the clone bursts and vanishes (raises CloneExpire like a normal end).</summary>

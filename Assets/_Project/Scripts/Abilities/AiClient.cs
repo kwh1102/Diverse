@@ -172,6 +172,15 @@ EXAMPLES
         /// Repair step: the validator's machine-readable errors go back to the LLM, which returns a corrected structure.
         /// Calls back with null on failure (the candidate is then dropped).
         /// </summary>
+        public static IEnumerator Fuse(GenerationContext ctx, AbilityDef first, AbilityDef second, Action<AbilityDef> done)
+        {
+            string json = null;
+            string user = Request(ctx) + "\nSynthesize ONE physical equipment part from these TWO material abilities. Preserve a recognizable mechanic from EACH material, intertwining their triggers/effects; do not return an unrelated ability. Compact to 1-3 rules; namespace any states. Engine validates and balances all numbers. Return the usual abilities array with exactly one entry.\nMATERIAL A: " + StructureJson(first) + "\nMATERIAL B: " + StructureJson(second);
+            yield return Complete(SystemPrompt, user, .8f, 2000, s => json = s);
+            var candidates = json != null ? Parse(json) : null;
+            done(candidates?.FirstOrDefault());
+        }
+
         public static IEnumerator Repair(GenerationContext ctx, List<(AbilityDef a, RuleValidator.Result r)> broken, Action<List<AbilityDef>> done)
         {
             var key = SaveSystem.LoadApiKey();

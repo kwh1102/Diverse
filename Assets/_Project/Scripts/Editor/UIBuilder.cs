@@ -43,6 +43,7 @@ namespace Diverse.EditorTools
             if (!File.Exists(GameScenePath)) BuildGameScene(game);
             BuildSettings();
             UILayoutRepair.Run();
+            InstallInventory();
         }
 
         static GameObject Prefab(string path, System.Func<GameObject> build)

@@ -47,6 +47,42 @@ MonoBehaviour:
     smithSkillLevels: 01000000020000000400000006000000
     warpStoneCost: 120
     warpRange: 6
+  inventory:
+    shapes:
+    - type: 0
+      width: 7
+      height: 7
+    - type: 1
+      width: 10
+      height: 5
+    - type: 2
+      width: 6
+      height: 8
+    - type: 3
+      width: 8
+      height: 6
+    - type: 4
+      width: 7
+      height: 7
+    - type: 5
+      width: 6
+      height: 8
+    maxWeapons: 4
+    fusionBaseCost: 30
+    fusionCostPerTier: 25
+    maxPartTier: 8
+    legacyBaseTier: 1
+    legacyBossesPerTier: 2
+    weaponUnlockLevel: 5
+    weaponUnlockBosses: 1
+    relicMinDistance: 80
+    smithWeaponCost: 180
+    potionPrice: 18
+    xpPotionPrice: 35
+    antidotePrice: 12
+    potionHealFraction: 0.4
+    xpPotionAmount: 50
+    consumableStack: 9
   feel:
     maxHitstop: 0.05
     minHitstopScale: 0.25

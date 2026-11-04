@@ -290,10 +290,12 @@ namespace Diverse
         {
             if (Offer == null || i < 0 || i >= Offer.Count || OfferLocked || ChatBusy) return;
             var g = Offer[i];
-            Player.Abilities.Add(g);
+            var part = InventoryItem.Part(g);
+            Player.Inventory.Receive(part);
             Player.Telemetry.RecordChoice(g);
             Player.PendingEvolutions--;
-            World.Log($"{Ko.I(HeroName)} [{g.name}] 능력을 얻었다. ({g.Explain().Replace("\n", " / ")})", "evolve");
+            World.Log($"{Ko.I(HeroName)} [{part.name}] 파츠를 얻었다. ({g.Explain().Replace("\n", " / ")})", "evolve");
+            Ui.Toast($"[{part.name}] 획득 — I 인벤토리에서 무기 대각선에 장착해 줘.");
             Fx.I?.Play(Art.Shockwave(Pal.ShadowEl, 30), Player.Pos, 0, 18, 1, null, true);
             Fx.I?.Burst(Player.Pos + Vector2.up * 0.5f, Pal.ShadowEl, 30, 6, 0.9f, -3);
             Sfx.Play("levelup");
@@ -305,7 +307,8 @@ namespace Diverse
             if (Player.PendingEvolutions > 0 && prefetching) { }
             else { ResetPrefetch(); RequestPrefetch(); }
             // If there are attribute points, choose them right away in the next screen
-            if (Player.UnspentAttr > 0) OpenOverlay(GameState.Paused, "attrs");
+            SaveRun();
+            OpenOverlay(GameState.Inventory);
         }
 
         public void RerollEvolution()

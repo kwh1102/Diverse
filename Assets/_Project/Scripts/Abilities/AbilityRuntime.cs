@@ -64,6 +64,9 @@ namespace Diverse
         /// <summary>Restore without firing acquisition triggers or one-shot system ops (continue / load).</summary>
         public void Restore(AbilityDef g) { g.EnsureLists(); Owned.Add(g); RebuildMeta(); }
 
+        // Items remember whether these one-shot rewards ran; moving or re-equipping must never repeat them.
+        public void AcquireOnce(AbilityDef g) { Raise("AbilityAcquired"); RunOneShotSystem(g); }
+
         public void Clear()
         {
             Owned.Clear(); states.Clear(); positions.Clear(); targets.Clear(); lastFire.Clear(); nth.Clear(); meta.Clear(); empower.Clear();
@@ -72,17 +75,25 @@ namespace Diverse
 
         public void Recompute() => p.RecalcStats();
 
-        public void Remove(AbilityDef a)
+        public void Remove(AbilityDef a, bool preserveState = false)
         {
             if (!Owned.Remove(a)) return;
-            states.Remove(a); positions.Remove(a); targets.Remove(a); upgrades.Remove(a);
+            if (!preserveState) { states.Remove(a); positions.Remove(a); targets.Remove(a); upgrades.Remove(a); }
             armed.RemoveAll(x => x.a == a);
             empower.RemoveAll(x => (x.tags ?? "").Split(' ').Contains("ABILITY:" + a.id));
-            foreach (var r in a.rules) { lastFire.Remove(r); nextPeriodic.Remove(r); nth.Remove(r); }
+            if (!preserveState) foreach (var r in a.rules) { lastFire.Remove(r); nextPeriodic.Remove(r); nth.Remove(r); }
+            Summon.Revoke(p,"ABILITY:"+a.id); Clone.Revoke(p,"ABILITY:"+a.id);
             lastClone.Remove(a); lastSummon.Remove(a);
             RebuildMeta();
             continuousStats.Clear();
             Recompute();
+        }
+
+        public void RefreshEquipmentStats()
+        {
+            var now=EvalContinuousStats(); continuousStats.Clear();
+            foreach(var kv in now) continuousStats[kv.Key]=kv.Value;
+            p.RecalcStats();
         }
 
         // ───────────────────────── System rules ─────────────────────────
@@ -748,7 +759,7 @@ namespace Diverse
             float gap = Mathf.Max(0.25f, (o.duration > 0 ? o.duration : 3) / ticks);
             for (int i = 0; i < ticks; i++)
             {
-                if (p == null || !p.Alive) yield break;
+                if (p == null || !p.Alive || !Owned.Contains(a)) yield break;
                 Apply(a, r, o, ev, scale);
                 yield return new WaitForSeconds(gap);
             }
