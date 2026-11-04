@@ -41,6 +41,7 @@ namespace Diverse
                 (Reactive, 3f),
                 (Numeric, 0.6f),
             };
+            if(t>=1) { list.Add((DefenseShape,1.1f)); list.Add((UtilityShape,.8f)); }
             if (t >= 2)
             {
                 list.Add((Accumulate, c.owned.Any(a => a.IsStacking) ? 0.15f : 0.5f));
@@ -61,6 +62,27 @@ namespace Diverse
         }
 
         static T Pick<T>(System.Random r, IList<T> list) => list[r.Next(list.Count)];
+
+        static AbilityDef DefenseShape(GenerationContext c,System.Random r)
+        {
+            var a=new AbilityDef {concept="행동에 반응하는 방어와 재정비"};
+            string trigger=Pick(r,new[]{"Dash","PerfectDodge","Damaged","SkillCast","ComboFinish","Every"});
+            var rule=Rule(trigger); rule.period=4; rule.cooldown=1;
+            rule.ops.Add(new OpDef {op="Shield"});
+            if(c.maxTier>=2 && Chance(r,.5)) rule.ops.Add(new OpDef {op=Pick(r,new[]{"Cleanse","Heal","Push"}),at="Self"});
+            if(Chance(r,.35)) rule.when.Add(new CondDef{type="Compare",a="self.hpPct",cmp="<=",value=.5f});
+            a.rules.Add(rule); return a;
+        }
+        static AbilityDef UtilityShape(GenerationContext c,System.Random r)
+        {
+            var a=new AbilityDef {concept="공격 리듬을 이동과 재사용 자원으로 전환"};
+            var rule=Rule(Pick(r,new[]{"Kill","PerfectDodge","ComboFinish","SkillCast"}));
+            rule.cooldown=2;
+            string effect=Pick(r,new[]{"ResetCooldowns","GainDash","Heal","Buff"});
+            rule.ops.Add(new OpDef {op=effect,stat=effect=="Buff"?"MoveSpeed":null});
+            if(c.maxTier>=2 && effect!="GainDash" && Chance(r,.4)) { rule.ops[0].time="Delay"; rule.ops[0].delay=.5f; }
+            a.rules.Add(rule); return a;
+        }
 
         static T Weighted<T>(System.Random r, IList<(T v, float w)> list)
         {

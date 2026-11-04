@@ -1,6 +1,8 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Diverse
@@ -10,136 +12,167 @@ namespace Diverse
         [SerializeField] GridLayoutGroup grid;
         [SerializeField] InventoryCell cellTemplate;
         [SerializeField] Button pendingTemplate;
-        [SerializeField] Text title, details, status, pendingLabel;
+        [SerializeField] Text title,details,status,pendingLabel,equipmentSummary;
         [SerializeField] Image preview;
-        [SerializeField] Button equip, use, discard, materialA, materialB, fuse, confirm, cancel, close, generate;
-        [SerializeField] GameObject promptPanel;
-        [SerializeField] InputField weaponPrompt;
-        [SerializeField] RectTransform activeFrame;
-        readonly List<InventoryCell> cells = new List<InventoryCell>();
-        readonly List<Button> pending = new List<Button>();
+        [SerializeField] Text previewGlyph;
+        [SerializeField] Button equip,use,discard,receive,openFusion,redraw,close;
+        [SerializeField] RectTransform activeFrame,dragGhost;
+        [SerializeField] Image dragImage;
+        [SerializeField] Text dragGlyph;
+        [SerializeField] CanvasGroup dragGroup;
+        [SerializeField] RectTransform dropMarker;
+        [SerializeField] GameObject validDrop,invalidDrop;
+        [SerializeField] float ghostFollow=28,ghostTravelSeconds=.14f;
+        readonly List<InventoryCell> cells=new List<InventoryCell>();
+        readonly List<Button> pending=new List<Button>();
         Game g;
-        string selected, dragged, first, second, message;
-        int revision = -1;
+        string selected,dragged,message;
+        int revision=-1;
         InventoryState shown;
-        InventoryItem shownFusion;
-        public bool Typing => weaponPrompt != null && weaponPrompt.isFocused;
-        public bool Busy => g != null && g.InventoryBusy;
+        RectTransform dragSource;
+        Coroutine settling;
+        string hoverMessage;
+        public string Dragged=>dragged;
+        public bool Typing=>false;
+        public bool Busy=>g!=null && g.InventoryBusy;
+        InventoryState Bag=>g.Player.Inventory;
 
         public void Init(Game game)
         {
-            g = game;
-            UIKit.Bind(close, () => g.CloseOverlay());
-            UIKit.Bind(equip, () => { if (Bag.Select(selected)) Changed(); });
-            UIKit.Bind(use, () => { if (g.Player.UseItem(selected)) Changed(); else message = "지금은 사용할 필요가 없어."; });
-            UIKit.Bind(discard, () =>
-            {
-                if (!Mutable) return;
-                if (Bag.Discard(selected, out string why)) { selected = null; Changed(); }
-                else message = why;
-            });
-            UIKit.Bind(materialA, () => { first = selected; message = "첫 번째 재료를 골랐어. 같은 복잡도의 다른 파츠를 선택해 줘."; });
-            UIKit.Bind(materialB, () => { second = selected; message = "두 번째 재료를 골랐어. 합성 버튼으로 결과를 만들어 봐."; });
-            UIKit.Bind(fuse, () => { message = null; g.StartFusion(first,second); });
-            UIKit.Bind(confirm, () => { g.ConfirmFusion(); revision = -1; });
-            UIKit.Bind(cancel, () => { g.CancelFusion(); message = null; });
-            UIKit.Bind(generate, () => { message = null; g.CreateRewardWeapon(weaponPrompt.text); });
+            g=game;
+            UIKit.Bind(close,()=>g.CloseOverlay());
+            UIKit.Bind(equip,()=>{ if(!Busy && Bag.Select(selected)) Changed(); });
+            UIKit.Bind(use,()=>{ if(!Busy && g.Player.UseItem(selected)) Changed(); else message="지금은 사용할 필요가 없어."; });
+            UIKit.Bind(discard,()=> { if(Busy) return; if(Bag.Discard(selected,out string why)) { selected=null; Changed(); } else message=why; });
+            UIKit.Bind(receive,()=> { var item=Bag.Find(selected); if(item==null || Busy) return; message=Bag.PlaceFirst(item)?null:"배치할 공간이 없어. 가방을 정리해 줘."; g.InventoryChanged(); revision=-1; });
+            UIKit.Bind(openFusion,()=>g.OpenFusion(selected));
+            UIKit.Bind(redraw,()=>g.RequestPartVisuals(selected));
         }
-
-        InventoryState Bag => g.Player.Inventory;
-        bool Mutable => !g.InventoryBusy && g.FusionPreview == null;
-        void Changed() { message = null; g.InventoryChanged(); revision = -1; }
-        public void Opened() { selected = null; message = null; revision = -1; }
-        void OnDisable() { if (Controls.TypingField == weaponPrompt) Controls.TypingField = null; }
-
-        public void Click(int x, int y)
+        public void Opened()
         {
-            if (!Mutable) return;
-            var item = Bag.At(x,y);
-            if (item != null) { selected = item.id; message = null; revision = -1; return; }
-            if (selected == null) return;
-            if (Bag.Move(selected,x,y,out string why)) Changed(); else message = why;
+            selected=null; message=null; revision=-1;
+            if(g!=null) g.RequestPartVisuals();
         }
-        public void QuickUse(int x, int y)
+        void Changed() { message=null; g.InventoryChanged(); revision=-1; }
+        public void SelectItem(string id) { if(Busy) return; selected=id; message=null; revision=-1; }
+        public void Click(int x,int y) { if(!Busy) SelectItem(Bag.At(x,y)?.id); }
+        public void QuickUse(int x,int y)
         {
-            if (!Mutable) return;
-            var item = Bag.At(x,y); if (item == null) return;
-            selected = item.id;
-            if (item.kind == ItemKind.Weapon) Bag.Select(item.id);
-            else if (item.kind == ItemKind.Consumable) g.Player.UseItem(item.id);
+            if(Busy) return;
+            var item=Bag.At(x,y); if(item==null) return;
+            selected=item.id;
+            if(item.kind==ItemKind.Weapon) Bag.Select(item.id);
+            else if(item.kind==ItemKind.Consumable) g.Player.UseItem(item.id);
             Changed();
         }
-        public void BeginDrag(int x,int y) { if (!Mutable) return; dragged = Bag.At(x,y)?.id; selected = dragged; revision = -1; }
-        public void EndDrag() => dragged = null;
+        public void BeginDrag(int x,int y,PointerEventData e)
+        {
+            var item=Bag.At(x,y); if(item==null) return;
+            BeginDragItem(item.id,cells[y*Bag.width+x].GetComponent<RectTransform>(),e);
+            Hover(x,y);
+        }
+        public void BeginDragItem(string id,RectTransform source,PointerEventData e)
+        {
+            if(Busy || Bag.Find(id)==null) return;
+            if(settling!=null) { StopCoroutine(settling); settling=null; }
+            dragged=id; selected=id; dragSource=source; revision=-1;
+            ItemIcons.Bind(dragImage,dragGlyph,Bag.Find(id));
+            dragGhost.gameObject.SetActive(true); dragGhost.SetAsLastSibling(); dragGroup.alpha=.95f;
+            dragGhost.localScale=Vector3.one*1.12f;
+            MoveGhost(e.position,e.pressEventCamera,true);
+        }
+        void MoveGhost(Vector2 screen,Camera camera,bool immediate)
+        {
+            if(!RectTransformUtility.ScreenPointToLocalPointInRectangle((RectTransform)dragGhost.parent,screen,camera,out var point)) return;
+            dragGhost.anchoredPosition=immediate?point:Vector2.Lerp(dragGhost.anchoredPosition,point,1-Mathf.Exp(-ghostFollow*Time.unscaledDeltaTime));
+        }
+        public void Drag(PointerEventData e) { if(dragged!=null) MoveGhost(e.position,e.pressEventCamera,false); }
+        public void Hover(int x,int y)
+        {
+            if(dragged==null) return;
+            bool valid=Bag.CanMove(dragged,x,y,out string why);
+            var item=Bag.Find(dragged); int side=item?.kind==ItemKind.Weapon?3:1;
+            int inset=side==3?1:0;var pitch=grid.cellSize+grid.spacing;
+            dropMarker.anchoredPosition=new Vector2((x-inset)*pitch.x,-(y-inset)*pitch.y);
+            dropMarker.sizeDelta=grid.cellSize*side+grid.spacing*(side-1);
+            dropMarker.SetAsLastSibling();UIKit.Show(dropMarker,true);UIKit.Show(validDrop,valid);UIKit.Show(invalidDrop,!valid);
+            hoverMessage=valid?"여기에 놓을 수 있어.":why;
+        }
+        public void LeaveHover() {if(dragged==null)return;UIKit.Show(dropMarker,false);hoverMessage="가방 안의 칸으로 옮겨 줘.";}
+        public void EndDrag() { if(dragged!=null) FinishDrag(dragSource,false); }
         public void Drop(int x,int y)
         {
-            if (!Mutable || dragged == null) return;
-            if (Bag.Move(dragged,x,y,out string why)) Changed(); else message = why;
-            dragged = null;
+            if(Busy || dragged==null) return;
+            bool moved=Bag.Move(dragged,x,y,out string why);
+            if(moved) Changed(); else message=why;
+            FinishDrag(moved?cells[y*Bag.width+x].GetComponent<RectTransform>():dragSource,moved);
         }
-
+        void FinishDrag(RectTransform destination,bool accepted)
+        {
+            dragged=null; revision=-1;
+            UIKit.Show(dropMarker,false);hoverMessage=null;
+            if(destination==null) { UIKit.Show(dragGhost,false); return; }
+            Vector2 end=((RectTransform)dragGhost.parent).InverseTransformPoint(destination.TransformPoint(destination.rect.center));
+            settling=StartCoroutine(Settle(end,accepted));
+        }
+        IEnumerator Settle(Vector2 end,bool accepted)
+        {
+            Vector2 start=dragGhost.anchoredPosition; float elapsed=0;
+            while(elapsed<ghostTravelSeconds)
+            {
+                elapsed+=Time.unscaledDeltaTime; float t=Mathf.Clamp01(elapsed/ghostTravelSeconds); float ease=1-Mathf.Pow(1-t,3);
+                dragGhost.anchoredPosition=Vector2.Lerp(start,end,ease);
+                dragGhost.localScale=Vector3.one*Mathf.Lerp(1.12f,accepted ? .85f : 1,ease);
+                dragGroup.alpha=1-t*.6f; yield return null;
+            }
+            UIKit.Show(dragGhost,false); settling=null;
+        }
+        void OnDisable() { dragged=null; if(settling!=null) StopCoroutine(settling); settling=null; UIKit.Show(dragGhost,false);UIKit.Show(dropMarker,false); }
         void Update()
         {
-            if (g?.Player?.Inventory == null) return;
-            if (Typing) Controls.TypingField = weaponPrompt;
-            else if (Controls.TypingField == weaponPrompt) Controls.TypingField = null;
-            if (shown != Bag || revision != Bag.revision)
+            if(g?.Player?.Inventory==null) return;
+            if(shown!=Bag || revision!=Bag.revision)
             {
-                shown = Bag; revision = Bag.revision;
-                grid.constraintCount = Bag.width;
+                shown=Bag; revision=Bag.revision; grid.constraintCount=Bag.width;
                 UIKit.Pool(cellTemplate,cells,Bag.width*Bag.height);
-                for (int i=0;i<Bag.width*Bag.height;i++) cells[i].Bind(this,i%Bag.width,i/Bag.width,Bag,selected);
-                if (activeFrame != null && Bag.Active != null)
+                for(int i=0;i<Bag.width*Bag.height;i++) cells[i].Bind(this,i%Bag.width,i/Bag.width,Bag,selected);
+                var w=Bag.Active;
+                if(w!=null)
                 {
-                    var w=Bag.Active; var pitch=grid.cellSize+grid.spacing;
-                    activeFrame.anchoredPosition=((RectTransform)grid.transform).anchoredPosition+new Vector2((w.x-1)*pitch.x,-(w.y-1)*pitch.y);
+                    Vector2 pitch=grid.cellSize+grid.spacing;
+                    ((RectTransform)grid.transform).sizeDelta=new Vector2(Bag.width*pitch.x-grid.spacing.x,Bag.height*pitch.y-grid.spacing.y);
+                    activeFrame.anchoredPosition=new Vector2((w.x-1)*pitch.x,-(w.y-1)*pitch.y);
                     activeFrame.sizeDelta=grid.cellSize*3+grid.spacing*2;
+                    activeFrame.SetAsLastSibling();
                 }
-                var waiting = Bag.Pending.ToList();
-                UIKit.Pool(pendingTemplate,pending,waiting.Count);
-                for (int i=0;i<waiting.Count;i++)
-                {
-                    var item = waiting[i]; UIKit.Label(pending[i],item.name);
-                    UIKit.Bind(pending[i],() => { if (!Mutable) return; selected = item.id; message = "가방의 빈 칸을 눌러 수령해 줘."; revision = -1; });
-                }
-                UIKit.Set(pendingLabel,$"수령 대기 {waiting.Count}");
+                var waiting=Bag.Pending.ToList(); UIKit.Pool(pendingTemplate,pending,waiting.Count);
+                for(int i=0;i<waiting.Count;i++) pending[i].GetComponent<InventoryPendingItem>().Bind(this,waiting[i]);
+                UIKit.Set(pendingLabel,$"수령 대기 {waiting.Count} · 끌어서 가방에 넣기");
             }
-            var selectedItem = Bag.Find(selected);
-            var itemShown = g.FusionPreview ?? selectedItem;
-            if (shownFusion != g.FusionPreview) { shownFusion = g.FusionPreview; message = null; }
-            UIKit.Set(title,$"{TravelTypes.Name(g.Player.MovementType)} 가방 {Bag.width}×{Bag.height} · {g.Player.Gold}G · 무기 {Bag.items.Count(i=>i.kind==ItemKind.Weapon&&i.Placed)}/{InventoryState.Rules.maxWeapons}");
-            UIKit.Sprite(preview,PartArt.For(itemShown));
-            UIKit.Set(details,Description(itemShown));
-            string statusText=message ?? g.InventoryStatus ?? "클릭 후 빈 칸에 배치 · 드래그로 교환\n무기 이동 시 장착물도 함께 이동\n초록 테두리: 사용 중인 무기 영역";
-            UIKit.Set(status,statusText);
-            equip.interactable = Mutable && selectedItem?.kind == ItemKind.Weapon && selectedItem.Placed;
-            use.interactable = Mutable && selectedItem?.kind == ItemKind.Consumable && selectedItem.Placed;
-            discard.interactable = Mutable && selectedItem != null;
-            materialA.interactable = materialB.interactable = Mutable && selectedItem?.kind == ItemKind.Part;
-            UIKit.Label(materialA,first == null ? "재료 A 선택" : "A: " + (Bag.Find(first)?.name ?? "다시 선택"));
-            UIKit.Label(materialB,second == null ? "재료 B 선택" : "B: " + (Bag.Find(second)?.name ?? "다시 선택"));
-            var a = Bag.Find(first); var b = Bag.Find(second);
-            fuse.interactable = Mutable && a != null && b != null && a != b && a.complexity == b.complexity;
-            UIKit.Label(fuse,a != null ? $"합성 ({InventoryState.Rules.FusionCost(a.complexity)}G)" : "파츠 합성");
-            UIKit.Show(confirm,g.FusionPreview != null); UIKit.Show(cancel,g.FusionPreview != null);
-            UIKit.Show(promptPanel,g.HasWeaponReward && g.FusionPreview == null);
-            UIKit.Show(status,!g.HasWeaponReward || g.FusionPreview != null);
-            var promptLabel=promptPanel.transform.Find("Label")?.GetComponent<Text>();
-            UIKit.Set(promptLabel,g.InventoryBusy ? "무기 생성 중…" : message ?? g.InventoryStatus ?? "발견한 무기를 디자인해 줘");
-            generate.interactable = !Busy && !string.IsNullOrWhiteSpace(weaponPrompt.text);
-            close.interactable = !Busy;
+            var item=Bag.Find(selected); var active=Bag.Active;
+            UIKit.Set(title,$"{TravelTypes.Name(g.Player.MovementType)} · {Bag.width}×{Bag.height}");
+            UIKit.Set(equipmentSummary,active==null?"사용 중인 무기가 없어.":$"<b>{active.name}</b>\n사용 중인 무기\n\n무기 {Bag.items.Count(i=>i.kind==ItemKind.Weapon)}/{InventoryState.Rules.maxWeapons}\n보유 골드 {g.Player.Gold}G\n\n위 Q · 왼쪽 W\n오른쪽 E · 아래 R\n대각선 네 칸: 파츠\n\n{string.Join("\n",Bag.Attached(active).Where(i=>i.kind==ItemKind.Part).Select(i=>"◆ "+i.name))}");
+            ItemIcons.Bind(preview,previewGlyph,item); UIKit.Set(details,Description(item));
+            UIKit.Set(status,(dragged!=null?hoverMessage:null)??message??(g.PartVisualBusy?"파츠의 고유한 이름과 그림을 준비하는 중…":"드래그로 이동 · 빈 칸 클릭은 선택 해제\n초록 테두리: 사용 중인 무기"));
+            bool mutable=!Busy;
+            UIKit.Show(equip,item?.kind==ItemKind.Weapon && item.Placed); equip.interactable=mutable && item?.id!=Bag.activeWeapon;
+            UIKit.Label(equip,item?.id==Bag.activeWeapon?"사용 중인 무기":"이 무기 사용");
+            UIKit.Show(use,item?.kind==ItemKind.Consumable && item.Placed); use.interactable=mutable;
+            UIKit.Show(receive,item!=null && !item.Placed); receive.interactable=mutable;
+            UIKit.Show(discard,item!=null); discard.interactable=mutable && !(item?.kind==ItemKind.Weapon && item.Placed && Bag.items.Count(i=>i.kind==ItemKind.Weapon&&i.Placed)==1);
+            UIKit.Show(redraw,item?.kind==ItemKind.Part && !PartPresentation.Ready(item.Ability)); redraw.interactable=mutable && !g.PartVisualBusy && AiClient.Enabled;
+            openFusion.interactable=mutable; close.interactable=mutable;
         }
-
-        static string Description(InventoryItem item)
+        public static string Description(InventoryItem item)
         {
-            if (item == null) return "아이템을 선택해 줘.\n\n  파츠 Q 파츠\n     W 무기 E\n  파츠 R 파츠";
-            string desc = item.kind switch {
-                ItemKind.Part => $"복잡도 T{item.complexity}\n{item.Ability?.Explain()}",
-                ItemKind.Skill => $"{ "QWER"[item.skillSlot]} 스킬 · {SkillDB.Get(item.skillId)?.desc}",
-                ItemKind.Weapon => $"무기 · 주변 3×3 확보\n{item.weapon.desc}",
-                _ => item.consumable == "xp" ? $"경험치 +{InventoryState.Rules.xpPotionAmount}" : item.consumable == "cleanse" ? "상태 이상 제거" : $"체력 {InventoryState.Rules.potionHealFraction*100:0}% 회복"
+            if(item==null) return "아이템을 선택하면\n이곳에 설명이 나타나요.";
+            string desc=item.kind switch {
+                ItemKind.Part=>$"복잡도 T{item.complexity}\n\n{item.Ability?.Explain()}",
+                ItemKind.Skill=>$"{ "QWER"[item.skillSlot]} 스킬\n\n{SkillDB.Get(item.skillId)?.desc}",
+                ItemKind.Weapon=>$"무기 · 주변 3×3 확보\n\n{item.weapon.desc}",
+                _=>item.consumable=="xp"?$"경험치 +{InventoryState.Rules.xpPotionAmount}":item.consumable=="cleanse"?"상태 이상 제거":$"체력 {InventoryState.Rules.potionHealFraction*100:0}% 회복"
             };
-            return $"<b>{item.name}</b>\n{desc}" + (string.IsNullOrEmpty(item.ancestor) ? "" : "\n유산: " + item.ancestor);
+            return $"<b>{item.name}</b>\n\n{desc}"+(string.IsNullOrEmpty(item.ancestor)?"":"\n\n유산: "+item.ancestor);
         }
     }
 }

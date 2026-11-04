@@ -13,14 +13,54 @@ namespace Diverse
         string fusionA, fusionB;
         public string WeaponRewardKey { get; private set; }
         public int WeaponRewardCost { get; private set; }
+        public DesignPack WeaponDraft { get; private set; }
+        public bool PartVisualBusy { get; private set; }
+        readonly System.Collections.Generic.HashSet<string> visualAttempts=new System.Collections.Generic.HashSet<string>();
+        string inventoryBuild;
         public bool CanDiscoverWeapon => Player != null && Player.Level >= InventoryState.Rules.weaponUnlockLevel && World.bossKills >= InventoryState.Rules.weaponUnlockBosses;
         public bool HasWeaponReward => !string.IsNullOrEmpty(WeaponRewardKey);
         public string WeaponUnlockHint => $"레벨 {InventoryState.Rules.weaponUnlockLevel} · 보스 처치 {InventoryState.Rules.weaponUnlockBosses}회 이후";
 
         public void InventoryChanged()
         {
-            ResetPrefetch(); RequestPrefetch();
+            string build=Player.Inventory.activeWeapon+"|"+string.Join("|",Player.Abilities.Owned.Select(a=>a.id).OrderBy(id=>id))+"|"+string.Join("|",Player.Skills.Select(s=>s.def?.id));
+            if(build!=inventoryBuild) { inventoryBuild=build;ResetPrefetch();RequestPrefetch(); }
             SaveRun();
+        }
+
+        public void OpenFusion(string selected=null)
+        {
+            if(InventoryBusy) return;
+            InventoryStatus=null;OpenOverlay(GameState.PartFusion,selected);
+        }
+
+        public void RequestPartVisuals(string selected=null)
+        {
+            if(PartVisualBusy || !AiClient.Enabled || Player==null) return;
+            var parts=Player.Inventory.items.Where(i=>i.kind==ItemKind.Part && i.Ability!=null && !PartPresentation.Ready(i.Ability)
+                && (selected==null?!visualAttempts.Contains(i.id):i.id==selected)).ToList();
+            if(parts.Count>0) StartCoroutine(StoredVisuals(parts));
+        }
+        IEnumerator StoredVisuals(System.Collections.Generic.List<InventoryItem> parts)
+        {
+            var owner=Player;PartVisualBusy=true;
+            foreach(var item in parts) visualAttempts.Add(item.id);
+            void Apply()
+            {
+                if(Player!=owner || owner==null) return;
+                foreach(var item in parts.Where(i=>owner.Inventory.Find(i.id)==i))
+                {
+                    item.part=AbilityRecord.From(item.Ability);PartArt.Describe(item);
+                }
+                owner.Inventory.Notify();
+            }
+            try
+            {
+                yield return PartPresentation.Prepare(this,parts.Select(i=>i.Ability).ToList(),s=>Apply(),
+                    owner.Inventory.items.Except(parts).Where(i=>i.kind==ItemKind.Part).Select(i=>i.name));
+                Apply(); if(Player==owner) SaveRun();
+            }
+            finally { PartVisualBusy=false; }
         }
 
         public void StartFusion(string a, string b)
@@ -52,9 +92,12 @@ namespace Diverse
             var validation = RuleValidator.Validate(result, ctx.build);
             if (!validation.ok || !Reflects(result,first.Ability) || !Reflects(result,second.Ability))
             { InventoryStatus = "두 재료를 반영하면서 세계 규칙에 맞는 합성안이 필요해. 재료와 골드는 보존돼."; yield break; }
+            InventoryBusy=true;
+            yield return PartPresentation.Prepare(this,new[]{result},s=>InventoryStatus=s,owner.Inventory.items.Where(i=>i.kind==ItemKind.Part).Select(i=>i.name));
+            InventoryBusy=false;
+            if(owner!=Player || !owner.Alive) yield break;
             FusionPreview = InventoryItem.Part(result);
             FusionPreview.complexity = first.complexity + 1;
-            FusionPreview.name = "융합된 " + FusionPreview.name;
             FusionPreview.acquisitionApplied = first.acquisitionApplied || second.acquisitionApplied;
             FusionPreview.ancestor = string.Join(" → ", new[] { first.ancestor, second.ancestor }.Where(s => !string.IsNullOrEmpty(s)).Distinct());
             InventoryStatus = "결과를 확인하고 합성을 확정해 줘. 취소하면 재료와 골드는 그대로야.";
@@ -83,9 +126,9 @@ namespace Diverse
         public void OpenWeaponReward(string key, int cost = 0)
         {
             if (InventoryBusy || !CanDiscoverWeapon || World.Flag("weapon:" + key) || Player.Gold < cost) return;
-            WeaponRewardKey = key; WeaponRewardCost = cost; InventoryStatus = "발견한 무기의 모습을 말해 줘.";
+            WeaponRewardKey = key; WeaponRewardCost = cost; WeaponDraft=null;InventoryStatus = "발견한 무기의 모습을 말해 줘.";
             Dialogue.Current = null;
-            OpenOverlay(GameState.Inventory);
+            OpenOverlay(GameState.WeaponDesign);
         }
 
         public void CreateRewardWeapon(string prompt)
@@ -93,7 +136,7 @@ namespace Diverse
             if (Player.Inventory.items.Count(i=>i.kind==ItemKind.Weapon) >= InventoryState.Rules.maxWeapons)
             { InventoryStatus="무기 보관 한도에 도달했어. 기존 무기를 버리고 다시 시도해 줘."; return; }
             if (InventoryBusy || !HasWeaponReward || !CanDiscoverWeapon || Player.Gold < WeaponRewardCost || string.IsNullOrWhiteSpace(prompt)) return;
-            StartCoroutine(WeaponRewardRoutine(prompt.Trim().Substring(0, Math.Min(prompt.Trim().Length, 200))));
+            StartCoroutine(WeaponRewardRoutine(prompt.Trim().Substring(0, Math.Min(prompt.Trim().Length, DesignGuard.MaxPrompt))));
         }
 
         IEnumerator WeaponRewardRoutine(string prompt)
@@ -106,7 +149,7 @@ namespace Diverse
             if (DesignAi.Available)
             {
                 yield return DesignAi.Generate(this, seed, "무기만 디자인해 줘: " + prompt, false, false,
-                    s => InventoryStatus = s, (p, s) => { result = p; InventoryStatus = s; });
+                    s => InventoryStatus = s, (p, s) => { result = p; InventoryStatus = s; },weaponOnly:true);
                 World.designCalls++; World.designCostUsd+=DesignAi.LastCostUsd;
             }
             if (result == null)
@@ -116,6 +159,17 @@ namespace Diverse
             }
             InventoryBusy = false;
             if (owner != Player || !owner.Alive || World.Flag("weapon:" + key) || owner.Gold < cost) yield break;
+            WeaponDraft=result;
+            InventoryStatus="무기 미리보기를 확인해 줘. 다시 요청하거나 이 무기를 받을 수 있어.";
+        }
+
+        public void CancelWeaponReward() { if(InventoryBusy) return;WeaponRewardKey=null;WeaponDraft=null;WeaponRewardCost=0; }
+
+        public void ClaimRewardWeapon()
+        {
+            if(InventoryBusy || WeaponDraft==null || !HasWeaponReward || Player==null || Player.Gold<WeaponRewardCost || World.Flag("weapon:"+WeaponRewardKey)) return;
+            var owner=Player;var result=WeaponDraft;int cost=WeaponRewardCost;string key=WeaponRewardKey;
+            if(owner.Inventory.items.Count(i=>i.kind==ItemKind.Weapon)>=InventoryState.Rules.maxWeapons) {InventoryStatus="무기 보관 한도에 도달했어. 기존 무기를 정리한 뒤 다시 찾아와 줘.";return;}
             var w = (DesignCombat.For(result) ?? DB.W(DesignRuntime.Chassis(result))).Clone();
             var item = new InventoryItem { kind = ItemKind.Weapon, weapon = w, name = w.name, design = result };
             owner.Inventory.Receive(item);
@@ -134,8 +188,10 @@ namespace Diverse
             owner.Gold -= cost; World.SetFlag("weapon:" + key);
             World.Log($"{HeroName}: [{item.name}] 무기를 발견했다.", "deed");
             WeaponRewardKey = null; WeaponRewardCost = 0;
+            WeaponDraft=null;
             InventoryStatus = item.Placed ? "새 무기와 QWER 스킬을 얻었어. 무기를 선택해서 사용할 수 있어." : "새 무기는 수령 대기 중이야. 3×3 공간을 확보해 배치해 줘.";
             InventoryChanged(); SaveSystem.SaveWorld(World);
+            OpenOverlay(GameState.Inventory);
         }
 
         public void SelectLegacy(GraveRecord grave, string id)

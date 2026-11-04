@@ -20,6 +20,7 @@ namespace Diverse
         [SerializeField] Text info, status;
         [Header("Preview")]
         [SerializeField] Image hero, heroWeapon, projectile, slash;
+        [SerializeField] InventoryShapePreview inventoryPreview;
         [SerializeField] Button flipWeapon;            // mirror the weapon picture when the image model drew it backwards
         [SerializeField] Button flipEffects;           // turn the swing / muzzle effect around when it still plays backwards
         [Header("Chassis (new life only)")]
@@ -369,6 +370,7 @@ namespace Diverse
         void Update()
         {
             if (working == null) return;
+            inventoryPreview?.Show(working.travelType,working.travelSelected);
             // Esc / any state change closes the pause menu → the studio cancels with it
             if (InGame && (game.State != GameState.Paused || game.Player == null)) { Close(); return; }
 

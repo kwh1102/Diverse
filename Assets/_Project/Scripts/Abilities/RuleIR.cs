@@ -30,6 +30,8 @@ namespace Diverse
         public string concept;               // creative intent (LLM step A) — one sentence
         public string semanticReason;        // why it suits this player (shown on the card)
         public string source = "local";      // local | ai
+        public string partName, partImagePrompt, partImage;
+        public int partVisualVersion;
         public List<StateDef> states = new List<StateDef>();
         public List<RuleDef> rules = new List<RuleDef>();
 

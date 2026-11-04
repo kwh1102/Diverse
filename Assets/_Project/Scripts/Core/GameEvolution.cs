@@ -28,6 +28,7 @@ namespace Diverse
         bool prefetching;
         int prefetchRun;                               // invalidates coroutines from an older life
         string prefetchStatus;
+        int preparingPartArt;
 
         // Evolution chat
         public readonly List<(bool player, string text)> Chat = new List<(bool, string)>();
@@ -152,14 +153,19 @@ namespace Diverse
             var pick = AbilityPipeline.PickTop(valid, ctx, Player, Player.Abilities.OfferCount);
             log.Add($"⑫⑬ 시너지·점수 → 상위 {pick.Count}개");
 
-            foreach (var g in pick) LocalComposer.Name(g);
-            if (ai && pick.Any(g => g.source == "ai"))
+            preparingPartArt++;
+            try
             {
-                yield return AiClient.NameAll(pick, Diverse.World.I.Gen.RegionName(Player.Pos), () => { });
-                log.Add("⑮ LLM #2 이름 짓기 완료");
+                foreach(var g in pick) LocalComposer.Name(g);
+                if(ai && pick.Any(g=>g.source=="ai"))
+                {
+                    yield return AiClient.NameAll(pick,Diverse.World.I.Gen.RegionName(Player.Pos),()=>{});
+                    log.Add("⑮ 능력 설명 준비 완료");
+                }
+                yield return PartPresentation.Prepare(this,pick,s=>OfferStatus=s,
+                    Player.Inventory.items.Where(i=>i.kind==ItemKind.Part).Select(i=>i.name));
             }
-            else log.Add("⑮ 로컬 이름 짓기");
-
+            finally { preparingPartArt--; }
             done(pick);
         }
 
@@ -220,9 +226,9 @@ namespace Diverse
             //    from the local generator and the AI answer (if it arrives) is kept for the next evolution
             OfferStatus = "AI가 당신의 플레이를 읽는 중…";
             float waitUntil = Time.unscaledTime + MaxOfferWait;
-            while (prefetching && prefetched == null && Time.unscaledTime < waitUntil)
+            while (prefetching && prefetched == null && (Time.unscaledTime < waitUntil || preparingPartArt>0))
             {
-                OfferStatus = $"AI가 당신의 플레이를 읽는 중… ({Mathf.CeilToInt(waitUntil - Time.unscaledTime)}초)";
+                if(preparingPartArt==0) OfferStatus = $"AI가 당신의 플레이를 읽는 중… ({Mathf.Max(0,Mathf.CeilToInt(waitUntil - Time.unscaledTime))}초)";
                 yield return null;
             }
             if (Player == null) yield break;
@@ -344,109 +350,61 @@ namespace Diverse
             if (text.Length > 200) text = text.Substring(0, 200);
             Player.Gold -= ChatCost;
             Chat.Add((true, text));
-            StartCoroutine(ChatRoutine());
+            StartCoroutine(ChatRoutine(text));
         }
 
-        IEnumerator ChatRoutine()
+        IEnumerator ChatRoutine(string request)
         {
-            ChatBusy = true;
-            int cost = ChatCost;
-            string reply = null; List<AbilityDef> revised = null;
-            var ctx = GenerationContext.Build(Player, Player.Telemetry, rnd);
-            yield return AiClient.Chat(ctx, Offer, Chat, (r, a) => { reply = r; revised = a; });
-            ChatBusy = false;
-            if (Player == null || Offer == null) yield break;
-            if (reply == null)
+            ChatBusy=true;
+            int cost=ChatCost;
+            var owner=Player;
+            var shown=Offer;
+            string reply=null; List<AbilityDef> revised=null;
+            var ctx=GenerationContext.Build(owner,owner.Telemetry,rnd);
+            yield return AiClient.Chat(ctx,shown,Chat,(r,a)=>{reply=r; revised=a;});
+            if(Player!=owner || Offer!=shown || owner==null) { ChatBusy=false; yield break; }
+            if(reply==null)
             {
-                Player.Gold += cost;   // refund: the message never reached the storyteller
-                Chat.Add((false, $"<color=#ff8a8a>(전달 실패: {AiClient.LastStatus} — 골드를 돌려받았다)</color>"));
-                yield break;
+                owner.Gold+=cost; ChatBusy=false;
+                Chat.Add((false,"연결에 실패해서 후보를 바꾸지 못했어. 대화 골드는 돌려줬어.")); yield break;
             }
-
-            // Replace only the cards that actually changed; anything invalid keeps the old card
-            int changed = 0, refused = 0;
-            var fresh = new List<AbilityDef>();
-            var build = BuildContext.Of(Player);
-            for (int i = 0; i < Offer.Count && i < revised.Count; i++)
+            var intent=AbilityRequest.Parse(request);
+            int refused=0;
+            var changed=new List<int>(); var fresh=new List<AbilityDef>();
+            var build=BuildContext.Of(owner);
+            for(int i=0;i<shown.Count && i<(revised?.Count??0);i++)
             {
-                var g = revised[i];
-                if (g == null) continue;            // the storyteller kept this card
-                var sig = g.Signature();
-                if (Offer.Any(o => o.Signature() == sig)) continue;   // unchanged (or moved)
-                var res = RuleValidator.Validate(g, build);
-                if (!res.ok)
+                var candidate=revised[i]; if(candidate==null) continue;
+                if(shown.Any(a=>a.Signature()==candidate.Signature())) continue;
+                var result=RuleValidator.Validate(candidate,build);
+                if(!result.ok || !intent.Matches(candidate) || shown.Where((a,n)=>n!=i).Any(a=>a.Signature()==candidate.Signature()) || fresh.Any(a=>a.Signature()==candidate.Signature())) { refused++; continue; }
+                candidate.id=System.Guid.NewGuid().ToString("N"); LocalComposer.Name(candidate);
+                changed.Add(i); fresh.Add(candidate);
+            }
+            if(changed.Count==0)
+            {
+                bool proposed=(revised?.Any(a=>a!=null)??false) || intent.HasRequirements;
+                if(proposed)
                 {
-                    // Salvage: keep the old card's (valid) structure and apply only what can be read off the new one —
-                    // an element change, a new name/concept — so "make it fire" still works when the AI's structure is broken
-                    var salvaged = Retint(Offer[i], g, (Chat.LastOrDefault(c => c.player).text ?? "") + " " + reply + " " + g.concept);
-                    if (salvaged != null && RuleValidator.Validate(salvaged, build).ok) { g = salvaged; res = null; }
+                    owner.Gold+=cost;
+                    Chat.Add((false,$"요청한 {(intent.HasRequirements?intent.Labels:"변경")}을 실제 효과와 세계 규칙에 맞게 반영하지 못했어. 후보는 그대로이고 대화 골드는 돌려줬어."));
                 }
-                if (res != null && !res.ok || Offer.Any(o => o != Offer[i] && o.Signature() == g.Signature())) { refused++; continue; }
-                g.id = System.Guid.NewGuid().ToString("N").Substring(0, 8);
-                LocalComposer.Name(g);
-                Offer[i] = g;
-                fresh.Add(g);
-                changed++;
+                else
+                {
+                    bool claimed=new[]{"바꿨","바꾸었","고쳤","변경했","만들었","열었","추가했"}.Any(reply.Contains);
+                    Chat.Add((false,claimed?"이번에는 실제로 반영된 변경이 없어. 후보는 그대로야.":reply));
+                }
+                ChatBusy=false; SaveRun(); yield break;
             }
-            // The reply goes up the moment it arrives (the "thinking…" line is replaced in the same frame);
-            // naming the changed cards happens after, in place, without holding the conversation
-            string note = changed > 0 ? $" <color=#8bff9a>(후보 {changed}개 변경)</color>" : "";
-            if (refused > 0) note += $" <color=#8c7aa8>(규칙에 맞지 않는 제안 {refused}개는 반영하지 않음)</color>";
-            Chat.Add((false, reply + note));
-            if (changed > 0)
-            {
-                OfferShownAt = Time.unscaledTime;   // cards changed under the cursor → lock clicks again briefly
-                Sfx.Play("evolve", 0.4f, 1.4f);
-                yield return AiClient.NameAll(fresh, Diverse.World.I.Gen.RegionName(Player.Pos), () => { });
-            }
+            yield return PartPresentation.Prepare(this,fresh,s=>OfferStatus=s,
+                shown.Where((a,n)=>!changed.Contains(n)).Select(a=>a.partName).Concat(owner.Inventory.items.Where(i=>i.kind==ItemKind.Part).Select(i=>i.name)));
+            if(Player!=owner || Offer!=shown) { ChatBusy=false; yield break; }
+            for(int n=0;n<changed.Count;n++) shown[changed[n]]=fresh[n];
+            string actual=string.Join("\n",changed.Select((index,n)=>$"{index+1}번 [{PartPresentation.DisplayName(fresh[n])}]: {fresh[n].Explain()}"));
+            Chat.Add((false,"다음 효과를 실제 후보에 반영했어.\n"+actual+(refused>0?"\n나머지 제안은 규칙 또는 요청과 맞지 않아 반영하지 않았어.":"")));
+            OfferShownAt=Time.unscaledTime; OfferStatus=null; ChatBusy=false;
+            Sfx.Play("evolve",.4f,1.4f); SaveRun();
         }
-
-/// <summary>The old card with the element the storyteller's (invalid) revision asked for. Null when there is nothing to carry over.</summary>
-        static AbilityDef Retint(AbilityDef old, AbilityDef revised, string text)
-        {
-            string el = revised.rules.SelectMany(r => r.ops).Select(o => o.element).FirstOrDefault(RuleLanguage.IsElement) ?? ElementIn(text);
-            if (el == null) return null;
-            var c = old.Clone();
-            bool any = false;
-            foreach (var o in c.rules.SelectMany(r => r.ops))
-            {
-                var p = RuleLanguage.Get(o.op);
-                if (p == null || p.kinds != "T" || o.op is "AddState" or "SetState" or "StorePosition" or "StoreTarget") continue;
-                o.element = el;
-                if (o.op == "ApplyStatus" || o.op == "Detonate") o.status = RuleLanguage.StatusOf(el) ?? o.status;
-                any = true;
-            }
-            if (!any)
-            {
-                // No op that carries an element (a stat / trade-off card): give the card that element's character —
-                // its rules now count as that element (meta/build scaling sees it) and gain a small elemental aura
-                var aura = new RuleDef { kind = RuleKind.Continuous };
-                aura.ops.Add(new OpDef { op = "Aura", element = el, status = RuleLanguage.StatusOf(el), amount = 0.15f, radius = 2.2f });
-                c.rules.Add(aura);
-                any = true;
-            }
-            if (c.Signature() == old.Signature()) return null;
-            c.id = null; c.name = null; c.desc = null; c.source = "ai";
-            c.concept = revised.concept ?? old.concept;
-            return c;
-        }
-
-/// <summary>An element named in Korean or English text ("화염으로 바꿔 줘", "make it frost").</summary>
-        static string ElementIn(string text)
-        {
-            if (string.IsNullOrEmpty(text)) return null;
-            string t = text.ToLowerInvariant();
-            (string word, string el)[] map =
-            {
-                ("화염", "Fire"), ("불", "Fire"), ("fire", "Fire"), ("냉기", "Frost"), ("얼음", "Frost"), ("서리", "Frost"), ("frost", "Frost"), ("ice", "Frost"),
-                ("번개", "Lightning"), ("전기", "Lightning"), ("lightning", "Lightning"), ("그림자", "Shadow"), ("어둠", "Shadow"), ("shadow", "Shadow"),
-                ("신성", "Holy"), ("빛", "Holy"), ("holy", "Holy"), ("독", "Poison"), ("poison", "Poison"), ("바람", "Wind"), ("wind", "Wind"),
-                ("피", "Blood"), ("blood", "Blood"), ("공허", "Void"), ("void", "Void"), ("비전", "Arcane"), ("arcane", "Arcane"),
-            };
-            // the earliest mention wins (the player's request comes first in the text)
-            return map.Select(m => (m.el, i: t.IndexOf(m.word, System.StringComparison.Ordinal))).Where(x => x.i >= 0).OrderBy(x => x.i).Select(x => x.el).FirstOrDefault();
-        }
-
         // ───────────────────────── Interaction ─────────────────────────
 
         public bool TryInteractAt(Vector2 world)

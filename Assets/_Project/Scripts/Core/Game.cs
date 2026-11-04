@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Diverse
 {
-    public enum GameState { Playing, Evolving, Dialogue, Map, Paused, Dead, Inventory }
+    public enum GameState { Playing, Evolving, Dialogue, Map, Paused, Dead, Inventory, PartFusion, WeaponDesign }
 
     /// <summary>
     /// Game scene entry point. Game.unity holds the camera, Fx, Sfx, UI and world objects; Game wires them up with save data
@@ -102,7 +102,7 @@ namespace Diverse
                 if (State == GameState.Playing && Player.PendingEvolutions > 0 && !Generating && Offer == null && Actor.Nearest(Player.Pos, 7, Team.Enemy) == null)
                     BeginEvolution();
             }
-            else if (State == GameState.Map || State == GameState.Paused || State == GameState.Dialogue || State == GameState.Evolving || State == GameState.Inventory)
+            else if (State == GameState.Map || State == GameState.Paused || State == GameState.Dialogue || State == GameState.Evolving || State == GameState.Inventory || State == GameState.PartFusion || State == GameState.WeaponDesign)
             {
                 if (State == GameState.Map && Player != null && Player.Alive)
                 {
@@ -148,7 +148,9 @@ namespace Diverse
 
         public void CloseOverlay()
         {
-            if (State == GameState.Inventory && InventoryBusy) return;
+            if ((State == GameState.Inventory || State == GameState.PartFusion || State == GameState.WeaponDesign) && InventoryBusy) return;
+            if(State==GameState.PartFusion) { CancelFusion();OpenOverlay(GameState.Inventory);return; }
+            if(State==GameState.WeaponDesign) CancelWeaponReward();
             if (State == GameState.Dialogue) Ui.CloseDialogue();
             State = GameState.Playing;
             GameTime.Resume("overlay");

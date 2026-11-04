@@ -244,6 +244,8 @@ YOU ARE NOW TALKING WITH THE PLAYER on the evolution screen. They see the CURREN
 - Then output ONLY THE CARDS YOU CHANGE, each with ""card"" = its number (1-based). Do NOT repeat unchanged cards.
 - Only change what the player asked for. If they only asked a question, return an empty list.
 - Every rule above still applies (primitives only, the engine decides numbers). Keep each new card compact (1~2 macros).
+- A request for SHIELD GAIN needs an actual Shield operation, Convert with to=Shield, or ReplaceWith mode=Shield. ShieldBroken triggers, lightning effects, armor, or a shield mentioned in concept/reply do NOT grant shields.
+- Treat reply as a proposal until the engine accepts changes. Never claim success that is not represented in changes. If the requested primitive/tier is unavailable, explain the limitation and leave changes empty.
 OUTPUT JSON: {""reply"":""..."",""changes"":[ {""card"":2, ...same intent schema as above...} ]}";
 
         /// <summary>
@@ -252,6 +254,7 @@ OUTPUT JSON: {""reply"":""..."",""changes"":[ {""card"":2, ...same intent schema
         /// </summary>
         public static IEnumerator Chat(GenerationContext ctx, List<AbilityDef> offer, List<(bool player, string text)> history, Action<string, List<AbilityDef>> done)
         {
+            AbilityRequest.ExpandLanguage(ctx);
             var key = SaveSystem.LoadApiKey();
             if (string.IsNullOrEmpty(key)) { LastStatus = "API 키 없음"; done(null, null); yield break; }
 
@@ -312,6 +315,7 @@ OUTPUT JSON: {""reply"":""..."",""changes"":[ {""card"":2, ...same intent schema
         public static string StructureJson(AbilityDef g)
         {
             var c = g.Clone();
+            c.partName=c.partImage=c.partImagePrompt=null;c.partVisualVersion=0;
             c.id = null; c.name = null; c.desc = null; c.tags = new List<string>(); c.power = 0; c.tier = 0; c.source = null; c.mechanic = null;
             foreach (var r in c.rules)
                 foreach (var o in r.ops)

@@ -101,6 +101,11 @@ namespace Diverse
             var far = RuleLanguage.All.Where(x => !c.retrieved.Contains(x) && (x.cat == "Trigger" || x.cat == "Op" && x.tier <= c.maxTier))
                 .OrderBy(_ => rnd.Next()).Take(6).ToList();
             c.exploration = far;
+            foreach(string id in new[]{"Shield","Heal","ResetCooldowns","GainDash","Buff","Resist","Cleanse","Push","Pull","Leap"})
+            {
+                var primitive=RuleLanguage.Get(id);
+                if(primitive!=null && primitive.tier<=c.maxTier && !c.retrieved.Contains(primitive)) c.retrieved.Add(primitive);
+            }
             return c;
         }
 

@@ -98,6 +98,12 @@ namespace Diverse
         }
 
         public bool Move(string id, int x, int y, out string why)
+            => TryMove(id,x,y,true,out why);
+
+        public bool CanMove(string id,int x,int y,out string why)
+            => TryMove(id,x,y,false,out why);
+
+        bool TryMove(string id,int x,int y,bool commit,out string why)
         {
             var item = Find(id); why = null;
             if (item == null || x < 0 || y < 0 || x >= width || y >= height) { why = "가방 안의 칸을 골라 줘."; return false; }
@@ -122,6 +128,11 @@ namespace Diverse
             {
                 foreach (var p in old) { p.i.x = p.x; p.i.y = p.y; }
                 return false;
+            }
+            if(!commit)
+            {
+                foreach(var p in old) {p.i.x=p.x;p.i.y=p.y;}
+                return true;
             }
             if (Active == null && item.kind == ItemKind.Weapon) activeWeapon = item.id;
             Notify(); return true;

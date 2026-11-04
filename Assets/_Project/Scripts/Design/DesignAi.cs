@@ -84,7 +84,7 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
         /// Generate the sections that have prompts. progress(text) reports picture progress; done(pack, status): pack = the merged
         /// result (null when even the spec failed). lockChassis: in-game edits keep the attack parts, skills and perk.
         /// </summary>
-        public static IEnumerator Generate(MonoBehaviour host, DesignPack current, string request, bool initial, bool lockChassis, Action<string> progress, Action<DesignPack, string> done)
+        public static IEnumerator Generate(MonoBehaviour host, DesignPack current, string request, bool initial, bool lockChassis, Action<string> progress, Action<DesignPack, string> done, bool weaponOnly=false)
         {
             if (!current.travelSelected) { done(null, "먼저 이동 유형을 골라 주세요."); yield break; }
             var user = new StringBuilder();
@@ -95,6 +95,7 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
             user.AppendLine("CURRENT HERO: " + Previous(current, 0));
             user.AppendLine("CURRENT COMBAT: " + Previous(current, 1));
             user.AppendLine("PLAYER REQUEST: " + request);
+            if(weaponOnly) user.AppendLine("WEAPON ONLY. Preserve the existing hero and travel type. Return weapon and attack sections only. Design a new weapon matching the request.");
             if (!lockChassis)
             {
                 user.AppendLine("BASIC SKILLS:\n" + SkillList(DesignCombat.Basics));
@@ -116,6 +117,7 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
             catch (Exception e) { done(null, "AI 응답 해석 실패 (" + e.Message + ")"); yield break; }
             if (answer == null) { done(null, "AI 응답 형식 오류"); yield break; }
             bool[] sections = { answer.hero != null && Has(json, "hero"), !lockChassis && Has(json, "weapon") && Has(json, "attack") };
+            if(weaponOnly) sections[0]=false;
             if (initial && (!sections[0] || !sections[1])) { done(null, "AI가 초기 디자인을 모두 만들지 못했어요"); yield break; }
             DesignGuard.Sanitize(answer);
 
@@ -146,7 +148,7 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
             var jobs = new List<IEnumerator>();
             // The hero sheet holds the attack poses too: a new way of attacking (bare fists, a different weapon) redraws it
             bool newAttack = sections[1] && result.weapon.attackPose != current.weapon.attackPose;
-            bool redrawHero = NeedsHeroSheet(current, sections[0], newAttack);
+            bool redrawHero = !weaponOnly && NeedsHeroSheet(current, sections[0], newAttack);
             if (redrawHero && result.hero.imagePrompt != null) jobs.Add(HeroJob(result));
             if (sections[1])
             {
@@ -154,7 +156,7 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
                 else { result.weapon.image = null; result.attack.projectile.image = null; }
                 if (result.attack.effectPrompts != null) jobs.Add(EffectsJob(result));
             }
-            if (result.travelType != TravelType.Dash && (sections[0] || string.IsNullOrEmpty(result.travelEffect)))
+            if (!weaponOnly && result.travelType != TravelType.Dash && (sections[0] || string.IsNullOrEmpty(result.travelEffect)))
                 jobs.Add(TravelJob(result));
             int finished = 0, failed = 0;
             foreach (var job in jobs)

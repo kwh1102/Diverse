@@ -466,6 +466,7 @@ static string TemporalAlias(string s) => Norm(s) switch
             ["lightning"] = "Chain", ["chainlightning"] = "Chain", ["burn"] = "ApplyStatus", ["ignite"] = "ApplyStatus", ["poison"] = "ApplyStatus", ["inflict"] = "ApplyStatus",
             ["freeze"] = "Stun", ["stun"] = "Stun", ["slow"] = "Slow", ["knockback"] = "Push", ["vortex"] = "Pull", ["suck"] = "Pull", ["blackhole"] = "Pull",
             ["heal"] = "Heal", ["regen"] = "Heal", ["barrier"] = "Shield", ["shield"] = "Shield", ["buff"] = "Buff", ["empower"] = "EmpowerNext",
+            ["gainshield"]="Shield",["shieldgain"]="Shield",["보호막"]="Shield",["실드"]="Shield",["쉴드"]="Shield",["치유"]="Heal",["정화"]="Cleanse",["대시충전"]="GainDash",
             ["summon"] = "Spawn", ["spawn"] = "Spawn", ["teleport"] = "Blink", ["blink"] = "Blink", ["dashto"] = "Leap", ["swap"] = "Swap", ["cooldownreset"] = "ResetCooldowns",
             ["refund"] = "ResetCooldowns", ["gold"] = "GainGold", ["xp"] = "GainXp", ["experience"] = "GainXp", ["consume"] = "Detonate",
             ["pop"] = "Detonate", ["contagion"] = "Spread", ["plague"] = "Spread", ["sweep"] = "Slash", ["laser"] = "Beam", ["ray"] = "Beam",

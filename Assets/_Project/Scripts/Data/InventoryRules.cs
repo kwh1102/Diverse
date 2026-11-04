@@ -28,6 +28,8 @@ namespace Diverse
         public int potionPrice = 18, xpPotionPrice = 35, antidotePrice = 12;
         public float potionHealFraction = 0.4f, xpPotionAmount = 50;
         public int consumableStack = 9;
+        public int partIconPixels = 32, partIconColors = 16;
+        public int partImageParallel = 3;
 
         public InventoryShape Shape(TravelType type) => Array.Find(shapes, s => s.type == type) ?? shapes[0];
         public int LegacyTier(WorldSave world) => Mathf.Min(maxPartTier, legacyBaseTier + world.bossKills / Mathf.Max(1, legacyBossesPerTier));

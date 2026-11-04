@@ -4,10 +4,13 @@ using UnityEngine.UI;
 
 namespace Diverse
 {
-    public class InventoryCell : MonoBehaviour, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler
+    public class InventoryCell : MonoBehaviour, IPointerClickHandler, IBeginDragHandler, IDragHandler, IEndDragHandler, IDropHandler,IPointerEnterHandler,IPointerExitHandler
     {
         [SerializeField] Image icon, selection;
         [SerializeField] Text caption;
+        [SerializeField] Text skillGlyph;
+        [SerializeField] Text skillKey;
+        [SerializeField] CanvasGroup contents;
         [SerializeField] GameObject top, bottom, left, right;
         InventoryView view;
         int x, y;
@@ -15,8 +18,11 @@ namespace Diverse
         {
             view = owner; x = px; y = py;
             var item = bag.At(x,y); var w = bag.Owner(x,y);
-            UIKit.Sprite(icon, PartArt.For(item));
-            string text = item?.kind == ItemKind.Skill ? "QWER"[item.skillSlot].ToString() : item?.kind == ItemKind.Part ? "T" + item.complexity : item?.kind == ItemKind.Consumable ? item.count.ToString() : "";
+            ItemIcons.Bind(icon,skillGlyph,item);
+            if(contents!=null) contents.alpha=owner!=null && item!=null && owner.Dragged==item.id ? .25f : 1;
+            UIKit.Show(skillKey,item?.kind==ItemKind.Skill);
+            if(item?.kind==ItemKind.Skill) UIKit.Set(skillKey,"QWER"[item.skillSlot].ToString());
+            string text = item?.kind == ItemKind.Part ? "T" + item.complexity : item?.kind == ItemKind.Consumable ? item.count.ToString() : "";
             if (item == null && w != null)
             {
                 int slot = System.Array.IndexOf(InventoryState.Slots, new Vector2Int(x-w.x,y-w.y));
@@ -33,9 +39,11 @@ namespace Diverse
             if (e.button == PointerEventData.InputButton.Right) view.QuickUse(x,y);
             else view.Click(x,y);
         }
-        public void OnBeginDrag(PointerEventData e) => view.BeginDrag(x,y);
-        public void OnDrag(PointerEventData e) { }
+        public void OnBeginDrag(PointerEventData e) { if(e.button==PointerEventData.InputButton.Left) view.BeginDrag(x,y,e); }
+        public void OnDrag(PointerEventData e) => view.Drag(e);
         public void OnEndDrag(PointerEventData e) => view.EndDrag();
         public void OnDrop(PointerEventData e) => view.Drop(x,y);
+        public void OnPointerEnter(PointerEventData e)=>view?.Hover(x,y);
+        public void OnPointerExit(PointerEventData e)=>view?.LeaveHover();
     }
 }

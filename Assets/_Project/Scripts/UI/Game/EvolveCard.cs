@@ -12,8 +12,10 @@ namespace Diverse
         [SerializeField] Image lockBar;           // Filled horizontal: fills while the click lock wears off
         [SerializeField] CanvasGroup group;
         [SerializeField] Image partIcon;
+        [SerializeField] Text complexityLabel;
         AbilityDef shownAbility;
         InventoryItem shownPart;
+        string shownVisual;
 
         public void Init(System.Action onClick)
         {
@@ -24,11 +26,13 @@ namespace Diverse
         /// <param name="lockK">0~1 while the appear-lock runs, &lt;0 when not shown.</param>
         public void Tick(AbilityDef a, int index, bool locked, float lockK)
         {
-            if (shownAbility != a) { shownAbility = a; shownPart = PartArt.Preview(a); }
+            string visual=a.partName+"|"+a.partImage;
+            if (shownAbility != a || shownVisual!=visual) { shownAbility = a; shownVisual=visual; shownPart = PartArt.Preview(a); }
             UIKit.Sprite(partIcon, PartArt.For(shownPart));
             string src = a.source == "ai" ? "<color=#c9b8ff>✦ AI 생성</color>" : "<color=#8c7aa8>◇ 로컬</color>";
             string kind = RuleText.TierLabel(a.tier);
-            UIKit.Set(header, $"<color=#6b5c8a>{index + 1}</color>  {src}  <color=#8c7aa8>{kind}</color>");
+            UIKit.Set(header, $"<color=#6b5c8a>{index + 1}</color>  {src}");
+            UIKit.Set(complexityLabel,$"복잡도 T{a.tier} · {kind}");
             UIKit.Set(title, $"<b><color=#fff2b3>{shownPart.name}</color></b>");
             // Exact rule text always comes from the graph (AI flavor text, if any, is shown in italics after it)
             string rule = a.Explain();
