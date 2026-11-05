@@ -1,0 +1,33 @@
+﻿ID,이름,계열,최종 PNG,현재 임시 원본
+focus_lens,집중 렌즈,위력,Assets/_Project/Resources/Sprites/Parts/focus_lens.png,focus_lens
+sword_knot,검사의 매듭,위력,Assets/_Project/Resources/Sprites/Parts/sword_knot.png,sword_knot
+ember_crucible,불씨 도가니,위력,Assets/_Project/Resources/Sprites/Parts/ember_crucible.png,ember_crucible
+prism_core,분광 핵,위력,Assets/_Project/Resources/Sprites/Parts/prism_core.png,focus_lens
+moon_charm,초승달 부적,치명타,Assets/_Project/Resources/Sprites/Parts/moon_charm.png,moon_charm
+lucky_die,흑요석 주사위,치명타,Assets/_Project/Resources/Sprites/Parts/lucky_die.png,mint_coin
+razor_gem,칼날 수정,치명타,Assets/_Project/Resources/Sprites/Parts/razor_gem.png,moon_charm
+ruby_pin,홍옥 핀,치명타,Assets/_Project/Resources/Sprites/Parts/ruby_pin.png,heart_lock
+clock_spring,태엽 시계,재사용,Assets/_Project/Resources/Sprites/Parts/clock_spring.png,clock_spring
+silver_gear,은빛 톱니,재사용,Assets/_Project/Resources/Sprites/Parts/silver_gear.png,clock_spring
+echo_bell,메아리 방울,재사용,Assets/_Project/Resources/Sprites/Parts/echo_bell.png,ward_buckle
+hourglass_bead,모래시계 구슬,재사용,Assets/_Project/Resources/Sprites/Parts/hourglass_bead.png,scholar_quill
+arrow_fletching,매깃 화살깃,투사체,Assets/_Project/Resources/Sprites/Parts/arrow_fletching.png,arrow_fletching
+falcon_sight,매눈 조준경,투사체,Assets/_Project/Resources/Sprites/Parts/falcon_sight.png,arrow_fletching
+rune_scope,룬 조준경,투사체,Assets/_Project/Resources/Sprites/Parts/rune_scope.png,focus_lens
+spiral_nozzle,나선 노즐,투사체,Assets/_Project/Resources/Sprites/Parts/spiral_nozzle.png,silk_grip
+trail_compass,길잡이 나침반,범위,Assets/_Project/Resources/Sprites/Parts/trail_compass.png,trail_compass
+star_map,별자리 지도,범위,Assets/_Project/Resources/Sprites/Parts/star_map.png,trail_compass
+long_reed,갈대 관,범위,Assets/_Project/Resources/Sprites/Parts/long_reed.png,scholar_quill
+amber_mirror,호박 거울,범위,Assets/_Project/Resources/Sprites/Parts/amber_mirror.png,focus_lens
+frost_shard,서리 결정,제어,Assets/_Project/Resources/Sprites/Parts/frost_shard.png,focus_lens
+anchor_hook,닻 갈고리,제어,Assets/_Project/Resources/Sprites/Parts/anchor_hook.png,iron_plate
+thunder_pin,뇌전 침,제어,Assets/_Project/Resources/Sprites/Parts/thunder_pin.png,ember_crucible
+gravity_stone,중력석,제어,Assets/_Project/Resources/Sprites/Parts/gravity_stone.png,iron_plate
+ward_buckle,수호 버클,방어,Assets/_Project/Resources/Sprites/Parts/ward_buckle.png,ward_buckle
+vital_vial,생명의 약병,방어,Assets/_Project/Resources/Sprites/Parts/vital_vial.png,vital_vial
+iron_plate,철갑 조각,방어,Assets/_Project/Resources/Sprites/Parts/iron_plate.png,iron_plate
+heart_lock,심장 자물쇠,방어,Assets/_Project/Resources/Sprites/Parts/heart_lock.png,heart_lock
+wind_boot,바람 장화,이동,Assets/_Project/Resources/Sprites/Parts/wind_boot.png,wind_boot
+silk_grip,비단 손잡이,이동,Assets/_Project/Resources/Sprites/Parts/silk_grip.png,silk_grip
+feather_ring,깃털 고리,이동,Assets/_Project/Resources/Sprites/Parts/feather_ring.png,arrow_fletching
+breeze_ribbon,산들바람 리본,이동,Assets/_Project/Resources/Sprites/Parts/breeze_ribbon.png,sword_knot

@@ -5,112 +5,211 @@ using UnityEngine;
 
 namespace Diverse
 {
+    /// <summary>Bounded per-cast graphs. Events and anchors never escape the lifetime of a manual cast.</summary>
     public static class ActiveSkillRuntime
     {
         static readonly Dictionary<Player, int> running = new Dictionary<Player, int>();
+        static readonly Dictionary<string, CastContext> recasts = new Dictionary<string, CastContext>();
         static ActiveRules C => ActiveSkillGenerator.Rules;
+        class Stage
+        {
+            public Vector2 start, position, impact;
+            public bool hit, arrived, finished;
+            public int live;
+        }
         class CastContext
         {
             public Player player;
             public ActiveSkillData skill;
             public string weaponId;
-            public float attack, power;
-            public bool healed;
+            public float attack, power, deadline, control, range;
+            public bool healed, closed, awaitingRecast, recast;
+            public int live, shots;
             public readonly HashSet<Actor> affected = new HashSet<Actor>();
-            public bool Valid => player != null && player.Alive && player.Inventory?.Active?.id == weaponId;
+            public bool Valid => !closed && Time.time < deadline && player != null && player.Alive && player.Inventory?.Active?.id == weaponId && player.Skills.Any(s => s?.def?.active?.id == skill.id);
         }
+        static string Key(Player p, ActiveSkillData a) => p.GetInstanceID() + ":" + a.id;
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void Reset() => running.Clear();
+        static void Reset() { running.Clear(); recasts.Clear(); }
+        public static bool TryRecast(Player p, ActiveSkillData skill)
+        {
+            if (skill == null || !recasts.TryGetValue(Key(p, skill), out var ctx) || !ctx.Valid || !ctx.awaitingRecast) return false;
+            ctx.recast = true; return true;
+        }
         public static bool CanCast(Player p, ActiveSkillData skill)
         {
-            if (p.Inventory?.Active == null || skill == null || (running.TryGetValue(p, out int n) && n >= C.maxConcurrentCasts)) return false;
+            if (p.Inventory?.Active == null || skill == null || !p.SkillUnlocked(skill.slot) || (running.TryGetValue(p, out int count) && count >= C.maxConcurrentCasts)) return false;
             if (ActiveSkillGenerator.TypeOf(p.Inventory.Active) != skill.weaponType) return false;
             if (skill.linkedMask == 0) return true;
             var attached = p.Inventory.Attached(p.Inventory.Active).Where(i => i.kind == ItemKind.Skill).ToList();
             return Enumerable.Range(0, 4).Where(slot => (skill.linkedMask & (1 << slot)) != 0)
-                .All(slot => attached.Any(i => i.skillSlot == slot && i.active?.linkId == skill.linkId && i.active.linkedMask == skill.linkedMask));
+                .All(slot => p.SkillUnlocked(slot) && attached.Any(i => i.skillSlot == slot && i.active?.linkId == skill.linkId && i.active.linkedMask == skill.linkedMask));
         }
         public static void Cast(Player p, ActiveSkillData skill, Vector2 dir, Vector2 aim)
         {
-            var ctx = new CastContext { player = p, skill = skill, weaponId = p.Inventory.Active.id, attack = p.AttackPower, power = ActiveSkillGenerator.Magnitude(skill) };
+            if (!CanCast(p, skill)) return;
+            var ctx = new CastContext { player = p, skill = skill, weaponId = p.Inventory.Active.id, attack = p.AttackPower,
+                power = ActiveSkillGenerator.Magnitude(skill), deadline = Time.time + C.maxCastDuration,
+                control = p.Abilities.ActiveControl, range = p.Abilities.ActiveRange };
             p.StartCoroutine(Run(ctx, dir, aim));
         }
         static IEnumerator Run(CastContext ctx, Vector2 dir, Vector2 aim)
         {
-            var p = ctx.player; var a = ctx.skill;
-            running[p] = running.TryGetValue(p, out int n) ? n + 1 : 1;
+            var p = ctx.player; var a = ctx.skill; var act = p.SkillAct(p.Skills[a.slot]);
+            string key = Key(p, a);
+            running[p] = running.TryGetValue(p, out int count) ? count + 1 : 1;
+            if (a.input == "recast") recasts[key] = ctx;
             try
             {
-                p.Abilities.OnActiveCast();
-                foreach (var step in a.steps)
+                if (a.input == "charge")
                 {
+                    float start = Time.time; Play(ctx, a.steps[0], 0, p.Pos, dir, C.projectilePixels);
+                    while (ctx.Valid && Controls.Held(act) && Time.time - start < C.chargeDuration)
+                    { p.HoldSkillAction(); yield return null; }
                     if (!ctx.Valid) yield break;
-                    if (step.timing == "delayed") yield return new WaitForSeconds(C.delay);
-                    int pulses = step.delivery == "field" || step.timing == "repeat" ? C.maxPulses : 1;
-                    Vector2 field = p.Pos + Vector2.ClampMagnitude(aim - p.Pos, ActiveSkillGenerator.Range(a, step));
-                    for (int pulse = 0; pulse < pulses; pulse++)
+                    ctx.power *= 1 + C.chargeBonus * Mathf.Clamp01((Time.time - start) / Mathf.Max(.01f, C.chargeDuration));
+                    aim = p.AimPoint; dir = (aim - p.Pos).SafeNormal(dir);
+                }
+                p.Abilities.OnActiveCast();
+                int cycles = a.input == "channel" ? C.maxPulses : 1;
+                for (int cycle = 0; cycle < cycles && ctx.Valid; cycle++)
+                {
+                    if (cycle > 0 && !Controls.Held(act)) break;
+                    Stage previous = null;
+                    foreach (var step in a.steps)
                     {
                         if (!ctx.Valid) yield break;
-                        if (ActiveSkillGenerator.Moving(step))
+                        if (step.trigger == "recast")
                         {
-                            Vector2 from = p.Pos;
-                            Vector2 travel = step.delivery == "retreat" ? -dir : dir;
-                            float distance = Mathf.Min(C.movementDistance, ActiveSkillGenerator.Range(a, step));
-                            if (step.delivery == "blink")
-                            {
-                                // Teleport only along a traversable path; generated skills cannot bypass terrain rules.
-                                p.Pos = WorldStreamer.I.Move(from, travel * distance, p.radius, bound: p.Bound);
-                            }
-                            else
-                            {
-                                float t = 0;
-                                while (t < C.movementDuration && ctx.Valid)
-                                {
-                                    float dt = Mathf.Min(Time.deltaTime, C.movementDuration - t); t += dt;
-                                    p.Pos = WorldStreamer.I.Move(p.Pos, travel * (distance / C.movementDuration) * dt, p.radius, bound: p.Bound);
-                                    yield return null;
-                                }
-                            }
-                            if (!ctx.Valid) yield break;
-                            ApplyTargets(ctx, step, new List<Actor>(Combat.Line(from, p.Pos, C.projectileRadius, Team.Enemy)), dir, 1);
+                            ctx.awaitingRecast = true; float until = Time.time + C.recastWindow;
+                            while (ctx.Valid && !ctx.recast && Time.time < until) yield return null;
+                            ctx.awaitingRecast = false;
+                            if (!ctx.recast || !ctx.Valid) yield break;
+                            aim = p.AimPoint; dir = (aim - p.Pos).SafeNormal(dir);
                         }
-                        else if (step.effect is "shield" or "heal")
+                        else if (previous != null && step.trigger != "after")
                         {
-                            if (step.effect == "shield") p.AddShield(ctx.attack * ctx.power / C.shieldScale / pulses, C.effectDuration);
-                            else p.Heal(ctx.attack * ctx.power / C.healScale / pulses);
-                            if (step.delivery == "guard") p.invulnUntil = Mathf.Max(p.invulnUntil, Time.time + C.guardInvulnerability);
-                            Play(ctx, 0, p.Pos, dir, C.effectPixels);
+                            while (ctx.Valid && !previous.finished && !(step.trigger == "hit" && previous.hit)) yield return null;
+                            if (!ctx.Valid || step.trigger == "hit" && !previous.hit || step.trigger == "arrive" && !previous.arrived) yield break;
                         }
-                        else if (step.delivery == "projectile") Fire(ctx, step, dir, pulses);
-                        else
-                        {
-                            float range = ActiveSkillGenerator.Range(a, step);
-                            Vector2 origin = step.delivery == "field" ? field : p.Pos;
-                            IEnumerable<Actor> targets = step.delivery switch {
-                                "arc" => new List<Actor>(Combat.Arc(p.Pos, dir, range, 140, Team.Enemy)),
-                                "line" => new List<Actor>(Combat.Line(p.Pos, p.Pos + dir * range, C.projectileRadius, Team.Enemy)),
-                                _ => new List<Actor>(Actor.InRadius(origin, Mathf.Min(C.radius, range), Team.Enemy)) };
-                            var selected = targets.Take(C.maxTargets).ToList();
-                            if (step.pattern == "chain" && selected.Count > 0)
-                            {
-                                Actor last = selected[0];
-                                selected.AddRange(Actor.InRadius(last.Pos, C.radius, Team.Enemy).Where(x => !selected.Contains(x)).Take(C.maxTargets - selected.Count));
-                            }
-                            float width = step.delivery == "line" ? range : step.delivery == "arc" ? range * 2 : Mathf.Min(C.radius, range) * 2;
-                            Play(ctx, 0, step.delivery == "line" ? p.Pos + dir * range * .5f : origin, dir, Mathf.RoundToInt(width * Art.PPU));
-                            ApplyTargets(ctx, step, selected, dir, pulses);
-                        }
-                        if (pulse + 1 < pulses) yield return new WaitForSeconds(C.pulseInterval);
+                        if (step.timing == "delayed") yield return new WaitForSeconds(C.delay);
+                        if (!ctx.Valid) yield break;
+                        float range = ActiveSkillGenerator.Range(a, step) * ctx.range;
+                        Vector2 origin = step.origin switch {
+                            "aim" => p.Pos + Vector2.ClampMagnitude(aim - p.Pos, range),
+                            "previous" => previous?.position ?? p.Pos,
+                            "impact" => previous?.impact ?? p.Pos,
+                            _ => p.Pos };
+                        // A movement recast can return to the exact start of the earlier movement.
+                        Vector2? returnTo = ActiveSkillGenerator.Moving(step) && step.origin == "previous" && step.trigger == "recast" ? previous?.start : null;
+                        var stage = new Stage { start = p.Pos, position = origin };
+                        yield return Execute(ctx, step, stage, origin, dir, range, cycles, returnTo);
+                        previous = stage;
+                    }
+                    if (cycle + 1 < cycles)
+                    {
+                        float until = Time.time + C.channelDuration / Mathf.Max(1, cycles - 1);
+                        while (ctx.Valid && Controls.Held(act) && Time.time < until) { p.HoldSkillAction(); yield return null; }
+                        aim = p.AimPoint; dir = (aim - p.Pos).SafeNormal(dir);
                     }
                 }
+                while (ctx.Valid && ctx.live > 0) yield return null;
             }
             finally
             {
+                ctx.closed = true; recasts.Remove(key);
                 if (running.TryGetValue(p, out int remaining)) { if (remaining <= 1) running.Remove(p); else running[p] = remaining - 1; }
             }
         }
-
-        static void Play(CastContext ctx, int cell, Vector2 at, Vector2 dir, int size) => Fx.I?.Play(ActiveSkillArt.Effect(ctx.skill, cell, size), at, dir.Angle(), 20, 1, null, true);
+        static IEnumerator Execute(CastContext ctx, ActiveStep step, Stage stage, Vector2 origin, Vector2 dir, float range, int cycles, Vector2? returnTo)
+        {
+            var p = ctx.player;
+            int pulses = ctx.skill.input == "channel" ? 1 : step.delivery == "field" || step.timing == "repeat" ? C.maxPulses : 1;
+            if (step.delivery == "trap")
+            {
+                float until = Time.time + C.effectDuration, fx = 0;
+                while (ctx.Valid && Time.time < until && !Actor.InRadius(origin, Mathf.Min(C.radius, range), Team.Enemy).Any(t => Eligible(ctx, step, t)))
+                {
+                    if (Time.time >= fx) { Play(ctx, step, 0, origin, dir, Mathf.RoundToInt(Mathf.Min(C.radius, range) * 2 * Art.PPU), C.pulseInterval); fx = Time.time + C.pulseInterval; }
+                    yield return null;
+                }
+                if (!ctx.Valid) yield break;
+                if (Time.time >= until) { stage.finished = true; yield break; }
+            }
+            if (step.delivery == "wall")
+            {
+                Vector2 side = new Vector2(-dir.y, dir.x) * Mathf.Min(C.radius, range);
+                Vector2 from = origin - side, to = origin + side; float until = Time.time + C.effectDuration, fx = 0;
+                while (ctx.Valid && Time.time < until)
+                {
+                    if (Time.time >= fx) { Play(ctx, step, 0, origin, side, Mathf.RoundToInt(side.magnitude * 2 * Art.PPU), C.pulseInterval); fx = Time.time + C.pulseInterval; }
+                    foreach (var shot in Projectile.Live.ToArray())
+                    {
+                        if (shot == null || shot.targetTeam != Team.Player) continue;
+                        Vector2 ab = to - from, pos = shot.transform.position;
+                        Vector2 nearest = from + ab * Mathf.Clamp01(Vector2.Dot(pos - from, ab) / Mathf.Max(.001f, ab.sqrMagnitude));
+                        if (Vector2.Distance(pos, nearest) < C.anchorWidth + shot.radius) shot.Block();
+                    }
+                    yield return null;
+                }
+                stage.finished = true; yield break;
+            }
+            for (int pulse = 0; pulse < pulses && ctx.Valid; pulse++)
+            {
+                if (ActiveSkillGenerator.Moving(step))
+                {
+                    Vector2 from = p.Pos;
+                    Vector2 delta = returnTo.HasValue ? Vector2.ClampMagnitude(returnTo.Value - from, C.movementDistance * ctx.range) :
+                        (step.delivery == "retreat" ? -dir : dir) * Mathf.Min(C.movementDistance * ctx.range, range);
+                    Play(ctx, step, 2, from, delta, C.effectPixels);
+                    if (step.delivery == "blink") p.Pos = WorldStreamer.I.Move(from, delta, p.radius, bound: p.Bound);
+                    else
+                    {
+                        float elapsed = 0;
+                        while (elapsed < C.movementDuration && ctx.Valid)
+                        {
+                            float dt = Mathf.Min(Time.deltaTime, C.movementDuration - elapsed); elapsed += dt;
+                            p.HoldSkillAction(); p.Pos = WorldStreamer.I.Move(p.Pos, delta / Mathf.Max(.01f, C.movementDuration) * dt, p.radius, bound: p.Bound);
+                            yield return null;
+                        }
+                    }
+                    if (!ctx.Valid) yield break;
+                    stage.position = p.Pos; stage.arrived = true;
+                    ApplyTargets(ctx, step, stage, new List<Actor>(Combat.Line(from, p.Pos, C.projectileRadius, Team.Enemy)), dir, cycles);
+                    Play(ctx, step, 0, p.Pos, delta, C.effectPixels);
+                }
+                else if (step.effect is "shield" or "heal")
+                {
+                    if (step.effect == "shield") p.AddShield(ctx.attack * ctx.power / C.shieldScale / (pulses * cycles), C.effectDuration);
+                    else p.Heal(ctx.attack * ctx.power / C.healScale / (pulses * cycles));
+                    if (step.delivery == "guard") p.invulnUntil = Mathf.Max(p.invulnUntil, Time.time + C.guardInvulnerability);
+                    Play(ctx, step, 0, p.Pos, dir, C.effectPixels);
+                }
+                else if (step.delivery == "projectile") Fire(ctx, step, stage, origin, dir, range, pulses * cycles);
+                else
+                {
+                    Vector2 at = origin;
+                    IEnumerable<Actor> targets = step.delivery switch {
+                        "arc" => new List<Actor>(Combat.Arc(at, dir, range, 140, Team.Enemy)),
+                        "line" => new List<Actor>(Combat.Line(at, at + dir * range, C.projectileRadius, Team.Enemy)),
+                        _ => new List<Actor>(Actor.InRadius(at, Mathf.Min(C.radius * ctx.range, range), Team.Enemy)) };
+                    var selected = targets.Take(C.maxTargets).ToList();
+                    if (step.pattern == "chain" && selected.Count > 0)
+                        selected.AddRange(Actor.InRadius(selected[0].Pos, C.radius, Team.Enemy).Where(x => !selected.Contains(x)).Take(C.maxTargets - selected.Count));
+                    float width = step.delivery == "line" ? range : step.delivery == "arc" ? range * 2 : Mathf.Min(C.radius * ctx.range, range) * 2;
+                    Play(ctx, step, 0, step.delivery == "line" ? at + dir * range * .5f : at, dir, Mathf.RoundToInt(width * Art.PPU));
+                    ApplyTargets(ctx, step, stage, selected, dir, pulses * cycles); stage.position = at;
+                }
+                if (pulse + 1 < pulses) yield return new WaitForSeconds(step.delivery == "field" ? C.effectDuration / Mathf.Max(1, pulses - 1) : C.pulseInterval);
+            }
+            if (stage.live == 0) stage.finished = true;
+        }
+        static void Play(CastContext ctx, ActiveStep step, int cell, Vector2 at, Vector2 dir, int size, float duration = 0)
+        {
+            var frames = ActiveSkillArt.Effect(ctx.skill, step, cell, size);
+            float scale = Mathf.Max(8, size) / Mathf.Max(1f, frames[0].rect.width - 6);
+            Fx.I?.Play(frames, at, dir.Angle(), duration > 0 ? frames.Length / duration : 20, scale, null, false);
+        }
         static string Status(string condition) => condition switch { "marked" => "mark", "burning" => "burn", "chilled" => "chill", "poisoned" => "poison", _ => null };
         static string Mark(ActiveSkillData a) => a.linkedMask == 0 ? "mark" : "active:" + a.linkId;
         static bool Eligible(CastContext ctx, ActiveStep step, Actor target)
@@ -120,65 +219,67 @@ namespace Diverse
         }
         static DamageInfo Damage(CastContext ctx, ActiveStep step, Vector2 dir, int divisions) => new DamageInfo {
             amount = ctx.attack * ctx.power * (step.condition == "always" ? 1 : 1 + C.conditionalBonus) / Mathf.Max(1, divisions),
-            source = ctx.player, direction = dir, knockback = 0, canCrit = true, element = System.Enum.TryParse(step.element, out Element el) ? el : Element.None,
+            source = ctx.player, direction = dir, knockback = 0, canCrit = true,
+            element = System.Enum.TryParse(step.element, out Element el) ? el : Element.None,
             tags = "SKILL " + (step.delivery == "projectile" ? "PROJECTILE RANGED" : "MELEE"),
-            impactFx = ActiveSkillArt.Effect(ctx.skill, 1, C.effectPixels), hitstop = 0.02f };
-        static void ApplyTargets(CastContext ctx, ActiveStep step, IEnumerable<Actor> targets, Vector2 dir, int pulses)
+            impactFx = ActiveSkillArt.Effect(ctx.skill, step, 1, C.effectPixels), normalImpactBlend = true, hitstop = .02f };
+        static void ApplyTargets(CastContext ctx, ActiveStep step, Stage stage, IEnumerable<Actor> targets, Vector2 dir, int divisions)
         {
-            foreach (var target in targets.Where(t => Eligible(ctx, step, t)).Take(C.maxTargets).ToList())
+            foreach (var target in targets.Take(C.maxTargets).ToList())
             {
-                if (step.effect == "damage")
+                if (!ctx.Valid || !Eligible(ctx, step, target)) continue;
+                if (step.effect == "damage" && Combat.Hit(target, Damage(ctx, step, dir, divisions), Pal.Hex(ctx.skill.color)) <= 0) continue;
+                if (!stage.hit) { stage.hit = true; stage.impact = target.Pos; }
+                ctx.affected.Add(target);
+                if (!ctx.healed && step.effect == "damage") { ctx.healed = true; ctx.player.Abilities.OnActiveHit(); }
+                if (step.effect == "mark") target.AddStatus(Mark(ctx.skill), C.statusDuration * ctx.control, 0, 0, ctx.player, Pal.Hex(ctx.skill.color));
+                if (step.effect == "stun" && target is Enemy enemy) enemy.Stun(C.stunDuration * ctx.control);
+                if (step.effect == "pull") target.Knockback(stage.position - target.Pos, C.knockback);
+                if (step.effect == "push") target.Knockback(target.Pos - stage.position, C.knockback);
+                if (step.effect == "damage" && step.element != "None")
                 {
-                    float dealt = Combat.Hit(target, Damage(ctx, step, dir, pulses), Pal.Hex(ctx.skill.color));
-                    if (dealt <= 0) continue;
-                    OnHit(ctx, step, target, dir);
+                    string status = step.element switch { "Fire" => "burn", "Frost" => "chill", "Poison" => "poison", _ => null };
+                    if (status != null) target.AddStatus(status, C.statusDuration * ctx.control, 0, step.element == "Frost" ? .2f : 0, ctx.player, Pal.Hex(ctx.skill.color));
                 }
-                else OnHit(ctx, step, target, dir);
+                if (step.consume)
+                {
+                    string status = step.condition == "marked" ? Mark(ctx.skill) : Status(step.condition);
+                    if (status != null) target.statuses.RemoveAll(s => s.id == status);
+                }
+                // Damage already plays this skill's dedicated impact through Combat.Hit.
+                if (step.effect != "damage") Play(ctx, step, 1, target.Pos, dir, C.effectPixels);
             }
         }
-        static void OnHit(CastContext ctx, ActiveStep step, Actor target, Vector2 dir)
+        static void Fire(CastContext ctx, ActiveStep step, Stage stage, Vector2 origin, Vector2 dir, float range, int divisions)
         {
-            if (!ctx.Valid) return;
-            if (!ctx.affected.Contains(target) && ctx.affected.Count >= C.maxTargets) return;
-            ctx.affected.Add(target);
-            if (!ctx.healed && step.effect == "damage") { ctx.healed = true; ctx.player.Abilities.OnActiveHit(); }
-            if (step.effect == "mark") target.AddStatus(Mark(ctx.skill), C.statusDuration, 0, 0, ctx.player, Pal.Hex(ctx.skill.color));
-            if (step.effect == "stun" && target is Enemy enemy) enemy.Stun(C.stunDuration);
-            if (step.effect == "pull") target.Knockback(ctx.player.Pos - target.Pos, C.knockback);
-            if (step.effect == "push") target.Knockback(target.Pos - ctx.player.Pos, C.knockback);
-            if (step.effect == "damage" && step.element != "None")
-            {
-                // Bounded status application; generated lightning cannot recursively spawn more hits.
-                string status = step.element switch { "Fire" => "burn", "Frost" => "chill", "Poison" => "poison", _ => null };
-                if (status != null) target.AddStatus(status, C.statusDuration, 0, step.element == "Frost" ? .2f : 0, ctx.player, Pal.Hex(ctx.skill.color));
-            }
-            if (step.consume)
-            {
-                string status = step.condition == "marked" ? Mark(ctx.skill) : Status(step.condition);
-                if (status != null) target.statuses.RemoveAll(s => s.id == status);
-            }
-            Play(ctx, 1, target.Pos, dir, C.effectPixels);
-        }
-        static void Fire(CastContext ctx, ActiveStep step, Vector2 dir, int pulses)
-        {
-            int count = step.pattern is "fan" or "ring" ? C.maxProjectiles : 1;
-            float range = ActiveSkillGenerator.Range(ctx.skill, step);
-            Play(ctx, 3, ctx.player.Pos, dir, C.projectilePixels);
+            int count = step.pattern is "fan" or "ring" or "converge" ? C.maxProjectiles : 1;
+            count = Mathf.Min(count, C.maxProjectiles * C.maxPulses - ctx.shots); if (count <= 0) return;
+            Play(ctx, step, step.pattern is "fan" or "ring" or "converge" ? 0 : 3, origin, dir, C.projectilePixels);
             for (int i = 0; i < count; i++)
             {
-                float angle = dir.Angle() + (step.pattern == "ring" ? i * 360f / count : step.pattern == "fan" ? (i - (count - 1) * .5f) * 15 : 0);
+                float angle = dir.Angle() + (step.pattern is "ring" or "converge" ? i * 360f / count : step.pattern == "fan" ? (i - (count - 1) * .5f) * 15 : 0);
                 Vector2 shotDir = MathX.Dir(angle);
-                var projectile = Projectile.Spawn(ActiveSkillArt.Shot(ctx.skill), ctx.player.Pos + Vector2.up * .4f, shotDir * C.projectileSpeed, Team.Enemy, ctx.player,
-                    Damage(ctx, step, shotDir, pulses * count * (step.pattern == "return" ? 2 : 1)), true);
+                Vector2 start = step.pattern == "converge" ? origin + shotDir * range : origin;
+                if (step.pattern == "converge") shotDir = -shotDir;
+                var projectile = Projectile.Spawn(ActiveSkillArt.Shot(ctx.skill, step), start, shotDir * C.projectileSpeed, Team.Enemy, ctx.player, Damage(ctx, step, shotDir, divisions * count), false);
+                ctx.shots++; ctx.live++; stage.live++;
                 projectile.life = range / C.projectileSpeed * (step.pattern == "return" ? 2 : 1);
                 projectile.radius = C.projectileRadius; projectile.pierce = step.pattern is "pierce" or "return" ? C.maxTargets : 0;
-                projectile.color = Pal.Hex(ctx.skill.color); projectile.trailFx = ActiveSkillArt.Effect(ctx.skill, 2, C.projectilePixels);
-                projectile.canHit = (_, target) => ctx.Valid && Eligible(ctx, step, target) && (ctx.affected.Contains(target) || ctx.affected.Count < C.maxTargets);
-                projectile.resolveHit = (_, target) => { ApplyTargets(ctx, step, new[] { target }, shotDir, pulses * count * (step.pattern == "return" ? 2 : 1)); };
+                projectile.bounces = step.pattern == "bounce" ? 1 : 0;
+                projectile.color = Pal.Hex(ctx.skill.color); projectile.trailFx = ActiveSkillArt.Effect(ctx.skill, step, 2, C.projectilePixels); projectile.normalTrailBlend = true;
+                projectile.canHit = (_, target) => ctx.Valid && Eligible(ctx, step, target);
+                projectile.resolveHit = (pr, target) => ApplyTargets(ctx, step, stage, new[] { target }, pr.vel.normalized, divisions * count * (step.pattern == "return" ? 2 : 1));
+                projectile.onEnd = pr =>
+                {
+                    ctx.live--; stage.live--;
+                    if (pr.Expired) { stage.arrived = true; stage.position = pr.transform.position; }
+                    if (stage.live == 0) stage.finished = true;
+                };
                 bool returning = false;
                 projectile.onUpdate = (pr, age) =>
                 {
                     if (!ctx.Valid) { pr.Block(); return; }
+                    if (step.pattern == "curve") pr.vel = MathX.Dir(pr.vel.Angle() + C.curveStrength * Time.deltaTime) * C.projectileSpeed;
                     if (step.pattern == "seek")
                     {
                         var target = Actor.Nearest(pr.transform.position, range, Team.Enemy);

@@ -30,7 +30,7 @@ namespace Diverse
         public void OpenFusion(string selected=null)
         {
             if(InventoryBusy) return;
-            InventoryStatus=null;OpenOverlay(GameState.PartFusion,selected);
+            CancelFusion();OpenOverlay(GameState.PartFusion,selected);
         }
 
         public void RequestPartVisuals(string selected = null)
@@ -51,21 +51,34 @@ namespace Diverse
         }
         public void StartFusion(string a, string b)
         {
-            if (InventoryBusy || FusionPreview != null) return;
+            if (InventoryBusy) return;
+            CancelFusion();
             var first = Player.Inventory.Find(a); var second = Player.Inventory.Find(b);
-            if (first?.kind != ItemKind.Part || second?.kind != ItemKind.Part || first == second || first.complexity != second.complexity || first.Ability.catalogId != second.Ability.catalogId)
-            { InventoryStatus = "같은 종류·같은 등급의 파츠 두 개를 골라 주세요."; return; }
-            if (first.complexity >= InventoryState.Rules.maxPartTier) { InventoryStatus = "최고 등급의 파츠입니다."; return; }
-            if (Player.Gold < InventoryState.Rules.FusionCost(first.complexity)) { InventoryStatus = "골드가 부족합니다."; return; }
+            string unavailable = FusionUnavailableReason(a, b, false);
+            if (unavailable != null) { InventoryStatus = unavailable; return; }
             fusionA = a; fusionB = b;
-            FusionPreview = InventoryItem.Part(PartCatalog.Create(first.Ability.catalogId, first.complexity + 1));
+            FusionPreview = InventoryItem.Part(PartCatalog.Fuse(first.Ability, second.Ability));
             FusionPreview.ancestor = first.ancestor ?? second.ancestor;
-            InventoryStatus = "같은 파츠의 등급을 올립니다. 결과를 확인하고 확정해 주세요.";
+            InventoryStatus = null;
+        }
+
+        public string FusionUnavailableReason(string firstId, string secondId, bool includeGold = true)
+        {
+            if (InventoryBusy) return "다른 작업이 진행 중입니다.";
+            var a = Player.Inventory.Find(firstId); var b = Player.Inventory.Find(secondId);
+            if (a?.kind != ItemKind.Part || b?.kind != ItemKind.Part) return "재료 A와 B에 파츠를 하나씩 선택하세요.";
+            if (a == b) return "같은 아이템 하나를 두 번 사용할 수 없습니다. 별개의 파츠 두 개가 필요합니다.";
+            if (a.complexity != b.complexity) return $"등급이 다릅니다: T{a.complexity} / T{b.complexity}. 같은 등급끼리만 합성할 수 있습니다.";
+            if (a.complexity >= InventoryState.Rules.maxPartTier) return $"T{InventoryState.Rules.maxPartTier}는 최종 등급입니다.";
+            int cost = InventoryState.Rules.FusionCost(a.complexity);
+            return includeGold && Player.Gold < cost ? $"골드 부족 · 보유 {Player.Gold}G / 필요 {cost}G" : null;
         }
 
         public void ConfirmFusion()
         {
             if (InventoryBusy || FusionPreview == null) return;
+            string unavailable = FusionUnavailableReason(fusionA, fusionB);
+            if (unavailable != null) { InventoryStatus = unavailable; return; }
             var a = Player.Inventory.Find(fusionA); var b = Player.Inventory.Find(fusionB);
             if (a == null || b == null || a.complexity != b.complexity) { CancelFusion(); return; }
             int cost = InventoryState.Rules.FusionCost(a.complexity);
@@ -78,7 +91,7 @@ namespace Diverse
             InventoryChanged(); SaveSystem.SaveWorld(World);
         }
 
-        public void CancelFusion() { if (InventoryBusy) return; FusionPreview = null; InventoryStatus = null; }
+        public void CancelFusion() { if (InventoryBusy) return; FusionPreview = null; fusionA = fusionB = null; InventoryStatus = null; }
 
         public void OpenWeaponReward(string key, int cost = 0)
         {
@@ -107,7 +120,7 @@ namespace Diverse
             {
                 yield return DesignAi.Generate(this, seed, "무기만 디자인해 줘: " + prompt, false, false,
                     s => InventoryStatus = s, (p, s) => { result = p; InventoryStatus = s; },weaponOnly:true);
-                World.designCalls++; World.designCostUsd+=DesignAi.LastCostUsd;
+                World.designCalls++; World.designCostUsd+=DesignAi.LastCostUsd; World.designUnknownCosts+=DesignAi.LastUnknownCosts;
             }
             if (result == null)
             {
@@ -131,12 +144,12 @@ namespace Diverse
             var item = new InventoryItem { kind = ItemKind.Weapon, weapon = w, name = w.name, design = result };
             owner.Inventory.Receive(item);
             // Skill generation is a separate acquisition event. Weapon art contains only basic attacks.
-            owner.QueueWeaponSkills(item, new[] { 0, 1, 2, 3 });
+            // New weapons carry basic attacks only; skill choices follow hero level unlocks.
             owner.Gold -= cost; World.SetFlag("weapon:" + key);
             World.Log($"{HeroName}: [{item.name}] 무기를 발견했다.", "deed");
             WeaponRewardKey = null; WeaponRewardCost = 0;
             WeaponDraft=null;
-            InventoryStatus = item.Placed ? "새 무기를 얻었어. QWER 전용 능력과 이미지를 생성하는 중이야." : "새 무기는 수령 대기 중이야. 무기 유형에 맞는 주변 공간을 확보해 배치해 줘.";
+            InventoryStatus = item.Placed ? "새 무기를 얻었어. 해금된 슬롯의 스킬은 교환하거나 대장간에서 의뢰해 줘." : "새 무기는 수령 대기 중이야. 무기 유형에 맞는 주변 공간을 확보해 배치해 줘.";
             InventoryChanged(); SaveSystem.SaveWorld(World);
             OpenOverlay(GameState.Inventory);
         }

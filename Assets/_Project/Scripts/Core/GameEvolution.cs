@@ -14,43 +14,74 @@ namespace Diverse
         public readonly List<(bool player, string text)> Chat = new List<(bool, string)>();
         public bool ChatBusy;
         public int ChatCost => 0;
-        public bool CanChat => false;
+        public bool CanChat => IsSkillOffer && !ChatBusy && !Generating;
         public int RerollCost => Mathf.RoundToInt(15 + Player.Level * 3);
-        public bool OfferLocked => Offer != null && Time.unscaledTime - OfferShownAt < OfferLockSeconds;
+        public bool OfferLocked => HasOffer && Time.unscaledTime - OfferShownAt < OfferLockSeconds;
         void ResetPrefetch() { }
         public void RequestPrefetch() { }
         public void BeginEvolution()
         {
             if (Generating || Player == null) return;
             State = GameState.Evolving; GameTime.Pause("evolve");
+            if (SkillOffer != null || Player.pendingRewardLevels.Count > 0 && DB.Progression.SkillSlotAt(Player.pendingRewardLevels[0]) >= 0)
+            {
+                SkillOffer ??= new SkillOfferSave { slot = DB.Progression.SkillSlotAt(Player.pendingRewardLevels[0]) };
+                Offer = null;
+                if (SkillOffer.candidates.Count != 3) BeginSkillCandidates(null);
+                else
+                {
+                    PipelineLog.Clear(); PipelineLog.AddRange(SkillOffer.process);
+                    OfferShownAt = Time.unscaledTime; OfferSummary = $"{ActiveSkillGenerator.SlotName(SkillOffer.slot)} 액티브 선택";
+                    if (!SkillOffer.iconsPrepared) BeginSkillCandidates(null, true);
+                    else Ui.OnOverlayOpened(GameState.Evolving, null);
+                }
+                return;
+            }
+            if (Player.PendingEvolutions <= 0) { State = GameState.Playing; GameTime.Resume("evolve"); return; }
             Offer = PartCatalog.Offer(rnd, Player.Abilities.OfferCount);
             OfferShownAt = Time.unscaledTime; OfferStatus = null;
-            OfferSummary = "고정 파츠 중 하나를 선택하세요. 액티브를 보조하며 같은 파츠는 가장 높은 등급만 적용됩니다.";
+            OfferSummary = "T1 파츠 32종 중 하나를 선택하세요. 같은 등급의 모든 파츠를 합성해 T5까지 성장시킬 수 있습니다.";
             PipelineLog.Clear(); PipelineLog.Add("고정 파츠 목록 → 중복 없는 후보 → 장착 시 보조 효과 적용");
             Ui.OnOverlayOpened(GameState.Evolving, null); Sfx.Play("evolve", .6f);
         }
         public void ChooseEvolution(int index)
         {
+            if (IsSkillOffer) { ChooseSkill(index); return; }
             if (Offer == null || OfferLocked || index < 0 || index >= Offer.Count) return;
             var part = InventoryItem.Part(Offer[index]); Player.Inventory.Receive(part);
-            Player.Telemetry.RecordChoice(Offer[index]); Player.PendingEvolutions = Mathf.Max(0, Player.PendingEvolutions - 1);
+            Player.Telemetry.RecordChoice(Offer[index]); Player.ConsumeLevelReward();
             World.Log($"{HeroName}: [{part.name}] 파츠 획득", "evolve");
             Ui.Toast($"[{part.name}] 획득 — 무기 유형별 파츠 칸에 장착해 주세요.");
-            Offer = null; GameTime.Resume("evolve"); State = GameState.Playing;
-            SaveRun(); OpenOverlay(GameState.Inventory);
+            FinishReward();
         }
         public void RerollEvolution()
         {
-            if (Player == null || Offer == null || Player.Gold < RerollCost || OfferLocked) return;
+            if (Player == null || !HasOffer || ChatBusy || Player.Gold < RerollCost || OfferLocked) return;
+            if (IsSkillOffer)
+            {
+                if (SkillOffer.pinned.All(p => p)) { OfferStatus = "고정하지 않은 후보가 필요합니다."; return; }
+                Player.Gold -= RerollCost; BeginSkillCandidates(null); SaveRun(); return;
+            }
             Player.Gold -= RerollCost; Offer = null; BeginEvolution();
         }
         public void SkipEvolution()
         {
-            if (Offer == null) return;
-            Offer = null; Player.PendingEvolutions = Mathf.Max(0, Player.PendingEvolutions - 1); Player.GainGold(20);
-            GameTime.Resume("evolve"); State = GameState.Playing; SaveRun();
+            if (!HasOffer || ChatBusy) return;
+            if (IsSkillOffer && !SkillOffer.commission)
+            {
+                // Milestone rewards cannot be silently lost; defer the same persisted candidates.
+                GameTime.Resume("evolve"); State = GameState.Playing; SaveRun(); OpenOverlay(GameState.Inventory); return;
+            }
+            if (IsSkillOffer) { FinishReward(); return; }
+            Player.ConsumeLevelReward(); Player.GainGold(20); FinishReward();
         }
-        public void SendChat(string text) { }
+        public void SendChat(string text)
+        {
+            if (!CanChat || string.IsNullOrWhiteSpace(text)) return;
+            if (SkillOffer.pinned.All(p => p)) { OfferStatus = "요청을 반영하려면 후보 하나 이상의 고정을 풀어 주세요."; return; }
+            text = text.Trim(); if (text.Length > DesignGuard.MaxPrompt) text = text.Substring(0, DesignGuard.MaxPrompt);
+            Chat.Add((true, text)); BeginSkillCandidates(text);
+        }
         // ───────────────────────── Interaction ─────────────────────────
 
         public bool TryInteractAt(Vector2 world)

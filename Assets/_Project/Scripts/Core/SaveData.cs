@@ -34,7 +34,8 @@ namespace Diverse
         public List<TravelType> unlockedTravelTypes = new List<TravelType>();
         public string designId;               // this world's look (designs/<id>.json); empty = the built-in art
         public int designCalls;               // AI design generations in this world (shown in the studio)
-        public float designCostUsd;           // their estimated API cost
+        public float designCostUsd;           // measured usage when available, otherwise estimated
+        public int designUnknownCosts;        // completed calls without known pricing
         public InventoryItem legacyPart;
 
         public bool Flag(string key) => flags.Contains(key);
@@ -63,6 +64,9 @@ namespace Diverse
         public int gold, kills;
         public int[] attrs = new int[4];
         public int unspentAttr, pendingEvolutions;
+        public int rewardVersion, claimedSkillMask;
+        public List<int> pendingRewardLevels = new List<int>();
+        public SkillOfferSave skillOffer;
         public float hp;
         public int dashMax = 2;
         public float x, y;

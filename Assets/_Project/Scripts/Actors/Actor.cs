@@ -21,6 +21,7 @@ namespace Diverse
         public bool noEvents;          // DoTs, etc.: do not fire Hit events
         public Color32? fxColor;
         public Sprite[] impactFx;       // dedicated active-skill impact, captured at cast time
+        public bool normalImpactBlend;
 
         public static DamageInfo Basic(float amount, Actor src, Vector2 dir) =>
             new DamageInfo { amount = amount, source = src, direction = dir, knockback = 2, hitstop = 0.04f, canCrit = true, tags = "" };

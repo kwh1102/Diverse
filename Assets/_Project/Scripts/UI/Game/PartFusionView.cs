@@ -21,14 +21,15 @@ namespace Diverse
             g=game;
             UIKit.Bind(chooseFirst,()=>selectingFirst=true); UIKit.Bind(chooseSecond,()=>selectingFirst=false);
             UIKit.Bind(generate,()=>g.StartFusion(first,second));
-            UIKit.Bind(confirm,()=>{g.ConfirmFusion();first=second=null;revision=-1;});
-            UIKit.Bind(cancel,()=>g.CancelFusion());
+            UIKit.Bind(confirm,()=>{g.ConfirmFusion();if(g.FusionPreview==null) {first=second=null;selectingFirst=true;} revision=-1;});
+            UIKit.Bind(cancel,()=>{g.CancelFusion();first=second=null;selectingFirst=true;revision=-1;});
             UIKit.Bind(back,()=>g.CloseOverlay());
         }
         public void Opened(string selected=null)
         {
             first=g.Player.Inventory.Find(selected)?.kind==ItemKind.Part?selected:null;
             second=null; selectingFirst=first==null; revision=-1;
+            g.CancelFusion();
         }
         void Update()
         {
@@ -43,8 +44,9 @@ namespace Diverse
                 {
                     var item=parts[i]; rows[i].Bind(item,item.id==first || item.id==second,()=>
                     {
-                        if(g.InventoryBusy || g.FusionPreview!=null) return;
+                        if(g.InventoryBusy) return;
                         if(selectingFirst) {first=item.id;selectingFirst=false;} else second=item.id;
+                        g.StartFusion(first,second);
                         revision=-1;
                     });
                 }
@@ -53,14 +55,17 @@ namespace Diverse
             UIKit.Sprite(firstIcon,PartArt.For(a));UIKit.Sprite(secondIcon,PartArt.For(b));UIKit.Sprite(resultIcon,PartArt.For(result));
             UIKit.Set(firstText,a==null?"재료 A를 선택해 주세요":$"{a.name}\n등급 T{a.complexity}");
             UIKit.Set(secondText,b==null?"재료 B를 선택해 주세요":$"{b.name}\n등급 T{b.complexity}");
-            UIKit.Set(resultText,result==null?"같은 종류·같은 등급의 파츠 두 개로\n해당 파츠의 등급을 올려요.\n\n결과를 확인한 뒤 확정하면\n재료와 골드가 소모돼요.":InventoryView.Description(result));
-            UIKit.Set(status,g.InventoryStatus??"재료 A와 B를 고른 뒤 합성안을 요청해 주세요.");
-            bool editable=!g.InventoryBusy && result==null;
+            UIKit.Set(resultText,result==null?"같은 등급의 모든 파츠를 합성할 수 있어요.\n두 재료의 능력을 계승하고 등급이 1 올라요.\nT5는 최종 등급이에요.\n\n확정할 때만 재료와 골드가 소모돼요.":InventoryView.Description(result));
+            string why=g.FusionUnavailableReason(first,second);
+            int cost=a==null?0:InventoryState.Rules.FusionCost(a.complexity);
+            UIKit.Set(status,(g.InventoryStatus??why??"합성 가능 · 확정할 때만 재료와 골드가 소모됩니다.")+$"\n보유 {g.Player.Gold}G"+(result!=null?$" / 필요 {cost}G":""));
+            bool editable=!g.InventoryBusy;
             foreach(var row in rows) row.SetInteractable(editable);
             chooseFirst.interactable=chooseSecond.interactable=editable;
             UIKit.Label(chooseFirst,selectingFirst?"A 선택 중":"재료 A 바꾸기");UIKit.Label(chooseSecond,selectingFirst?"재료 B 바꾸기":"B 선택 중");
-            generate.interactable=editable && a!=null && b!=null && a!=b && a.Ability.catalogId==b.Ability.catalogId && a.complexity==b.complexity && a.complexity<InventoryState.Rules.maxPartTier && g.Player.Gold>=InventoryState.Rules.FusionCost(a.complexity);
-            UIKit.Label(generate,a==null?"합성안 만들기":$"합성안 만들기 · {InventoryState.Rules.FusionCost(a.complexity)}G");
+            UIKit.Show(generate,false);
+            confirm.interactable=result!=null && why==null;
+            UIKit.Label(confirm,$"합성 확정 · {cost}G");
             UIKit.Show(confirm,result!=null);UIKit.Show(cancel,result!=null);back.interactable=!g.InventoryBusy;
         }
     }

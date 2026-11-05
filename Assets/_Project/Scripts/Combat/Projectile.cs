@@ -15,6 +15,8 @@ namespace Diverse
         public float life = 1.5f;
         public float radius = 0.25f;
         public int pierce;
+        public int bounces;
+        public bool Expired { get; private set; }
         public float homing;            // 유도 강도
         public float explodeRadius;
         public DamageInfo dmg;
@@ -23,6 +25,7 @@ namespace Diverse
         public float shake = 0.08f, kick = 1.5f;
         public bool trail = true;
         public Sprite[] trailFx;        // designed weapons: generated trail effect instead of dot particles
+        public bool normalTrailBlend;
         public bool spin;
         public System.Action<Projectile, Actor> onHit;
         public System.Func<Projectile, Actor, bool> canHit;
@@ -65,7 +68,7 @@ namespace Diverse
             float dt = Time.deltaTime;
             if (dt <= 0) return;
             t += dt;
-            if (t >= life) { End(); return; }
+            if (t >= life) { Expired = true; End(); return; }
 
             onUpdate?.Invoke(this, t);
             if (ended) return;
@@ -82,6 +85,17 @@ namespace Diverse
             Vector2 p = (Vector2)transform.position + vel * dt;
             if (WorldStreamer.I != null && WorldStreamer.I.IsSolidObstacle(p))
             {
+                if (bounces > 0)
+                {
+                    bounces--;
+                    Vector2 current = transform.position;
+                    bool blockX = WorldStreamer.I.IsSolidObstacle(new Vector2(p.x, current.y));
+                    bool blockY = WorldStreamer.I.IsSolidObstacle(new Vector2(current.x, p.y));
+                    if (blockX || !blockY) vel.x = -vel.x;
+                    if (blockY) vel.y = -vel.y;
+                    p = current + vel * dt;
+                    if (!WorldStreamer.I.IsSolidObstacle(p)) { transform.position = p; return; }
+                }
                 // 나무·벽에 박힘 (물 위로는 날아간다)
                 Fx.I?.Burst(p, color, 4, 4, 0.25f);
                 End();
@@ -94,7 +108,7 @@ namespace Diverse
             if (trail)
             {
                 trailT -= dt;
-                if (trailT <= 0 && trailFx != null) { trailT = 0.06f; Fx.I?.Play(trailFx, p, vel.Angle(), 18, 1, null, true); }
+                if (trailT <= 0 && trailFx != null) { trailT = 0.06f; Fx.I?.Play(trailFx, p, vel.Angle(), 18, 1, null, !normalTrailBlend); }
                 else if (trailT <= 0) { trailT = 0.025f; Fx.I?.Burst(p, color, 1, 0.5f, 0.2f, 0, 1); }
             }
 

@@ -29,9 +29,8 @@ namespace Diverse
             }
             UIKit.Set(caption,text);
             UIKit.Show(selection, item != null && item.id == selected);
-            bool active = w != null && w == bag.Active;
-            UIKit.Show(top, active && bag.Owner(x,y-1)!=w); UIKit.Show(bottom, active && bag.Owner(x,y+1)!=w);
-            UIKit.Show(left, active && bag.Owner(x-1,y)!=w); UIKit.Show(right, active && bag.Owner(x+1,y)!=w);
+            // One shared prefab graphic draws continuous thin/thick type-colored contours over the grid gaps.
+            UIKit.Show(top, false); UIKit.Show(bottom, false); UIKit.Show(left, false); UIKit.Show(right, false);
         }
         public void OnPointerClick(PointerEventData e)
         {

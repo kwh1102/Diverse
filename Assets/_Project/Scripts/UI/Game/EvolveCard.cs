@@ -13,6 +13,7 @@ namespace Diverse
         [SerializeField] CanvasGroup group;
         [SerializeField] Image partIcon;
         [SerializeField] Text complexityLabel;
+        [SerializeField] Button pin;
         AbilityDef shownAbility;
         InventoryItem shownPart;
         string shownVisual;
@@ -25,10 +26,28 @@ namespace Diverse
             button.onClick.RemoveAllListeners();
             button.onClick.AddListener(() => onClick());
         }
+        public void BindPin(System.Action action) => UIKit.Bind(pin, action);
+        public void TickActive(ActiveSkillData a, int index, bool locked, float lockK, bool pinned)
+        {
+            UIKit.Sprite(partIcon, ActiveSkillArt.Icon(a));
+            UIKit.Set(header, $"{index + 1} · {(a.source == "ai" ? "AI 설계" : "로컬 조합")}");
+            UIKit.Set(complexityLabel, $"{ActiveSkillGenerator.TypeName(a.weaponType)} · {ActiveSkillGenerator.SlotName(a.slot)} 전용");
+            UIKit.Set(title, a.name);
+            string details = ActiveSkillGenerator.Describe(a);
+            if (desc != null && desc.text != details) resetDescription = true;
+            UIKit.Set(desc, details); UIKit.Show(reason, false);
+            UIKit.Set(tags, ActiveSkillGenerator.ExchangeRule(a));
+            button.interactable = !locked;
+            if (group != null) group.alpha = locked ? .6f : 1;
+            UIKit.Show(lockBar, lockK >= 0); if (lockK >= 0) UIKit.Fill(lockBar, lockK);
+            UIKit.Show(pin, true); UIKit.Label(pin, pinned ? "고정 해제" : "후보 고정");
+            if (pin != null) pin.interactable = !locked;
+        }
 
         /// <param name="lockK">0~1 while the appear-lock runs, &lt;0 when not shown.</param>
         public void Tick(AbilityDef a, int index, bool locked, float lockK)
         {
+            UIKit.Show(pin, false);
             string visual=a.partName+"|"+a.partImage;
             if (shownAbility != a || shownVisual!=visual) { shownAbility = a; shownVisual=visual; shownPart = PartArt.Preview(a); }
             UIKit.Sprite(partIcon, PartArt.For(shownPart));

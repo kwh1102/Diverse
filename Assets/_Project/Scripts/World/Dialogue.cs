@@ -243,14 +243,7 @@ namespace Diverse
             var p = g.Player;
             int lvl = p.Weapon.baseDamage > p.Weapon.Origin.baseDamage ? Mathf.RoundToInt((p.Weapon.baseDamage / p.Weapon.Origin.baseDamage - 1) / 0.12f) : 0;
             int cost = 50 + lvl * 40;
-            // Weapon upgrades also unlock its QWER skills (in order) once the weapon reaches the level in ProgressionDef
-            var smithLevels = DB.Progression.smithSkillLevels;
-            int known = p.AcquiredSkills;
-            int nextAt = known < smithLevels.Length && known < p.Skills.Length ? smithLevels[known] : -1;
-            string nextSkill = known < p.Skills.Length ? "QWER"[known] + " 액티브" : null;
-            string skillLine = nextSkill == null ? "이 무기의 기술은 모두 익혔구먼."
-                : nextAt >= 0 && lvl + 1 >= nextAt ? $"한 번 더 벼리면 [{nextSkill}] 쓰는 법도 알려 주지."
-                : nextAt >= 0 ? $"+{nextAt}까지 벼리면 [{nextSkill}] 쓰는 법을 알려 주지." : "";
+            string skillLine = "Q/W/E/R은 레벨 5/10/15/20에 해금한다네. 열린 슬롯의 새 기술은 따로 의뢰할 수 있지.";
             var page = new DialoguePage { speaker = "대장장이 브루노", portrait = Art.Npc("bear", 0), text = $"흠. 쓸 만한 {p.Weapon.name}. 좀 더 벼려 줄까? (현재 강화 +{lvl})\n{skillLine}" };
             page.options.Add(new DialogueOption($"무기 강화 ({cost} 골드) — 공격력 +12%", () =>
             {
@@ -258,11 +251,16 @@ namespace Diverse
                 {
                     p.Gold -= cost; p.Weapon.baseDamage *= 1.12f; p.RecalcStats(); Sfx.Play("hit_metal"); CameraRig.I.Shake(0.2f);
                     int newLvl = lvl + 1;
-                    var learned = nextAt >= 0 && newLvl >= nextAt ? p.LearnNextSkill() : null;
-                    Game.I.Ui.Toast(learned != null ? $"{p.Weapon.name} +{newLvl} — [{learned.def.name}] 스킬 아이템 획득" : $"{p.Weapon.name} +{newLvl}");
+                    Game.I.Ui.Toast($"{p.Weapon.name} +{newLvl}");
                 }
                 Close();
             }, p.Gold >= cost));
+            for (int slot = 0; slot < 4; slot++)
+            {
+                int selectedSlot = slot; int price = InventoryState.Rules.skillCommissionCost;
+                page.options.Add(new DialogueOption($"{ActiveSkillGenerator.SlotName(slot)} 기술 후보 의뢰 ({price} 골드) · Lv.{DB.Progression.skillLevels[slot]}",
+                    () => g.OpenSkillCommission(selectedSlot), p.SkillUnlocked(slot) && p.Gold >= price && g.SkillOffer == null));
+            }
             int commission=InventoryState.Rules.smithWeaponCost;
             string commissionKey="smith:life:"+g.World.lifeCount;
             page.options.Add(new DialogueOption($"새 무기 제작 의뢰 ({commission} 골드) · {g.WeaponUnlockHint}",

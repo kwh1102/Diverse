@@ -283,14 +283,14 @@ namespace Diverse.EditorTools
         static void LayoutPartCards(GameObject root)
         {
             var evolve=root.GetComponentInChildren<EvolveView>(true);if(evolve==null) return;
-            var heading=evolve.transform.Find("Panel/Heading")?.GetComponent<Text>();if(heading!=null) heading.text="파츠";
-            var pipeline=evolve.transform.Find("Panel/Pipeline/Heading")?.GetComponent<Text>();if(pipeline!=null) pipeline.text="파츠 생성 과정";
+            var heading=evolve.transform.Find("Panel/Heading")?.GetComponent<Text>();if(heading!=null) heading.text="성장 보상";
+            var pipeline=evolve.transform.Find("Panel/Pipeline/Heading")?.GetComponent<Text>();if(pipeline!=null) pipeline.text="후보 준비 과정";
             foreach(var card in evolve.GetComponentsInChildren<EvolveCard>(true))
             {
                 var so=new SerializedObject(card);var title=so.FindProperty("title").objectReferenceValue as Text;var header=so.FindProperty("header").objectReferenceValue as Text;var tags=so.FindProperty("tags").objectReferenceValue as Text;var body=so.FindProperty("desc").objectReferenceValue as Text;
                 var rt=(RectTransform)card.transform;float width=rt.rect.width>0?rt.rect.width:rt.sizeDelta.x;float height=rt.rect.height>0?rt.rect.height:rt.sizeDelta.y;
                 var icon=InventoryFind<Image>(card.transform,"PartIcon")??InventoryPicture(card.transform,"PartIcon",6,22,32,32);Wire(card,"partIcon",icon);
-                InventoryRect(header.rectTransform,card.transform,6,4,width-12,12);header.fontSize=8;
+                InventoryRect(header.rectTransform,card.transform,6,4,width-63,12);header.fontSize=8;
                 InventoryRect(title.rectTransform,card.transform,44,20,width-50,36);title.alignment=TextAnchor.MiddleLeft;title.resizeTextForBestFit=true;title.resizeTextMinSize=8;title.resizeTextMaxSize=11;title.verticalOverflow=VerticalWrapMode.Truncate;
                 var scroll=body.GetComponentInParent<ScrollRect>();if(scroll!=null) InventoryRect(scroll.GetComponent<RectTransform>(),card.transform,6,62,width-12,height-96);
                 else InventoryRect(body.rectTransform,card.transform,6,62,width-12,height-96);

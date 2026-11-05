@@ -20,7 +20,8 @@ namespace Diverse
             new InventoryShape(TravelType.Blink, 7, 7), new InventoryShape(TravelType.Bounce, 6, 8)
         };
         public int maxWeapons = 4;
-        public int fusionBaseCost = 30, fusionCostPerTier = 25, maxPartTier = 8;
+        public int fusionBaseCost = 30, fusionCostPerTier = 25, maxPartTier = 5;
+        public int skillCommissionCost = 75;
         public int legacyBaseTier = 1, legacyBossesPerTier = 2;
         public int weaponUnlockLevel = 5, weaponUnlockBosses = 1;
         public float relicMinDistance = 80;

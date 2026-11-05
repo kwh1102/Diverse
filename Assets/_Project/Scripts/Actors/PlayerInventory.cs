@@ -66,14 +66,10 @@ namespace Diverse
             Inventory.Changed = SyncInventory;
             shownWeapon = null; inventorySkills.Clear(); equippedParts.Clear(); Abilities.Clear();
             SyncInventory();
-            foreach (var group in Inventory.items.Where(i => i.kind == ItemKind.Skill && i.pendingActive).GroupBy(i => i.sourceWeapon))
+            foreach (var item in Inventory.items.Where(i => i.active != null))
             {
-                var weapon = Inventory.Find(group.Key);
-                if (weapon?.kind != ItemKind.Weapon) { foreach (var i in group) i.pendingActive = false; continue; }
-                foreach (var i in group) i.generatingActive = true;
-                skillQueue.Enqueue((weapon, group.Select(i => i.skillSlot).ToArray()));
+                item.pendingActive = item.pendingArt = item.generatingActive = false;
             }
-            if (skillQueue.Count > 0 && !SkillGenerationBusy) StartCoroutine(GenerateQueuedSkills());
         }
 
         void StoreSkillCooldowns()
@@ -134,84 +130,37 @@ namespace Diverse
             Abilities.RefreshEquipmentStats();
         }
 
-        public int AcquiredSkills => Inventory == null ? LearnedSkills : Enumerable.Range(0,4).Count(slot =>
-            (Inventory.Active.learnedSkillMask & (1 << slot)) != 0);
+        public int AcquiredSkills => Enumerable.Range(0,4).Count(slot => (claimedSkillMask & (1 << slot)) != 0);
+        public bool SkillUnlocked(int slot) => slot >= 0 && slot < DB.Progression.skillLevels.Length && Level >= DB.Progression.skillLevels[slot];
 
+        public void ConsumeLevelReward()
+        {
+            if (pendingRewardLevels.Count > 0) pendingRewardLevels.RemoveAt(0);
+            PendingEvolutions = pendingRewardLevels.Count;
+        }
+        public InventoryItem GrantSkill(ActiveSkillData active)
+        {
+            var weapon = Inventory.items.FirstOrDefault(i => i.kind == ItemKind.Weapon && ActiveSkillGenerator.TypeOf(i) == active.weaponType);
+            var item = new InventoryItem { kind = ItemKind.Skill, active = active, skillId = active.id, skillSlot = active.slot,
+                name = active.name, sourceWeapon = weapon?.id };
+            claimedSkillMask |= 1 << active.slot;
+            Inventory.Receive(item, equip: Inventory.Active != null && ActiveSkillGenerator.TypeOf(Inventory.Active) == active.weaponType);
+            return item;
+        }
         SkillState AcquireNextSkill()
         {
-            var w = Inventory.Active;
             for (int slot=0;slot<4;slot++)
             {
-                if ((w.learnedSkillMask & (1 << slot)) != 0) continue;
-                QueueWeaponSkills(w, new[] { slot });
-                var item = Inventory.items.FirstOrDefault(i => i.kind == ItemKind.Skill && i.sourceWeapon == w.id && i.skillSlot == slot);
-                return item == null ? null : new SkillState { id = item.skillId, def = SkillDB.Get(item) };
+                if (!SkillUnlocked(slot) || (claimedSkillMask & (1 << slot)) != 0) continue;
+                int level = DB.Progression.skillLevels[slot];
+                if (!pendingRewardLevels.Contains(level)) pendingRewardLevels.Add(level);
+                PendingEvolutions = pendingRewardLevels.Count;
+                return null;
             }
             return null;
         }
 
-        readonly Queue<(InventoryItem weapon, int[] slots)> skillQueue = new Queue<(InventoryItem, int[])>();
-        public bool SkillGenerationBusy { get; private set; }
         public string ActiveGenerationStatus { get; private set; }
-        public void QueueWeaponSkills(InventoryItem weapon, int[] slots)
-        {
-            var fresh = slots.Where(s => (weapon.learnedSkillMask & (1 << s)) == 0).ToArray();
-            if (fresh.Length == 0) return;
-            foreach (int slot in fresh)
-            {
-                var active = ActiveSkillGenerator.Local(ActiveSkillGenerator.TypeOf(weapon), slot);
-                var item = new InventoryItem { kind = ItemKind.Skill, active = active, skillId = active.id, skillSlot = slot, name = active.name, sourceWeapon = weapon.id, pendingActive = AiClient.Enabled };
-                weapon.learnedSkillMask |= 1 << slot;
-                Inventory.items.Add(item);
-                if (weapon.Placed)
-                {
-                    var d = InventoryState.Slot(weapon, slot);
-                    if (Inventory.At(weapon.x + d.x, weapon.y + d.y) == null && Inventory.Move(item.id, weapon.x + d.x, weapon.y + d.y, out _)) { }
-                    else Inventory.PlaceFirst(item);
-                }
-                else Inventory.PlaceFirst(item);
-            }
-            // Placement precedes the lock so the initial skill can occupy its own slot.
-            foreach (var item in Inventory.items.Where(i => i.sourceWeapon == weapon.id && fresh.Contains(i.skillSlot))) item.generatingActive = AiClient.Enabled;
-            skillQueue.Enqueue((weapon, fresh));
-            if (!SkillGenerationBusy) StartCoroutine(GenerateQueuedSkills());
-        }
-        IEnumerator GenerateQueuedSkills()
-        {
-            SkillGenerationBusy = true;
-            try
-            {
-                while (skillQueue.Count > 0)
-                {
-                    var job = skillQueue.Dequeue();
-                    var bag = Inventory;
-                    var items = bag.items.Where(i => i.kind == ItemKind.Skill && i.sourceWeapon == job.weapon.id && job.slots.Contains(i.skillSlot)).ToList();
-                    List<ActiveSkillData> result = null;
-                    yield return ActiveSkillGenerator.Generate(this, job.weapon, job.slots, a => result = a, s => ActiveGenerationStatus = s);
-                    if (bag != Inventory || !Alive) yield break;
-                    if (result != null && items.All(i => bag.Find(i.id) == i))
-                    {
-                        foreach (var item in items)
-                        {
-                            var data = result.First(a => a.slot == item.skillSlot);
-                            item.active = data; item.name = data.name; item.skillId = data.id; item.generatingActive = false; item.pendingActive = false;
-                        }
-                        // A new hard-linked group is equipped atomically or stored together.
-                        foreach (var item in items.Where(i => i.active.linkedMask != 0))
-                        {
-                            var owner = item.Placed ? bag.Owner(item.x, item.y) : null;
-                            if (owner == null || !bag.Validate(out _))
-                                foreach (var member in items.Where(i => i.active.linkId == item.active.linkId)) member.x = member.y = -1;
-                        }
-                        bag.Notify();
-                        GameEvents.Notify("액티브 생성 완료 — 전용 아이콘·투사체·이펙트가 스킬과 함께 저장됩니다.");
-                        Game.I?.SaveRun();
-                    }
-                    foreach (var item in items) item.generatingActive = false;
-                }
-            }
-            finally { SkillGenerationBusy = false; ActiveGenerationStatus = null; foreach (var item in Inventory.items) item.generatingActive = false; }
-        }
 
         void MigrateFootprints()
         {

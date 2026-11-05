@@ -42,8 +42,8 @@ MonoBehaviour:
   progression:
     xpBase: 60
     xpGrowth: 1.32
-    evolveEvery: 2
-    skillLevels: 03000000060000000a0000000f000000
+    evolveEvery: 1
+    skillLevels: 050000000a0000000f00000014000000
     smithSkillLevels: 01000000020000000400000006000000
     warpStoneCost: 120
     warpRange: 6
@@ -70,7 +70,8 @@ MonoBehaviour:
     maxWeapons: 4
     fusionBaseCost: 30
     fusionCostPerTier: 25
-    maxPartTier: 8
+    maxPartTier: 5
+    skillCommissionCost: 75
     legacyBaseTier: 1
     legacyBossesPerTier: 2
     weaponUnlockLevel: 5

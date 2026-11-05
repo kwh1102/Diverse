@@ -99,7 +99,7 @@ namespace Diverse
                 saveT -= Time.unscaledDeltaTime;
                 if (saveT <= 0) { saveT = 20; SaveSystem.SaveWorld(World); SaveRun(); }
                 UpdateFrontier(dt);
-                if (State == GameState.Playing && Player.PendingEvolutions > 0 && !Generating && Offer == null && Actor.Nearest(Player.Pos, 7, Team.Enemy) == null)
+                if (State == GameState.Playing && (Player.PendingEvolutions > 0 || SkillOffer != null) && !Generating && Offer == null && Actor.Nearest(Player.Pos, 7, Team.Enemy) == null)
                     BeginEvolution();
             }
             else if (State == GameState.Map || State == GameState.Paused || State == GameState.Dialogue || State == GameState.Evolving || State == GameState.Inventory || State == GameState.PartFusion || State == GameState.WeaponDesign)
@@ -126,7 +126,7 @@ namespace Diverse
             else if (Controls.Down(Act.Pause)) OpenOverlay(GameState.Paused);
             else if (Controls.Down(Act.Abilities))
             {
-                if (Player.PendingEvolutions > 0 && !Generating && Offer == null) BeginEvolution();
+                if ((Player.PendingEvolutions > 0 || SkillOffer != null) && !Generating && Offer == null) BeginEvolution();
                 else OpenOverlay(GameState.Paused, "abilities");
             }
             else if (Controls.Down(Act.Chronicle)) OpenOverlay(GameState.Paused, "chronicle");
@@ -184,7 +184,7 @@ namespace Diverse
             CameraRig.I.target = Player.transform;
             CameraRig.I.Snap(Player.Pos);
             PrewarmRun();
-            Offer = null; Generating = false; Boss = null; ChatBusy = false;
+            Offer = null; SkillOffer = null; Generating = false; Boss = null; ChatBusy = false;
             ResetPrefetch();
             State = GameState.Playing;
             GameTime.ClearPauses();
@@ -275,6 +275,9 @@ namespace Diverse
                 hp = p.hp, dashMax = p.DashChargesMax, x = position.x, y = position.y,
                 warpStones = p.WarpStones, skillsLearned = p.LearnedSkills,
                 inventory = p.InventorySnapshot(),
+                rewardVersion = 1, claimedSkillMask = p.claimedSkillMask,
+                pendingRewardLevels = new List<int>(p.pendingRewardLevels),
+                skillOffer = SkillOffer == null ? null : JsonUtility.FromJson<SkillOfferSave>(JsonUtility.ToJson(SkillOffer)),
             };
             foreach (var a in p.Abilities.Owned.Where(a => !p.Inventory.items.Any(i => i.Ability == a))) r.abilities.Add(AbilityRecord.From(a));
             foreach (var kv in p.Telemetry.intent) r.intent.Add(kv.Key + "=" + kv.Value);
@@ -327,6 +330,7 @@ namespace Diverse
             p.RecalcStats();
             p.hp = Mathf.Clamp(r.hp, 1, p.maxHp);
             p.Pos = WorldStreamer.I.NearestWalkable(pos, p.radius, 8);
+            RestoreLevelRewards(r);
             CameraRig.I.target = p.transform;
             CameraRig.I.Snap(p.Pos);
             PrewarmRun();

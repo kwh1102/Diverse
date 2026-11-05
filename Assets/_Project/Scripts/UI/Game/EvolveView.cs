@@ -12,6 +12,7 @@ namespace Diverse
     /// </summary>
     public class EvolveView : MonoBehaviour
     {
+        [SerializeField, HideInInspector] int uiRevision;
         [SerializeField] Text status;
         [SerializeField] Button pipelineToggle;
         [SerializeField] GameObject pipelinePanel;
@@ -40,6 +41,7 @@ namespace Diverse
             g = game;
             UIKit.Bind(pipelineToggle, () => showPipeline = !showPipeline);
             for (int i = 0; i < cards.Length; i++) { int k = i; cards[i].Init(() => { if (!Locked) { g.ChooseEvolution(k); Sfx.Play("ui_select"); } }); }
+            for (int i = 0; i < cards.Length; i++) { int k = i; cards[i].BindPin(() => g.PinSkill(k)); }
             UIKit.Bind(send, Send);
             UIKit.Bind(reroll, () => g.RerollEvolution());
             UIKit.Bind(skip, () => g.SkipEvolution());
@@ -50,7 +52,7 @@ namespace Diverse
             }
         }
 
-        bool Locked => g.OfferLocked || g.ChatBusy || showPipeline;
+        bool Locked => g.OfferLocked || g.ChatBusy || g.Generating || showPipeline;
 
         void Send()
         {
@@ -66,22 +68,23 @@ namespace Diverse
             if (g == null || g.Player == null) return;
             UIKit.Label(pipelineToggle, showPipeline ? "닫기" : "과정 보기");
             UIKit.Show(pipelinePanel, showPipeline);
-            if (showPipeline) UIKit.Set(pipelineText, $"<color=#c9bcd8>{string.Join("\n", g.PipelineLog)}</color>");
+            if (showPipeline) UIKit.Set(pipelineText, string.Join("\n\n", g.PipelineLog));
 
-            bool offer = g.Offer != null;
+            bool offer = g.HasOffer;
             if (!offer) UIKit.Set(status, $"<color=#c9b8ff>{g.OfferStatus ?? "플레이 방식을 분석하는 중"}{new string('.', 1 + (int)(Time.unscaledTime * 3) % 3)}</color>");
-            else UIKit.Set(status, $"<color=#c9b8ff>{g.OfferSummary}</color>");
+            else UIKit.Set(status, $"<color=#c9b8ff>{g.OfferStatus ?? g.OfferSummary}</color>");
 
             float lockK = Mathf.Clamp01((Time.unscaledTime - g.OfferShownAt) / Game.OfferLockSeconds);
             for (int i = 0; i < cards.Length; i++)
             {
-                bool on = offer && i < g.Offer.Count;
+                bool on = offer && (g.IsSkillOffer ? i < g.SkillOffer.candidates.Count : i < g.Offer.Count);
                 UIKit.Show(cards[i], on);
-                if (on) cards[i].Tick(g.Offer[i], i, Locked, g.OfferLocked ? lockK : -1);
+                if (on && g.IsSkillOffer) cards[i].TickActive(g.SkillOffer.candidates[i], i, Locked, g.OfferLocked ? lockK : -1, g.SkillOffer.pinned[i]);
+                else if (on) cards[i].Tick(g.Offer[i], i, Locked, g.OfferLocked ? lockK : -1);
                 if (on && !Locked && Controls.KeyDown(Key.Digit1 + i)) { g.ChooseEvolution(i); return; }
             }
 
-            bool chat = false;
+            bool chat = g.IsSkillOffer;
             UIKit.Show(chatPanel, chat);
             // Bottom buttons are anchored to the panel's bottom edge, so they follow the height
             if (panel != null) panel.sizeDelta = new Vector2(panel.sizeDelta.x, chat || showPipeline ? heightWithChat : heightWithoutChat);
@@ -100,7 +103,7 @@ namespace Diverse
                     UIKit.Set(chatLog, string.Join("\n", lines));
                     if (grew && chatScroll != null) { Canvas.ForceUpdateCanvases(); chatScroll.verticalNormalizedPosition = 0; }
                 }
-                UIKit.Label(send, $"보내기 ({g.ChatCost}G)");
+                UIKit.Label(send, "요청 반영");
                 send.interactable = g.CanChat && !string.IsNullOrWhiteSpace(chatInput.text);
                 bool poor = !g.CanChat && !g.ChatBusy && g.Player.Gold < g.ChatCost;
                 UIKit.Show(chatWarning, poor);
@@ -114,6 +117,7 @@ namespace Diverse
                 UIKit.Label(reroll, $"다시 뽑기 ({g.RerollCost} 골드)");
                 reroll.interactable = g.Player.Gold >= g.RerollCost && !Locked;
                 skip.interactable = !g.ChatBusy;
+                UIKit.Label(skip, g.IsSkillOffer ? g.SkillOffer.commission ? "의뢰 취소" : "나중에 선택" : "넘기기 (+20G)");
             }
         }
     }

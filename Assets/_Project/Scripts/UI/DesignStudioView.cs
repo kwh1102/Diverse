@@ -320,6 +320,7 @@ namespace Diverse
                 {
                     Session.World.designCalls++;
                     Session.World.designCostUsd += DesignAi.LastCostUsd;
+                    Session.World.designUnknownCosts += DesignAi.LastUnknownCosts;
                 }
                 Done(result, power, why);
             }));
@@ -420,7 +421,7 @@ namespace Diverse
 
             UIKit.Set(info, Describe());
             var w = Session.World;
-            UIKit.Set(status, statusText + (w != null && w.designCalls > 0 ? $"\n<color=#6b5c8a>이 세계의 AI 디자인 {w.designCalls}회 · 누적 약 ${w.designCostUsd:0.0000}</color>" : ""));
+            UIKit.Set(status, statusText + (w != null && w.designCalls > 0 ? $"\n<color=#6b5c8a>이 세계의 AI 디자인 {w.designCalls}회 · 누적 약 ${w.designCostUsd:0.0000}" + (w.designUnknownCosts > 0 ? $" · 비용 미상 {w.designUnknownCosts}건 별도" : "") + "</color>" : ""));
 
             // Basic attacks are designed here; actives are generated when acquired.
             var qwer = ActiveSkillGenerator.TypeName(working.weapon.type) + " · QWER 습득 시 AI 생성 · 같은 유형·같은 슬롯끼리 교환";

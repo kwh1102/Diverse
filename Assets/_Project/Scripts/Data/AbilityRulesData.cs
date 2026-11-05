@@ -14,6 +14,8 @@ namespace Diverse
     {
         public ActiveRules active = new ActiveRules();
         public float partRankBonus = .12f;
+        public float[] partTierPower = { 1, 1.8f, 3, 4.5f, 6.4f };
+        public float maxRangeBonus = .5f, maxControlBonus = .5f;
         public float partShieldDuration = 2, partMaxShield = .75f, partMaxHeal = .15f;
         public float telemetryFullTrust = 25, telemetryMinSeconds = 30;
         public PartDef[] parts = Array.Empty<PartDef>();

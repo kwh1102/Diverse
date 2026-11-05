@@ -1,80 +1,99 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Diverse
 {
-    /// <summary>One dedicated six-cell sheet per skill. No weapon-global overrides are used.</summary>
+    /// <summary>One low-quality sheet for changed candidate icons. Combat visuals are local stage animations.</summary>
     public static class ActiveSkillArt
     {
-        static readonly Dictionary<string, Sprite[]> frames = new Dictionary<string, Sprite[]>();
+        static readonly Dictionary<string, Sprite> icons = new Dictionary<string, Sprite>();
         public static IEnumerator Prepare(ActiveSkillData skill, Action<string> progress = null)
+        { yield return PrepareIcons(new[] { skill }, progress); }
+
+        public static IEnumerator PrepareIcons(IList<ActiveSkillData> skills, Action<string> trace = null)
         {
-            if (skill.ArtReady) yield break;
-            progress?.Invoke($"{"QWER"[skill.slot]} [{skill.name}] 전용 아이콘·투사체·이펙트 생성 중…");
+            var pending = skills.Where(a => a != null && !a.ArtReady).Take(3).ToList();
+            if (pending.Count == 0) { trace?.Invoke("기존 후보 아이콘 재사용 · 이미지 요청 없음"); yield break; }
+            if (!AiClient.Enabled)
+            {
+                foreach (var a in pending) a.artStatus = "로컬 도트 아이콘 · AI 연결 없음";
+                trace?.Invoke("AI 연결 없음 · 동작에 맞는 로컬 아이콘 사용"); yield break;
+            }
             var rules = ActiveSkillGenerator.Rules;
+            var world = Game.I?.World;
             Texture2D sheet = null;
-            yield return ImageClient.Generate("Cute 16-bit pixel-art game sprites with crisp stepped edges, chunky readable shapes, dark purple outlines, limited palette, transparent background, no text or labels. " +
-                "Exactly 3 columns and 2 rows, six isolated cells with generous transparent gutters, each subject centered inside its cell. " +
-                "Top-left: one skill icon, " + skill.iconPrompt + ". Top-middle: dedicated projectile flying RIGHT, " + skill.projectilePrompt +
-                ". Top-right: cast/swing effect facing RIGHT, " + skill.effectPrompt + ". Bottom-left: matching impact explosion. Bottom-middle: matching short projectile trail. Bottom-right: matching muzzle flash. " +
-                "One coherent motif ONLY for this skill. Executable effect: " + ActiveSkillGenerator.Describe(skill), t => sheet = t, model: rules.imageModel);
-            if (sheet == null) { progress?.Invoke("전용 이미지 생성 실패 — 이 스킬의 임시 도트로 표시하며 인벤토리에서 다시 생성할 수 있어."); yield break; }
+            trace?.Invoke($"아이콘 {pending.Count}개를 2×2 시트 한 장으로 요청 · {rules.imageModel} / {rules.iconQuality}");
+            string prompt = "A transparent PNG sprite sheet: exactly 2 equal columns and 2 equal rows, NO grid lines, borders, labels, text, scenery, tiles, cards or backgrounds. " +
+                "Each cell has a SINGLE centered isolated skill symbol occupying at most 65% of its cell, generous completely transparent gutters on ALL sides. " +
+                "Cozy cute top-down pixel RPG style. Moderately detailed chunky pixel art, readable at 32px, dark muted purple outlines, 3-4 flat shading tones, restrained warm palette. " +
+                "Avoid gradients, photorealism, ornate emblems, excessive particles, bright halos, decorative frames and painted checkerboards. Transparent pixels must have alpha zero. " +
+                string.Join(" ", pending.Select((a, i) => $"{new[] { "Top-left", "Top-right", "Bottom-left" }[i]} cell: {a.iconPrompt}. Behavior: {ActiveSkillGenerator.VisualSummary(a)}.")) +
+                " All unused cells, including bottom-right, must be empty transparent pixels.";
+            yield return ImageClient.Generate(prompt, t => sheet = t, model: rules.imageModel, quality: rules.iconQuality, usage: usage =>
+            {
+                float? cost = usage != null && usage.output_tokens > 0 ? usage.CostUsd(rules.imageModel) : null;
+                bool measured = cost.HasValue;
+                cost ??= ImageClient.PriceUsd(rules.imageModel, rules.iconQuality);
+                if (world != null) { world.designCalls++; if (cost.HasValue) world.designCostUsd += cost.Value; else world.designUnknownCosts++; }
+                trace?.Invoke(cost.HasValue ? $"이미지 비용 {(measured ? "usage 기준" : "추정")} ${cost.Value:0.00000}" : "이미지 비용 미상 · 무료로 집계하지 않음");
+            });
+            if (sheet == null)
+            {
+                foreach (var a in pending) a.artStatus = "아이콘 요청 실패 · 로컬 도트 사용";
+                trace?.Invoke("이미지 요청 실패: " + ImageClient.LastStatus + " · 유료 자동 재시도 없음"); yield break;
+            }
             try
             {
-                string Save(int i, int pixels, bool outline)
+                for (int i = 0; i < pending.Count; i++)
                 {
-                    int w = sheet.width / 3, h = sheet.height / 2;
-                    var cv = Pixelizer.ConvertSet(sheet, new[] { new RectInt((i % 3) * w, sheet.height - (i / 3 + 1) * h, w, h) }, pixels, byHeight: false, colors: 12, outline: outline)[0];
-                    return cv == null ? null : DesignStore.SaveImage(cv);
+                    var a = pending[i]; int w = sheet.width / 2, h = sheet.height / 2;
+                    PixelCanvas cv = null; string why;
+                    try { cv = ActiveIconProcessor.Read(sheet, new RectInt(i % 2 * w, sheet.height - (i / 2 + 1) * h, w, h), out why); }
+                    catch (Exception error) { why = "아이콘 처리 실패 · 로컬 도트 사용"; Debug.LogWarning("[Active icon] " + error.Message); }
+                    if (cv != null) { a.iconImage = DesignStore.SaveImage(cv); a.iconRevision = 2; }
+                    else { a.iconImage = null; a.iconRevision = 0; }
+                    a.artStatus = cv != null ? "전용 아이콘 준비 완료" : "배경 검사 실패 · 로컬 도트 사용";
+                    trace?.Invoke($"[{a.name}] {why}{(cv == null ? " · 유료 재시도 없이 로컬 아이콘" : "")}");
                 }
-                skill.iconImage = Save(0, rules.iconPixels, true);
-                skill.projectileImage = Save(1, rules.projectilePixels, true);
-                skill.effectImages = new[] { Save(2, rules.effectPixels, false), Save(3, rules.effectPixels, false), Save(4, rules.effectPixels, false), Save(5, rules.effectPixels, false) };
-                if (Game.I?.World != null) { Game.I.World.designCalls++; Game.I.World.designCostUsd += ImageClient.PriceUsd(rules.imageModel) ?? 0; }
             }
-            catch (Exception error) { Debug.LogWarning("[Active skill art] " + error.Message); }
             finally { UnityEngine.Object.Destroy(sheet); }
+            trace?.Invoke("전투 이펙트는 각 단계의 형태·효과·궤적에서 즉시 생성 · 추가 이미지 비용 없음");
         }
-        public static Sprite Icon(ActiveSkillData a) => Stored(a?.iconImage) ?? FallbackIcon(a);
-        static readonly Dictionary<string, Sprite> icons = new Dictionary<string, Sprite>();
-        static Sprite Stored(string id)
+        public static Sprite Icon(ActiveSkillData a)
         {
-            if (string.IsNullOrEmpty(id)) return null;
-            string key = "image:" + id;
-            if (icons.TryGetValue(key, out var sprite) && sprite != null) return sprite;
-            sprite = DesignStore.Sprite(id, new Vector2(.5f, .5f));
-            if (sprite != null) icons[key] = sprite;
-            return sprite;
+            if (a == null) return null;
+            if (a.ArtReady)
+            {
+                if (icons.TryGetValue(a.iconImage, out var cached) && cached != null) return cached;
+                var sprite = DesignStore.Sprite(a.iconImage, new Vector2(.5f, .5f));
+                if (sprite != null) return icons[a.iconImage] = sprite;
+            }
+            return ActiveSkillVisuals.Icon(a);
         }
         public static void Restore(ActiveSkillData a)
         {
             if (a == null) return;
-            if (DesignStore.Image(a.iconImage) == null) a.iconImage = null;
-            if (DesignStore.Image(a.projectileImage) == null) a.projectileImage = null;
-            if (a.effectImages != null)
-                for (int i = 0; i < a.effectImages.Length; i++) if (DesignStore.Image(a.effectImages[i]) == null) a.effectImages[i] = null;
+            if (string.IsNullOrEmpty(a.input)) a.input = "tap";
+            if (a.steps != null) foreach (var step in a.steps)
+            {
+                if (step == null) continue;
+                if (string.IsNullOrEmpty(step.origin)) step.origin = "caster";
+                if (string.IsNullOrEmpty(step.trigger)) step.trigger = "after";
+            }
+            var image = DesignStore.Image(a.iconImage);
+            if (image == null) { a.iconImage = null; a.iconRevision = 0; }
+            else if (a.iconRevision < 2)
+            {
+                var clean = ActiveIconProcessor.Read(image, new RectInt(0, 0, image.width, image.height), out string why);
+                a.iconImage = clean != null ? DesignStore.SaveImage(clean) : null;
+                a.iconRevision = clean != null ? 2 : 0;
+                a.artStatus = "기존 아이콘 검사: " + why;
+            }
         }
-        static Sprite FallbackIcon(ActiveSkillData a)
-        {
-            if (a == null) return null;
-            if (icons.TryGetValue(a.id, out var result)) return result;
-            var cv = new PixelCanvas(24, 24); var color = Pal.Hex(a.color); uint hash = PartArt.Hash(a.id);
-            for (int y = 4; y < 20; y++) for (int x = 4; x < 20; x++)
-                if (Mathf.Abs(x - 12) + Mathf.Abs(y - 12) < 10 && ((hash >> ((x + y * 3) % 24)) & 1) != 0) cv.Rect(x, y, 2, 2, color);
-            cv.Outline(Pal.Hex("30263e")); return icons[a.id] = cv.ToSpriteCentered();
-        }
-        public static Sprite Shot(ActiveSkillData a) => Stored(a.projectileImage) ?? FallbackIcon(a);
-        public static Sprite[] Effect(ActiveSkillData a, int cell, int size)
-        {
-            string id = a.effectImages != null && cell < a.effectImages.Length ? a.effectImages[cell] : null;
-            string key = id + ":" + size;
-            if (id != null && frames.TryGetValue(key, out var cached)) return cached;
-            var tex = DesignStore.Image(id);
-            // Use the skill's own icon as a temporary effect; never inherit the equipped weapon's art.
-            if (tex == null) return new[] { FallbackIcon(a) };
-            return frames[key] = DesignArt.Effect(tex, cell == 0 ? DesignArt.EffectKind.Swing : cell == 2 ? DesignArt.EffectKind.Trail : cell == 3 ? DesignArt.EffectKind.Muzzle : DesignArt.EffectKind.Impact, size);
-        }
+        public static Sprite Shot(ActiveSkillData a, ActiveStep step) => ActiveSkillVisuals.Shot(a, step);
+        public static Sprite[] Effect(ActiveSkillData a, ActiveStep step, int cell, int size) => ActiveSkillVisuals.Effect(a, step, cell, size);
     }
 }

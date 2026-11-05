@@ -11,6 +11,7 @@ namespace Diverse
     public class WeaponFootprint
     {
         public WeaponType type;
+        public Color outlineColor = Color.white;
         public Vector2Int[] skills = (Vector2Int[])InventoryState.Slots.Clone();
         public Vector2Int[] parts;
         public IEnumerable<Vector2Int> Cells => new[] { Vector2Int.zero }.Concat(skills).Concat(parts ?? Array.Empty<Vector2Int>());
@@ -21,12 +22,14 @@ namespace Diverse
     [Serializable]
     public class ActiveStep
     {
-        public string delivery = "arc"; // arc, line, projectile, nova, field, dash, retreat, blink, guard
-        public string pattern = "single"; // single, fan, ring, chain, return, pierce, seek
-        public string effect = "damage"; // damage, shield, heal, pull, push, stun, mark
+        public string delivery = "arc"; // arc, line, projectile, nova, field, dash, retreat, blink, guard, trap, wall
+        public string pattern = "single"; // single, fan, ring, chain, return, pierce, seek, curve, bounce, converge
+        public string effect = "damage"; // damage, shield, heal, pull, push, stun, mark, block
         public string element = "None";
         public string condition = "always"; // always, marked, burning, chilled, poisoned
         public string timing = "instant"; // instant, delayed, repeat
+        public string origin = "caster"; // caster, aim, previous, impact
+        public string trigger = "after"; // after, hit, arrive, expire, recast
         public bool consume;
     }
 
@@ -34,7 +37,9 @@ namespace Diverse
     public class ActiveSkillData
     {
         public string id = Guid.NewGuid().ToString("N");
-        public string name, intent, source = "local", drawback = "recovery";
+        public string name, intent, source = "local", drawback = "recovery", input = "tap";
+        public string role, designReason, artStatus;
+        public int iconRevision;
         public WeaponType weaponType;
         public int slot;
         public List<ActiveStep> steps = new List<ActiveStep>();
@@ -45,15 +50,17 @@ namespace Diverse
         public string iconImage, projectileImage;
         public string[] effectImages;
         public string color = "c9b8ff";
-        public bool ArtReady => !string.IsNullOrEmpty(iconImage) && !string.IsNullOrEmpty(projectileImage) && effectImages?.Length == 4 && effectImages.All(x => !string.IsNullOrEmpty(x));
-        public string Signature() => string.Join("|", steps.Select(s => $"{s.delivery}:{s.pattern}:{s.effect}:{s.element}:{s.condition}:{s.timing}:{s.consume}")) + ":" + drawback;
+        public bool ArtReady => !string.IsNullOrEmpty(iconImage) && iconRevision >= 2;
+        public string Signature() => input + ":" + string.Join("|", steps.Select(s => $"{s.delivery}:{s.pattern}:{s.effect}:{s.condition}:{s.timing}:{s.consume}:{s.origin}:{s.trigger}"));
         public string Links => string.Concat(Enumerable.Range(0, 4).Where(i => (linkedMask & (1 << i)) != 0).Select(i => "QWER"[i]));
     }
 
     [Serializable]
     public class ActiveRules
     {
-        public int maxSteps = 3, maxLinkedSlots = 2, maxTargets = 8, maxProjectiles = 5, maxPulses = 3;
+        public int maxSteps = 4, maxLinkedSlots = 2, maxTargets = 8, maxProjectiles = 5, maxPulses = 3;
+        public float chargeDuration = 1.1f, chargeBonus = .5f, channelDuration = 1.5f, recastWindow = 3;
+        public float curveStrength = 65, maxCastDuration = 8, anchorWidth = .6f;
         public int maxConcurrentCasts = 4, generationAttempts = 3, recentSignatures = 32;
         public int iconPixels = 32, projectilePixels = 16, effectPixels = 48, artParallel = 2;
         public float baseCooldown = 7, ultimateCooldown = 22, minCooldown = 4, maxCooldown = 35;
@@ -67,5 +74,11 @@ namespace Diverse
         public float markBonus = .25f, passiveBonusCap = .65f, projectileRadius = .2f;
         public float guardInvulnerability = .25f;
         public string imageModel = "gpt-image-2.5-flare";
+        public string iconQuality = "low";
+        public int visualFrames = 6, maxVisualPixels = 128, visualCacheLimit = 192, iconPaletteColors = 12;
+        public float minChoiceDistance = .38f, iconBorderLimit = .08f, iconSolidLimit = .92f;
+        public float inputDistanceWeight = .15f, roleDistanceWeight = .25f;
+        public float iconMatteTolerance = 70, iconMatteBorderShare = .12f;
+        public float controlCooldown = 1.1f, guardCooldown = 1.3f, mobilityCooldown = .85f, trapCooldown = 1.15f;
     }
 }

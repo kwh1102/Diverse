@@ -44,6 +44,7 @@ namespace Diverse.EditorTools
             BuildSettings();
             UILayoutRepair.Run();
             InstallInventory();
+            SkillPartsPrefabAuthoring.Install();
         }
 
         static GameObject Prefab(string path, System.Func<GameObject> build)
@@ -842,7 +843,7 @@ namespace Diverse.EditorTools
             // Pipeline log over the cards
             var pp = Node(a, "Pipeline", TL, new Vector2(12, 52), new Vector2(W - 24, H - 90));
             Box(pp, panelSpr).raycastTarget = true;
-            Label(pp, "Heading", "<b>AI 액티브 과정</b> <color=#8c7aa8>— 플레이 기록 → 패턴 → AI 생성 → 검증 → 점수 → 이름</color>", TL, new Vector2(8, 6), new Vector2(W - 40, 12), 9);
+            Label(pp, "Heading", "후보 설계·검증 기록", TL, new Vector2(8, 6), new Vector2(W - 40, 12), 9);
             var pText = ScrollText(pp, "Log", Node(pp, "Log", TL, new Vector2(8, 22), new Vector2(W - 40, H - 120)), out _);
             UIKit.Show(pp, false);
 

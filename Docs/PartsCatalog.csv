@@ -1,0 +1,33 @@
+﻿ID,이름,계열,등급,설명,스탯,액티브 보조
+focus_lens,집중 렌즈,위력,T1,액티브 피해를 모으는 수정 렌즈.,[],{'skillDamage': 0.08}
+sword_knot,검사의 매듭,위력,T1,근접 액티브의 칼끝을 강화하는 매듭.,[],{'meleeDamage': 0.1}
+ember_crucible,불씨 도가니,위력,T1,원소 공격을 보조하는 작은 도가니.,"[(12, 0.08, False)]",{}
+prism_core,분광 핵,위력,T1,액티브 위력과 작은 시전 보호막을 제공한다.,[],"{'skillDamage': 0.04, 'shieldOnCast': 0.08}"
+moon_charm,초승달 부적,치명타,T1,치명타 확률을 보조하는 은빛 부적.,"[(4, 0.018, False)]",{}
+lucky_die,흑요석 주사위,치명타,T1,치명타 피해를 보조하는 주사위.,"[(5, 0.06, False)]",{}
+razor_gem,칼날 수정,치명타,T1,치명타 확률과 근접 액티브 피해를 보조한다.,"[(4, 0.009, False)]",{'meleeDamage': 0.04}
+ruby_pin,홍옥 핀,치명타,T1,치명타 피해와 액티브 위력을 함께 보조한다.,"[(5, 0.03, False)]",{'skillDamage': 0.035}
+clock_spring,태엽 시계,재사용,T1,액티브 재사용 대기시간을 줄이는 시계.,"[(6, 0.025, False)]",{}
+silver_gear,은빛 톱니,재사용,T1,재사용 간격과 공격 흐름을 보조한다.,"[(6, 0.012, False), (2, 0.025, True)]",{}
+echo_bell,메아리 방울,재사용,T1,재사용 간격과 시전 보호막을 보조한다.,"[(6, 0.012, False)]",{'shieldOnCast': 0.08}
+hourglass_bead,모래시계 구슬,재사용,T1,재사용 간격과 성장 경험치를 보조한다.,"[(6, 0.012, False), (8, 0.04, False)]",{}
+arrow_fletching,매깃 화살깃,투사체,T1,투사체 액티브의 피해를 강화한다.,[],{'projectileDamage': 0.1}
+falcon_sight,매눈 조준경,투사체,T1,투사체 피해와 치명타 확률을 보조한다.,"[(4, 0.009, False)]",{'projectileDamage': 0.045}
+rune_scope,룬 조준경,투사체,T1,투사체 액티브의 사거리와 피해를 보조한다.,[],"{'projectileDamage': 0.045, 'rangeBonus': 0.035}"
+spiral_nozzle,나선 노즐,투사체,T1,투사체 위력과 재사용 간격을 보조한다.,"[(6, 0.012, False)]",{'projectileDamage': 0.045}
+trail_compass,길잡이 나침반,범위,T1,액티브가 닿는 거리를 늘리는 나침반.,[],{'rangeBonus': 0.07}
+star_map,별자리 지도,범위,T1,사거리와 전리품 획득을 보조하는 지도.,"[(9, 0.04, False)]",{'rangeBonus': 0.035}
+long_reed,갈대 관,범위,T1,사거리와 투사체 피해를 보조한다.,[],"{'rangeBonus': 0.035, 'projectileDamage': 0.045}"
+amber_mirror,호박 거울,범위,T1,사거리와 액티브 위력을 보조한다.,[],"{'rangeBonus': 0.035, 'skillDamage': 0.035}"
+frost_shard,서리 결정,제어,T1,냉기와 기절 등 액티브 제어 시간을 늘린다.,[],{'controlBonus': 0.1}
+anchor_hook,닻 갈고리,제어,T1,제어 지속시간과 근접 액티브 위력을 보조한다.,[],"{'controlBonus': 0.05, 'meleeDamage': 0.045}"
+thunder_pin,뇌전 침,제어,T1,제어 지속시간과 원소 공격을 보조한다.,"[(12, 0.04, False)]",{'controlBonus': 0.05}
+gravity_stone,중력석,제어,T1,제어 지속시간과 사거리를 보조한다.,[],"{'controlBonus': 0.05, 'rangeBonus': 0.035}"
+ward_buckle,수호 버클,방어,T1,액티브를 시전하면 짧은 보호막을 얻는다.,[],{'shieldOnCast': 0.18}
+vital_vial,생명의 약병,방어,T1,액티브 적중 시 시전당 한 번 회복한다.,[],{'healOnHit': 0.025}
+iron_plate,철갑 조각,방어,T1,받는 피해를 줄이는 작은 갑옷 조각.,"[(7, 0.025, False)]",{}
+heart_lock,심장 자물쇠,방어,T1,최대 체력과 작은 시전 보호막을 보조한다.,"[(0, 6, False)]",{'shieldOnCast': 0.08}
+wind_boot,바람 장화,이동,T1,이동 속도를 보조하는 가벼운 장화.,"[(3, 0.035, True)]",{}
+silk_grip,비단 손잡이,이동,T1,공격 속도와 이동 속도를 조금씩 보조한다.,"[(2, 0.025, True), (3, 0.015, True)]",{}
+feather_ring,깃털 고리,이동,T1,대시 재충전 시간을 줄이는 고리.,"[(11, -0.04, True)]",{}
+breeze_ribbon,산들바람 리본,이동,T1,이동과 대시 재충전을 함께 보조한다.,"[(3, 0.018, True), (11, -0.02, True)]",{}

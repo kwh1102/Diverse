@@ -20,6 +20,7 @@ namespace Diverse
         public ActiveSkillData active;
         [NonSerialized] public bool generatingActive;
         public bool pendingActive;
+        public bool pendingArt;
         public string sourceWeapon;
         public int learnedSkillMask;
         public bool startingWeapon;
@@ -272,8 +273,8 @@ namespace Diverse
         public bool Fuse(string a, string b, InventoryItem result, out string why)
         {
             var first = Find(a); var second = Find(b); why = null;
-            if (first == null || second == null || first == second || first.kind != ItemKind.Part || second.kind != ItemKind.Part || first.complexity != second.complexity || first.Ability?.catalogId != second.Ability?.catalogId)
-            { why = "같은 종류·같은 등급의 서로 다른 파츠 두 개를 골라 줘."; return false; }
+            if (first == null || second == null || first == second || first.kind != ItemKind.Part || second.kind != ItemKind.Part || first.complexity != second.complexity || first.complexity >= Rules.maxPartTier || result?.Ability == null || result.complexity != first.complexity + 1 || result.Ability.Signature() != PartCatalog.Fuse(first.Ability, second.Ability)?.Signature())
+            { why = "최고 등급 미만의 같은 등급 파츠 두 개가 필요해."; return false; }
             result.x = first.x; result.y = first.y;
             items.Remove(first); items.Remove(second); items.Add(result);
             if (!Validate(out why)) { items.Remove(result); items.Add(first); items.Add(second); return false; }

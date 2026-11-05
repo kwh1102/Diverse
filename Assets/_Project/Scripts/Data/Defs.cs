@@ -151,9 +151,9 @@ namespace Diverse
         [Tooltip("Each level needs this much more than the last (×).")]
         public float xpGrowth = 1.32f;
         [Tooltip("An ability evolution is offered every N levels (1 = every level).")]
-        public int evolveEvery = 2;
+        public int evolveEvery = 1;
         [Tooltip("Levels at which the next QWER skill is learned (in order). Skills can also be learned from the smith.")]
-        public int[] skillLevels = { 3, 6, 10, 15 };
+        public int[] skillLevels = { 5, 10, 15, 20 };
         [Tooltip("Smith: weapon level at which each QWER skill can be learned (in order).")]
         public int[] smithSkillLevels = { 1, 2, 4, 6 };
         [Tooltip("Warp stone price at the merchant.")]
@@ -162,7 +162,8 @@ namespace Diverse
         public float warpRange = 6f;
 
         public float XpFor(int level) => Mathf.Round(xpBase * Mathf.Pow(xpGrowth, level - 1));
-        public bool EvolvesAt(int level) => evolveEvery <= 1 || level % evolveEvery == 0;
+        public int SkillSlotAt(int level) => Array.IndexOf(skillLevels, level);
+        public bool EvolvesAt(int level) => level > 1 && SkillSlotAt(level) < 0;
     }
 
     /// <summary>Global hit feel (Resources/GameDatabase.asset → feel). Weapons and skills ask for hit-stop; these cap it.</summary>

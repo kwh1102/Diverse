@@ -26,6 +26,8 @@ namespace Diverse
         public int[] Attrs = new int[4];
         public int UnspentAttr;
         public int PendingEvolutions;
+        public List<int> pendingRewardLevels = new List<int>();
+        public int claimedSkillMask;
         public string HeroName;
         public int WarpStones;                     // carried warp stones, placed with the interact key away from town
         public bool Ferrying;                      // riding the ferryman's raft right now
@@ -226,8 +228,7 @@ namespace Diverse
             Level++;
             XpToNext = prog.XpFor(Level);
             UnspentAttr += 1;
-            bool evolve = prog.EvolvesAt(Level);
-            if (evolve) PendingEvolutions++;
+            pendingRewardLevels.Add(Level); PendingEvolutions = pendingRewardLevels.Count;
             RecalcStats();
             hp = Mathf.Min(maxHp, hp + maxHp * 0.25f);
             Fx.I?.Play(Art.Shockwave(Pal.Gold, 24), Pos, 0, 18, 1, null, true);
@@ -235,11 +236,9 @@ namespace Diverse
             Fx.I?.Number(Pos + Vector2.up * 1.2f, "레벨 업!", new Color(1f, 0.9f, 0.4f), 1.3f, 1.2f);
             Sfx.Play("levelup");
             Abilities?.Raise("LevelUp");
-            var learned = LearnSkillsForLevel();
-            if (learned != null) GameEvents.Notify($"레벨 {Level}! [{learned.def.name}] 스킬 아이템을 얻었다.");
-            else if (evolve) GameEvents.Notify($"레벨 {Level}! 진화가 준비되었다 ({Controls.KeyName(Act.Abilities)} 또는 자동)");
-            else GameEvents.Notify($"레벨 {Level}! 능력치 포인트 +1 (다음 진화: 레벨 {NextEvolveLevel})");
-            if (evolve) Game.I?.RequestPrefetch();
+            int slot = prog.SkillSlotAt(Level);
+            GameEvents.Notify(slot >= 0 ? $"레벨 {Level}! {"QWER"[slot]} 액티브 후보를 선택할 수 있어." : $"레벨 {Level}! T1 파츠 선택이 준비되었어.");
+            Game.I?.RequestPrefetch();
         }
 
         /// <summary>Next level that offers an ability evolution.</summary>
@@ -290,7 +289,12 @@ namespace Diverse
         /// <summary>Restore learned skills from a save (count of slots learned, in order).</summary>
         public void RestoreSkills(int learned)
         {
-            if (Inventory != null) { while (AcquiredSkills < learned) if (AcquireNextSkill() == null) break; return; }
+            if (Inventory != null)
+            {
+                for (int i = 0; i < Mathf.Min(learned, Skills.Length); i++)
+                    if (SkillUnlocked(i) && (claimedSkillMask & (1 << i)) == 0) GrantSkill(ActiveSkillGenerator.Local(ActiveSkillGenerator.TypeOf(Inventory.Active), i));
+                return;
+            }
             for (int i = 0; i < Skills.Length; i++)
             {
                 var s = Skills[i];
@@ -835,6 +839,8 @@ namespace Diverse
 
         // ───────────────────────── Skills ─────────────────────────
 
+        public void HoldSkillAction() => actionLock = Mathf.Max(actionLock, Time.deltaTime * 2);
+
         void CastSkill(int i)
         {
             var s = Skills[i];
@@ -843,7 +849,8 @@ namespace Diverse
                 if (Controls.Down(skillActs[i])) Fx.I?.Number(Pos + Vector2.up * 1.1f, "아직 익히지 않은 기술", new Color(0.7f, 0.65f, 0.8f), 0.7f, 0.6f);
                 return;
             }
-            if (s.cd > 0) return;
+            if (ActiveSkillRuntime.TryRecast(this, s.def.active)) return;
+            if (s.cd > 0 || actionLock > 0) return;
             if (s.def.active != null && !ActiveSkillRuntime.CanCast(this, s.def.active)) return;
             s.cd = s.def.cooldown * (1 - Stats[StatId.CooldownReduction]);
             Vector2 dir = (AimPoint - (Pos + Vector2.up * 0.4f)).SafeNormal(Facing);

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace Diverse
@@ -43,12 +44,13 @@ namespace Diverse
         {
             if(item==null) return null;
             if(item.kind==ItemKind.Skill) return ActiveSkillArt.Icon(item.active);
-            string key=item.kind==ItemKind.Weapon?"weapon:"+item.id:item.kind==ItemKind.Part?"part:"+item.Ability?.partImage:"consumable:"+item.consumable;
+            string key=item.kind==ItemKind.Weapon?"weapon:"+item.id:item.kind==ItemKind.Part?"part:"+item.Ability?.Signature():"consumable:"+item.consumable;
             if(cache.TryGetValue(key,out var sprite) && sprite!=null) return sprite;
             if(item.kind==ItemKind.Weapon)
                 return cache[key]=item.design!=null?DesignStore.Sprite(item.design.weapon.image,new Vector2(.5f,.5f))??DesignArt.Weapon(item.design.weapon,centered:true)??BuiltinWeapon(item.weapon.kind):BuiltinWeapon(item.weapon.kind);
             if(item.kind==ItemKind.Part)
             {
+                if (item.Ability?.tier > 1) return cache[key] = Composite(item.Ability);
                 var generated=Resources.Load<Sprite>(item.Ability?.partImage ?? "") ?? DesignStore.Sprite(item.Ability?.partImage,new Vector2(.5f,.5f));
                 if(generated!=null) return cache[key]=generated;
                 return Pending();
@@ -59,6 +61,34 @@ namespace Diverse
             var liquid=Pal.Hex(item.consumable=="xp"?"76b9ff":item.consumable=="cleanse"?"96e1a6":"f47794");
             c.Rect(9,18,6,3,metal); c.Rect(10,14,4,4,shine); c.Ellipse(12,9,6,7,Pal.Hex("6c526b")); c.Ellipse(12,8,5,5,liquid); c.Rect(9,8,2,4,shine);
             c.Outline(Pal.Hex("23212d")); return cache[key]=c.ToSpriteCentered();
+        }
+        static Sprite Composite(AbilityDef a)
+        {
+            var sources = PartCatalog.Dominant(a).ToList();
+            var canvas = new PixelCanvas(48, 48);
+            void Stamp(string id, int ox, int oy, int size)
+            {
+                var sprite = Resources.Load<Sprite>(PartCatalog.Find(id).sprite);
+                if (sprite == null || !sprite.texture.isReadable) return;
+                var r = sprite.rect; var tex = sprite.texture; var pixels = tex.GetPixels32();
+                for (int y = 0; y < size; y++) for (int x = 0; x < size; x++)
+                {
+                    int sx = (int)r.x + Mathf.Min((int)r.width - 1, x * (int)r.width / size);
+                    int sy = (int)r.y + Mathf.Min((int)r.height - 1, y * (int)r.height / size);
+                    var c = pixels[sy * tex.width + sx]; if (c.a > 0) canvas.Set(ox + x, oy + y, c);
+                }
+            }
+            // Dominant source is the body; readable source badges preserve secondary materials.
+            Stamp(sources[0].id, 5, 5, 36);
+            for (int i = 1; i < Mathf.Min(sources.Count, 4); i++) Stamp(sources[i].id, (i - 1) * 14 + 2, 0, 16);
+            var trim = Resources.Load<Texture2D>("Sprites/Parts/trim_t" + a.tier);
+            if (trim != null && trim.isReadable && trim.width == 48 && trim.height == 48)
+            {
+                var px = trim.GetPixels32();
+                for (int y = 0; y < 48; y++) for (int x = 0; x < 48; x++)
+                    if (px[y * trim.width + x].a > 0) canvas.Set(x, y, px[y * trim.width + x]);
+            }
+            return canvas.ToSpriteCentered();
         }
         static Sprite Pending()
         {

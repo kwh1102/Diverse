@@ -34,13 +34,15 @@ namespace Diverse
         public float FilterHeal(float amount, float missing) => amount;
         public IEnumerable<string> TagsOf(AbilityDef a) => a.tags;
 
-        IEnumerable<AbilityDef> Equipped => Owned.Where(a => PartCatalog.Find(a.catalogId) != null)
-            .GroupBy(a => a.catalogId).Select(g => g.OrderByDescending(a => a.tier).First());
-        float Sum(System.Func<PartDef, float> value) => Equipped.Sum(a => value(PartCatalog.Find(a.catalogId)) * PartCatalog.Rank(a));
+        IEnumerable<AbilityDef> Equipped => Owned.Where(a => a.ingredients?.Count > 0)
+            .GroupBy(a => a.Signature()).Select(g => g.OrderByDescending(a => a.tier).First());
+        float Sum(System.Func<PartDef, float> value) => Equipped.Sum(a => value(PartCatalog.Resolve(a)));
+        public float ActiveRange => 1 + Mathf.Clamp(Sum(d => d.rangeBonus), 0, DB.Asset.abilityRules.def.maxRangeBonus);
+        public float ActiveControl => 1 + Mathf.Clamp(Sum(d => d.controlBonus), 0, DB.Asset.abilityRules.def.maxControlBonus);
         public void ApplyStats(Stats stats)
         {
-            foreach (var a in Equipped) foreach (var m in PartCatalog.Find(a.catalogId).mods)
-                if (m.mul) stats.Mul(m.stat, m.value * PartCatalog.Rank(a)); else stats.Add(m.stat, m.value * PartCatalog.Rank(a));
+            foreach (var a in Equipped) foreach (var m in PartCatalog.Resolve(a).mods)
+                if (m.mul) stats.Mul(m.stat, m.value); else stats.Add(m.stat, m.value);
         }
         public float DamageMultiplier(Actor target, string tags)
         {

@@ -72,6 +72,7 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
 
         /// <summary>Estimated USD of the last Generate (text + pictures).</summary>
         public static float LastCostUsd;
+        public static int LastUnknownCosts;
 
         static string Previous(DesignPack p, int section) => section == 0
             ? JsonUtility.ToJson(new HeroLook { name = p.hero.name, species = p.hero.species, imagePrompt = p.hero.imagePrompt })
@@ -84,6 +85,7 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
         /// </summary>
         public static IEnumerator Generate(MonoBehaviour host, DesignPack current, string request, bool initial, bool lockChassis, Action<string> progress, Action<DesignPack, string> done, bool weaponOnly=false)
         {
+            LastCostUsd = 0; LastUnknownCosts = 0;
             if (!current.travelSelected) { done(null, "먼저 이동 유형을 골라 주세요."); yield break; }
             var user = new StringBuilder();
             user.AppendLine("MODE: " + (lockChassis ? "APPEARANCE ONLY" : initial ? "INITIAL" : "EDIT"));
@@ -141,18 +143,26 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
 
             // Pictures: every sheet runs at once; a failed sheet leaves those sprites on the local fallback drawing
             var jobs = new List<IEnumerator>();
+            float imageCost = 0; int unknownImages = 0, measuredImages = 0, estimatedImages = 0;
+            Action<ImageClient.ImageUsage> Meter(float sizeFactor) => usage =>
+            {
+                float? cost = usage != null && usage.output_tokens > 0 ? usage.CostUsd(ImageClient.Model) : null;
+                if (cost.HasValue) measuredImages++;
+                else { cost = ImageClient.PriceUsd(ImageClient.Model) * sizeFactor; if (cost.HasValue) estimatedImages++; }
+                if (cost.HasValue) imageCost += cost.Value; else unknownImages++;
+            };
             // The hero sheet holds the attack poses too: a new way of attacking (bare fists, a different weapon) redraws it
             bool newAttack = sections[1] && result.weapon.attackPose != current.weapon.attackPose;
             bool redrawHero = !weaponOnly && NeedsHeroSheet(current, sections[0], newAttack);
-            if (redrawHero && result.hero.imagePrompt != null) jobs.Add(HeroJob(result));
+            if (redrawHero && result.hero.imagePrompt != null) jobs.Add(HeroJob(result, Meter(1.5f)));
             if (sections[1])
             {
-                if (result.weapon.imagePrompt != null || result.attack.projectile.imagePrompt != null) jobs.Add(WeaponJob(result));
+                if (result.weapon.imagePrompt != null || result.attack.projectile.imagePrompt != null) jobs.Add(WeaponJob(result, Meter(1)));
                 else { result.weapon.image = null; result.attack.projectile.image = null; }
-                if (result.attack.effectPrompts != null) jobs.Add(EffectsJob(result));
+                if (result.attack.effectPrompts != null) jobs.Add(EffectsJob(result, Meter(1)));
             }
             if (!weaponOnly && result.travelType != TravelType.Dash && (sections[0] || string.IsNullOrEmpty(result.travelEffect)))
-                jobs.Add(TravelJob(result));
+                jobs.Add(TravelJob(result, Meter(1)));
             int finished = 0, failed = 0;
             foreach (var job in jobs)
                 host.StartCoroutine(Run(job, ok => { finished++; if (!ok) failed++; progress($"그림 그리는 중… {finished}/{jobs.Count}"); }));
@@ -166,11 +176,10 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
             yield return FixFacing(result, new[] { redrawHero, sections[1] }, c => visionCost = c);
 
             var textCost = (AiClient.CostUsd(Game.Settings.aiModel, textIn, textOut) ?? 0) + visionCost;
-            // The hero sheet is drawn on a wide canvas: about 1.5x a square picture
-            int wide = jobs.Count(j => j.GetType().Name.Contains("HeroJob"));
-            var imageCost = (ImageClient.PriceUsd(ImageClient.Model) ?? 0) * (jobs.Count - failed + wide * 0.5f);
+            LastUnknownCosts = unknownImages;
             LastCostUsd = textCost + imageCost;
             string status = $"새 디자인 완성 (글 {textIn}+{textOut}토큰, 그림 {jobs.Count - failed}장 · 약 ${LastCostUsd:0.000})";
+            status += $"\n이미지 비용: usage {measuredImages}건 / 추정 {estimatedImages}건" + (unknownImages > 0 ? $" / 비용 미상 {unknownImages}건 별도" : "");
             if(!string.IsNullOrEmpty(LastFacingStatus)) status+="\n"+LastFacingStatus;
             if (failed > 0) status += $"\n<color=#ffb36b>그림 {failed}장 실패: {ImageClient.LastStatus} — 그 부분은 기본 도트로 표시</color>";
             done(result, status);
@@ -255,10 +264,10 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
                 hands + " Character: " + p.hero.imagePrompt;
         }
 
-        static IEnumerator HeroJob(DesignPack p)
+        static IEnumerator HeroJob(DesignPack p, Action<ImageClient.ImageUsage> usage)
         {
             Texture2D tex = null;
-            yield return ImageClient.Generate(HeroSheetPrompt(p), t => tex = t, size: ImageClient.WideSize);
+            yield return ImageClient.Generate(HeroSheetPrompt(p), t => tex = t, size: ImageClient.WideSize, usage: usage);
             // Keep the prior appearance if regeneration fails; the UI reports this as a failed sheet.
             if (tex == null) { yield return false; yield break; }
             // The idle pose (cell 4) goes first: it sets the scale every other pose keeps
@@ -275,12 +284,12 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
             yield return p.hero.image != null && p.hero.frames?.Length == 12;
         }
 
-        static IEnumerator TravelJob(DesignPack p)
+        static IEnumerator TravelJob(DesignPack p, Action<ImageClient.ImageUsage> usage)
         {
             Texture2D tex = null;
             yield return ImageClient.Generate(EffectStyle +
                 "One compact sprite matching Diverse's muted midtones, clustered highlights, crisp stepped edges and dark purple shadows. " +
-                TravelTypes.EffectSubject(p.travelType) + ". Match the accent colors of this hero: " + p.hero.imagePrompt, t => tex = t);
+                TravelTypes.EffectSubject(p.travelType) + ". Match the accent colors of this hero: " + p.hero.imagePrompt, t => tex = t, usage: usage);
             if (tex == null) { yield return false; yield break; }
             var canvas = Pixelizer.ConvertSet(tex, new[] { new RectInt(0, 0, tex.width, tex.height) },
                 32, byHeight: false, colors: 10, outline: false)[0];
@@ -290,7 +299,7 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
             yield return id != null;
         }
 
-        static IEnumerator WeaponJob(DesignPack p)
+        static IEnumerator WeaponJob(DesignPack p, Action<ImageClient.ImageUsage> usage)
         {
             var w = p.weapon;
             var shot = p.attack.projectile;
@@ -298,7 +307,7 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
             string weaponPart = held ? w.imagePrompt + ", lying horizontally, pointing to the right, handle on the left" : "nothing (leave empty)";
             string shotPart = shot.imagePrompt != null ? shot.imagePrompt + ", small, flying to the right" : "nothing (leave empty)";
             Texture2D tex = null;
-            yield return ImageClient.Generate(Style + "Two separate items side by side with a wide empty gap between them. LEFT HALF: " + weaponPart + ". RIGHT HALF: " + shotPart + ".", t => tex = t);
+            yield return ImageClient.Generate(Style + "Two separate items side by side with a wide empty gap between them. LEFT HALF: " + weaponPart + ". RIGHT HALF: " + shotPart + ".", t => tex = t, usage: usage);
             if (tex == null) { w.image = null; shot.image = null; yield return false; yield break; }
             w.image = held ? Save(Pixelizer.Convert(tex, Cell(tex, 0, 0, 2, 1), w.length > 0 ? w.length : 20, byHeight: false)) : null;
             shot.image = shot.imagePrompt != null ? Save(Pixelizer.Convert(tex, Cell(tex, 1, 0, 2, 1), 11, byHeight: false)) : null;
@@ -306,13 +315,13 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
             yield return true;
         }
 
-        static IEnumerator EffectsJob(DesignPack p)
+        static IEnumerator EffectsJob(DesignPack p, Action<ImageClient.ImageUsage> usage)
         {
             var e = p.attack.effectPrompts;
             Texture2D tex = null;
             yield return ImageClient.Generate(EffectStyle + "A 2x2 grid of four separate effects, each centered in its own quarter with empty space around it. " +
                 $"Top-left, a melee attack sweep shaped like a crescent on the right side: {e[0]}. Top-right, a hit impact burst: {e[1]}. " +
-                $"Bottom-left, a small trail puff behind a flying shot: {e[2]}. Bottom-right, a muzzle flash / casting burst: {e[3]}.", t => tex = t);
+                $"Bottom-left, a small trail puff behind a flying shot: {e[2]}. Bottom-right, a muzzle flash / casting burst: {e[3]}.", t => tex = t, usage: usage);
             if (tex == null) { p.attack.effectImages = null; yield return false; yield break; }
             var ids = new string[4];
             for (int i = 0; i < 4; i++) ids[i] = e[i] == null ? null : Save(Pixelizer.ConvertSet(tex, new[] { Quarter(tex, i) }, 48, byHeight: false, colors: 10, outline: false)[0]);

@@ -21,6 +21,7 @@ namespace Diverse
         [SerializeField] Text dragGlyph;
         [SerializeField] CanvasGroup dragGroup;
         [SerializeField] RectTransform dropMarker;
+        [SerializeField] InventoryFootprintGraphic footprintView;
         [SerializeField] GameObject validDrop,invalidDrop;
         [SerializeField] float ghostFollow=28,ghostTravelSeconds=.14f;
         readonly List<InventoryCell> cells=new List<InventoryCell>();
@@ -91,15 +92,11 @@ namespace Diverse
         {
             if(dragged==null) return;
             bool valid=Bag.CanMove(dragged,x,y,out string why);
-            var item=Bag.Find(dragged); var pitch=grid.cellSize+grid.spacing;
-            var footprint=item?.kind==ItemKind.Weapon?ActiveSkillGenerator.Shape(item).Cells.ToArray():new[]{Vector2Int.zero};
-            int minX=footprint.Min(d=>d.x),maxX=footprint.Max(d=>d.x),minY=footprint.Min(d=>d.y),maxY=footprint.Max(d=>d.y);
-            dropMarker.anchoredPosition=new Vector2((x+minX)*pitch.x,-(y+minY)*pitch.y);
-            dropMarker.sizeDelta=new Vector2((maxX-minX+1)*pitch.x-grid.spacing.x,(maxY-minY+1)*pitch.y-grid.spacing.y);
-            dropMarker.SetAsLastSibling();UIKit.Show(dropMarker,true);UIKit.Show(validDrop,valid);UIKit.Show(invalidDrop,!valid);
+            footprintView?.Preview(Bag.Find(dragged),x,y,valid);
+            UIKit.Show(dropMarker,false);
             hoverMessage=valid?why??"여기에 놓을 수 있어.":why;
         }
-        public void LeaveHover() {if(dragged==null)return;UIKit.Show(dropMarker,false);hoverMessage="가방 안의 칸으로 옮겨 줘.";}
+        public void LeaveHover() {if(dragged==null)return;footprintView?.ClearPreview();UIKit.Show(dropMarker,false);hoverMessage="가방 안의 칸으로 옮겨 줘.";}
         public void EndDrag() { if(dragged!=null) FinishDrag(dragSource,false); }
         public void Drop(int x,int y)
         {
@@ -111,6 +108,7 @@ namespace Diverse
         void FinishDrag(RectTransform destination,bool accepted)
         {
             dragged=null; revision=-1;
+            footprintView?.ClearPreview();
             UIKit.Show(dropMarker,false);hoverMessage=null;
             if(destination==null) { UIKit.Show(dragGhost,false); return; }
             Vector2 end=((RectTransform)dragGhost.parent).InverseTransformPoint(destination.TransformPoint(destination.rect.center));
@@ -128,7 +126,7 @@ namespace Diverse
             }
             UIKit.Show(dragGhost,false); settling=null;
         }
-        void OnDisable() { dragged=null; if(settling!=null) StopCoroutine(settling); settling=null; UIKit.Show(dragGhost,false);UIKit.Show(dropMarker,false); }
+        void OnDisable() { dragged=null; if(settling!=null) StopCoroutine(settling); settling=null; footprintView?.ClearPreview();UIKit.Show(dragGhost,false);UIKit.Show(dropMarker,false); }
         void Update()
         {
             if(g?.Player?.Inventory==null) return;
@@ -141,6 +139,8 @@ namespace Diverse
                 var pitch=grid.cellSize+grid.spacing;
                 ((RectTransform)grid.transform).sizeDelta=new Vector2(Bag.width*pitch.x-grid.spacing.x,Bag.height*pitch.y-grid.spacing.y);
                 UIKit.Show(activeFrame,false); // Per-cell borders trace the actual weapon footprint.
+                footprintView?.Bind(Bag);
+                if (footprintView != null) footprintView.transform.SetAsLastSibling();
                 var waiting=Bag.Pending.ToList(); UIKit.Pool(pendingTemplate,pending,waiting.Count);
                 for(int i=0;i<waiting.Count;i++) pending[i].GetComponent<InventoryPendingItem>().Bind(this,waiting[i]);
                 UIKit.Set(pendingLabel,$"수령 대기 {waiting.Count} · 끌어서 가방에 넣기");
@@ -149,7 +149,7 @@ namespace Diverse
             UIKit.Set(title,$"{TravelTypes.Name(g.Player.MovementType)} · {Bag.width}×{Bag.height}");
             UIKit.Set(equipmentSummary,active==null?"사용 중인 무기가 없어.":$"<b>{active.name}</b>\n{ActiveSkillGenerator.TypeName(ActiveSkillGenerator.TypeOf(active))} · 사용 중인 무기\n\n무기 {Bag.items.Count(i=>i.kind==ItemKind.Weapon)}/{InventoryState.Rules.maxWeapons}\n보유 골드 {g.Player.Gold}G\n\n표시된 QWER 칸: 액티브\n◇ 칸: 고정 파츠\n같은 유형·같은 슬롯 교환\n종속 스킬은 함께 이동\n\n{string.Join("\n",Bag.Attached(active).Where(i=>i.kind==ItemKind.Part).Select(i=>"◆ "+i.name))}");
             ItemIcons.Bind(preview,previewGlyph,item); UIKit.Set(details,Description(item));
-            UIKit.Set(status,(dragged!=null?hoverMessage:null)??message??(g.PartVisualBusy?"액티브 전용 그림을 준비하는 중…":g.Player.ActiveGenerationStatus??"드래그로 이동 · 빈 칸 클릭은 선택 해제\n초록 테두리: 사용 중인 무기"));
+            UIKit.Set(status,(dragged!=null?hoverMessage:null)??message??(g.PartVisualBusy?"액티브 전용 그림을 준비하는 중…":g.Player.ActiveGenerationStatus??"드래그로 이동 · 빈 칸 클릭은 선택 해제\n유형별 색상 · 두꺼운 외곽선: 사용 중인 무기"));
             bool mutable=!Busy;
             UIKit.Show(equip,item?.kind==ItemKind.Weapon && item.Placed); equip.interactable=mutable && item?.id!=Bag.activeWeapon;
             UIKit.Label(equip,item?.id==Bag.activeWeapon?"사용 중인 무기":"이 무기 사용");
@@ -165,7 +165,7 @@ namespace Diverse
             if(item==null) return "아이템을 선택하면\n이곳에 설명이 나타나요.";
             string desc=item.kind switch {
                 ItemKind.Part=>$"등급 T{item.complexity}\n\n{item.Ability?.Explain()}",
-                ItemKind.Skill=>$"{ "QWER"[item.skillSlot]} 스킬\n\n{SkillDB.Get(item)?.desc}",
+                ItemKind.Skill=>$"{ "QWER"[item.skillSlot]} 스킬\n\n{SkillDB.Get(item)?.desc}"+(item.active==null?"":"\n\n<b>교환 규칙</b>\n"+ActiveSkillGenerator.ExchangeRule(item.active)),
                 ItemKind.Weapon=>$"{ActiveSkillGenerator.TypeName(ActiveSkillGenerator.TypeOf(item))} · 유형별 주변 공간\n\n{item.weapon.desc}",
                 _=>item.consumable=="xp"?$"경험치 +{InventoryState.Rules.xpPotionAmount}":item.consumable=="cleanse"?"상태 이상 제거":$"체력 {InventoryState.Rules.potionHealFraction*100:0}% 회복"
             };
