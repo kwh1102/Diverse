@@ -104,7 +104,7 @@ namespace Diverse
                 life = r.life, heroName = r.heroName, costume = r.costume, weapon = r.weapon, level = r.level, kills = r.kills,
                 x = r.x, y = r.y, cause = "긴 방랑",
             };
-            foreach (var rec in r.abilities.Select(a => (rec: a, g: a.ToAbility())).Where(t => t.g != null && t.g.tier >= 1).OrderByDescending(t => t.g.power).Take(2))
+            foreach (var rec in r.abilities.Select(a => (rec: a, g: a.ToAbility())).Where(t => t.g != null && t.g.tier >= 1).OrderByDescending(t => t.g.tier).Take(2))
                 grave.abilities.Add(rec.rec);
             grave.epitaph = $"{r.heroName} — 길 위에서 사라지다. 레벨 {r.level}, 처치한 몬스터 {r.kills}마리.";
             World.graves.Add(grave);

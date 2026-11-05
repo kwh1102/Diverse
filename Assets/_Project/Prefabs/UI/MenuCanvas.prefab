@@ -12106,7 +12106,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "AI \uC9C4\uD654: \uB85C\uCEEC \uBAA8\uB4DC   \xB7   \uC138\uACC4 \uC2DC\uB4DC
+  m_Text: "AI \uC561\uD2F0\uBE0C: \uB85C\uCEEC \uBAA8\uB4DC   \xB7   \uC138\uACC4 \uC2DC\uB4DC
     0"
 --- !u!114 &1305613072382951706
 MonoBehaviour:
@@ -13045,7 +13045,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "<b>AI \uC9C4\uD654 (OpenAI)</b>"
+  m_Text: "<b>AI \uC561\uD2F0\uBE0C (OpenAI)</b>"
 --- !u!114 &6613324384410889148
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -163,7 +163,11 @@ namespace Diverse
                 var style = DB.W(System.Enum.TryParse(w.baseWeapon, out WeaponKind k) ? k : WeaponKind.Greatsword);
                 w.moves = style.combo.Select(DesignCombat.Classify).Take(4).ToList();
                 w.weight = "medium";
-                w.skills = style.skills;
+                w.skills = null;
+                w.type = Any(s, "총", "권총", "소총", "gun", "pistol", "rifle") ? WeaponType.Gun
+                    : w.baseWeapon == nameof(WeaponKind.Crossbow) ? WeaponType.Bow
+                    : w.baseWeapon == nameof(WeaponKind.Staff) ? WeaponType.Staff
+                    : w.baseWeapon == nameof(WeaponKind.Dagger) ? WeaponType.Dagger : WeaponType.Sword;
             }
         }
     }

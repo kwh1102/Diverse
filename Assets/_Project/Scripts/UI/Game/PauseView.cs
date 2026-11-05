@@ -73,7 +73,7 @@ namespace Diverse
             {
                 UIKit.Set(abilitiesHeader, $"<b>{p.Weapon.name}</b> · {p.Costume.name} <color=#fff2b3>({p.Costume.perk})</color>");
                 UIKit.Set(abilitiesList, p.Abilities.Owned.Count == 0
-                    ? "<color=#8c7aa8>아직 능력이 없다. 레벨이 오르면 플레이 방식이 능력으로 진화한다.</color>"
+                    ? "<color=#8c7aa8>장착한 파츠가 없습니다. 인벤토리의 무기 파츠 칸에 고정 파츠를 장착하세요.</color>"
                     : string.Join("\n\n", p.Abilities.Owned.Select(a =>
                         $"{(a.source == "ai" ? "<color=#c9b8ff>✦AI</color>" : "<color=#8c7aa8>◇</color>")} <b><color=#fff2b3>{a.name}</color></b>  <color=#6b5c8a>{string.Join(" ", a.tags)}</color>\n<color=#c9bcd8>{a.Explain()}</color>")));
             }

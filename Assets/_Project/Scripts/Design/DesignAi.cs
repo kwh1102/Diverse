@@ -40,18 +40,19 @@ HARD RULES
   For EDIT, preserve current design details unless the player asks to change them.
 - Picture prompts: English, a concrete description of ONE subject (shape, colours, material, details), 8-35 words.
   No art-style words (the engine adds them), no text or letters, no real brands, no real people.
-- For INITIAL output hero, weapon and attack. For EDIT infer the requested changes from the single prompt and omit unchanged sections. Return weapon and attack together if combat changes. For APPEARANCE ONLY output hero only if its appearance was requested, otherwise just a Korean summary explaining combat is locked. Korean for name/species/summary/ignored/skillNames (max 10 characters).
+- For INITIAL output hero, weapon and attack. For EDIT infer the requested changes from the single prompt and omit unchanged sections. Return weapon and attack together if combat changes. For APPEARANCE ONLY output hero only if its appearance was requested, otherwise just a Korean summary explaining combat is locked. Korean for name/species/summary/ignored (max 10 characters).
 
 SECTIONS
-hero: {name, species, imagePrompt, perkConcept}
-  perkConcept: one English sentence, the passive trait this character would naturally have (flavour; the engine balances it).
-weapon: {name, imagePrompt, hold(Hand|Mouth|Hidden), length(8-34 px), attackPose, moves, weight(light|medium|heavy), skills, skillNames}
+hero: {name, species, imagePrompt}
+  No starting passive generation. Fixed costume modifiers are applied by the engine.
+weapon: {name, type(0 Sword|1 Bow|2 Gun|3 Staff|4 Dagger), imagePrompt, hold(Hand|Mouth|Hidden), length(8-34 px), attackPose, moves, weight(light|medium|heavy)}
+  type is a finite weapon category, independent of appearance. Use a JSON integer 0..4.
+  Generate ONLY the basic-attack appearance and projectile/effects here. NEVER generate QWER skills or skill art; those are generated individually when learned.
   hold Hidden + imagePrompt """" when the player fights with nothing in hand (fists, kicks, tentacles, breath, magic from the body).
   attackPose = English, how the hero's BODY moves when attacking (""throwing a straight punch"", ""kicking forward"", ""lashing a tentacle"", ""swinging both arms down"").
   moves = the basic attack combo in order, 1-4 of: slash | wide | thrust | spin | smash | shot | spread (fists: [""thrust"",""thrust"",""smash""]).
-  skills = 4 ids: Q, W, E from BASIC SKILLS and R from ULTIMATE SKILLS (lists below). skillNames = Korean names in the weapon's theme.
 attack (always with weapon): {origin(Hand|Mouth|Eyes|Above), projectile:{imagePrompt, spin}, slash, slashCore, trail, effectPrompts}
-  effectPrompts = 4 English prompts for NEW visual effects that match how this weapon attacks:
+  effectPrompts = 4 English prompts for BASIC ATTACK ONLY visual effects:
   [swing (a melee attack sweep, e.g. rings of sound waves for a bell), impact (what bursts on a hit), trail (behind a flying shot), muzzle (when shooting/casting)].
   projectile.imagePrompt = what flies when it shoots or throws. slash/slashCore/trail = hex colours matching the effects.
 
@@ -62,9 +63,8 @@ MODE: INITIAL
 PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
 일렉 기타로 음파를 쏘고 싶어. 쿨타임 없게!
 {""summary"":""기타로 음파를 쏘는 로봇 고양이"",""ignored"":[""쿨타임 없음 — 능력치는 바꿀 수 없음""],
- ""hero"":{""name"":""비트 냥"",""species"":""로봇 고양이"",""imagePrompt"":""a small round white robot cat with glowing cyan eyes, pink headphones and a little antenna, standing on two legs"",""perkConcept"":""a rhythm robot whose every third hit releases a sound wave""},
- ""weapon"":{""name"":""일렉 기타"",""imagePrompt"":""a red electric guitar with a white pickguard and silver strings"",""hold"":""Hand"",""length"":20,""moves"":[""wide"",""wide"",""shot""],""weight"":""medium"",
-  ""skills"":[""st_cyclone"",""kt_crescent"",""gs_rush"",""st_thunder""],""skillNames"":[""하울링"",""파워 코드"",""무대 돌진"",""앙코르""]},
+ ""hero"":{""name"":""비트 냥"",""species"":""로봇 고양이"",""imagePrompt"":""a small round white robot cat with glowing cyan eyes, pink headphones and a little antenna, standing on two legs""},
+ ""weapon"":{""name"":""일렉 기타"",""imagePrompt"":""a red electric guitar with a white pickguard and silver strings"",""hold"":""Hand"",""length"":20,""moves"":[""wide"",""wide"",""shot""],""weight"":""medium"",""type"":3},
  ""attack"":{""origin"":""Hand"",""projectile"":{""imagePrompt"":""a glowing cyan musical note"",""spin"":true},""slash"":""#ff6b8a"",""slashCore"":""#fff0f4"",""trail"":""#7ff3ff"",
   ""effectPrompts"":[""three curved neon pink sound wave arcs spreading outward"",""a starburst of cyan musical notes and sparks"",""a short fading cyan ripple ring"",""a bright pink speaker blast ring""]}}";
 
@@ -73,12 +73,9 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
         /// <summary>Estimated USD of the last Generate (text + pictures).</summary>
         public static float LastCostUsd;
 
-        static string SkillList(IEnumerable<string> ids) =>
-            string.Join("\n", ids.Select(id => { var d = SkillDB.Get(id); return $"  {id}: {d.name} — {d.desc}"; }));
-
         static string Previous(DesignPack p, int section) => section == 0
-            ? JsonUtility.ToJson(new HeroLook { name = p.hero.name, species = p.hero.species, imagePrompt = p.hero.imagePrompt, perkConcept = p.hero.perkConcept })
-            : JsonUtility.ToJson(new WeaponLook { name = p.weapon.name, imagePrompt = p.weapon.imagePrompt, hold = p.weapon.hold, length = p.weapon.length, moves = p.weapon.moves, weight = p.weapon.weight, skills = p.weapon.skills, skillNames = p.weapon.skillNames })
+            ? JsonUtility.ToJson(new HeroLook { name = p.hero.name, species = p.hero.species, imagePrompt = p.hero.imagePrompt })
+            : JsonUtility.ToJson(new WeaponLook { name = p.weapon.name, imagePrompt = p.weapon.imagePrompt, hold = p.weapon.hold, length = p.weapon.length, moves = p.weapon.moves, weight = p.weapon.weight, type = p.weapon.type })
                  + " attack: " + JsonUtility.ToJson(new AttackLook { origin = p.attack.origin, projectile = new ProjectileLook { imagePrompt = p.attack.projectile.imagePrompt }, effectPrompts = p.attack.effectPrompts });
 
         /// <summary>
@@ -97,11 +94,7 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
             user.AppendLine("CURRENT COMBAT: " + Previous(current, 1));
             user.AppendLine("PLAYER REQUEST: " + request);
             if(weaponOnly) user.AppendLine("WEAPON ONLY. Preserve the existing hero and travel type. Return weapon and attack sections only. Design a new weapon matching the request.");
-            if (!lockChassis)
-            {
-                user.AppendLine("BASIC SKILLS:\n" + SkillList(DesignCombat.Basics));
-                user.AppendLine("ULTIMATE SKILLS:\n" + SkillList(DesignCombat.Ultimates));
-            }
+
 
             progress("AI가 디자인을 구상하는 중…");
             string json = null;
@@ -117,6 +110,7 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
             try { answer = JsonUtility.FromJson<DesignPack>(json); }
             catch (Exception e) { done(null, "AI 응답 해석 실패 (" + e.Message + ")"); yield break; }
             if (answer == null) { done(null, "AI 응답 형식 오류"); yield break; }
+            answer.version = DesignPack.Version;
             bool[] sections = { answer.hero != null && Has(json, "hero"), !lockChassis && Has(json, "weapon") && Has(json, "attack") };
             if(weaponOnly) sections[0]=false;
             if (initial && (!sections[0] || !sections[1])) { done(null, "AI가 초기 디자인을 모두 만들지 못했어요"); yield break; }

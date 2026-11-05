@@ -422,13 +422,10 @@ namespace Diverse
             var w = Session.World;
             UIKit.Set(status, statusText + (w != null && w.designCalls > 0 ? $"\n<color=#6b5c8a>이 세계의 AI 디자인 {w.designCalls}회 · 누적 약 ${w.designCostUsd:0.0000}</color>" : ""));
 
-            // Combat and starting passive are generated, never picked from presets; numbers are the engine's
-            var qwer = string.Join(" ", b.skills.Take(4).Select((id, i) => "QWER"[i] + " " + SkillDB.Get(id)?.name));
+            // Basic attacks are designed here; actives are generated when acquired.
+            var qwer = ActiveSkillGenerator.TypeName(working.weapon.type) + " · QWER 습득 시 AI 생성 · 같은 유형·같은 슬롯끼리 교환";
             UIKit.Set(weaponBase, $"공격 <color=#fff2b3>{DesignCombat.Describe(working.weapon)}</color>  <color=#8c7aa8>{qwer}</color>");
-            var perk = working.hero.perk;
-            UIKit.Set(perkBase, perk != null && !string.IsNullOrEmpty(perk.name)
-                ? $"시작 능력 <color=#fff2b3>{perk.name}</color>"
-                : "시작 능력 <color=#8c7aa8>삶을 시작하면 캐릭터 설명으로 만들어져요 (밸런스 검증)</color>");
+            UIKit.Set(perkBase, "<color=#8c7aa8>고정 파츠로 액티브를 보조하고, QWER 능력은 습득할 때 새로 생성합니다.</color>");
         }
 
         Sprite TravelMotionPreview(TravelType type, float elapsed)

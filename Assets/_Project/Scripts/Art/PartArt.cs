@@ -41,14 +41,15 @@ namespace Diverse
 
         static Sprite Raw(InventoryItem item)
         {
-            if(item==null || item.kind==ItemKind.Skill) return null;
+            if(item==null) return null;
+            if(item.kind==ItemKind.Skill) return ActiveSkillArt.Icon(item.active);
             string key=item.kind==ItemKind.Weapon?"weapon:"+item.id:item.kind==ItemKind.Part?"part:"+item.Ability?.partImage:"consumable:"+item.consumable;
             if(cache.TryGetValue(key,out var sprite) && sprite!=null) return sprite;
             if(item.kind==ItemKind.Weapon)
                 return cache[key]=item.design!=null?DesignStore.Sprite(item.design.weapon.image,new Vector2(.5f,.5f))??DesignArt.Weapon(item.design.weapon,centered:true)??BuiltinWeapon(item.weapon.kind):BuiltinWeapon(item.weapon.kind);
             if(item.kind==ItemKind.Part)
             {
-                var generated=DesignStore.Sprite(item.Ability?.partImage,new Vector2(.5f,.5f));
+                var generated=Resources.Load<Sprite>(item.Ability?.partImage ?? "") ?? DesignStore.Sprite(item.Ability?.partImage,new Vector2(.5f,.5f));
                 if(generated!=null) return cache[key]=generated;
                 return Pending();
             }

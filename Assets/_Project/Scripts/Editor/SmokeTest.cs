@@ -252,10 +252,7 @@ namespace Diverse.EditorTools
                 if (Game.I.Player != null && Game.I.Player.Weapon.name != "이쑤시개") Fail("weapon skin (name) not applied");
                 if (Game.I.Player != null && Mathf.Abs(DesignCombat.Power(Game.I.Player.Weapon) - DesignCombat.Budget) > DesignCombat.Budget * 0.01f)
                     Fail($"designed weapon is off the power budget ({DesignCombat.Power(Game.I.Player.Weapon):0.0} vs {DesignCombat.Budget:0.0})");
-                if (Game.I.Player != null && Game.I.Player.Costume.mods != null) Fail("designed hero kept a preset stat perk");
                 yield return Frames(5);
-                if (Game.I.Player != null && Game.I.Player.Abilities.Owned.Count == 0) Fail("designed hero got no starting passive");
-                if (DesignStore.PackOfCostume(Game.I.Player.Costume.id)?.hero.perk == null) Fail("starting passive was not kept with the design");
                 var boot = CheckBoot();
                 if (boot != null) Fail(boot);
                 if (!Visible<HudView>()) Fail("HUD not visible");
@@ -464,10 +461,7 @@ namespace Diverse.EditorTools
 
                 step = "grave inheritance preview";
                 {
-                    var ability = new AbilityDef { id = "smoke_legacy", name = "기억 전승 검증", rules = { new RuleDef
-                    {
-                        kind = RuleKind.Replace, replaces = "Dash", ops = { new OpDef { op = "ReplaceWith", mode = "Blink" } },
-                    } } };
+                    var ability = PartCatalog.Create("focus_lens");
                     var grave = new GraveRecord { heroName = "검증 영웅", abilities = { AbilityRecord.From(ability) } };
                     var it = Object.Instantiate(DB.Asset.interactablePrefab);
                     it.kind = "grave"; it.data = grave;
@@ -488,11 +482,6 @@ namespace Diverse.EditorTools
                 step = "replacement dash travel";
                 {
                     var p = g.Player;
-                    var replacement = new AbilityDef { id = "smoke_replace_dash", rules = { new RuleDef
-                    {
-                        kind = RuleKind.Replace, replaces = "Dash", ops = { new OpDef { op = "ReplaceWith", mode = "Blink" } },
-                    } } };
-                    p.Abilities.Add(replacement);
                     p.SetTravelTarget(p.Pos + Vector2.right * 8);
                     p.DashCharges = p.DashChargesMax;
                     p.TryDash(Vector2.left);
@@ -539,21 +528,6 @@ namespace Diverse.EditorTools
                     p.StopMoving();
                 }
 
-                step = "stack limits and removal";
-                {
-                    var p = g.Player;
-                    var a = new AbilityDef { id = "stack_regression", name = "스택 검증",
-                        states = { new StateDef { name = "count", label = "중첩", max = 3 } },
-                        rules = { new RuleDef { kind = RuleKind.Trigger, trigger = "Damaged",
-                            ops = { new OpDef { op = "AddState", state = "count", amount = 10 } } } } };
-                    p.Abilities.Add(a);
-                    p.Abilities.Fire(new CombatEvent { type = Trig.Damaged, source = p, position = p.Pos });
-                    if (p.Abilities.GetState(a, "count") != 3) Fail("stack exceeded its maximum");
-                    if (!a.Explain().Contains("최대 3")) Fail("stack description omitted its maximum");
-                    p.Abilities.Remove(a);
-                    if (p.Abilities.Owned.Contains(a) || p.Abilities.GetState(a, "count") != 0) Fail("ability removal retained state");
-                }
-
                 step = "developer level progression";
                 {
                     var p = g.Player;
@@ -570,87 +544,6 @@ namespace Diverse.EditorTools
                     p.DebugSetLevel(oldLevel);
                     if (p.Level != oldLevel || p.PendingEvolutions != awarded) Fail("level decrease corrupted earned evolutions");
                     p.PendingEvolutions = oldPending; p.UnspentAttr = oldPoints; p.RestoreSkills(learned);
-                }
-
-                // Rule IR: every reference ability on one live player, then real combat events through the runtime
-                step = "rule abilities";
-                {
-                    var p = g.Player;
-                    int fired0 = p.Abilities.fireCount;
-                    var all = new System.Collections.Generic.List<AbilityDef> { RuleSamples.FireSource(), RuleSamples.FireSource2() };
-                    all.AddRange(RuleSamples.Accepted());
-                    int added = 0;
-                    foreach (var a in all)
-                    {
-                        a.EnsureLists(); RuleValidator.Tag(a);
-                        a.id = "smoke" + added++;
-                        p.Abilities.Add(a);      // numbers as written: this checks execution, not balance
-                    }
-                    p.RecalcStats();
-                    var foe = Enemy.Spawn(DB.ScaledEnemy("fox", 0), p.Pos + Vector2.right * 1.5f, null);
-                    foe.AddStatus("poison", 3, 1, 0, p, Pal.White);
-                    GameEvents.Raise(new CombatEvent { type = Trig.Damaged, source = p, position = p.Pos, amount = p.maxHp * 0.1f });
-                    for (int i = 0; i < 3; i++) GameEvents.Raise(new CombatEvent { type = Trig.PerfectDodge, source = p, position = p.Pos, direction = Vector2.right });
-                    GameEvents.Raise(new CombatEvent { type = Trig.ComboFinish, source = p, position = p.Pos, direction = Vector2.right });
-                    p.Heal(10);
-                    foe.TakeDamage(new DamageInfo { amount = 99999, source = p, direction = Vector2.right });
-                    GameEvents.Raise(new CombatEvent { type = Trig.Kill, source = p, target = foe, position = foe.Pos });
-                    yield return Frames(30);
-                    if (p.Abilities.fireCount - fired0 < 4) Fail($"rule abilities barely fired ({p.Abilities.fireCount - fired0})");
-                    if (p.Abilities.OfferCount != 2) Fail("system rule OfferCount not applied");
-                    p.Abilities.Clear(); p.RecalcStats();
-                }
-
-                // Every expressiveness case (relations, temporals, replace/constrain, meta, system…) on the live runtime:
-                // real events through GameEvents + real player actions, several seconds of frames. Any exception fails the test.
-                step = "rule language runtime";
-                {
-                    var p = g.Player;
-                    int fired0 = p.Abilities.fireCount;
-                    int added = 0;
-                    foreach (var c in RuleExpressiveness.All())
-                    {
-                        var a = AbilityCompiler.Compile(c.intent).ability;
-                        var r = RuleValidator.Validate(a, BuildContext.Bare(20));
-                        if (r.failedStage is "Schema" or "Type" or "Reference" or "Capability" or "Bounds") { Fail($"{c.name} not structurally valid: {r.Summary()}"); continue; }
-                        RuleValidator.Tag(a);
-                        a.name = c.name; a.id = "expr" + added++;
-                        p.Abilities.Add(a);
-                    }
-                    p.RecalcStats();
-                    for (int wave = 0; wave < 3; wave++)
-                    {
-                        var foes = new System.Collections.Generic.List<Enemy>();
-                        for (int i = 0; i < 4; i++) foes.Add(Enemy.Spawn(DB.ScaledEnemy("fox", 0), p.Pos + MathX.Dir(i * 90 + wave * 20) * 2f, null));
-                        foes[0].AddStatus("poison", 3, 1, 0, p, Pal.White);
-                        foes[1].AddStatus("burn", 3, 1, 0, p, Pal.Fire);
-                        GameEvents.Raise(new CombatEvent { type = Trig.Hit, source = p, target = foes[2], position = foes[2].Pos, amount = p.AttackPower, tags = p.Weapon.tags });
-                        GameEvents.Raise(new CombatEvent { type = Trig.Crit, source = p, target = foes[1], position = foes[1].Pos, amount = p.AttackPower * 2, tags = p.Weapon.tags });
-                        GameEvents.Raise(new CombatEvent { type = Trig.Damaged, source = p, target = foes[3], position = p.Pos, amount = p.maxHp * 0.1f });
-                        GameEvents.Raise(new CombatEvent { type = Trig.SkillCast, source = p, position = p.Pos, direction = Vector2.right, tags = "SKILL" });
-                        GameEvents.Raise(new CombatEvent { type = Trig.ComboFinish, source = p, position = p.Pos, direction = Vector2.right });
-                        GameEvents.Raise(new CombatEvent { type = Trig.PerfectDodge, source = p, position = p.Pos, direction = Vector2.right });
-                        GameEvents.Raise(new CombatEvent { type = Trig.Guard, source = p, target = foes[3], position = p.Pos });
-                        GameEvents.Raise(new CombatEvent { type = Trig.LowHealth, source = p, position = p.Pos });
-                        p.TryDash(Vector2.left);
-                        p.Heal(5);
-                        p.AddShield(5, 3); p.invulnUntil = 0;
-                        p.TakeDamage(new DamageInfo { amount = 8, source = foes[3], direction = Vector2.right });
-                        p.Abilities.Raise("Pickup", p.Pos, "gold");
-                        p.Abilities.Moved(7);
-                        foreach (var f in foes) if (f != null && f.Alive) f.TakeDamage(new DamageInfo { amount = 99999, source = p, direction = Vector2.right });
-                        foreach (var f in foes) GameEvents.Raise(new CombatEvent { type = Trig.Kill, source = p, target = f, position = f != null ? f.Pos : p.Pos, amount = 99999 });
-                        yield return Frames(45);
-                        foreach (var f in foes) if (f != null) f.Despawn();
-                    }
-                    yield return Frames(30);
-                    int fired = p.Abilities.fireCount - fired0;
-                    if (fired < 20) Fail($"rule language barely fired ({fired})");
-                    p.Abilities.Clear(); p.RecalcStats();
-                    foreach (var c in Clone.Active.ToArray()) if (c != null) Object.Destroy(c.gameObject);
-                    foreach (var s in Summon.Active.ToArray()) if (s != null) Object.Destroy(s.gameObject);
-                    p.hp = p.maxHp;
-                    yield return Frames(2);
                 }
 
                 step = "evolve";
@@ -725,8 +618,7 @@ namespace Diverse.EditorTools
                 Game.I.Player.Gold = 77;
                 Game.I.Player.WarpStones = 3;
                 Game.I.Player.LearnNextSkill();
-                var savedAbility = RuleSamples.FireSource();
-                savedAbility.EnsureLists(); RuleValidator.Tag(savedAbility);
+                var savedAbility = PartCatalog.Create("focus_lens");
                 Game.I.Player.Abilities.Add(savedAbility);
                 string savedSignature = savedAbility.Signature();
                 Game.I.OpenOverlay(GameState.Paused);
@@ -745,7 +637,7 @@ namespace Diverse.EditorTools
                 if (Game.I.Player.Costume.id != designedCostume) Fail("continued life lost its designed hero");
                 if (Game.I.Player.WarpStones != 3) Fail("continued life lost carried warp stones");
                 if (Game.I.Player.LearnedSkills != 1) Fail("continued life lost learned skills");
-                if (!Game.I.Player.Abilities.Owned.Any(a => a.Signature() == savedSignature)) Fail("continued life lost RuleIR ability");
+                if (!Game.I.Player.Abilities.Owned.Any(a => a.Signature() == savedSignature)) Fail("continued life lost fixed part");
             }
 
             /// <summary>Offline checks of the picture → sprite pieces (frames, effects, prompt detection).</summary>

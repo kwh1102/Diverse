@@ -25,9 +25,13 @@ namespace Diverse
         public Sprite[] trailFx;        // designed weapons: generated trail effect instead of dot particles
         public bool spin;
         public System.Action<Projectile, Actor> onHit;
+        public System.Func<Projectile, Actor, bool> canHit;
+        public System.Action<Projectile, Actor> resolveHit;
         public System.Action<Projectile, float> onUpdate;    // steering (curving shots); gets the age in seconds
         public System.Action<Projectile> onEnd;
         readonly HashSet<Actor> hitSet = new HashSet<Actor>();
+        bool ended;
+        public void ResetHits() => hitSet.Clear();
         public static readonly List<Projectile> Live = new List<Projectile>();
         void Awake() => Live.Add(this);
         void OnDestroy() => Live.Remove(this);
@@ -64,6 +68,7 @@ namespace Diverse
             if (t >= life) { End(); return; }
 
             onUpdate?.Invoke(this, t);
+            if (ended) return;
             if (homing > 0)
             {
                 var tgt = Actor.Nearest(transform.position, 6f, targetTeam);
@@ -97,15 +102,17 @@ namespace Diverse
             {
                 if (a == null || !a.Alive || a.team != targetTeam || hitSet.Contains(a)) continue;
                 if (((Vector2)a.Pos + Vector2.up * 0.35f - p).sqrMagnitude > (radius + a.radius) * (radius + a.radius)) continue;
+                if (canHit != null && !canHit(this, a)) continue;
                 hitSet.Add(a);
                 var d = dmg;
                 d.direction = vel.normalized;
-                if (owner != null && owner.team == Team.Player) Combat.Hit(a, d, color, sfx, shake, kick);
+                if (resolveHit != null) resolveHit(this, a);
+                else if (owner != null && owner.team == Team.Player) Combat.Hit(a, d, color, sfx, shake, kick);
                 else
                 {
                     a.TakeDamage(d);
                 }
-                if (d.element != Element.None) Combat.ApplyElement(a, d.element, d.amount, owner, d.depth);
+                if (resolveHit == null && d.element != Element.None) Combat.ApplyElement(a, d.element, d.amount, owner, d.depth);
                 onHit?.Invoke(this, a);
                 if (explodeRadius > 0) { Explode(); return; }
                 if (pierce-- <= 0) { End(); return; }
@@ -130,6 +137,8 @@ namespace Diverse
 
         void End()
         {
+            if (ended) return;
+            ended = true;
             onEnd?.Invoke(this);
             Destroy(gameObject);
         }

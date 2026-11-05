@@ -186,8 +186,6 @@ namespace Diverse
             PrewarmRun();
             Offer = null; Generating = false; Boss = null; ChatBusy = false;
             ResetPrefetch();
-            var heroPack = DesignStore.PackOfCostume(costume.id);
-            if (heroPack != null) StartCoroutine(StartingPerkRoutine(heroPack));
             State = GameState.Playing;
             GameTime.ClearPauses();
             World.Log($"{World.lifeCount}번째 삶: {HeroName}({costume.name}, {w.name}) — 기억의 광장에서 눈을 떴다.", "life");
@@ -314,17 +312,15 @@ namespace Diverse
             if (r.inventory != null)
             {
                 p.RestoreInventory(r.inventory);
-                foreach (var rec in r.abilities) { var g = rec.ToAbility(); if (g != null) p.Abilities.Restore(g); }
+                p.MigrateAbilities(r.abilities);
             }
             else
             {
                 p.RestoreSkills(r.skillsLearned < 0 ? p.Skills.Length : r.skillsLearned);
-                var intrinsic = DesignStore.PackOfCostume(costume.id)?.hero.perk?.ToAbility();
                 foreach (var rec in r.abilities)
                 {
                     var a = rec.ToAbility(); if (a == null) continue;
-                    if (intrinsic != null && (!string.IsNullOrEmpty(a.id) && a.id == intrinsic.id || a.Signature() == intrinsic.Signature())) p.Abilities.Restore(a);
-                    else { var item = InventoryItem.Part(a); item.acquisitionApplied = true; p.Inventory.Receive(item, equip: true); }
+                    { var item = InventoryItem.Part(a); item.acquisitionApplied = true; p.Inventory.Receive(item, equip: true); }
                 }
             }
             foreach (var s in r.intent) { var kv = s.Split('='); if (kv.Length == 2 && int.TryParse(kv[1], out var n)) p.Telemetry.intent[kv[0]] = n; }
@@ -418,8 +414,8 @@ namespace Diverse
                 life = World.lifeCount, heroName = HeroName, costume = p.Costume.id, weapon = (int)p.Weapon.kind, level = p.Level, kills = p.Kills,
                 x = p.Pos.x, y = p.Pos.y, cause = cause,
             };
-            // Abilities carved on the grave (the 2 strongest) → the next life can visit the grave and recover them
-            foreach (var item in p.Inventory.items.Where(i => i.kind == ItemKind.Part).OrderByDescending(i => i.complexity).ThenByDescending(i => i.Ability?.power ?? 0))
+            // Preserve fixed parts on the grave, ordered by upgrade rank for legacy selection.
+            foreach (var item in p.Inventory.items.Where(i => i.kind == ItemKind.Part).OrderByDescending(i => i.complexity))
                 grave.parts.Add(item.Copy());
             var legacy = grave.parts.FirstOrDefault(i => i.complexity <= InventoryState.Rules.LegacyTier(World));
             if (legacy != null) SelectLegacy(grave, legacy.id);

@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   def:
     kind: 4
+    type: 4
     name: "\uB2E8\uAC80"
     desc: "\uB208\uBCF4\uB2E4 \uBE60\uB978 \uB09C\uB3C4\uC9C8. \uAC00\uBCCD\uC9C0\uB9CC
       \uAE09\uC18C\uB97C \uB178\uB9B0\uB2E4."
@@ -102,10 +103,10 @@ MonoBehaviour:
       swingDir: 1
       fxScale: 0.9
     skills:
-    - dg_fan
-    - dg_shadowstep
-    - dg_venom
-    - dg_frenzy
+    -
+    -
+    -
+    -
     element: 0
     sfxSwing: swing_light
     sfxHit: hit_light

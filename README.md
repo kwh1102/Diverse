@@ -64,7 +64,7 @@
 ## 게임 구조
 
 - **삶(Run)**: 코스튬 + 시작 무기 선택 → 마을(기억의 광장)에서 시작 → 무한한 세계 탐험
-- **장비**: 유형별 격자 가방에서 무기 주변의 QWER·대각선 파츠를 배치한다. 선택한 무기만 효과를 사용한다. [인벤토리·합성·계승 규칙](Docs/Inventory.md)
+- **장비**: 유형별 격자 가방에서 무기 주변의 QWER·유형별 파츠를 배치한다. 선택한 무기만 효과를 사용한다. [인벤토리·합성·계승 규칙](Docs/Inventory.md)
 - **죽음**: 쓰러진 자리에 무덤이 남는다. 사망 화면에서 파츠 하나를 다음 삶의 **유산**으로 선택한다. 옛 저장의 미회수 무덤에서도 능력을 파츠로 계승할 수 있다.
 - **세계의 기억**: 소탕한 야영지, 연 상자, 구한 여행자, 동상, 탑의 층, 연대기는 삶이 바뀌어도 이어진다.
 - **이야기꾼**: 과거 영웅을 **기록**할지(광장에 동상, 영구 공격력 보너스) **망각**할지(기억의 조각) 고른다.
@@ -85,22 +85,13 @@
 
 흰 토끼(경험치 +30%) · 갈색 토끼(치명타) · 검은 토끼(재사용 대기시간) · 회색 토끼(체력·방어) · 분홍 토끼(회복·원소) · 금빛 토끼(골드·이동 속도)
 
-## AI 능력 진화 (기획의 핵심)
+## AI 액티브와 고정 파츠
 
-```
-[플레이] → ① 텔레메트리 → ② 특징 추출 → ③ 패턴 분석 → ④ 능력 그래프 분석 (Active/Seeded)
-        → ⑥ 생성 컨텍스트 → ⑦ 원자 검색 (+ 탐색용 풀)
-        → ⑧ LLM #1: 능력 그래프 생성 (구조만)
-        → ⑩ 스키마 검증 → ⑪ 세계 규칙 검증/수리 → ⑫ 시너지(태그) → ⑬ 점수화 → ⑭ 파워 버짓 (수치는 코드가 결정)
-        → ⑮ LLM #2: 이름/설명 → 실물 파츠 후보 3개 중 1개 획득 → 가방에서 무기 대각선에 장착
-```
+파츠는 고정 16종과 도트 PNG를 사용합니다. 레벨업 후보는 목록에서 선택하고, 같은 종류·같은 등급을 합쳐 강화합니다. 파츠는 액티브를 보조하며 같은 종류는 가장 높은 등급 하나만 적용합니다.
 
-- AI는 **스킬 목록에서 고르지 않는다.** **능력 언어**의 원자(Event/Action/Relation/Entity/Form/Element/Temporal/Condition + 기본 법칙)로 그래프를 조립한다.
-- 밸런스 수치는 AI 출력과 상관없이 항상 `AbilityValidator.Balance`가 정한다.
-- 기존 강화 능력(예: `[CLONE] ×1.25`)은 같은 태그를 가진 새 능력에 자동으로 적용된다.
-- API 키가 없거나 호출이 실패하면 **로컬 생성기(`LocalComposer`)**가 같은 형식으로 그래프를 만들기 때문에 게임은 항상 동작한다.
-- 레벨 N이 되는 순간 N+1 레벨용 후보를 백그라운드에서 미리 생성한다. AI 응답이 쓸 수 없으면 레벨업 전까지 재시도하므로 진화 창은 대기 없이 열린다.
-- 진화 창에서 이야기꾼(AI)과 대화해 후보를 고칠 수 있다 (골드 소모, 다시 뽑기보다 비쌈). 파이프라인 상세는 **과정 보기**로 확인.
+QWER은 습득할 때 AI가 전달 방식·패턴·효과·조건·타이밍·대가를 조합해 새로 설계합니다. 완성된 24종 스킬 표와 패시브 기술 언어는 제거했습니다. 수치는 데이터의 위력 예산으로 계산합니다. 각 스킬은 image-2.5 API로 전용 아이콘·투사체·이펙트를 만들고 저장합니다. 무기 디자인은 평타 아트만 생성합니다. AI를 사용할 수 없으면 로컬 조합으로 동작합니다.
+
+검·활·총·봉·단검 유형별 주변 공간을 사용하고, 같은 유형·같은 슬롯끼리만 스킬을 교환합니다. 종속 스킬은 양쪽 무기의 관계를 보존하도록 함께 옮깁니다. [생성 규칙과 에디터 설정](Docs/ActiveSkills.md), [인벤토리·합성·계승](Docs/Inventory.md)
 
 ### OpenAI 연결 (선택)
 
@@ -109,7 +100,7 @@
    - 환경 변수 `OPENAI_API_KEY`
    - `%USERPROFILE%\AppData\LocalLow\DefaultCompany\Diverse\openai_key.txt` (메뉴 **Diverse → AI 키 파일 위치 열기**)
    - 프로젝트 루트의 `openai_key.txt` (git에서 제외됨)
-3. 게임 내 **설정 → AI 진화**에서 모델 선택 (GPT-4o mini / GPT-4.1 mini / GPT-4.1 nano / GPT-4.1, 기본값 GPT-4o mini — 목록은 `AiClient.Models`)
+3. 게임 내 **설정 → AI 액티브**에서 모델 선택 (GPT-4o mini / GPT-4.1 mini / GPT-4.1 nano / GPT-4.1, 기본값 GPT-4o mini — 목록은 `AiClient.Models`)
 
 > **비용 안내**: OpenAI API는 무료 제공량이 없다. 계정에 크레딧이 있어야 호출된다 (`429 insufficient_quota`는 크레딧이 없다는 뜻). `gpt-4o-mini` 기준 진화 1회(호출 2번)는 보통 1원도 안 되지만 "완전 무료"는 아니다. 키가 없어도 로컬 모드로 게임 전체를 플레이할 수 있다.
 
@@ -122,8 +113,8 @@
 | `Art/` | 도트 생성기(`PixelCanvas`): 캐릭터, 적, 지형, 건물, 이펙트. `Resources/Sprites/<key>.png`가 있으면 그 이미지를 우선 사용 |
 | `World/` | `WorldGen`(시드 기반 무한 지형·구조물), `WorldStreamer`(청크 로딩, 충돌, A* 경로 탐색), `ChunkView`, `World`(구조물 생성 + 기억 반영), `FireFx`, `Dialogue`, `Interactable`, `Pickup` |
 | `Actors/` | `Actor`(공통: 체력·넉백·피격 플래시·상태이상), `Player`, `Enemy`(공격 예고, AI 7종, 보스 패턴), `Clone`(분신), `Summon`(포탑·궤도 구슬·장판) |
-| `Combat/` | `Combat`(판정·피해·타격 연출), `Projectile`, `Skills`(스킬 24종), `Fx`(이펙트 풀) |
-| `Abilities/` | `AbilityLanguage`(원자 DSL), `AbilityGraph`, `Telemetry`, `AbilityPipeline`(컨텍스트·검증·밸런스), `LocalComposer`, `AiClient`(OpenAI), `AbilityRuntime`(실행) |
+| `Combat/` | `Combat`(판정·피해·타격 연출), `Projectile`, `Skills`·`ActiveSkillGenerator`·`ActiveSkillRuntime`(AI 조합 액티브), `Fx`(이펙트 풀) |
+| `Abilities/` | `FixedParts`(고정 파츠·저장 호환), `AbilityRuntime`(파츠 보조 효과), `Telemetry`, `AiClient` |
 | `UI/` | uGUI 화면 스크립트(값만 채움): `Menu/`(MenuUI, TitleView, CharacterSelectView), `Game/`(GameUI, HudView, PauseView, DialogueView, EvolveView, MapView, DeathView, ToastView…), `SettingsView`(두 씬 공용), `UIKit` |
 | `Editor/` | `Diverse` 메뉴: 파이프라인 검증, 스모크 테스트, UI 스크린샷, 빠진 에셋 채우기(`ProjectAssetBuilder`·`UIBuilder`, 기본 수치는 `DefaultData`), 마을 그림 찍기, AI 키 폴더, 세이브 초기화 |
 
@@ -131,7 +122,7 @@
 
 - **타격감 조정**: `Data/Weapons/<무기>.asset` → `Combo` 항목 (`hitstop`, `shake`, `kick`, `lunge`, `knockback`)
 - **적·코스튬 수치**: `Data/Enemies/*.asset`, `Data/Costumes/*.asset` (코스튬 특화 능력치는 `Mods`: 스탯 / 곱연산 여부 / 값)
-- **스킬 추가**: `Combat/Skills.cs` → `SkillDB`에 정의 + `Run()`에 `case` 추가 + 무기 에셋의 `Skills` 변경
+- **액티브 규칙·파츠·무기 공간**: `Data/AbilityRules.asset`과 `Combat/ActiveSkillGenerator.cs`, `Combat/ActiveSkillRuntime.cs`
 - **새 적**: `Data/Enemies`에서 **Create → Diverse → Enemy**로 만들고 `GameDatabase`의 `Enemies`에 추가 + `Resources/Sprites/enemy_<sprite>_0~4.png` 그림(코드 대체 그림 없음) + `WorldGen.FillSpec` 등장 목록에 추가
 - **새 구조물**: `StructKind` + `WorldGen.PickKind/FillSpec` + `World.BuildStructure`
 - **도트 그림 교체**: `Resources/Sprites/`의 PNG를 고치면 된다. 키 이름 규칙은 `Art.Get` 호출부 참고 (예: `rabbit_white_Idle0`, `enemy_fox_0`, `prop_well`)

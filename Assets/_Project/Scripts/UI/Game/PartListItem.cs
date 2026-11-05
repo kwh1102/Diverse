@@ -10,7 +10,7 @@ namespace Diverse
         public void Bind(InventoryItem item,bool chosen,System.Action click)
         {
             UIKit.Sprite(icon,PartArt.For(item));
-            UIKit.Set(nameLabel,(chosen?"◆ ":"")+item.name+$"\n복잡도 T{item.complexity}");
+            UIKit.Set(nameLabel,(chosen?"◆ ":"")+item.name+$"\n등급 T{item.complexity}");
             UIKit.Bind(GetComponent<Button>(),click);
         }
         public void SetInteractable(bool value)=>GetComponent<Button>().interactable=value;

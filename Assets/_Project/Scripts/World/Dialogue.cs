@@ -247,10 +247,10 @@ namespace Diverse
             var smithLevels = DB.Progression.smithSkillLevels;
             int known = p.AcquiredSkills;
             int nextAt = known < smithLevels.Length && known < p.Skills.Length ? smithLevels[known] : -1;
-            var nextSkill = known < p.Skills.Length ? SkillDB.Get(p.Skills[known].id) : null;
+            string nextSkill = known < p.Skills.Length ? "QWER"[known] + " 액티브" : null;
             string skillLine = nextSkill == null ? "이 무기의 기술은 모두 익혔구먼."
-                : nextAt >= 0 && lvl + 1 >= nextAt ? $"한 번 더 벼리면 [{nextSkill.name}] 쓰는 법도 알려 주지."
-                : nextAt >= 0 ? $"+{nextAt}까지 벼리면 [{nextSkill.name}] 쓰는 법을 알려 주지." : "";
+                : nextAt >= 0 && lvl + 1 >= nextAt ? $"한 번 더 벼리면 [{nextSkill}] 쓰는 법도 알려 주지."
+                : nextAt >= 0 ? $"+{nextAt}까지 벼리면 [{nextSkill}] 쓰는 법을 알려 주지." : "";
             var page = new DialoguePage { speaker = "대장장이 브루노", portrait = Art.Npc("bear", 0), text = $"흠. 쓸 만한 {p.Weapon.name}. 좀 더 벼려 줄까? (현재 강화 +{lvl})\n{skillLine}" };
             page.options.Add(new DialogueOption($"무기 강화 ({cost} 골드) — 공격력 +12%", () =>
             {
@@ -398,7 +398,7 @@ namespace Diverse
                         Show(new DialoguePage
                         {
                             speaker = $"기억 전승 — {r.name}", portrait = Art.Prop("grave"),
-                            text = $"복잡도 T{r.complexity} · 계승 한도 T{InventoryState.Rules.LegacyTier(g.World)}\n" + preview.Explain(),
+                            text = $"등급 T{r.complexity} · 계승 한도 T{InventoryState.Rules.LegacyTier(g.World)}\n" + preview.Explain(),
                             options =
                             {
                                 new DialogueOption("이 파츠 계승하기", () =>

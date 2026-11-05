@@ -37,6 +37,7 @@ namespace Diverse
     public class WeaponDef
     {
         public WeaponKind kind;
+        public WeaponType type;
         public string name;
         [TextArea] public string desc;
         public string tags;              // ability language tags ("SWORD HEAVY MELEE")
@@ -47,7 +48,7 @@ namespace Diverse
         public float moveSpeedMul = 1f;
         public float attackRange = 1.6f; // range at which right-click auto-attack starts
         public ComboStep[] combo;
-        public string[] skills = new string[4];  // QWER skill ids
+        public string[] skills = new string[4];  // Legacy save field; active skills live on inventory items.
         public Element element;
         public string sfxSwing = "swing";
         public string sfxHit = "hit";

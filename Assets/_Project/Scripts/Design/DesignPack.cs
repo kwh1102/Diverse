@@ -13,7 +13,7 @@ namespace Diverse
     [Serializable]
     public class DesignPack
     {
-        public const int Version = 1;
+        public const int Version = 2;
         public int version = Version;
         public string id;                 // file name; a committed pack is never edited, a change makes a new id
         public string parent;             // the pack this one was edited from
@@ -50,8 +50,7 @@ namespace Diverse
 
     /// <summary>
     /// The hero. With an API key it is a fresh picture (image) of anything the player described — not necessarily a rabbit.
-    /// Without one, the rabbit is recolored from the fields below (local fallback). The starting passive (perk) is generated
-    /// once from perkConcept by the Rule IR pipeline (validated + power budget), then kept with the pack.
+    /// Without one, the rabbit is recolored from the fields below (local fallback). Legacy perk fields are read only for old saves; current characters use finite costume modifiers.
     /// </summary>
     [Serializable]
     public class HeroLook
@@ -71,19 +70,20 @@ namespace Diverse
     }
 
     /// <summary>
-    /// The held object and how it fights. Attack parts (moves + weight) and QWER skill ids are turned into a WeaponDef by
+    /// The held object and how it fights. Basic attack parts (moves + weight) are turned into a WeaponDef by
     /// DesignCombat with numbers from the existing weapon assets, normalized to the built-in power budget.
     /// image = a fresh picture; shape/pixels = the local fallback drawing.
     /// </summary>
     [Serializable]
     public class WeaponLook
     {
+        public WeaponType type = WeaponType.Sword;
         public string name;
         public string imagePrompt;                 // English (image model)
         public string image;                       // DesignStore image id
         public List<string> moves = new List<string>();   // DesignCombat.Moves, 1..4 = the basic attack combo
         public string weight = "medium";           // light | medium | heavy
-        public string[] skills;                    // QWER ids from DesignCombat.AllSkills (R = an ultimate)
+        public string[] skills;                    // legacy serialized field; current skills live on InventoryItem.active
         public string[] skillNames;                // Korean display names for them
         public string baseWeapon = "Greatsword";   // WeaponKind (local fallback without attack parts)
         public string shape = "builtin";           // DesignArt.WeaponShapes

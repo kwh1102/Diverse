@@ -51,15 +51,15 @@ namespace Diverse
             }
             var a=bag.Find(first);var b=bag.Find(second);var result=g.FusionPreview;
             UIKit.Sprite(firstIcon,PartArt.For(a));UIKit.Sprite(secondIcon,PartArt.For(b));UIKit.Sprite(resultIcon,PartArt.For(result));
-            UIKit.Set(firstText,a==null?"재료 A를 선택해 주세요":$"{a.name}\n복잡도 T{a.complexity}");
-            UIKit.Set(secondText,b==null?"재료 B를 선택해 주세요":$"{b.name}\n복잡도 T{b.complexity}");
-            UIKit.Set(resultText,result==null?"같은 복잡도의 파츠 두 개로\n새로운 파츠를 만들어요.\n\n결과를 확인한 뒤 확정하면\n재료와 골드가 소모돼요.":InventoryView.Description(result));
+            UIKit.Set(firstText,a==null?"재료 A를 선택해 주세요":$"{a.name}\n등급 T{a.complexity}");
+            UIKit.Set(secondText,b==null?"재료 B를 선택해 주세요":$"{b.name}\n등급 T{b.complexity}");
+            UIKit.Set(resultText,result==null?"같은 종류·같은 등급의 파츠 두 개로\n해당 파츠의 등급을 올려요.\n\n결과를 확인한 뒤 확정하면\n재료와 골드가 소모돼요.":InventoryView.Description(result));
             UIKit.Set(status,g.InventoryStatus??"재료 A와 B를 고른 뒤 합성안을 요청해 주세요.");
             bool editable=!g.InventoryBusy && result==null;
             foreach(var row in rows) row.SetInteractable(editable);
             chooseFirst.interactable=chooseSecond.interactable=editable;
             UIKit.Label(chooseFirst,selectingFirst?"A 선택 중":"재료 A 바꾸기");UIKit.Label(chooseSecond,selectingFirst?"재료 B 바꾸기":"B 선택 중");
-            generate.interactable=editable && a!=null && b!=null && a!=b && a.complexity==b.complexity && a.complexity<InventoryState.Rules.maxPartTier && g.Player.Gold>=InventoryState.Rules.FusionCost(a.complexity);
+            generate.interactable=editable && a!=null && b!=null && a!=b && a.Ability.catalogId==b.Ability.catalogId && a.complexity==b.complexity && a.complexity<InventoryState.Rules.maxPartTier && g.Player.Gold>=InventoryState.Rules.FusionCost(a.complexity);
             UIKit.Label(generate,a==null?"합성안 만들기":$"합성안 만들기 · {InventoryState.Rules.FusionCost(a.complexity)}G");
             UIKit.Show(confirm,result!=null);UIKit.Show(cancel,result!=null);back.interactable=!g.InventoryBusy;
         }

@@ -81,7 +81,7 @@ namespace Diverse
                 if (on && !Locked && Controls.KeyDown(Key.Digit1 + i)) { g.ChooseEvolution(i); return; }
             }
 
-            bool chat = offer && AiClient.Enabled && !showPipeline;
+            bool chat = false;
             UIKit.Show(chatPanel, chat);
             // Bottom buttons are anchored to the panel's bottom edge, so they follow the height
             if (panel != null) panel.sizeDelta = new Vector2(panel.sizeDelta.x, chat || showPipeline ? heightWithChat : heightWithoutChat);

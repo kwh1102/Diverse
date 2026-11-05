@@ -185,7 +185,7 @@ namespace Diverse.EditorTools
             var equip=InventoryButton(host,actions,"Equip","이 무기 사용",0,0,156,22);
             var use=InventoryButton(host,actions,"Use","아이템 사용",0,0,156,22);
             var receive=InventoryButton(host,actions,"Receive","가방에 넣기",0,0,156,22);
-            var redraw=InventoryButton(host,actions,"Redraw","파츠 이름·그림 생성",0,0,156,22);
+            var redraw=InventoryButton(host,actions,"Redraw","스킬 그림 생성",0,0,156,22);
             var discard=InventoryButton(host,actions,"Discard","버리기",0,0,156,22);
             foreach(var b in new[]{equip,use,receive,redraw,discard}) UIKit.Show(b,false);
             var waiting=InventoryBox(panel,"PendingBox",146,300,304,36,slotSpr);
@@ -294,7 +294,7 @@ namespace Diverse.EditorTools
                 InventoryRect(title.rectTransform,card.transform,44,20,width-50,36);title.alignment=TextAnchor.MiddleLeft;title.resizeTextForBestFit=true;title.resizeTextMinSize=8;title.resizeTextMaxSize=11;title.verticalOverflow=VerticalWrapMode.Truncate;
                 var scroll=body.GetComponentInParent<ScrollRect>();if(scroll!=null) InventoryRect(scroll.GetComponent<RectTransform>(),card.transform,6,62,width-12,height-96);
                 else InventoryRect(body.rectTransform,card.transform,6,62,width-12,height-96);
-                var complexity=InventoryText(card.transform,"Complexity","복잡도 T0",6,height-28,width-12,11,8);complexity.color=UIKit.Highlight;Wire(card,"complexityLabel",complexity);
+                var complexity=InventoryText(card.transform,"Complexity","등급 T0",6,height-28,width-12,11,8);complexity.color=UIKit.Highlight;Wire(card,"complexityLabel",complexity);
                 InventoryRect(tags.rectTransform,card.transform,6,height-14,width-12,10);tags.fontSize=7;tags.resizeTextForBestFit=true;tags.resizeTextMinSize=6;tags.resizeTextMaxSize=7;tags.verticalOverflow=VerticalWrapMode.Truncate;
             }
         }

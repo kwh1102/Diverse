@@ -37,7 +37,7 @@ namespace Diverse
                     var w=DesignCombat.For(pack)??DB.W(DesignRuntime.Chassis(pack));
                     UIKit.Sprite(weapon,DesignStore.Sprite(pack.weapon.image,new Vector2(.5f,.5f))??DesignArt.Weapon(pack.weapon,centered:true)??Art.Weapon(w.kind));
                     UIKit.Sprite(projectile,DesignStore.Sprite(pack.attack.projectile.image,new Vector2(.5f,.5f))??DesignArt.Projectile(pack.attack.projectile,pack.weapon));
-                    UIKit.Set(info,$"<b>{w.name}</b>\n{w.desc}\n\n"+string.Join("\n",System.Linq.Enumerable.Select(System.Linq.Enumerable.Range(0,4),i=>$"{ "QWER"[i]} · {SkillDB.Get(w.skills[i])?.name}")));
+                    UIKit.Set(info,$"<b>{w.name}</b>\n{w.desc}\n\n{ActiveSkillGenerator.TypeName(g.WeaponDraft.weapon.type)} 유형\n획득 후 QWER 능력과 전용 그림을 각각 생성합니다.");
                 }
                 else {UIKit.Sprite(weapon,null);UIKit.Sprite(projectile,null);UIKit.Set(info,"원하는 무기의 외형과 공격 방식을 말해 주세요.\n새 무기와 QWER 스킬 아이템을 함께 받아요.");}
             }

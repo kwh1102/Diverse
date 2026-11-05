@@ -373,7 +373,7 @@ namespace Diverse.EditorTools
             var slotB = B("ChangeSlot", "세계 선택");
             var settings = B("Settings", "설정");
             var quit = B("Quit", "종료");
-            var footer = Label(rt, "Footer", "AI 진화: 로컬 모드   ·   세계 시드 0", BL, new Vector2(8, -18), new Vector2(620, 14), 9);
+            var footer = Label(rt, "Footer", "AI 액티브: 로컬 모드   ·   세계 시드 0", BL, new Vector2(8, -18), new Vector2(620, 14), 9);
             footer.rectTransform.pivot = new Vector2(0, 0);
             footer.rectTransform.anchoredPosition = new Vector2(8, 4);
 
@@ -463,7 +463,7 @@ namespace Diverse.EditorTools
             Label(sp, "ShakeLabel", "화면 흔들림", TL, new Vector2(x, y), new Vector2(100, 14));
             var shake = MakeSlider(sp, "Shake", TL, new Vector2(x + 100, y + 1), new Vector2(150, 12), 0, 1.5f); y += 18;
             var dmg = Btn(sp, "DamageNumbers", "피해 숫자: 켜짐", TL, new Vector2(x, y), new Vector2(170, 18), 9); y += 26;
-            Label(sp, "AiHeading", "<b>AI 진화 (OpenAI)</b>", TL, new Vector2(x, y), new Vector2(430, 14)); y += 16;
+            Label(sp, "AiHeading", "<b>AI 액티브 (OpenAI)</b>", TL, new Vector2(x, y), new Vector2(430, 14)); y += 16;
             var keyState = Label(sp, "KeyState", "API 키 없음", TL, new Vector2(x, y), new Vector2(430, 12), 9); y += 13;
             var keyHint = Label(sp, "KeyHint", "키 위치: …", TL, new Vector2(x, y), new Vector2(430, 26), 9, color: UIKit.Muted); y += 28;
             var ai = Btn(sp, "AiToggle", "AI: 켜짐", TL, new Vector2(x, y), new Vector2(120, 18), 9);
@@ -602,13 +602,14 @@ namespace Diverse.EditorTools
                 var s = Node(bar, "Skill " + keys[i], TL, new Vector2(i * 34, 0), new Vector2(30, 30));
                 Box(s, slotSpr).raycastTarget = true;
                 var icon = TextOn(Stretch(s, "Icon"), "★", 16, TextAnchor.MiddleCenter, Pal.Hex("ffd27a"), bold: true);
+                var artwork = Box(Stretch(s, "Artwork", 3, 3, 3, 3), whiteSpr); artwork.preserveAspect = true; artwork.raycastTarget = false;
                 var shadeRt = Stretch(s, "Cooldown Shade", 2, 2, 2, 2);
                 var shade = Box(shadeRt, whiteSpr, new Color(0.05f, 0.03f, 0.1f, 0.7f));
                 shade.type = Image.Type.Filled; shade.fillMethod = Image.FillMethod.Vertical; shade.fillOrigin = (int)Image.OriginVertical.Top; shade.fillAmount = 0.4f;
                 var cd = TextOn(Stretch(s, "Cooldown"), "3", 11, TextAnchor.MiddleCenter);
                 var key = Label(s, "Key", keys[i], TL, new Vector2(2, 1), new Vector2(28, 10), 8, color: UIKit.Highlight);
                 slots[i] = s.gameObject.AddComponent<SkillSlot>();
-                Wire(slots[i], "icon", icon); Wire(slots[i], "cooldown", cd); Wire(slots[i], "key", key); Wire(slots[i], "cooldownShade", shade);
+                Wire(slots[i], "icon", icon); Wire(slots[i], "cooldown", cd); Wire(slots[i], "key", key); Wire(slots[i], "cooldownShade", shade); Wire(slots[i], "artwork", artwork);
             }
             var moveHint = Label(bar, "MoveHint", "<color=#8c7aa8>우클릭</color> 이동/공격", TL, new Vector2(138, 4), new Vector2(120, 12), 9);
             var dashHint = Label(bar, "DashHint", "<color=#8c7aa8>Space</color> 대시", TL, new Vector2(138, 16), new Vector2(120, 12), 9);
@@ -841,7 +842,7 @@ namespace Diverse.EditorTools
             // Pipeline log over the cards
             var pp = Node(a, "Pipeline", TL, new Vector2(12, 52), new Vector2(W - 24, H - 90));
             Box(pp, panelSpr).raycastTarget = true;
-            Label(pp, "Heading", "<b>AI 진화 과정</b> <color=#8c7aa8>— 플레이 기록 → 패턴 → AI 생성 → 검증 → 점수 → 이름</color>", TL, new Vector2(8, 6), new Vector2(W - 40, 12), 9);
+            Label(pp, "Heading", "<b>AI 액티브 과정</b> <color=#8c7aa8>— 플레이 기록 → 패턴 → AI 생성 → 검증 → 점수 → 이름</color>", TL, new Vector2(8, 6), new Vector2(W - 40, 12), 9);
             var pText = ScrollText(pp, "Log", Node(pp, "Log", TL, new Vector2(8, 22), new Vector2(W - 40, H - 120)), out _);
             UIKit.Show(pp, false);
 

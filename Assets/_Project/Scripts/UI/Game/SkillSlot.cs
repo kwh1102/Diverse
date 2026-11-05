@@ -8,13 +8,24 @@ namespace Diverse
     {
         [SerializeField] Text icon, cooldown, key;
         [SerializeField] Image cooldownShade;      // Filled image, vertical, shrinks as the skill recharges
+        [SerializeField] Image artwork;
         int shownCd = -1;
+
+        void Awake()
+        {
+            UIKit.Sprite(artwork, null);
+            UIKit.Show(icon, false);
+            UIKit.Show(cooldownShade, false);
+            UIKit.Show(cooldown, false);
+        }
 
         public void Tick(Player p, SkillState s, string keyName, TooltipView tooltip, string lockedHint = null)
         {
             UIKit.Set(key, keyName);
             bool has = s != null && s.def != null;
-            UIKit.Show(icon, has);
+            var sprite = has && s.def.active != null ? ActiveSkillArt.Icon(s.def.active) : null;
+            UIKit.Sprite(artwork, sprite);
+            UIKit.Show(icon, has && sprite == null);
             if (!has)
             {
                 UIKit.Show(cooldownShade, false); UIKit.Show(cooldown, false);

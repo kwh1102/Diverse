@@ -24,14 +24,14 @@ namespace Diverse
             string text = item?.kind==ItemKind.Skill ? "QWER"[item.skillSlot].ToString() : item?.kind == ItemKind.Part ? "T" + item.complexity : item?.kind == ItemKind.Consumable ? item.count.ToString() : "";
             if (item == null && w != null)
             {
-                int slot = System.Array.IndexOf(InventoryState.Slots, new Vector2Int(x-w.x,y-w.y));
+                int slot = System.Array.IndexOf(ActiveSkillGenerator.Shape(w).skills, new Vector2Int(x-w.x,y-w.y));
                 text = slot >= 0 ? "QWER"[slot].ToString() : "◇";
             }
             UIKit.Set(caption,text);
             UIKit.Show(selection, item != null && item.id == selected);
             bool active = w != null && w == bag.Active;
-            UIKit.Show(top, active && y == w.y-1); UIKit.Show(bottom, active && y == w.y+1);
-            UIKit.Show(left, active && x == w.x-1); UIKit.Show(right, active && x == w.x+1);
+            UIKit.Show(top, active && bag.Owner(x,y-1)!=w); UIKit.Show(bottom, active && bag.Owner(x,y+1)!=w);
+            UIKit.Show(left, active && bag.Owner(x-1,y)!=w); UIKit.Show(right, active && bag.Owner(x+1,y)!=w);
         }
         public void OnPointerClick(PointerEventData e)
         {

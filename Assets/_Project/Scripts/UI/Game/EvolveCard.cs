@@ -32,10 +32,10 @@ namespace Diverse
             string visual=a.partName+"|"+a.partImage;
             if (shownAbility != a || shownVisual!=visual) { shownAbility = a; shownVisual=visual; shownPart = PartArt.Preview(a); }
             UIKit.Sprite(partIcon, PartArt.For(shownPart));
-            string src = a.source == "ai" ? "<color=#c9b8ff>✦ AI 생성</color>" : "<color=#8c7aa8>◇ 로컬</color>";
-            string kind = RuleText.TierLabel(a.tier);
+            string src = a.source == "ai" ? "<color=#c9b8ff>✦ AI 생성</color>" : "<color=#8c7aa8>◆ 고정 목록</color>";
+            string kind = "고정 파츠";
             UIKit.Set(header, $"<color=#6b5c8a>{index + 1}</color>  {src}");
-            UIKit.Set(complexityLabel,$"복잡도 T{a.tier} · {kind}");
+            UIKit.Set(complexityLabel,$"등급 T{a.tier} · {kind}");
             UIKit.Set(title, $"<b><color=#fff2b3>{shownPart.name}</color></b>");
             // Exact rule text always comes from the graph (AI flavor text, if any, is shown in italics after it)
             string rule = a.Explain();

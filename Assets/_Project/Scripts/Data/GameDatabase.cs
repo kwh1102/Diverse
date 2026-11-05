@@ -21,7 +21,7 @@ namespace Diverse
         [Tooltip("Hit-stop limits: how hits feel (a short slow-down, never a hard freeze).")]
         public FeelDef feel = new FeelDef();
 
-        [Header("Ability rules (Rule IR limits, power budget, tier unlocks)")]
+        [Header("AI active skills, fixed parts and weapon footprints")]
         public AbilityRulesData abilityRules;
 
         [Header("Art rules: the palette and tile looks every picture follows")]

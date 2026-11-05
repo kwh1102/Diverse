@@ -7,10 +7,11 @@ namespace Diverse
         public static void Bind(Image image,Text glyph,InventoryItem item)
         {
             bool skill=item?.kind==ItemKind.Skill;
-            UIKit.Sprite(image,skill?null:PartArt.For(item));
-            UIKit.Show(glyph,skill);
+            var sprite = PartArt.For(item);
+            UIKit.Sprite(image,sprite);
+            UIKit.Show(glyph,skill && sprite == null);
             if(!skill || glyph==null) return;
-            var definition=SkillDB.Get(item.skillId);
+            var definition=SkillDB.Get(item);
             UIKit.Set(glyph,definition?.icon??"?");
             glyph.color=definition?.color??UIKit.Ink;
         }

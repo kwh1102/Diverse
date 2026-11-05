@@ -99,7 +99,7 @@ namespace Diverse
             p.AimPoint = pos + Vector2.right;
             p.SetupVisual();
             // A new hero starts with only the weapon's basic attack; QWER skills are learned by leveling or at the smith
-            for (int i = 0; i < 4; i++) p.Skills[i] = new SkillState { id = weapon.skills[i] };
+            for (int i = 0; i < p.Skills.Length; i++) p.Skills[i] = new SkillState();
             p.InitializeInventory();
             p.XpToNext = DB.Progression.XpFor(1);
             p.RecalcStats();
@@ -844,6 +844,7 @@ namespace Diverse
                 return;
             }
             if (s.cd > 0) return;
+            if (s.def.active != null && !ActiveSkillRuntime.CanCast(this, s.def.active)) return;
             s.cd = s.def.cooldown * (1 - Stats[StatId.CooldownReduction]);
             Vector2 dir = (AimPoint - (Pos + Vector2.up * 0.4f)).SafeNormal(Facing);
             Facing = dir;

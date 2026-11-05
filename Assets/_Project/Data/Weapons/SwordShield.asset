@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   def:
     kind: 1
+    type: 0
     name: "\uAC80\uACFC \uBC29\uD328"
     desc: "\uADE0\uD615 \uC7A1\uD78C \uC5F0\uACA9\uACFC \uB2E8\uB2E8\uD55C \uBC29\uD328.
       \uB9C9\uACE0 \uB418\uBC1B\uC544\uCE5C\uB2E4."
@@ -102,10 +103,10 @@ MonoBehaviour:
       swingDir: 1
       fxScale: 1.2
     skills:
-    - ss_bash
-    - ss_parry
-    - ss_leap
-    - ss_sanctum
+    -
+    -
+    -
+    -
     element: 0
     sfxSwing: swing
     sfxHit: hit_metal

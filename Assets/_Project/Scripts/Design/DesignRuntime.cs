@@ -16,10 +16,9 @@ namespace Diverse
         public static DesignPack Active { get; private set; } = DesignPack.Default();
         public static DesignPack CombatPack { get; private set; } = DesignPack.Default();
         static string activeJson;
-        static readonly Dictionary<string, SkillDef> skillNames = new Dictionary<string, SkillDef>();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() { Active = DesignPack.Default(); CombatPack = DesignPack.Default(); activeJson = null; skillNames.Clear(); effects.Clear(); activeWeapon = null; }
+        static void ResetStatics() { Active = DesignPack.Default(); CombatPack = DesignPack.Default(); activeJson = null; effects.Clear(); activeWeapon = null; }
 
         /// <summary>The WeaponKind this pack plays as: its designed weapon's internal kind, or the classic fallback.</summary>
         public static WeaponKind Chassis(DesignPack p)
@@ -39,7 +38,6 @@ namespace Diverse
             CombatPack = p;
             activeJson = json;
             Art.ResetLooks();
-            skillNames.Clear();
             effects.Clear();
             activeWeapon = DesignCombat.For(p);
 
@@ -59,7 +57,7 @@ namespace Diverse
         public static void EquipWeapon(DesignPack pack, WeaponDef weapon)
         {
             CombatPack = pack ?? DesignPack.Default();
-            Art.ResetLooks(); skillNames.Clear(); effects.Clear();
+            Art.ResetLooks(); effects.Clear();
             activeWeapon = pack != null ? DesignCombat.For(pack) : null;
             if (pack == null) return;
             var tex = DesignStore.Image(pack.weapon.image);
@@ -87,19 +85,6 @@ namespace Diverse
             w.name = src.name;
             w.slashColor = src.slashColor;
             w.slashCore = src.slashCore;
-        }
-
-        /// <summary>QWER display names from the designed weapon (the skill itself is unchanged). Called by SkillDB.Get.</summary>
-        public static SkillDef RenameSkill(SkillDef d)
-        {
-            if (d == null) return null;
-            var w = CombatPack.weapon;
-            if (w.skills == null || w.skillNames == null) return d;
-            int i = Array.IndexOf(w.skills, d.id);
-            if (i < 0 || i >= w.skillNames.Length || string.IsNullOrEmpty(w.skillNames[i])) return d;
-            if (!skillNames.TryGetValue(d.id, out var r))
-                skillNames[d.id] = r = new SkillDef { id = d.id, name = w.skillNames[i], desc = d.desc, cooldown = d.cooldown, lockTime = d.lockTime, color = d.color, icon = d.icon };
-            return r;
         }
 
         // ───────────────────────── Attack / hold points (visual) ─────────────────────────

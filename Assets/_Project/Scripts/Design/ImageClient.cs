@@ -54,11 +54,11 @@ namespace Diverse
 
         /// <summary>One picture. Calls back with null on failure (LastStatus says why).</summary>
         /// <param name="transparent">false for full-bleed textures (ground swatches).</param>
-        public static IEnumerator Generate(string prompt, Action<Texture2D> done, bool transparent = true, string size = "1024x1024")
+        public static IEnumerator Generate(string prompt, Action<Texture2D> done, bool transparent = true, string size = "1024x1024", string model = null)
         {
             var key = SaveSystem.LoadApiKey();
             if (string.IsNullOrEmpty(key)) { LastStatus = "API 키 없음"; done(null); yield break; }
-            var body = Encoding.UTF8.GetBytes(JsonUtility.ToJson(new Req { model = Model, prompt = prompt, size = size, quality = Quality, background = transparent ? "transparent" : "opaque" }));
+            var body = Encoding.UTF8.GetBytes(JsonUtility.ToJson(new Req { model = model ?? Model, prompt = prompt, size = size, quality = Quality, background = transparent ? "transparent" : "opaque" }));
             using var www = new UnityWebRequest(Endpoint, "POST");
             www.uploadHandler = new UploadHandlerRaw(body);
             www.downloadHandler = new DownloadHandlerBuffer();

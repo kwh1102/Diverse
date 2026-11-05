@@ -136,7 +136,7 @@ namespace Diverse
             {
                 // Only the next skill in line says when it comes; later ones just say they're locked
                 string hint = p.Inventory.items.Any(item=>item.kind==ItemKind.Skill && item.skillSlot==i)
-                    ? $"인벤토리에서 무기의 {new[]{"위","왼쪽","오른쪽","아래"}[i]} 칸에 해당 스킬을 놓아 줘."
+                    ? $"인벤토리에서 같은 유형 무기의 {"QWER"[i]} 칸에 해당 스킬을 놓아 줘."
                     : i == learned && i < levels.Length ? NextSkillHint(levels[i]) : "레벨업·새 무기 획득으로 스킬 아이템을 얻을 수 있어.";
                 skills[i]?.Tick(p, p.Skills[i], Controls.KeyName(SkillActs[i]), tooltip, hint);
             }

@@ -182,9 +182,9 @@ namespace Diverse
             {
                 id = id,
                 name = h.name ?? b.name,
-                // No stat perk: the hero starts with a generated passive instead (Game.StartingPerk)
-                perk = h.perk != null && !string.IsNullOrEmpty(h.perk.name) ? "시작 능력: " + h.perk.name : "시작 능력: 첫 삶에서 생겨남",
-                mods = null,
+                // Finite costume modifiers replace generated character passives.
+                perk = b.perk,
+                mods = b.mods,
                 tags = b.tags,
                 fur = fur,
                 furShade = Col(h.furShade, string.IsNullOrEmpty(h.fur) ? b.furShade : Pal.Mul(fur, 0.82f)),

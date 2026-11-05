@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   def:
     kind: 0
+    type: 0
     name: "\uB300\uAC80"
     desc: "\uB290\uB9AC\uC9C0\uB9CC \uD55C \uBC29\uC774 \uBB35\uC9C1\uD558\uB2E4.
       \uD718\uB450\uB97C \uB54C\uB9C8\uB2E4 \uBAB8\uC774 \uC55E\uC73C\uB85C \uC3E0\uB9B0\uB2E4."
@@ -84,10 +85,10 @@ MonoBehaviour:
       swingDir: 1
       fxScale: 1.5
     skills:
-    - gs_leap
-    - gs_whirl
-    - gs_rush
-    - gs_titan
+    -
+    -
+    -
+    -
     element: 0
     sfxSwing: swing_heavy
     sfxHit: hit_heavy

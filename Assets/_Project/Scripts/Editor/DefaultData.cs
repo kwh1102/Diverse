@@ -25,7 +25,7 @@ namespace Diverse.EditorTools
             // Greatsword: slow, heavy, the biggest freeze-frame and screen shake.
             Weapons[WeaponKind.Greatsword] = new WeaponDef
             {
-                kind = WeaponKind.Greatsword, name = "대검",
+                kind = WeaponKind.Greatsword, type = WeaponType.Sword, name = "대검",
                 desc = "느리지만 한 방이 묵직하다. 휘두를 때마다 몸이 앞으로 쏠린다.",
                 tags = "SWORD HEAVY MELEE", baseDamage = 22, comboReset = 0.9f, moveSpeedMul = 0.92f, attackRange = 2.1f,
                 slashColor = Pal.Hex("ffd27a"), slashCore = Pal.White, sfxSwing = "swing_heavy", sfxHit = "hit_heavy",
@@ -35,13 +35,13 @@ namespace Diverse.EditorTools
                     new ComboStep { windup = 0.12f, recovery = 0.34f, range = 2.3f, arc = 170, damage = 1.1f, lunge = 0.45f, knockback = 5, hitstop = 0.085f, shake = 0.28f, kick = 5, swingDir = -1, fxScale = 1.35f },
                     new ComboStep { windup = 0.22f, recovery = 0.55f, range = 2.6f, arc = 360, damage = 1.9f, lunge = 0.2f, knockback = 8, hitstop = 0.14f, shake = 0.5f, kick = 9, spin = true, fxScale = 1.5f },
                 },
-                skills = new[] { "gs_leap", "gs_whirl", "gs_rush", "gs_titan" },
+                skills = new string[4],
             };
 
             // Sword and shield: steady, mid-weight 4-hit combo with a guard.
             Weapons[WeaponKind.SwordShield] = new WeaponDef
             {
-                kind = WeaponKind.SwordShield, name = "검과 방패",
+                kind = WeaponKind.SwordShield, type = WeaponType.Sword, name = "검과 방패",
                 desc = "균형 잡힌 연격과 단단한 방패. 막고 되받아친다.",
                 tags = "SWORD SHIELD MELEE", baseDamage = 13, comboReset = 0.6f, attackRange = 1.6f, moveSpeedMul = 1f,
                 slashColor = Pal.Hex("bfe3ff"), slashCore = Pal.White, sfxSwing = "swing", sfxHit = "hit_metal",
@@ -52,13 +52,13 @@ namespace Diverse.EditorTools
                     new ComboStep { windup = 0.06f, recovery = 0.2f, range = 1.9f, arc = 40, damage = 1.1f, lunge = 0.45f, knockback = 3, hitstop = 0.05f, shake = 0.14f, kick = 3, thrust = true },
                     new ComboStep { windup = 0.1f, recovery = 0.36f, range = 1.6f, arc = 120, damage = 1.6f, lunge = 0.5f, knockback = 6, hitstop = 0.09f, shake = 0.3f, kick = 6, swingDir = 1, fxScale = 1.2f },
                 },
-                skills = new[] { "ss_bash", "ss_parry", "ss_leap", "ss_sanctum" },
+                skills = new string[4],
             };
 
             // Crossbow: ranged; each shot pushes the body back with recoil.
             Weapons[WeaponKind.Crossbow] = new WeaponDef
             {
-                kind = WeaponKind.Crossbow, name = "석궁",
+                kind = WeaponKind.Crossbow, type = WeaponType.Bow, name = "석궁",
                 desc = "멀리서 정확하게. 쏠 때마다 반동으로 뒤로 밀린다.",
                 tags = "BOW RANGED PROJECTILE", baseDamage = 12, comboReset = 0.8f, attackRange = 7.5f, moveSpeedMul = 1.05f,
                 slashColor = Pal.Hex("fff1b0"), slashCore = Pal.White, sfxSwing = "shoot", sfxHit = "hit",
@@ -68,13 +68,13 @@ namespace Diverse.EditorTools
                     new ComboStep { windup = 0.04f, recovery = 0.3f, range = 9, damage = 1.0f, projectile = true, recoil = 0.22f, knockback = 2, hitstop = 0.035f, shake = 0.1f, kick = 2.5f },
                     new ComboStep { windup = 0.1f, recovery = 0.45f, range = 9, damage = 0.8f, projectile = true, projectileCount = 3, projectileSpread = 14, recoil = 0.45f, knockback = 3, hitstop = 0.05f, shake = 0.2f, kick = 4 },
                 },
-                skills = new[] { "cb_pierce", "cb_scatter", "cb_backstep", "cb_rain" },
+                skills = new string[4],
             };
 
             // Staff: long reach, sweeping strikes, lightning.
             Weapons[WeaponKind.Staff] = new WeaponDef
             {
-                kind = WeaponKind.Staff, name = "봉",
+                kind = WeaponKind.Staff, type = WeaponType.Staff, name = "봉",
                 desc = "긴 사거리로 휘감아 치는 연격. 끝에 맺힌 수정이 번개를 부른다.",
                 tags = "STAFF MELEE MAGIC", baseDamage = 11, comboReset = 0.65f, attackRange = 2.2f, element = Element.Lightning,
                 slashColor = Pal.Hex("c9b8ff"), slashCore = Pal.Hex("f4efff"), sfxSwing = "swing", sfxHit = "hit",
@@ -86,13 +86,13 @@ namespace Diverse.EditorTools
                     new ComboStep { windup = 0.08f, recovery = 0.18f, range = 2.4f, arc = 360, damage = 0.7f, lunge = 0f, knockback = 2.5f, hitstop = 0.045f, shake = 0.14f, kick = 2, spin = true },
                     new ComboStep { windup = 0.12f, recovery = 0.38f, range = 2.6f, arc = 50, damage = 1.6f, lunge = 0.45f, knockback = 6, hitstop = 0.09f, shake = 0.3f, kick = 6, thrust = true, fxScale = 1.3f },
                 },
-                skills = new[] { "st_thrust", "st_cyclone", "st_vault", "st_thunder" },
+                skills = new string[4],
             };
 
             // Dagger: very fast, light, strong crits.
             Weapons[WeaponKind.Dagger] = new WeaponDef
             {
-                kind = WeaponKind.Dagger, name = "단검",
+                kind = WeaponKind.Dagger, type = WeaponType.Dagger, name = "단검",
                 desc = "눈보다 빠른 난도질. 가볍지만 급소를 노린다.",
                 tags = "DAGGER MELEE SWIFT", baseDamage = 7, comboReset = 0.45f, attackRange = 1.3f, moveSpeedMul = 1.12f,
                 slashColor = Pal.Hex("ffb3d1"), slashCore = Pal.White, sfxSwing = "swing_light", sfxHit = "hit_light",
@@ -103,13 +103,13 @@ namespace Diverse.EditorTools
                     new ComboStep { windup = 0.03f, recovery = 0.1f, range = 1.5f, arc = 30, damage = 1.0f, lunge = 0.35f, knockback = 1.5f, hitstop = 0.03f, shake = 0.08f, kick = 2, thrust = true, fxScale = 0.8f },
                     new ComboStep { windup = 0.06f, recovery = 0.22f, range = 1.5f, arc = 360, damage = 1.4f, lunge = 0.1f, knockback = 3.5f, hitstop = 0.06f, shake = 0.18f, kick = 3, spin = true, fxScale = 0.9f },
                 },
-                skills = new[] { "dg_fan", "dg_shadowstep", "dg_venom", "dg_frenzy" },
+                skills = new string[4],
             };
 
             // Katana: quickdraw. A short pause, then a single sharp cut.
             Weapons[WeaponKind.Katana] = new WeaponDef
             {
-                kind = WeaponKind.Katana, name = "도",
+                kind = WeaponKind.Katana, type = WeaponType.Sword, name = "도",
                 desc = "칼집에서 뽑는 순간이 가장 날카롭다. 일섬의 미학.",
                 tags = "BLADE MELEE IAI", baseDamage = 14, comboReset = 0.7f, attackRange = 1.9f,
                 slashColor = Pal.Hex("d4f3ff"), slashCore = Pal.White, sfxSwing = "swing", sfxHit = "hit_slice",
@@ -119,7 +119,7 @@ namespace Diverse.EditorTools
                     new ComboStep { windup = 0.04f, recovery = 0.18f, range = 2.0f, arc = 150, damage = 1.0f, lunge = 0.35f, knockback = 2, hitstop = 0.05f, shake = 0.12f, kick = 3, swingDir = -1, fxScale = 1.1f },
                     new ComboStep { windup = 0.16f, recovery = 0.42f, range = 2.4f, arc = 60, damage = 2.0f, lunge = 1.1f, knockback = 4, hitstop = 0.11f, shake = 0.35f, kick = 7, thrust = true, fxScale = 1.3f },
                 },
-                skills = new[] { "kt_iai", "kt_crescent", "kt_counter", "kt_flash" },
+                skills = new string[4],
             };
         }
 

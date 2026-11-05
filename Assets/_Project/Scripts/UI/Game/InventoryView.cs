@@ -91,12 +91,13 @@ namespace Diverse
         {
             if(dragged==null) return;
             bool valid=Bag.CanMove(dragged,x,y,out string why);
-            var item=Bag.Find(dragged); int side=item?.kind==ItemKind.Weapon?3:1;
-            int inset=side==3?1:0;var pitch=grid.cellSize+grid.spacing;
-            dropMarker.anchoredPosition=new Vector2((x-inset)*pitch.x,-(y-inset)*pitch.y);
-            dropMarker.sizeDelta=grid.cellSize*side+grid.spacing*(side-1);
+            var item=Bag.Find(dragged); var pitch=grid.cellSize+grid.spacing;
+            var footprint=item?.kind==ItemKind.Weapon?ActiveSkillGenerator.Shape(item).Cells.ToArray():new[]{Vector2Int.zero};
+            int minX=footprint.Min(d=>d.x),maxX=footprint.Max(d=>d.x),minY=footprint.Min(d=>d.y),maxY=footprint.Max(d=>d.y);
+            dropMarker.anchoredPosition=new Vector2((x+minX)*pitch.x,-(y+minY)*pitch.y);
+            dropMarker.sizeDelta=new Vector2((maxX-minX+1)*pitch.x-grid.spacing.x,(maxY-minY+1)*pitch.y-grid.spacing.y);
             dropMarker.SetAsLastSibling();UIKit.Show(dropMarker,true);UIKit.Show(validDrop,valid);UIKit.Show(invalidDrop,!valid);
-            hoverMessage=valid?"여기에 놓을 수 있어.":why;
+            hoverMessage=valid?why??"여기에 놓을 수 있어.":why;
         }
         public void LeaveHover() {if(dragged==null)return;UIKit.Show(dropMarker,false);hoverMessage="가방 안의 칸으로 옮겨 줘.";}
         public void EndDrag() { if(dragged!=null) FinishDrag(dragSource,false); }
@@ -137,39 +138,35 @@ namespace Diverse
                 UIKit.Pool(cellTemplate,cells,Bag.width*Bag.height);
                 for(int i=0;i<Bag.width*Bag.height;i++) cells[i].Bind(this,i%Bag.width,i/Bag.width,Bag,selected);
                 var w=Bag.Active;
-                if(w!=null)
-                {
-                    Vector2 pitch=grid.cellSize+grid.spacing;
-                    ((RectTransform)grid.transform).sizeDelta=new Vector2(Bag.width*pitch.x-grid.spacing.x,Bag.height*pitch.y-grid.spacing.y);
-                    activeFrame.anchoredPosition=new Vector2((w.x-1)*pitch.x,-(w.y-1)*pitch.y);
-                    activeFrame.sizeDelta=grid.cellSize*3+grid.spacing*2;
-                    activeFrame.SetAsLastSibling();
-                }
+                var pitch=grid.cellSize+grid.spacing;
+                ((RectTransform)grid.transform).sizeDelta=new Vector2(Bag.width*pitch.x-grid.spacing.x,Bag.height*pitch.y-grid.spacing.y);
+                UIKit.Show(activeFrame,false); // Per-cell borders trace the actual weapon footprint.
                 var waiting=Bag.Pending.ToList(); UIKit.Pool(pendingTemplate,pending,waiting.Count);
                 for(int i=0;i<waiting.Count;i++) pending[i].GetComponent<InventoryPendingItem>().Bind(this,waiting[i]);
                 UIKit.Set(pendingLabel,$"수령 대기 {waiting.Count} · 끌어서 가방에 넣기");
             }
             var item=Bag.Find(selected); var active=Bag.Active;
             UIKit.Set(title,$"{TravelTypes.Name(g.Player.MovementType)} · {Bag.width}×{Bag.height}");
-            UIKit.Set(equipmentSummary,active==null?"사용 중인 무기가 없어.":$"<b>{active.name}</b>\n사용 중인 무기\n\n무기 {Bag.items.Count(i=>i.kind==ItemKind.Weapon)}/{InventoryState.Rules.maxWeapons}\n보유 골드 {g.Player.Gold}G\n\n위 Q · 왼쪽 W\n오른쪽 E · 아래 R\n대각선 네 칸: 파츠\n\n{string.Join("\n",Bag.Attached(active).Where(i=>i.kind==ItemKind.Part).Select(i=>"◆ "+i.name))}");
+            UIKit.Set(equipmentSummary,active==null?"사용 중인 무기가 없어.":$"<b>{active.name}</b>\n{ActiveSkillGenerator.TypeName(ActiveSkillGenerator.TypeOf(active))} · 사용 중인 무기\n\n무기 {Bag.items.Count(i=>i.kind==ItemKind.Weapon)}/{InventoryState.Rules.maxWeapons}\n보유 골드 {g.Player.Gold}G\n\n표시된 QWER 칸: 액티브\n◇ 칸: 고정 파츠\n같은 유형·같은 슬롯 교환\n종속 스킬은 함께 이동\n\n{string.Join("\n",Bag.Attached(active).Where(i=>i.kind==ItemKind.Part).Select(i=>"◆ "+i.name))}");
             ItemIcons.Bind(preview,previewGlyph,item); UIKit.Set(details,Description(item));
-            UIKit.Set(status,(dragged!=null?hoverMessage:null)??message??(g.PartVisualBusy?"파츠의 고유한 이름과 그림을 준비하는 중…":"드래그로 이동 · 빈 칸 클릭은 선택 해제\n초록 테두리: 사용 중인 무기"));
+            UIKit.Set(status,(dragged!=null?hoverMessage:null)??message??(g.PartVisualBusy?"액티브 전용 그림을 준비하는 중…":g.Player.ActiveGenerationStatus??"드래그로 이동 · 빈 칸 클릭은 선택 해제\n초록 테두리: 사용 중인 무기"));
             bool mutable=!Busy;
             UIKit.Show(equip,item?.kind==ItemKind.Weapon && item.Placed); equip.interactable=mutable && item?.id!=Bag.activeWeapon;
             UIKit.Label(equip,item?.id==Bag.activeWeapon?"사용 중인 무기":"이 무기 사용");
             UIKit.Show(use,item?.kind==ItemKind.Consumable && item.Placed); use.interactable=mutable;
             UIKit.Show(receive,item!=null && !item.Placed); receive.interactable=mutable;
             UIKit.Show(discard,item!=null); discard.interactable=mutable && !(item?.kind==ItemKind.Weapon && item.Placed && Bag.items.Count(i=>i.kind==ItemKind.Weapon&&i.Placed)==1);
-            UIKit.Show(redraw,item?.kind==ItemKind.Part && !PartPresentation.Ready(item.Ability)); redraw.interactable=mutable && !g.PartVisualBusy && AiClient.Enabled;
+            UIKit.Show(redraw,item?.kind==ItemKind.Skill && item.active!=null && !item.active.ArtReady); redraw.interactable=mutable && item?.generatingActive!=true && !g.PartVisualBusy && AiClient.Enabled;
+            UIKit.Label(redraw,"스킬 그림 생성");
             openFusion.interactable=mutable; close.interactable=mutable;
         }
         public static string Description(InventoryItem item)
         {
             if(item==null) return "아이템을 선택하면\n이곳에 설명이 나타나요.";
             string desc=item.kind switch {
-                ItemKind.Part=>$"복잡도 T{item.complexity}\n\n{item.Ability?.Explain()}",
-                ItemKind.Skill=>$"{ "QWER"[item.skillSlot]} 스킬\n\n{SkillDB.Get(item.skillId)?.desc}",
-                ItemKind.Weapon=>$"무기 · 주변 3×3 확보\n\n{item.weapon.desc}",
+                ItemKind.Part=>$"등급 T{item.complexity}\n\n{item.Ability?.Explain()}",
+                ItemKind.Skill=>$"{ "QWER"[item.skillSlot]} 스킬\n\n{SkillDB.Get(item)?.desc}",
+                ItemKind.Weapon=>$"{ActiveSkillGenerator.TypeName(ActiveSkillGenerator.TypeOf(item))} · 유형별 주변 공간\n\n{item.weapon.desc}",
                 _=>item.consumable=="xp"?$"경험치 +{InventoryState.Rules.xpPotionAmount}":item.consumable=="cleanse"?"상태 이상 제거":$"체력 {InventoryState.Rules.potionHealFraction*100:0}% 회복"
             };
             return $"<b>{item.name}</b>\n\n{desc}"+(string.IsNullOrEmpty(item.ancestor)?"":"\n\n유산: "+item.ancestor);

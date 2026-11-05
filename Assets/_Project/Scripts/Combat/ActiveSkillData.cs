@@ -1,0 +1,71 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+
+namespace Diverse
+{
+    public enum WeaponType { Sword, Bow, Gun, Staff, Dagger }
+
+    [Serializable]
+    public class WeaponFootprint
+    {
+        public WeaponType type;
+        public Vector2Int[] skills = (Vector2Int[])InventoryState.Slots.Clone();
+        public Vector2Int[] parts;
+        public IEnumerable<Vector2Int> Cells => new[] { Vector2Int.zero }.Concat(skills).Concat(parts ?? Array.Empty<Vector2Int>());
+        public bool Contains(int x, int y) => Cells.Contains(new Vector2Int(x, y));
+    }
+
+    /// <summary>AI supplies structure only. The runtime calculates every gameplay number from ActiveRules.</summary>
+    [Serializable]
+    public class ActiveStep
+    {
+        public string delivery = "arc"; // arc, line, projectile, nova, field, dash, retreat, blink, guard
+        public string pattern = "single"; // single, fan, ring, chain, return, pierce, seek
+        public string effect = "damage"; // damage, shield, heal, pull, push, stun, mark
+        public string element = "None";
+        public string condition = "always"; // always, marked, burning, chilled, poisoned
+        public string timing = "instant"; // instant, delayed, repeat
+        public bool consume;
+    }
+
+    [Serializable]
+    public class ActiveSkillData
+    {
+        public string id = Guid.NewGuid().ToString("N");
+        public string name, intent, source = "local", drawback = "recovery";
+        public WeaponType weaponType;
+        public int slot;
+        public List<ActiveStep> steps = new List<ActiveStep>();
+        // A hard dependency requires the actual companion instance, never just another skill in that slot.
+        public int linkedMask;
+        public string linkId;
+        public string iconPrompt, projectilePrompt, effectPrompt;
+        public string iconImage, projectileImage;
+        public string[] effectImages;
+        public string color = "c9b8ff";
+        public bool ArtReady => !string.IsNullOrEmpty(iconImage) && !string.IsNullOrEmpty(projectileImage) && effectImages?.Length == 4 && effectImages.All(x => !string.IsNullOrEmpty(x));
+        public string Signature() => string.Join("|", steps.Select(s => $"{s.delivery}:{s.pattern}:{s.effect}:{s.element}:{s.condition}:{s.timing}:{s.consume}")) + ":" + drawback;
+        public string Links => string.Concat(Enumerable.Range(0, 4).Where(i => (linkedMask & (1 << i)) != 0).Select(i => "QWER"[i]));
+    }
+
+    [Serializable]
+    public class ActiveRules
+    {
+        public int maxSteps = 3, maxLinkedSlots = 2, maxTargets = 8, maxProjectiles = 5, maxPulses = 3;
+        public int maxConcurrentCasts = 4, generationAttempts = 3, recentSignatures = 32;
+        public int iconPixels = 32, projectilePixels = 16, effectPixels = 48, artParallel = 2;
+        public float baseCooldown = 7, ultimateCooldown = 22, minCooldown = 4, maxCooldown = 35;
+        public float basePower = 3.8f, ultimatePower = 8.5f, maxDamage = 12;
+        public float range = 5, meleeRange = 2.5f, radius = 2, projectileSpeed = 11;
+        public float lockTime = .25f, recoveryPenalty = .3f, cooldownPenalty = 1.3f, shortRangeFactor = .55f;
+        public float effectDuration = 2, statusDuration = 3, stunDuration = .65f, pulseInterval = .45f, delay = .6f;
+        public float movementDistance = 3, movementDuration = .2f, knockback = 4, shieldScale = 5, healScale = 2;
+        public float conditionalBonus = .35f, patternCost = .45f, controlCost = .65f, movementCost = .45f;
+        public float areaCost = .35f, rangeCost = .3f, timingCost = .35f, defenseCost = .65f;
+        public float markBonus = .25f, passiveBonusCap = .65f, projectileRadius = .2f;
+        public float guardInvulnerability = .25f;
+        public string imageModel = "gpt-image-2.5-flare";
+    }
+}
