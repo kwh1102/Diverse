@@ -38,6 +38,9 @@ namespace Diverse
 
         DesignPack working;
         readonly Stack<DesignPack> history = new Stack<DesignPack>();
+        readonly Stack<string> weaponImageHistory = new Stack<string>();
+        string inGameWeaponImage;
+        Sprite inGameWeaponPreview;
         GameObject typeWindow;
         Text typeBalance, typeDescription;
         Image modalMotion;
@@ -86,17 +89,19 @@ namespace Diverse
             });
             UIKit.Bind(flipWeapon, () =>
             {
-                if (InGame || busy || working.weapon.image == null) return;
+                string image = InGame ? inGameWeaponImage : working?.weapon?.image;
+                if (busy || image == null) return;
                 Push();
-                working.weapon.image = DesignStore.Mirrored(working.weapon.image);
+                if (InGame) inGameWeaponImage = DesignStore.Mirrored(image);
+                else working.weapon.image = DesignStore.Mirrored(image);
                 Preview();
             });
             UIKit.Bind(flipHero,()=>
             {
-                if(InGame || busy || working?.hero?.image==null) return;
+                if(busy || working?.hero?.image==null) return;
                 Push();DesignStore.MirrorHero(working.hero);Preview();
             });
-            UIKit.Bind(undo, () => { if (history.Count > 0 && !busy) { working = history.Pop(); Preview(); } });
+            UIKit.Bind(undo, () => { if (history.Count > 0 && !busy) { working = history.Pop(); inGameWeaponImage = weaponImageHistory.Pop(); Preview(); } });
             prompt.characterLimit = DesignGuard.MaxPrompt;
             // Designs are made from scratch: no preset character / weapon / perk pickers
             UIKit.Show(classicButton, false);
@@ -122,6 +127,7 @@ namespace Diverse
 
         void OnDisable()
         {
+            if (inGameWeaponPreview != null) { Destroy(inGameWeaponPreview); inGameWeaponPreview = null; }
             UIKit.Show(typeWindow, false);
             if (Controls.TypingField == prompt) Controls.TypingField = prevTyping;
         }
@@ -132,6 +138,7 @@ namespace Diverse
             var p = game.Player;
             if (p == null) return;
             var pack = (DesignStore.PackOfCostume(p.Costume.id) ?? DesignPack.Default()).Clone();
+            inGameWeaponImage = p.Inventory?.Active?.design?.weapon?.image;
             pack.weapon.baseWeapon = p.Weapon.kind.ToString();
             if (!p.Costume.id.StartsWith(DesignStore.CostumePrefix)) pack.hero.basePerk = p.Costume.id;
             UIKit.Show(gameObject, true);
@@ -144,13 +151,14 @@ namespace Diverse
             working = pack;
             if (InGame || !string.IsNullOrEmpty(pack.id)) working.travelSelected = true;
             history.Clear();
+            weaponImageHistory.Clear();
             prompt.SetTextWithoutNotify("");
             UIKit.Show(typeWindow, false);
             statusText = DesignAi.Available ? $"AI 디자인: {AiClient.ModelLabel(Game.Settings.aiModel)}" : "AI 꺼짐 — 무료 로컬 해석으로 만들어요";
             busy = false;
             UIKit.Label(startButton, InGame ? "적용하고 닫기" : "삶을 시작하기");
             UIKit.Label(backButton, InGame ? "취소" : "뒤로");
-            UIKit.Set(tabHint, InGame ? "이번 삶에서는 캐릭터 외형만 수정할 수 있어요." : "유형을 고르고 캐릭터 외형과 공격을 한 번에 설명해 주세요.");
+            UIKit.Set(tabHint, InGame ? "캐릭터 외형 수정 · 캐릭터와 장착 무기의 좌우 반전이 가능해요." : "유형을 고르고 캐릭터 외형과 공격을 한 번에 설명해 주세요.");
             if (prompt.placeholder is Text ph)
                 ph.text = InGame ? "예) 망토를 보라색으로 바꿔줘" : "예) 마법사 모자를 쓴 보라색 문어. 다리로 적을 공격한다.";
             Preview();
@@ -164,6 +172,7 @@ namespace Diverse
             if (InGame && game.Player != null)
             {
                 DesignRuntime.Activate(DesignStore.PackOfCostume(game.Player.Costume.id) ?? DesignPack.Default());
+                DesignRuntime.EquipWeapon(game.Player.Inventory?.Active?.design, game.Player.Weapon);
                 DesignRuntime.Skin(game.Player.Weapon);
                 game.Player.RefreshLook();
             }
@@ -292,7 +301,7 @@ namespace Diverse
             RefreshTypes();
         }
 
-        void Push() => history.Push(working.Clone());
+        void Push() { history.Push(working.Clone()); weaponImageHistory.Push(inGameWeaponImage); }
 
         void Generate()
         {
@@ -358,9 +367,11 @@ namespace Diverse
         void ApplyInGame()
         {
             if (busy) return;
+            if (game.Player.Inventory?.Active?.startingWeapon == true && inGameWeaponImage != null)
+                working.weapon.image = inGameWeaponImage;
             var committed = DesignStore.Commit(working);
             Session.World.designId = committed.id;
-            game.ApplyDesign(committed);
+            game.ApplyDesign(committed, inGameWeaponImage);
             UIKit.Show(gameObject, false);
         }
 
@@ -371,6 +382,10 @@ namespace Diverse
         void Preview()
         {
             DesignRuntime.Activate(working);
+            if (InGame && game.Player != null)
+                DesignRuntime.EquipWeapon(game.Player.Inventory?.Active?.design, game.Player.Weapon);
+            if (inGameWeaponPreview != null) Destroy(inGameWeaponPreview);
+            inGameWeaponPreview = InGame ? DesignStore.Sprite(inGameWeaponImage, new Vector2(.5f, .5f)) : null;
             previewCostume = DesignStore.PreviewCostume(working);
         }
 
@@ -399,14 +414,16 @@ namespace Diverse
                      : phase < 3f ? ((int)(t * 2.2f) % 2 == 0 ? Pose.Idle0 : Pose.Idle1)
                      : phase < 3.3f ? Pose.AttackWind : phase < 3.7f ? Pose.AttackHit : Pose.Idle0;
             UIKit.Sprite(hero, Art.Rabbit(previewCostume, pose));
-            var kind = DesignRuntime.Chassis(working);
-            UIKit.Sprite(heroWeapon, DesignRuntime.WeaponHidden ? null : Art.Weapon(kind));
-            UIKit.Show(flipWeapon, !InGame && working.weapon.image != null && !DesignRuntime.WeaponHidden);
-            UIKit.Show(flipHero,!InGame && working.hero.image!=null);
+            var kind = InGame ? game.Player.Weapon.kind : DesignRuntime.Chassis(working);
+            UIKit.Sprite(heroWeapon, DesignRuntime.WeaponHidden ? null : inGameWeaponPreview != null ? inGameWeaponPreview : Art.Weapon(kind));
+            UIKit.Show(flipWeapon, (InGame ? inGameWeaponImage : working.weapon.image) != null && !DesignRuntime.WeaponHidden);
+            if(flipWeapon!=null) flipWeapon.interactable=!busy;
+            UIKit.Show(flipHero,working.hero.image!=null);
             if(flipHero!=null) flipHero.interactable=!busy;
             UIKit.Show(flipEffects, !InGame && working.attack.effectImages != null);
-            var shot = working.attack.projectile;
-            var b = DesignCombat.For(working) ?? DB.W(kind);
+            var combat = InGame ? game.Player.Inventory?.Active?.design ?? working : working;
+            var shot = combat.attack.projectile;
+            var b = InGame ? game.Player.Weapon : DesignCombat.For(working) ?? DB.W(kind);
             bool shoots = shot.image != null || shot.shape != "builtin" || shot.pixels != null || b.combo.Any(s => s.projectile) || kind == WeaponKind.Dagger;
             UIKit.Sprite(projectile, shoots ? (kind == WeaponKind.Dagger && shot.image == null && shot.shape == "builtin" && shot.pixels == null ? Art.Knife() : Art.Bolt()) : null);
             // Only the fully drawn frames of the swing (the first ones are still sweeping in and look cut off)

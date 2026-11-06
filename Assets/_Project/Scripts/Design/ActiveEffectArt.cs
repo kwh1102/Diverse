@@ -23,7 +23,7 @@ namespace Diverse
         }
         public static bool Ready(ActiveSkillData a) => a != null && a.effectRevision == 1 && a.effectFrames == 4 &&
             a.effectImages?.Length == a.steps.Count * 3 * a.effectFrames && a.effectImages.All(id => DesignStore.Image(id) != null);
-        const int ProcessorRevision = 2;
+        const int ProcessorRevision = 4;
         static string SourceSignature(ActiveSkillData a) => a.input + ":" + string.Join("|", a.steps.Select(s => JsonUtility.ToJson(s)));
         static bool HasSource(ActiveSkillData a) => a != null && a.effectSourceSignature == SourceSignature(a) &&
             a.effectSourceRows?.Length > 0 && DesignStore.ImagePersisted(a.effectSourceImage);
@@ -42,7 +42,7 @@ namespace Diverse
         }
         public static IEnumerator Prepare(ActiveSkillData a, Action<string> trace, Action<bool> done, Action persist = null, bool fresh = false)
         {
-            if (Ready(a)) { trace?.Invoke("저장된 전용 이펙트 재사용 · 이미지 요청 없음"); done(true); yield break; }
+            if (!fresh && Ready(a) && !CanReprocess(a)) { trace?.Invoke("저장된 전용 이펙트 재사용 · 이미지 요청 없음"); done(true); yield break; }
             var cfg = ActiveSkillGenerator.Rules;
             Texture2D sheet = null; bool ownsSheet = false;
             int[] rows = null;
@@ -64,12 +64,13 @@ namespace Diverse
                 string size = "1024x1024";
                 string prompt = $"Transparent PNG pixel animation sheet, exactly FOUR columns and {rows.Length} equal-height rows, all cells used. Canvas {size}. No grid lines, text, background, checkerboard or badges. " +
                     ActiveSkillStyle.Prompt(a) +
-                    "Each ROW is ONE four-frame animation, read LEFT TO RIGHT: anticipation, expansion, peak, dissipation. First/last frames may fade to transparency; middle frames must show distinct animation. " +
+                    "Each ROW is ONE four-frame animation. For attack/impact rows read LEFT TO RIGHT: small windup, crisp leading edge, resolved follow-through, short clean tail. Projectile rows LOOP with a stable body and short moving tail. Keep large transparent negative spaces and thin tapered strokes, never a solid rectangle, cone or luminous blob. " +
                     "Use consistent centered pivot and apparent scale within each row, keep all art inside its cell with 15 percent transparent gutters. Motion faces RIGHT. Cells may be rectangular; preserve natural effect proportions and fit inside the shorter cell dimension. " +
-                    "Polished cute top-down pixel action RPG effects, chunky silhouettes, 3-4 tones, muted purple edges, crisp highlights, restrained sparks. No skill icons, scenery or painted light blobs. " +
+                    "COMBAT MOTION, not inventory art: never draw a centered skill symbol, equipment silhouette, shield badge, crest or static illustration. A slash pivots around a fully TRANSPARENT hand anchor at cell centre and stays on the RIGHT half; thrust/muzzle originates at the empty centre and extends RIGHT, not both directions. A hit burst is centred on the contact point; ground bursts stay on a low horizontal ellipse. Every action changes its leading edge and occupied silhouette across frames; the same emblem fading in/out is invalid. " +
+                    "Polished cute top-down pixel action RPG effects, chunky coherent pixel clusters, 3-4 flat tones per material, muted purple edges, restrained highlights, at most two purposeful sparks. No bloom, blur, gradients, fog, soft glow, confetti, or bright white flood fill.  No skill icons, scenery or painted light blobs. " +
                     string.Join(" ", rows.Select((r, i) => {
                         var s = a.steps[r / 3]; string motif = r % 3 == 0 ? "casting/action" : r % 3 == 1 ? "impact/activation burst" : s.delivery == "projectile" ? "flying projectile body with short trail, visible in ALL four looping frames" : "movement trail";
-                        string motion = s.delivery == "arc" ? "A broad sharp crescent sweeps from upper-right to lower-right around the weapon hand; NO detached orb." : s.delivery == "line" ? "A low elongated horizontal thrust grows outward then contracts; NO detached orb." : s.delivery is "nova" or "field" or "trap" ? "A low ground-plane ellipse expands; no upright floating sphere." : "Readable anticipation, strong directional motion, clean dissolving tail.";
+                        string motion = s.delivery == "wall" ? "Only a small deployment ripple at the feet of the installed wall, followed by a short contact glint; NO slash or full-screen energy strip. Its persistent upright body is a separate placed masonry-and-walnut construction; do not draw or paste the inventory icon." : s.delivery == "arc" ? "A broad sharp crescent sweeps from upper-right to lower-right around the weapon hand; NO detached orb." : s.delivery == "line" ? "A low elongated horizontal thrust grows outward then contracts; NO detached orb." : s.delivery is "nova" or "field" or "trap" ? "A low ground-plane ellipse expands; no upright floating sphere." : "Readable anticipation, strong directional motion, clean dissolving tail.";
                         return $"Row {i + 1}: {motif} for step {r / 3 + 1}: {s.delivery}/{s.pattern}/{s.effect}/{s.element}. {motion}";
                     })) + $" Executable skill: {ActiveSkillGenerator.VisualSummary(a)}.";
                 var world = Game.I?.World;
@@ -89,6 +90,7 @@ namespace Diverse
             {
                 if (ownsSheet)
                 {
+                    a.effectSourcePromptRevision = 2;
                     a.effectSourceImage = DesignStore.SaveSourceImage(sheet);
                     a.effectSourceSignature = SourceSignature(a); a.effectSourceRows = rows; a.effectProcessedRevision = 0;
                     persist?.Invoke();
@@ -106,6 +108,7 @@ namespace Diverse
                     {
                         a.effectImages = ids; a.effectFrames = 4; a.effectRevision = 1;
                         a.effectProcessedRevision = ProcessorRevision;
+                        a.effectPromptRevision = a.effectSourcePromptRevision;
                         a.artStatus = "전용 아이콘·AI 전투 이펙트 준비 완료"; success = Ready(a);
                     }
                     else trace?.Invoke("전용 이미지 파일 저장 실패 · 스킬 장착 보류");

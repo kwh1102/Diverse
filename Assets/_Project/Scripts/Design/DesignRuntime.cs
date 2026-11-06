@@ -126,7 +126,8 @@ namespace Diverse
         static Sprite[] EffectOf(int slot, DesignArt.EffectKind kind, int widthPx, float stretch = 1)
         {
             var ids = CombatPack.attack.effectImages;
-            if (ids == null || ids.Length != 4) return null;
+            if (ids == null || (ids.Length != 4 && ids.Length != 16)) return null;
+            if (ids.Length == 16) return AnimatedEffect(slot,widthPx,stretch);
             var tex = DesignStore.Image(ids[slot]);
             if (tex == null) return null;
             widthPx = Mathf.Clamp(widthPx, 6, 96);
@@ -134,6 +135,24 @@ namespace Diverse
             var key = $"{ids[slot]}_{widthPx}_{stretch}_{flip}";
             if (!effects.TryGetValue(key, out var f)) effects[key] = f = DesignArt.Effect(tex, kind, widthPx, stretch, flip);
             return f;
+        }
+
+        static Sprite[] AnimatedEffect(int slot,int widthPx,float stretch)
+        {
+            var ids=CombatPack.attack.effectImages;bool flip=CombatPack.attack.flipEffects;
+            string key=string.Join(",",ids)+":"+slot+":"+widthPx+":"+stretch+":"+flip;
+            if(effects.TryGetValue(key,out var found))return found;
+            var result=new Sprite[4];
+            for(int f=0;f<4;f++)
+            {
+                var tex=DesignStore.Image(ids[slot*4+f]);if(tex==null)return null;
+                int w=Mathf.Clamp(Mathf.RoundToInt(widthPx*stretch),6,96),h=Mathf.Max(4,Mathf.RoundToInt(widthPx*tex.height/(float)tex.width));
+                var cv=new PixelCanvas(w+6,h+6);var px=tex.GetPixels32();
+                for(int y=0;y<h;y++)for(int x=0;x<w;x++)
+                {int sx=(flip?w-1-x:x)*tex.width/w;cv.Px[(y+3)*cv.W+x+3]=px[y*tex.height/h*tex.width+sx];}
+                result[f]=cv.ToSpriteCentered();
+            }
+            return effects[key]=result;
         }
 
         public static Sprite[] TravelFx(DesignPack pack)
@@ -145,8 +164,8 @@ namespace Diverse
             return tex == null ? null : effects[key] = DesignArt.Effect(tex, DesignArt.EffectKind.Impact, 24);
         }
 
-        public static Sprite[] SwingFx(Color32 col, int radiusPx) => Mine(col) ? EffectOf(0, DesignArt.EffectKind.Swing, radiusPx * 2) : null;
-        public static Sprite[] ThrustFx(Color32 col, int lengthPx) => Mine(col) ? EffectOf(0, DesignArt.EffectKind.Swing, lengthPx / 2, 2f) : null;
+        public static Sprite[] SwingFx(Color32 col, int radiusPx) => Mine(col) && CombatPack.attack.effectFrames == 4 ? EffectOf(0, DesignArt.EffectKind.Swing, radiusPx * 2) : null;
+        public static Sprite[] ThrustFx(Color32 col, int lengthPx) => null; // A thrust uses its native directional stroke, never a stretched crescent.
         public static Sprite[] ImpactFx(Color32 col, int sizePx) => Mine(col) ? EffectOf(1, DesignArt.EffectKind.Impact, sizePx * 2) : null;
         public static Sprite[] TrailFx => EffectOf(2, DesignArt.EffectKind.Trail, 10);
         public static Sprite[] MuzzleFx => EffectOf(3, DesignArt.EffectKind.Muzzle, 16);

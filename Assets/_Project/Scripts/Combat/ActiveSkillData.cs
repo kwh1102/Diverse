@@ -43,7 +43,7 @@ namespace Diverse
         public int effectRevision, effectFrames;
         public string effectSourceImage, effectSourceSignature;
         public int[] effectSourceRows;
-        public int effectProcessedRevision;
+        public int effectProcessedRevision, effectPromptRevision, effectSourcePromptRevision;
         public WeaponType weaponType;
         public int slot;
         public List<ActiveStep> steps = new List<ActiveStep>();

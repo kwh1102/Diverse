@@ -33,7 +33,8 @@ namespace Diverse
             Color edge = shape != null ? shape.outlineColor : color;
             if (ghost) edge.a = .95f;
             Vector2 pitch = grid.cellSize + grid.spacing;
-            float scale = canvas != null ? Mathf.Max(.01f, canvas.scaleFactor) : 1;
+            float inheritedScale = canvas != null ? Mathf.Abs(rectTransform.lossyScale.x) / Mathf.Max(.0001f, Mathf.Abs(canvas.transform.lossyScale.x)) : 1;
+            float scale = canvas != null ? Mathf.Max(.01f, canvas.scaleFactor * inheritedScale) : 1;
             float Snap(float value) => Mathf.Round(value * scale) / scale;
             width = Mathf.Max(1, Mathf.Round(width * scale)) / scale;
             float half = width * .5f;
@@ -44,11 +45,30 @@ namespace Diverse
                 float right = Snap(left + pitch.x), bottom = Snap(top - pitch.y);
                 if (ghost) Quad(vh, left, bottom, right - left, top - bottom, valid ? validFill : invalidFill);
                 // Centered strips share a square joint at every endpoint, including inward corners.
-                if (!cells.Contains(d + Vector2Int.up)) Quad(vh, left - half, bottom - half, right - left + width, width, edge);
-                if (!cells.Contains(d + Vector2Int.down)) Quad(vh, left - half, top - half, right - left + width, width, edge);
-                if (!cells.Contains(d + Vector2Int.left)) Quad(vh, left - half, bottom - half, width, top - bottom + width, edge);
-                if (!cells.Contains(d + Vector2Int.right)) Quad(vh, right - half, bottom - half, width, top - bottom + width, edge);
+                bool bottomEdge=!cells.Contains(d+Vector2Int.up),topEdge=!cells.Contains(d+Vector2Int.down);
+                bool leftEdge=!cells.Contains(d+Vector2Int.left),rightEdge=!cells.Contains(d+Vector2Int.right);
+                if(bottomEdge) Rim(vh,left-half,bottom-half,right-left+width,width,edge,true);
+                if(topEdge) Rim(vh,left-half,top-half,right-left+width,width,edge,true);
+                if(leftEdge) Rim(vh,left-half,bottom-half,width,top-bottom+width,edge,false);
+                if(rightEdge) Rim(vh,right-half,bottom-half,width,top-bottom+width,edge,false);
+                // Small corner fittings decorate the continuous footprint, never the internal cell boundaries.
+                Color light=Color.Lerp(edge,Color.white,.55f);
+                void Corner(float cx,float cy)
+                {Quad(vh,cx-1.5f,cy-1.5f,3,3,new Color(.14f,.11f,.19f,1));Quad(vh,cx-1,cy-1,2,2,light);Quad(vh,cx-.5f,cy,1,.5f,Color.white);}
+                if(item==bag.Active && !ghost)
+                {
+                    if(leftEdge&&topEdge)Corner(left,top);if(rightEdge&&topEdge)Corner(right,top);
+                    if(leftEdge&&bottomEdge)Corner(left,bottom);if(rightEdge&&bottomEdge)Corner(right,bottom);
+                }
             }
+        }
+        static void Rim(VertexHelper vh,float x,float y,float w,float h,Color edge,bool horizontal)
+        {
+            var shadow=Color.Lerp(edge,Color.black,.72f);shadow.a=.95f;
+            Quad(vh,x-.5f,y-.5f,w+1,h+1,shadow);
+            Quad(vh,x,y,w,h,edge);
+            var light=Color.Lerp(edge,Color.white,.35f);
+            Quad(vh,x,y+(horizontal?h-.5f:0),horizontal?w:.5f,horizontal ? .5f : h,light);
         }
         static void Quad(VertexHelper vh, float x, float y, float w, float h, Color c)
         {

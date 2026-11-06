@@ -40,6 +40,8 @@ namespace Diverse
         public Clone clonePrefab;
         public Summon summonPrefab;
         public Projectile projectilePrefab;
+        public ActiveBarrier activeBarrierPrefab;
+        public CombatVisualLibrary combatVisuals;
         public Pickup pickupPrefab;
         public Interactable interactablePrefab;
 

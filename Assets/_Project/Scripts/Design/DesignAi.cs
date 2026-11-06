@@ -24,7 +24,7 @@ namespace Diverse
         /// <summary>Added to every sprite prompt so all pictures share one look.</summary>
         const string Style = "Cute pixel art video game sprite, 16-bit style, chunky readable silhouette, crisp dark purple one-pixel contour, clustered upper-left highlights, deep contact shadows, distinctive face and joints, " +
                              "limited soft colour palette, no text, no ground, no cast shadow, isolated on a fully transparent background. ";
-        const string EffectStyle = "Pixel art video game visual effects, 16-bit style, bright glowing colours, no characters, no text, " +
+        const string EffectStyle = "Pixel art video game visual effects, 16-bit style, chunky coherent square pixel clusters, thin tapered strokes, dark purple edges, 3-4 flat tones per material, no bloom, blur, gradients, light fog, white flood fill, noisy particles, characters or text, " +
                                    "isolated on a fully transparent background. ";
 
         const string SystemPrompt =
@@ -307,27 +307,37 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
             string weaponPart = held ? w.imagePrompt + ", lying horizontally, pointing to the right, handle on the left" : "nothing (leave empty)";
             string shotPart = shot.imagePrompt != null ? shot.imagePrompt + ", small, flying to the right" : "nothing (leave empty)";
             Texture2D tex = null;
-            yield return ImageClient.Generate(Style + "Two separate items side by side with a wide empty gap between them. LEFT HALF: " + weaponPart + ". RIGHT HALF: " + shotPart + ".", t => tex = t, usage: usage);
+            yield return ImageClient.Generate(Style + "Exactly TWO equal-width cells, one row, no grid lines. A COMPLETE isolated object in each cell, centered, occupying at most 60 percent of its cell width and height, 20 percent TRANSPARENT gutters on ALL four sides. The entire blade tip, pommel, crossguard, grip, barrel and stock must be visible. Do not crop, zoom, truncate, hide the handle, add a hand or merge the two cells. 3-4 flat tones per material. LEFT CELL: " + weaponPart + ". RIGHT CELL: " + shotPart + ".", t => tex = t, usage: usage);
             if (tex == null) { w.image = null; shot.image = null; yield return false; yield break; }
-            w.image = held ? Save(Pixelizer.Convert(tex, Cell(tex, 0, 0, 2, 1), w.length > 0 ? w.length : 20, byHeight: false)) : null;
-            shot.image = shot.imagePrompt != null ? Save(Pixelizer.Convert(tex, Cell(tex, 1, 0, 2, 1), 11, byHeight: false)) : null;
+            w.sourceImage = DesignStore.SaveSourceImage(tex);w.sourcePrompt=w.imagePrompt;w.artRevision=1;
+            string weaponWhy="숨긴 무기",shotWhy="투사체 없음";
+            w.image = held ? Save(Pixelizer.Isolated(tex, Cell(tex,0,0,2,1), w.length>0?w.length:20, out weaponWhy)) : null;
+            shot.image = shot.imagePrompt != null ? Save(Pixelizer.Isolated(tex,Cell(tex,1,0,2,1),11,out shotWhy)) : null;
+            w.artStatus=weaponWhy+" / "+shotWhy;
+            Debug.Log("[Weapon art] "+w.artStatus);
             UnityEngine.Object.Destroy(tex);
-            yield return true;
+            yield return (!held || w.image!=null) && (shot.imagePrompt==null || shot.image!=null);
         }
 
         static IEnumerator EffectsJob(DesignPack p, Action<ImageClient.ImageUsage> usage)
         {
             var e = p.attack.effectPrompts;
             Texture2D tex = null;
-            yield return ImageClient.Generate(EffectStyle + "A 2x2 grid of four separate effects, each centered in its own quarter with empty space around it. " +
-                $"Top-left, a melee attack sweep shaped like a crescent on the right side: {e[0]}. Top-right, a hit impact burst: {e[1]}. " +
-                $"Bottom-left, a small trail puff behind a flying shot: {e[2]}. Bottom-right, a muzzle flash / casting burst: {e[3]}.", t => tex = t, usage: usage);
+            yield return ImageClient.Generate(EffectStyle +
+                "Exactly FOUR columns and FOUR rows of equal cells. No grid, labels or scenery. Each ROW is one real four-frame animation read left to right; fixed center and scale within its row. All content stays within the middle 70 percent of each cell. " +
+                "Weapon identity: "+p.weapon.imagePrompt+". Reuse its actual materials, accent colours and signature motif throughout; effects should leave the hero and held weapon readable. " +
+                $"Row 1: a thin crescent sweep on the RIGHT side of the empty hand pivot; windup, sharp moving leading edge, follow-through, short tapered tail. {e[0]}. " +
+                $"Row 2: a compact contact burst with two directional chips, resolves quickly, not an explosion. {e[1]}. " +
+                $"Row 3: a short looping projectile trail, narrow body and shrinking tail, no character silhouette. {e[2]}. " +
+                $"Row 4: a small directional muzzle/casting flash, anticipation, ignition, recoil, fade. {e[3]}.", t => tex = t, usage: usage);
             if (tex == null) { p.attack.effectImages = null; yield return false; yield break; }
-            var ids = new string[4];
-            for (int i = 0; i < 4; i++) ids[i] = e[i] == null ? null : Save(Pixelizer.ConvertSet(tex, new[] { Quarter(tex, i) }, 48, byHeight: false, colors: 10, outline: false)[0]);
+            p.attack.effectSourceImage=DesignStore.SaveSourceImage(tex);
+            var rows=ActiveEffectProcessor.Read(tex,new[]{0,1,2,3},2,ActiveSkillGenerator.Rules,null,out string why);
             UnityEngine.Object.Destroy(tex);
-            p.attack.effectImages = ids.All(s => s != null) ? ids : null;
-            yield return p.attack.effectImages != null;
+            // Canonical processor also supplies unused step slots; only the four requested animation rows are stored.
+            p.attack.effectImages=rows?.Take(16).Select(Save).ToArray();p.attack.effectFrames=rows!=null?4:0;
+            Debug.Log("[Basic effects] "+why);
+            yield return p.attack.effectImages?.Length==16 && p.attack.effectImages.All(id=>id!=null);
         }
 
         // ───────────────────────── Facing check ─────────────────────────

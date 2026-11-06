@@ -20,14 +20,20 @@ namespace Diverse
             var item = bag.At(x,y); var w = bag.Owner(x,y);
             ItemIcons.Bind(icon,skillGlyph,item);
             if(contents!=null) contents.alpha=owner!=null && item!=null && owner.Dragged==item.id ? .25f : 1;
-            UIKit.Show(skillKey,false);
-            string text = item?.kind==ItemKind.Skill ? "QWER"[item.skillSlot].ToString() : item?.kind == ItemKind.Part ? "T" + item.complexity : item?.kind == ItemKind.Consumable ? item.count.ToString() : "";
-            if (item == null && w != null)
+            string guide = "";
+            if (w != null && (x != w.x || y != w.y))
             {
-                int slot = System.Array.IndexOf(ActiveSkillGenerator.Shape(w).skills, new Vector2Int(x-w.x,y-w.y));
-                text = slot >= 0 ? "QWER"[slot].ToString() : "◇";
+                var shape = ActiveSkillGenerator.Shape(w);
+                var offset = new Vector2Int(x-w.x,y-w.y);
+                int slot = System.Array.IndexOf(shape.skills, offset);
+                if (slot >= 0 && slot < 4) guide = "QWER"[slot].ToString();
+                else if (System.Array.IndexOf(shape.parts ?? System.Array.Empty<Vector2Int>(), offset) >= 0) guide = "◇";
             }
+            UIKit.Set(skillKey,guide);
+            UIKit.Show(skillKey,!string.IsNullOrEmpty(guide));
+            string text = item?.kind==ItemKind.Skill && string.IsNullOrEmpty(guide) ? "QWER"[item.skillSlot].ToString() : item?.kind == ItemKind.Part ? "T" + item.complexity : item?.kind == ItemKind.Consumable ? item.count.ToString() : "";
             UIKit.Set(caption,text);
+            UIKit.Show(caption,!string.IsNullOrEmpty(text));
             UIKit.Show(selection, item != null && item.id == selected);
             // One shared prefab graphic draws continuous thin/thick type-colored contours over the grid gaps.
             UIKit.Show(top, false); UIKit.Show(bottom, false); UIKit.Show(left, false); UIKit.Show(right, false);

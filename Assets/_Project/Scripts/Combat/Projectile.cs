@@ -43,9 +43,9 @@ namespace Diverse
         void OnDestroy() => Live.Remove(this);
 
         /// <summary>Stopped by a barrier.</summary>
-        public void Block()
+        public void Block(bool flash = true)
         {
-            Fx.I?.Burst(transform.position, color, 6, 4, 0.25f);
+            if (flash) Fx.I?.Burst(transform.position, color, 6, 4, 0.25f);
             End();
         }
         [SerializeField] SpriteRenderer sr;
@@ -87,6 +87,7 @@ namespace Diverse
             }
 
             Vector2 p = (Vector2)transform.position + vel * dt;
+            if (ActiveBarrier.TryBlock(this, transform.position, p)) return;
             if (WorldStreamer.I != null && WorldStreamer.I.IsSolidObstacle(p))
             {
                 if (bounces > 0)
@@ -110,7 +111,8 @@ namespace Diverse
             transform.rotation = spin ? Quaternion.Euler(0, 0, t * 900f) : Quaternion.Euler(0, 0, vel.Angle());
             sr.sortingOrder = Art.SortY(p.y - 0.5f) + 10;
 
-            if (trail)
+            float trailDistance=normalTrailBlend && CombatVisuals.Library!=null?CombatVisuals.Library.trailStartDistance:0;
+            if (trail && Travelled>=trailDistance)
             {
                 trailT -= dt;
                 if (trailT <= 0 && trailFx != null) { trailT = 0.06f; Fx.I?.Play(trailFx, p, vel.Angle(), 18, 1, null, !normalTrailBlend); }
@@ -142,8 +144,8 @@ namespace Diverse
         void Explode()
         {
             Vector2 p = transform.position;
-            Fx.I?.Play(Art.Shockwave(color, Mathf.RoundToInt(explodeRadius * Art.PPU)), p, 0, 24, 1, null, true);
-            Fx.I?.Burst(p, color, 14, 8, 0.4f);
+            if (!CombatVisuals.Explosion(p,explodeRadius,dmg.element,color))
+                Fx.I?.Play(Art.Shockwave(color, Mathf.RoundToInt(explodeRadius * Art.PPU)), p, 0, 24, 1, null, false);
             Sfx.Play("explode", 0.6f);
             foreach (var a in new List<Actor>(Actor.InRadius(p, explodeRadius, targetTeam)))
             {

@@ -81,6 +81,8 @@ namespace Diverse
         public string name;
         public string imagePrompt;                 // English (image model)
         public string image;                       // DesignStore image id
+        public string sourceImage, sourcePrompt, artStatus; // paid raw sheet retained for free reprocessing
+        public int artRevision;
         public List<string> moves = new List<string>();   // DesignCombat.Moves, 1..4 = the basic attack combo
         public string weight = "medium";           // light | medium | heavy
         public string[] skills;                    // legacy serialized field; current skills live on InventoryItem.active
@@ -117,8 +119,10 @@ namespace Diverse
         public string origin = "Hand";             // Hand | Mouth | Eyes | Above
         public ProjectileLook projectile = new ProjectileLook();
         public string slash, slashCore, trail;     // hex; empty = the chassis' colors
-        public string[] effectPrompts;             // English: swing, impact, trail, muzzle (one 2x2 effect sheet)
+        public string[] effectPrompts;             // English: swing, impact, trail, muzzle (four animation rows)
         public string[] effectImages;              // DesignStore image ids in the same order
+        public string effectSourceImage;
+        public int effectFrames;                    // 0 = legacy single pictures; 4 = real animation rows
         public bool flipEffects;                   // player's manual left/right flip of the swing and muzzle effects
     }
 }

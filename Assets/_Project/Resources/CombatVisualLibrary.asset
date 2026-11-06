@@ -1,0 +1,113 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f2ed7968b5829a11cf107778d2d9db41, type: 3}
+  m_Name: CombatVisualLibrary
+  m_EditorClassIdentifier: 
+  slash:
+  - {fileID: 21300000, guid: 22dc60bf9b22854945a9c6a0dd3327a4, type: 3}
+  - {fileID: 21300000, guid: 558b776a26e59ca8a53e6502d39dd90b, type: 3}
+  - {fileID: 21300000, guid: adb1f46e22f7d9c0bbcf95c79b5444c4, type: 3}
+  - {fileID: 21300000, guid: f3c33a03500da403b8d7066647ba6359, type: 3}
+  - {fileID: 21300000, guid: b7227430fc7b4fd58a550cb388adb84f, type: 3}
+  - {fileID: 21300000, guid: 6a0931e4f7b4e855db018ebf2c30c135, type: 3}
+  contact:
+  - {fileID: 21300000, guid: 229d798aa8c8c619b8e14d90ac2eb366, type: 3}
+  - {fileID: 21300000, guid: 84bd6d101130f0ed1927022a2ef17903, type: 3}
+  - {fileID: 21300000, guid: 06249b1ef13922cfc54daf7d90b5c730, type: 3}
+  - {fileID: 21300000, guid: b0bae7fdbe91a4a00d892f32dd1d3882, type: 3}
+  - {fileID: 21300000, guid: 3aeb5c11379a57ffbad7094b7c5e55ee, type: 3}
+  - {fileID: 21300000, guid: cc0a816517da18dc3fa35f7d97cd3b12, type: 3}
+  fire:
+  - {fileID: 21300000, guid: 3fce94be51ec9ff5145010ceb1a4e399, type: 3}
+  - {fileID: 21300000, guid: 7bb27ca8e4e9728276e4a51c9d36ca20, type: 3}
+  - {fileID: 21300000, guid: 9bab0d3ce6a913bbc512147e0b54ffd9, type: 3}
+  - {fileID: 21300000, guid: cb5f5cb43ad0ad1275ede3c66786ba5c, type: 3}
+  - {fileID: 21300000, guid: 41a5c646b38897a14997588545cca88e, type: 3}
+  - {fileID: 21300000, guid: b7bb4ea08e132a3d8d39cbf6382ed5f3, type: 3}
+  earth:
+  - {fileID: 21300000, guid: fa650abf87a462956c06e48102c899cb, type: 3}
+  - {fileID: 21300000, guid: f0c62b6827973d3aa17c38dd31d9eb99, type: 3}
+  - {fileID: 21300000, guid: 8b4a37a802ce47c4fcc82f59c0378480, type: 3}
+  - {fileID: 21300000, guid: 408ef2b9cca2816c4fa1e358e21baca9, type: 3}
+  - {fileID: 21300000, guid: c76951767ec37219acd400f64d1edacc, type: 3}
+  - {fileID: 21300000, guid: 51774cd1f874a8fc973daaa5f87ba148, type: 3}
+  cut:
+  - {fileID: 21300000, guid: 0809f7ac9ffff86fca22c9722d2361cc, type: 3}
+  - {fileID: 21300000, guid: a3647d8711cbcaaaabfdf26f29cce88d, type: 3}
+  - {fileID: 21300000, guid: 07f65e8dcbe55158598efc5261aefe13, type: 3}
+  - {fileID: 21300000, guid: 72b47a50487a0f591c1db9762bffd7a0, type: 3}
+  - {fileID: 21300000, guid: 6724dc5bb8429831d58989b910f50d27, type: 3}
+  - {fileID: 21300000, guid: 547c597048d3108f5828c6bbc63f6eca, type: 3}
+  thrust:
+  - {fileID: 21300000, guid: 7889f0f6a8357f437ea19aabb18c1562, type: 3}
+  - {fileID: 21300000, guid: aaf16e2b710de895909671a21aaeebc1, type: 3}
+  - {fileID: 21300000, guid: be1a123fea734657e681c9729f50b769, type: 3}
+  - {fileID: 21300000, guid: 5489b0fda59a636b0e73922a5d9e77ec, type: 3}
+  - {fileID: 21300000, guid: a2c029f147c0219b5a9724cd09db7905, type: 3}
+  - {fileID: 21300000, guid: c4c379d5e44d435c54e28ee304bf4168, type: 3}
+  ring:
+  - {fileID: 21300000, guid: 6441c096c86149104f9d81bd4c4923de, type: 3}
+  - {fileID: 21300000, guid: ab6790da87e0edc8a3e0049f1d8dbd71, type: 3}
+  - {fileID: 21300000, guid: 4b2f90fbc33ed4087dfc198c3588a1f6, type: 3}
+  - {fileID: 21300000, guid: a72ac98208304ec6ad242055353d8e20, type: 3}
+  - {fileID: 21300000, guid: 1626a99da358369abc6ef8bae183ed4a, type: 3}
+  - {fileID: 21300000, guid: 57bb280b1f193eba8aa326d4f2002655, type: 3}
+  ice:
+  - {fileID: 21300000, guid: 87717ba87a2484968fc92cf8ce1105bc, type: 3}
+  - {fileID: 21300000, guid: 7e3690482d7e9297ade259135794044f, type: 3}
+  - {fileID: 21300000, guid: de9b2bcfbd262bd95b728ffec24ee07e, type: 3}
+  - {fileID: 21300000, guid: fb80b370769854cd02b2b58204b74e97, type: 3}
+  - {fileID: 21300000, guid: acc16397ce7f35de29d147ff560f0d86, type: 3}
+  - {fileID: 21300000, guid: 8be33a53973a12c1308b7e130d1e3519, type: 3}
+  arcane:
+  - {fileID: 21300000, guid: 2dded2895f2da3da384f77a2f4780cbe, type: 3}
+  - {fileID: 21300000, guid: 694e9586173dca94ac0fb0f34f14e257, type: 3}
+  - {fileID: 21300000, guid: 20ce62260e24571e1b8162403dea603a, type: 3}
+  - {fileID: 21300000, guid: b7dc6f1b62955ea777622d1c871f7766, type: 3}
+  - {fileID: 21300000, guid: 4110a403e7bf7b98d05b8368f7589013, type: 3}
+  - {fileID: 21300000, guid: 0a7094bb5cba4f79bfbac70ad3a8ae87, type: 3}
+  shards:
+  - {fileID: 21300000, guid: dd8c911f6513d413f19d357876ae289a, type: 3}
+  - {fileID: 21300000, guid: 4223a8f369f07b808ecb74bee9f00919, type: 3}
+  - {fileID: 21300000, guid: 9faf01895b005f30d133cb7669feadc9, type: 3}
+  - {fileID: 21300000, guid: 7e72daec106289e94ad5e6b1358b0faa, type: 3}
+  - {fileID: 21300000, guid: 59094bf0351621b81b5a7c211d512a8e, type: 3}
+  - {fileID: 21300000, guid: 9049699527cbcbf7b9a3f7bc264a1a3c, type: 3}
+  trail:
+  - {fileID: 21300000, guid: 7627afbe0cf9f7682518fa4bc2ffc44c, type: 3}
+  - {fileID: 21300000, guid: e083400a5328191bf8980c6f9a50d3fc, type: 3}
+  - {fileID: 21300000, guid: a987091349a57ca9ba8531bd37ca8a58, type: 3}
+  - {fileID: 21300000, guid: 81aff7ca4653e25685ccb1f5dbc6ad53, type: 3}
+  - {fileID: 21300000, guid: a09fffde8da676faf1c77d422d381a2f, type: 3}
+  - {fileID: 21300000, guid: 30e0f7cb1845f8305a4e232e51de8374, type: 3}
+  bolt:
+  - {fileID: 21300000, guid: 96558426c45f4f99791ff5dcbc9c4542, type: 3}
+  - {fileID: 21300000, guid: 9eaeb19b9aa772577f05040fd56e5b8c, type: 3}
+  - {fileID: 21300000, guid: a82370eb3e88ef34f571f9aa216c6091, type: 3}
+  - {fileID: 21300000, guid: d130451828b7ab54ad5ecea1d8e1f6c8, type: 3}
+  - {fileID: 21300000, guid: 845d1a0a6e23dae365199e401a20148c, type: 3}
+  - {fileID: 21300000, guid: bc978d41e18626a9d1b30a34f3a17fb5, type: 3}
+  barriers:
+  - {fileID: 21300000, guid: 1a1654e8c82c5b7a7e0f36721f5eac0e, type: 3}
+  - {fileID: 21300000, guid: 9465935acd951b897d352b8206061ea7, type: 3}
+  - {fileID: 21300000, guid: 444d2f0c51b3749998703d746fd6326b, type: 3}
+  - {fileID: 21300000, guid: e40ed7243ea82612d93316508a6e43cc, type: 3}
+  framesPerSecond: 30
+  contactScale: 0.55
+  accentScale: 0.8
+  slashReferenceRadius: 24
+  trailStartDistance: 1.25
+  barrierReferenceLengths:
+  - 64
+  - 52
+  - 68
+  - 68

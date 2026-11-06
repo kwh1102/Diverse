@@ -10,6 +10,8 @@ namespace Diverse
     public class InventoryView : MonoBehaviour
     {
         [SerializeField] GridLayoutGroup grid;
+        [SerializeField] RectTransform panel;
+        Canvas uiCanvas;
         [SerializeField] InventoryCell cellTemplate;
         [SerializeField] Button pendingTemplate;
         [SerializeField] Text title,details,status,pendingLabel,equipmentSummary;
@@ -39,11 +41,22 @@ namespace Diverse
         public string Dragged=>dragged;
         public bool Typing=>false;
         public bool Busy=>g!=null && g.InventoryBusy;
+        public bool CapturesWorldPointer
+        {
+            get
+            {
+                if(!isActiveAndEnabled)return false;
+                if(dragged!=null || settling!=null)return true;
+                var camera=uiCanvas!=null && uiCanvas.renderMode!=RenderMode.ScreenSpaceOverlay?uiCanvas.worldCamera:null;
+                return panel!=null && RectTransformUtility.RectangleContainsScreenPoint(panel,Controls.MouseScreen,camera);
+            }
+        }
         InventoryState Bag=>g.Player.Inventory;
 
         public void Init(Game game)
         {
             g=game;
+            uiCanvas=GetComponentInParent<Canvas>();
             UIKit.Bind(close,()=>g.CloseOverlay());
             UIKit.Bind(equip,()=>{ if(!Busy && Bag.Select(selected)) Changed(); });
             UIKit.Bind(use,()=>{ if(!Busy && g.Player.UseItem(selected)) Changed(); else message="지금은 사용할 필요가 없어."; });
@@ -146,7 +159,7 @@ namespace Diverse
                 if (footprintView != null) footprintView.transform.SetAsLastSibling();
                 var waiting=Bag.Pending.ToList(); UIKit.Pool(pendingTemplate,pending,waiting.Count);
                 for(int i=0;i<waiting.Count;i++) pending[i].GetComponent<InventoryPendingItem>().Bind(this,waiting[i]);
-                UIKit.Set(pendingLabel,$"수령 대기 {waiting.Count} · 끌어서 가방에 넣기");
+                UIKit.Set(pendingLabel,$"수령 대기 {waiting.Count}");
             }
             var item=Bag.Find(selected); var active=Bag.Active;
             UIKit.Set(title,$"{TravelTypes.Name(g.Player.MovementType)} · {Bag.width}×{Bag.height}");
@@ -158,7 +171,7 @@ namespace Diverse
             if (itemHeading != null && item != null) description = description.Replace($"<b>{item.name}</b>\n\n", "");
             UIKit.Set(details,description);
             if (detailsItem != selected) { detailsItem = selected; if (detailsScroll != null) { Canvas.ForceUpdateCanvases(); detailsScroll.StopMovement(); detailsScroll.verticalNormalizedPosition = 1; } }
-            UIKit.Set(status,(dragged!=null?hoverMessage:null)??message??(g.PartVisualBusy?"액티브 전용 그림을 준비하는 중…":g.Player.ActiveGenerationStatus??"드래그로 이동 · 빈 칸 클릭은 선택 해제\n유형별 색상 · 두꺼운 외곽선: 사용 중인 무기"));
+            UIKit.Set(status,(dragged!=null?hoverMessage:null)??message??(g.PartVisualBusy?"전용 그림 준비 중…":g.Player.ActiveGenerationStatus??"드래그: 이동\n빈 칸: 선택 해제\n굵은 테두리:\n사용 중인 무기"));
             bool mutable=!Busy;
             UIKit.Show(equip,item?.kind==ItemKind.Weapon && item.Placed); equip.interactable=mutable && item?.id!=Bag.activeWeapon;
             UIKit.Label(equip,item?.id==Bag.activeWeapon?"사용 중인 무기":"이 무기 사용");

@@ -363,6 +363,7 @@ namespace Diverse
         /// <param name="heavy">0~1 how hard the blow was (knockback): heavier hits get a ring and shards.</param>
         public void HitSpark(Vector2 pos, Vector2 dir, Color32 col, bool crit, float scale = 1f, float heavy = 0f)
         {
+            if (CombatVisuals.Contact(pos,dir,col,crit,scale,heavy)) return;
             float ang = dir.Angle();
             Play(Art.HitSpark(col, crit ? 12 : 9), pos, Random.Range(0, 360f), Random.Range(24f, 32f), scale * Random.Range(0.9f, 1.1f), null, true);
             // A second layer that changes from hit to hit: a cut mark for crits, a ring + shards for heavy blows,

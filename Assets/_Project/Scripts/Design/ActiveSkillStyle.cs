@@ -26,8 +26,8 @@ namespace Diverse
         public static string Prompt(ActiveSkillData a)
         {
             Ensure(a);
-            return "Use ONLY this skill palette: " + string.Join(", ", a.visualPalette.Select(c => "#" + c)) +
-                ". Main body colour #" + a.color + ". Keep the same material, shape language and chunky silhouettes as its icon concept: " + a.iconPrompt + ". ";
+            return "Use this primary material shade ramp: " + string.Join(", ", a.visualPalette.Select(c => "#" + c)) +
+                ". Keep the icon concept's secondary material colours, 3-4 flat tones per material; no global monochrome recolouring. Main body colour #" + a.color + ". Keep the same material, shape language and chunky silhouettes as its icon concept: " + a.iconPrompt + ". ";
         }
         public static Color32 Tone(ActiveSkillData a, float value)
         {

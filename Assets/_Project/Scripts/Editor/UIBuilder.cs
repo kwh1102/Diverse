@@ -604,7 +604,7 @@ namespace Diverse.EditorTools
                 var s = Node(bar, "Skill " + keys[i], TL, new Vector2(i * 34, 0), new Vector2(30, 30));
                 Box(s, slotSpr).raycastTarget = true;
                 var icon = TextOn(Stretch(s, "Icon"), "★", 16, TextAnchor.MiddleCenter, Pal.Hex("ffd27a"), bold: true);
-                var artwork = Box(Stretch(s, "Artwork", 3, 3, 3, 3), whiteSpr); artwork.preserveAspect = true; artwork.raycastTarget = false;
+                var artwork = Box(Stretch(s, "Artwork", 5, 5, 5, 5), whiteSpr); artwork.preserveAspect = true; artwork.raycastTarget = false;
                 var shadeRt = Stretch(s, "Cooldown Shade", 2, 2, 2, 2);
                 var shade = Box(shadeRt, whiteSpr, new Color(0.05f, 0.03f, 0.1f, 0.7f));
                 shade.type = Image.Type.Filled; shade.fillMethod = Image.FillMethod.Vertical; shade.fillOrigin = (int)Image.OriginVertical.Top; shade.fillAmount = 0.4f;

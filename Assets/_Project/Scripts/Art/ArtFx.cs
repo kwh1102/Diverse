@@ -29,7 +29,7 @@ namespace Diverse
                     float a0 = swingDir > 0 ? half - arc * tailT : -half + arc * tailT;
                     float a1 = swingDir > 0 ? half - arc * headT : -half + arc * headT;
                     float lo = Mathf.Min(a0, a1), hi = Mathf.Max(a0, a1);
-                    float thickBase = Mathf.Max(3, radiusPx * 0.34f) * (1f - f * 0.17f);
+                    float thickBase = Mathf.Max(2, radiusPx * 0.20f) * (1f - f * 0.17f);
                     for (int y = 0; y < S; y++)
                         for (int x = 0; x < S; x++)
                         {
@@ -49,17 +49,7 @@ namespace Diverse
                             if (f >= 3 && along > (f == 3 ? .68f : .35f)) continue;
                             cv.Set(x, y, px);
                         }
-                    // 끝단 부스러기
-                    if (f >= 1)
-                    {
-                        var rng = new Rng((uint)(f * 97 + radiusPx));
-                        for (int i = 0; i < 4 + f; i++)
-                        {
-                            float ang = Mathf.Lerp(lo, hi, rng.Value) * Mathf.Deg2Rad;
-                            float r = radiusPx + rng.Range(0f, 3f) + f;
-                            cv.Set((int)(c + Mathf.Cos(ang) * r), (int)(c + Mathf.Sin(ang) * r), f < 3 ? core : col);
-                        }
-                    }
+                    // One clean taper; contact sparks belong to the hit, not every empty swing.
                     frames[f] = cv.ToSprite(new Vector2(c, c));
                 }
                 return frames;

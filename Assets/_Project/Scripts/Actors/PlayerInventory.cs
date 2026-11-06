@@ -92,9 +92,10 @@ namespace Diverse
             if (changedWeapon)
             {
                 shownWeapon = w.id;
-                StopMoving();
+                if(Game.I?.State != GameState.Inventory) StopMoving();
                 if (basicAttackRoutine != null) { StopCoroutine(basicAttackRoutine); basicAttackRoutine = null; }
                 attackStrikePending = false; queuedAttack = false; comboIndex = 0; comboTimer = 0;
+                basicActionLock = 0;
                 weaponSwingT = weaponSwingDur = 0; lungeT = 0;
                 // A skill still finishing cannot be bypassed by selecting a different weapon.
                 DesignRuntime.EquipWeapon(w.design, Weapon);

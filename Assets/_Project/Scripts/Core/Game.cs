@@ -19,6 +19,7 @@ namespace Diverse
         public static Settings Settings => Session.Settings;
 
         [System.NonSerialized] public GameState State = GameState.Playing;
+        public bool CombatRunning => State == GameState.Playing || State == GameState.Inventory;
         public WorldSave World => Session.World;
         [System.NonSerialized] public Player Player;
         [System.NonSerialized] public string HeroName;
@@ -85,12 +86,14 @@ namespace Diverse
 
             if (Player != null) WorldStreamer.I.Tick(Player.Pos);
 
-            if (State == GameState.Playing && Player != null && Player.Alive)
+            if (CombatRunning && Player != null && Player.Alive)
             {
-                HandleGlobalKeys();
+                if (State == GameState.Playing) HandleGlobalKeys();
+                else if ((Controls.Down(Act.Pause) && !Ui.ConsumesEscape) || (Controls.Down(Act.Inventory) && !Controls.Typing)) CloseOverlay();
+                if (!CombatRunning) return;
                 discoverT -= dt;
                 if (discoverT <= 0) { discoverT = 0.5f; Diverse.World.I.UpdateDiscovery(Player.Pos); UpdateQuests(); }
-                if (Controls.Down(Act.Interact))
+                if (State == GameState.Playing && Controls.Down(Act.Interact))
                 {
                     var it = Interactable.Nearest(Player.Pos);
                     if (it != null) Interact(it);
@@ -136,8 +139,9 @@ namespace Diverse
         public void OpenOverlay(GameState s, string tab = null)
         {
             State = s;
-            if (s == GameState.Map) GameTime.Resume("overlay");
+            if (s == GameState.Map || s == GameState.Inventory) GameTime.Resume("overlay");
             else GameTime.Pause("overlay");
+            InputConsumedFrame = Time.frameCount;
             Ui.OnOverlayOpened(s, tab);
             Sfx.Play("ui", 0.5f);
         }
@@ -149,6 +153,7 @@ namespace Diverse
             if(State==GameState.PartFusion) { CancelFusion();OpenOverlay(GameState.Inventory);return; }
             if(State==GameState.WeaponDesign) CancelWeaponReward();
             if (State == GameState.Dialogue) Ui.CloseDialogue();
+            InputConsumedFrame = Time.frameCount;
             State = GameState.Playing;
             GameTime.Resume("overlay");
             Sfx.Play("ui", 0.4f, 0.8f);
@@ -208,7 +213,7 @@ namespace Diverse
         /// Design studio (pause menu) committed a new look for this life: redraw the hero, weapon and world.
         /// The chassis is locked by the studio, so only names, colors and sprites change — never the numbers.
         /// </summary>
-        public void ApplyDesign(DesignPack committed)
+        public void ApplyDesign(DesignPack committed, string activeWeaponImage = null)
         {
             var p = Player;
             if (p == null) return;
@@ -220,6 +225,15 @@ namespace Diverse
                 starting.design = committed.Clone(); DesignRuntime.EquipWeapon(committed,starting.weapon);
                 DesignRuntime.Skin(starting.weapon); starting.name=starting.weapon.name;
                 PartArt.InvalidateWeapon(starting.id);
+            }
+            var active = p.Inventory.Active;
+            if (active?.design != null && activeWeaponImage != null && active.design.weapon.image != activeWeaponImage)
+            {
+                var appearance = active.design.Clone();
+                appearance.weapon.image = activeWeaponImage;
+                active.design = DesignStore.Commit(appearance);
+                PartArt.InvalidateWeapon(active.id);
+                p.Inventory.Notify();
             }
             DesignRuntime.EquipWeapon(p.Inventory.Active.design,p.Weapon);
             p.RefreshLook();

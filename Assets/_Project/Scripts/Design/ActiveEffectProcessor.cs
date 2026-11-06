@@ -46,7 +46,7 @@ namespace Diverse
                 { why = $"{label}: 유효 프레임 {present.Count(v => v)}/4 · 애니메이션에 필요한 그림 부족"; return null; }
                 // A single scale about the original cell centre retains intentional motion and registration.
                 float scale = (pixels - 6) / (2 * Mathf.Max(extentX, extentY));
-                var frames = new PixelCanvas[4]; var hashes = new HashSet<uint>();
+                var frames = new PixelCanvas[4]; var hashes = new HashSet<uint>(); var silhouettes = new HashSet<uint>();
                 for (int frame = 0; frame < 4; frame++)
                 {
                     var cv = frames[frame] = new PixelCanvas(pixels, pixels);
@@ -64,15 +64,23 @@ namespace Diverse
                             var p = cells[frame][sy * w + sx]; if (p.a < 32) continue;
                             red += p.r * p.a; green += p.g * p.a; blue += p.b * p.a; weight += p.a; alpha = Math.Max(alpha, p.a);
                         }
-                        if (weight > 0) cv.Px[y * pixels + x] = new Color32((byte)(red / weight), (byte)(green / weight), (byte)(blue / weight), alpha);
+                        int area = Mathf.Max(1,(x1-x0)*(y1-y0));
+                        // Max-alpha sampling turned isolated bright source pixels into opaque chunky noise.
+                        byte coverage = (byte)Mathf.Min(alpha, Mathf.RoundToInt(weight / (float)area));
+                        if (coverage >= 64) cv.Px[y * pixels + x] = new Color32((byte)(red / weight), (byte)(green / weight), (byte)(blue / weight), coverage);
                     }
                     if (cv.Px.Count(p => p.a >= 32) < cfg.effectMinPixels)
                     { why = $"{label} / {frame + 1}프레임: 도트 변환 후 그림이 너무 작음"; return null; }
                     uint hash = 2166136261;
                     foreach (var p in cv.Px) hash = (hash ^ p.r ^ ((uint)p.g << 8) ^ ((uint)p.b << 16) ^ ((uint)p.a << 24)) * 16777619;
                     hashes.Add(hash);
+                    uint silhouette=2166136261;
+                    foreach(var p in cv.Px)silhouette=(silhouette^(p.a>=128?1u:0u))*16777619;
+                    silhouettes.Add(silhouette);
                 }
                 if (hashes.Count < 2) { why = $"{label}: 유효 프레임이 같은 정지 그림 · 다른 동작 프레임 필요"; return null; }
+                if(key%3!=2 && silhouettes.Count<2)
+                {why=$"{label}: 색만 바뀌는 정지 아이콘 · 형태가 움직이는 동작 프레임 필요";return null;}
                 // Preserve faded entrances/exits, but repair missing middle/loop frames from this same AI animation.
                 for (int frame = 0; frame < 4; frame++) if (!present[frame] && (key % 3 == 2 || frame == 1 || frame == 2))
                 {

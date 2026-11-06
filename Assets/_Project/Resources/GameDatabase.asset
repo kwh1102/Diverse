@@ -125,5 +125,7 @@ MonoBehaviour:
   clonePrefab: {fileID: 327556377014560540, guid: d3de4f8d0c87c6643b0ab0ff9238523d, type: 3}
   summonPrefab: {fileID: 3772199649996619314, guid: ffd3ebac58fecc44baafd74e74669b16, type: 3}
   projectilePrefab: {fileID: 4761425230516893180, guid: 9390f122216e46c46a72cbd4fa82ec7e, type: 3}
+  activeBarrierPrefab: {fileID: 4761425230516893180, guid: 20d4f0ae4bdca7c4cbaa35f0466d2c16, type: 3}
   pickupPrefab: {fileID: 8539102407990997866, guid: 5a91ebff912f4c54cb5e0a3079f46152, type: 3}
   interactablePrefab: {fileID: 6921281593326623387, guid: 85d62e0dd48e8094ead42d3d39176c31, type: 3}
+  combatVisuals: {fileID: 11400000, guid: ccc99d0bee85742e27f726b015ba1241, type: 2}

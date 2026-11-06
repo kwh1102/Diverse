@@ -149,19 +149,13 @@ namespace Diverse
             if (step.delivery == "wall")
             {
                 Vector2 side = new Vector2(-dir.y, dir.x) * Mathf.Min(C.radius, range);
-                Vector2 from = origin - side, to = origin + side; float until = Time.time + C.effectDuration, fx = 0;
-                while (ctx.Valid && Time.time < until)
-                {
-                    if (Time.time >= fx) { Play(ctx, step, 0, origin, side, Mathf.RoundToInt(side.magnitude * 2 * Art.PPU), C.pulseInterval); fx = Time.time + C.pulseInterval; }
-                    foreach (var shot in Projectile.Live.ToArray())
-                    {
-                        if (shot == null || shot.targetTeam != Team.Player) continue;
-                        Vector2 ab = to - from, pos = shot.transform.position;
-                        Vector2 nearest = from + ab * Mathf.Clamp01(Vector2.Dot(pos - from, ab) / Mathf.Max(.001f, ab.sqrMagnitude));
-                        if (Vector2.Distance(pos, nearest) < C.anchorWidth + shot.radius) shot.Block();
-                    }
-                    yield return null;
-                }
+                p.PresentSkill(ctx.skill, step, dir);
+                Vector2 placement=step.origin=="caster"?origin+dir*(p.radius+C.anchorWidth):origin;
+                stage.position=placement;
+                Play(ctx, step, 0, placement, dir, C.effectPixels);
+                var barrier = ActiveBarrier.Spawn(p, ctx.skill, placement - side, placement + side, () => ctx.Valid);
+                try { while (ctx.Valid && barrier != null && barrier.Active) yield return null; }
+                finally { if (barrier != null) barrier.Dismiss(); }
                 stage.finished = true; yield break;
             }
             for (int pulse = 0; pulse < pulses && ctx.Valid; pulse++)
@@ -232,8 +226,10 @@ namespace Diverse
             Vector2 position = at + (ground ? Vector2.zero : Vector2.up * C.actionHeight);
             if (cell == 0 && step.delivery == "arc") position = Combat.MeleeFxOrigin(position, dir);
             float seconds = duration > 0 ? duration : cell == 1 ? C.impactVisualDuration : C.castVisualDuration;
-            Fx.I?.Play(frames, position, ground && step.delivery != "wall" || step.delivery == "guard" ? 0 : dir.Angle(), frames.Length / Mathf.Max(.01f, seconds), scale, null, false,
+            Color? tint=ctx.skill.effectPromptRevision<2?CombatVisuals.Tint(Pal.Hex(ctx.skill.color)):(Color?)null;
+            Fx.I?.Play(frames, position, ground && step.delivery != "wall" || step.delivery == "guard" ? 0 : dir.Angle(), frames.Length / Mathf.Max(.01f, seconds), scale, tint, false,
                 Art.SortY(at.y) + (ground ? -1 : 5), attached ? ctx.player.transform : null);
+            if(cell==0)CombatVisuals.Accent(step,position,dir,scale,Pal.Hex(ctx.skill.color),Art.SortY(at.y)+(ground?-1:5),attached?ctx.player.transform:null);
         }
         static string Status(string condition) => condition switch { "marked" => "mark", "burning" => "burn", "chilled" => "chill", "poisoned" => "poison", _ => null };
         static string Mark(ActiveSkillData a) => a.linkedMask == 0 ? "mark" : "active:" + a.linkId;
@@ -290,7 +286,9 @@ namespace Diverse
             {
                 float angle = dir.Angle() + (step.pattern is "ring" or "converge" ? i * 360f / count : step.pattern == "fan" ? (i - (count - 1) * .5f) * 15 : 0);
                 Vector2 shotDir = MathX.Dir(angle);
-                Vector2 start = step.pattern == "converge" ? origin + shotDir * range : origin;
+                Vector2 castOrigin=origin+Vector2.up*C.actionHeight;
+                float muzzleOffset=step.origin=="caster"?ctx.player.radius+C.projectileRadius:0;
+                Vector2 start = step.pattern == "converge" ? castOrigin + shotDir * range : castOrigin+shotDir*muzzleOffset;
                 if (step.pattern == "converge") shotDir = -shotDir;
                 var projectile = Projectile.Spawn(ActiveSkillArt.Shot(ctx.skill, step), start, shotDir * C.projectileSpeed, Team.Enemy, ctx.player, Damage(ctx, step, shotDir, divisions * count), false);
                 projectile.animationFrames = ActiveSkillArt.FlyingFrames(ctx.skill, step); projectile.animationFps = C.effectFramesPerSecond;
@@ -301,7 +299,7 @@ namespace Diverse
                 ctx.player.Abilities.PreparePartProjectile(ctx.parts, projectile, ctx.shots == 1);
                 projectile.color = Pal.Hex(ctx.skill.color);
                 // Dissipating impact flecks form the trail; don't leave copies of the flying body behind.
-                projectile.trailFx = ActiveSkillArt.Effect(ctx.skill, step, 1, C.projectilePixels); projectile.normalTrailBlend = true;
+                projectile.trailFx = CombatVisuals.Library?.trail ?? ActiveSkillArt.Effect(ctx.skill, step, 1, C.projectilePixels); projectile.normalTrailBlend = true;
                 projectile.canHit = (_, target) => ctx.Valid && Eligible(ctx, step, target);
                 projectile.resolveHit = (pr, target) => ApplyTargets(ctx, step, stage, new[] { target }, pr.vel.normalized, divisions * count * (step.pattern == "return" ? 2 : 1), pr.Travelled);
                 projectile.onEnd = pr =>

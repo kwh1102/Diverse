@@ -23,6 +23,7 @@ namespace Diverse
         [SerializeField] GameObject dim;            // full-screen shade behind overlays
 
         Game g;
+        public bool InventoryCapturesPointer => inventory != null && inventory.CapturesWorldPointer;
 
         /// <summary>Esc is being used by a text field or key rebinding, so it must not close the overlay.</summary>
         public bool ConsumesEscape => pause.Rebinding || evolve.Typing || g!=null && g.InventoryBusy || weaponReward!=null && weaponReward.Typing || inventory!=null && inventory.Typing;
@@ -71,7 +72,7 @@ namespace Diverse
             UIKit.Show(map, s == GameState.Map);
             UIKit.Show(inventory, s == GameState.Inventory);
             UIKit.Show(partFusion,s==GameState.PartFusion);UIKit.Show(weaponReward,s==GameState.WeaponDesign);
-            UIKit.Show(dim, s == GameState.Paused || s == GameState.Evolving || s == GameState.Map || s == GameState.Inventory || s==GameState.PartFusion || s==GameState.WeaponDesign || (s == GameState.Dead && death.HasRecord));
+            UIKit.Show(dim, s == GameState.Paused || s == GameState.Evolving || s == GameState.Map || s==GameState.PartFusion || s==GameState.WeaponDesign || (s == GameState.Dead && death.HasRecord));
         }
 
         void Update()
@@ -80,7 +81,7 @@ namespace Diverse
             Refresh();
             if (hud.isActiveAndEnabled) hud.Tick();
             // Clicks on UI must not also move/attack in the world
-            g.UiCapturingMouse = DeveloperMode.CapturingInput || g.State != GameState.Playing || (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject());
+            g.UiCapturingMouse = DeveloperMode.CapturingInput || !g.CombatRunning || InventoryCapturesPointer || (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject());
         }
     }
 }

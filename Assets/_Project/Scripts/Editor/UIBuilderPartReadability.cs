@@ -84,6 +84,7 @@ namespace Diverse.EditorTools
             }
             foreach(var scroll in root.GetComponentsInChildren<ScrollRect>(true))
                 if(scroll.enabled) EnsureReadabilityScrollbars(scroll);
+            LayoutInventoryArtwork(root);
         }
 
         static void EnsureReadabilityScrollbars(ScrollRect scroll)
