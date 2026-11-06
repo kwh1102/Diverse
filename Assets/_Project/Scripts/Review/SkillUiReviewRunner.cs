@@ -45,6 +45,16 @@ namespace Diverse.EditorTools
             Time.captureDeltaTime = 1f / 60;
             var p = g.Player; p.Level = 20; p.Gold = 10000; p.invulnUntil = float.MaxValue;
             foreach (var enemy in Actor.All.OfType<Enemy>().ToArray()) enemy.enabled = false;
+            PartTraitChecks.Run(p, (ok, message) => {
+                if (!ok) throw new System.InvalidOperationException(message);
+                if (!message.StartsWith("초반 후보")) Note(message + " OK");
+            });
+            p.Level = 2; p.pendingRewardLevels.Add(2); p.PendingEvolutions = 1; g.BeginEvolution();
+            yield return Frames(5); Shot("10_early_part_choices");
+            g.Offer = null; p.pendingRewardLevels.Clear(); p.PendingEvolutions = 0;
+            g.State = GameState.Playing; GameTime.ClearPauses(); g.Ui.OnOverlayOpened(GameState.Playing, null); p.Level = 20;
+            // Keep UI fixtures from starting extra drafts and consuming the recent-signature pool.
+            p.claimedSkillMask = 15;
             string fixturePath = Output + "/Scratch/fixture.json";
             var skill = File.Exists(fixturePath) ? JsonUtility.FromJson<ActiveSkillData>(File.ReadAllText(fixturePath)) : ActiveSkillGenerator.Local(WeaponType.Sword, 0);
             skill.slot = 0; ActiveSkillArt.Restore(skill);
@@ -72,8 +82,20 @@ namespace Diverse.EditorTools
             p.Inventory.items.Add(pending); p.Inventory.Notify(); inventory.SelectItem(pending.id);
             yield return Frames(5); Footer(inventory, "receive", "redraw", "discard"); Shot("04_inventory_receive_redraw_discard");
 
+            var fused = PartCatalog.Fuse(PartCatalog.Create("focus_lens"), PartCatalog.Create("ward_buckle"));
+            var fusionItem = InventoryItem.Part(fused); p.Inventory.items.Add(fusionItem); p.Inventory.Notify();
+            inventory.SelectItem(fusionItem.id); yield return Frames(5); Shot("08_part_t2_top");
+            scroll.verticalNormalizedPosition = 0; yield return Frames(5); Shot("08_part_t2_bottom");
+            var complex = PartCatalog.Fuse(PartCatalog.Create("rune_scope"), PartCatalog.Create("wind_boot"));
+            while (complex.tier < InventoryState.Rules.maxPartTier) complex = PartCatalog.Fuse(complex, complex.Clone());
+            var highPart = InventoryItem.Part(complex); p.Inventory.items.Add(highPart); p.Inventory.Notify();
+            inventory.SelectItem(highPart.id); yield return Frames(5); Shot("09_part_t5_top");
+            scroll.verticalNormalizedPosition = 0; yield return Frames(5); Shot("09_part_t5_bottom");
+            Note("T2/T5 실제 합성 결과 · 기본 효과/조건/추가 효과/재료 설명 캡처");
+
             g.CloseOverlay(); yield return Frames(3);
             // Use the actual prefetch path, then promote the same object into a milestone offer.
+            p.claimedSkillMask = 1;
             g.RequestPrefetch();
             for (int i = 0; i < 180 && g.SkillPrefetch?.iconsPrepared != true; i++) yield return null;
             var prepared = g.SkillPrefetch;

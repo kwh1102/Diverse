@@ -5,19 +5,19 @@ using UnityEngine;
 namespace Diverse
 {
     /// <summary>Finite equipment modifiers. Parts cannot spawn attacks, repeat skills, or run AI programs.</summary>
-    public class AbilityRuntime
+    public partial class AbilityRuntime
     {
         public readonly List<AbilityDef> Owned = new List<AbilityDef>();
         readonly Player player;
         int previousSlot = -1;
         float previousCastTime;
-        public AbilityRuntime(Player owner) { player = owner; }
+        public AbilityRuntime(Player owner) { player = owner; traitPosition = owner.Pos; RefreshTraits(); }
         public void Add(AbilityDef a) { Restore(a); Recompute(); }
-        public void Restore(AbilityDef a) { if (a != null && !Owned.Contains(a)) Owned.Add(a); }
+        public void Restore(AbilityDef a) { if (a != null && !Owned.Contains(a)) Owned.Add(a); RefreshTraits(); }
         public void AcquireOnce(AbilityDef a) { }
-        public void Clear() { Owned.Clear(); previousSlot = -1; previousCastTime = 0; }
+        public void Clear() { Owned.Clear(); previousSlot = -1; previousCastTime = 0; ClearTraits(); }
         public void Remove(AbilityDef a, bool preserveState = false) { Owned.Remove(a); Recompute(); }
-        public void Recompute() => player.RecalcStats();
+        public void Recompute() { RefreshTraits(); player.RecalcStats(); }
         public void RefreshEquipmentStats() => Recompute();
         public int OfferCount => 3;
         public float RerollMul => 1;
@@ -27,11 +27,11 @@ namespace Diverse
         public bool ReplaceDash(Vector2 direction) => false;
         public void ComboFinisher(Vector2 direction) { }
         public void Moved(float meters) { }
-        public void Tick(float dt) { }
+        public void Tick(float dt) => TickTraits(dt);
         public void Raise(string trigger, Vector2? pos = null, string param = null) { }
-        public void Fire(CombatEvent ev) { }
-        public float ClampStat(StatId stat, float value) => value;
-        public float IncomingMultiplier(Actor attacker, float amount) => 1;
+        public void Fire(CombatEvent ev) => TraitEvent(ev);
+        public float ClampStat(StatId stat, float value) => TraitStat(stat, value);
+        public float IncomingMultiplier(Actor attacker, float amount) => TraitIncoming(amount);
         public float FilterXp(float amount) => amount;
         public float FilterHeal(float amount, float missing) => amount;
         public IEnumerable<string> TagsOf(AbilityDef a) => a.tags;

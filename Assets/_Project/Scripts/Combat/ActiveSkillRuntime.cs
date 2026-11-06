@@ -25,6 +25,7 @@ namespace Diverse
             public float attack, power, deadline, control, range, evolutionHeal;
             public bool healed, closed, awaitingRecast, recast;
             public int live, shots;
+            public PartAttackState parts;
             public readonly HashSet<Actor> affected = new HashSet<Actor>();
             public bool Valid => !closed && Time.time < deadline && player != null && player.Alive && player.Inventory?.Active?.id == weaponId && player.Skills.Any(s => s?.def?.active?.id == skill.id);
         }
@@ -71,6 +72,8 @@ namespace Diverse
                     ctx.power *= 1 + C.chargeBonus * Mathf.Clamp01((Time.time - start) / Mathf.Max(.01f, C.chargeDuration));
                     aim = p.AimPoint; dir = (aim - p.Pos).SafeNormal(dir);
                 }
+                ctx.parts = p.Abilities.BeginActive(a, aim);
+                ctx.range += Mathf.Min(DB.Asset.abilityRules.def.partTraits.rangeCap, ctx.parts.range);
                 var evolution = p.Abilities.OnActiveCast(a, aim);
                 ctx.power *= 1 + evolution.damage;
                 ctx.range = Mathf.Min(1 + DB.Asset.abilityRules.def.maxRangeBonus, ctx.range + evolution.range);
@@ -123,6 +126,7 @@ namespace Diverse
             }
             finally
             {
+                p.Abilities.EndActive(ctx.parts, ctx.Valid);
                 ctx.closed = true; recasts.Remove(key);
                 if (running.TryGetValue(p, out int remaining)) { if (remaining <= 1) running.Remove(p); else running[p] = remaining - 1; }
             }
@@ -243,20 +247,26 @@ namespace Diverse
             source = ctx.player, direction = dir, knockback = 0, canCrit = true,
             element = System.Enum.TryParse(step.element, out Element el) ? el : Element.None,
             tags = "SKILL " + (step.delivery == "projectile" ? "PROJECTILE RANGED" : "MELEE"),
+            partAttack = ctx.parts,
             impactFx = ActiveSkillArt.Effect(ctx.skill, step, 1, C.effectPixels), normalImpactBlend = true, hitstop = .02f };
-        static void ApplyTargets(CastContext ctx, ActiveStep step, Stage stage, IEnumerable<Actor> targets, Vector2 dir, int divisions)
+        static void ApplyTargets(CastContext ctx, ActiveStep step, Stage stage, IEnumerable<Actor> targets, Vector2 dir, int divisions, float travelled = 0)
         {
             foreach (var target in targets.Take(C.maxTargets).ToList())
             {
                 if (!ctx.Valid || !Eligible(ctx, step, target)) continue;
-                if (step.effect == "damage" && Combat.Hit(target, Damage(ctx, step, dir, divisions), Pal.Hex(ctx.skill.color)) <= 0) continue;
+                if (step.effect == "damage")
+                {
+                    var hit = Damage(ctx, step, dir, divisions); hit.travelled = travelled;
+                    if (Combat.Hit(target, hit, Pal.Hex(ctx.skill.color)) <= 0) continue;
+                }
                 if (!stage.hit) { stage.hit = true; stage.impact = target.Pos; }
                 ctx.affected.Add(target);
                 if (!ctx.healed && step.effect == "damage") { ctx.healed = true; ctx.player.Abilities.OnActiveHit(ctx.evolutionHeal); }
                 if (step.effect == "mark") target.AddStatus(Mark(ctx.skill), C.statusDuration * ctx.control, 0, 0, ctx.player, Pal.Hex(ctx.skill.color));
                 if (step.effect == "stun" && target is Enemy enemy) enemy.Stun(C.stunDuration * ctx.control);
-                if (step.effect == "pull") target.Knockback(stage.position - target.Pos, C.knockback);
+                if (step.effect == "pull") target.Knockback(stage.position - target.Pos, C.knockback * ctx.player.Abilities.PartPullMultiplier(ctx.parts));
                 if (step.effect == "push") target.Knockback(target.Pos - stage.position, C.knockback);
+                ctx.player.Abilities.PartControl(ctx.parts, step, target);
                 if (step.effect == "damage" && step.element != "None")
                 {
                     string status = step.element switch { "Fire" => "burn", "Frost" => "chill", "Poison" => "poison", _ => null };
@@ -288,11 +298,12 @@ namespace Diverse
                 projectile.life = range / C.projectileSpeed * (step.pattern == "return" ? 2 : 1);
                 projectile.radius = C.projectileRadius; projectile.pierce = step.pattern is "pierce" or "return" ? C.maxTargets : 0;
                 projectile.bounces = step.pattern == "bounce" ? 1 : 0;
+                ctx.player.Abilities.PreparePartProjectile(ctx.parts, projectile, ctx.shots == 1);
                 projectile.color = Pal.Hex(ctx.skill.color);
                 // Dissipating impact flecks form the trail; don't leave copies of the flying body behind.
                 projectile.trailFx = ActiveSkillArt.Effect(ctx.skill, step, 1, C.projectilePixels); projectile.normalTrailBlend = true;
                 projectile.canHit = (_, target) => ctx.Valid && Eligible(ctx, step, target);
-                projectile.resolveHit = (pr, target) => ApplyTargets(ctx, step, stage, new[] { target }, pr.vel.normalized, divisions * count * (step.pattern == "return" ? 2 : 1));
+                projectile.resolveHit = (pr, target) => ApplyTargets(ctx, step, stage, new[] { target }, pr.vel.normalized, divisions * count * (step.pattern == "return" ? 2 : 1), pr.Travelled);
                 projectile.onEnd = pr =>
                 {
                     ctx.live--; stage.live--;
@@ -311,10 +322,12 @@ namespace Diverse
                     }
                     if (step.pattern == "return" && age > range / C.projectileSpeed)
                     {
+                        pr.homing = 0;
                         if (!returning) { returning = true; pr.ResetHits(); }
                         pr.vel = (ctx.player.Pos - (Vector2)pr.transform.position).normalized * C.projectileSpeed;
                         if (Vector2.Distance(ctx.player.Pos, pr.transform.position) < C.projectileRadius) pr.Block();
                     }
+                    ctx.player.Abilities.SteerPartProjectile(ctx.parts, pr, age);
                 };
             }
         }

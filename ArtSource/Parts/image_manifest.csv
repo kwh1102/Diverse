@@ -1,36 +1,36 @@
 ﻿id,name,tier,families,final_png,art_brief,status
-focus_lens,집중 렌즈,1,위력,Assets/_Project/Resources/Sprites/Parts/focus_lens.png,액티브 피해를 모으는 수정 렌즈.,정교화 대기
-sword_knot,검사의 매듭,1,위력,Assets/_Project/Resources/Sprites/Parts/sword_knot.png,근접 액티브의 칼끝을 강화하는 매듭.,정교화 대기
-ember_crucible,불씨 도가니,1,위력,Assets/_Project/Resources/Sprites/Parts/ember_crucible.png,원소 공격을 보조하는 작은 도가니.,정교화 대기
-prism_core,분광 핵,1,위력,Assets/_Project/Resources/Sprites/Parts/prism_core.png,액티브 위력과 작은 시전 보호막을 제공한다.,정교화 대기
-moon_charm,초승달 부적,1,치명타,Assets/_Project/Resources/Sprites/Parts/moon_charm.png,치명타 확률을 보조하는 은빛 부적.,정교화 대기
-lucky_die,흑요석 주사위,1,치명타,Assets/_Project/Resources/Sprites/Parts/lucky_die.png,치명타 피해를 보조하는 주사위.,정교화 대기
-razor_gem,칼날 수정,1,치명타,Assets/_Project/Resources/Sprites/Parts/razor_gem.png,치명타 확률과 근접 액티브 피해를 보조한다.,정교화 대기
-ruby_pin,홍옥 핀,1,치명타,Assets/_Project/Resources/Sprites/Parts/ruby_pin.png,치명타 피해와 액티브 위력을 함께 보조한다.,정교화 대기
-clock_spring,태엽 시계,1,재사용,Assets/_Project/Resources/Sprites/Parts/clock_spring.png,액티브 재사용 대기시간을 줄이는 시계.,정교화 대기
-silver_gear,은빛 톱니,1,재사용,Assets/_Project/Resources/Sprites/Parts/silver_gear.png,재사용 간격과 공격 흐름을 보조한다.,정교화 대기
-echo_bell,메아리 방울,1,재사용,Assets/_Project/Resources/Sprites/Parts/echo_bell.png,재사용 간격과 시전 보호막을 보조한다.,정교화 대기
-hourglass_bead,모래시계 구슬,1,재사용,Assets/_Project/Resources/Sprites/Parts/hourglass_bead.png,재사용 간격과 성장 경험치를 보조한다.,정교화 대기
-arrow_fletching,매깃 화살깃,1,투사체,Assets/_Project/Resources/Sprites/Parts/arrow_fletching.png,투사체 액티브의 피해를 강화한다.,정교화 대기
-falcon_sight,매눈 조준경,1,투사체,Assets/_Project/Resources/Sprites/Parts/falcon_sight.png,투사체 피해와 치명타 확률을 보조한다.,정교화 대기
-rune_scope,룬 조준경,1,투사체,Assets/_Project/Resources/Sprites/Parts/rune_scope.png,투사체 액티브의 사거리와 피해를 보조한다.,정교화 대기
-spiral_nozzle,나선 노즐,1,투사체,Assets/_Project/Resources/Sprites/Parts/spiral_nozzle.png,투사체 위력과 재사용 간격을 보조한다.,정교화 대기
-trail_compass,길잡이 나침반,1,범위,Assets/_Project/Resources/Sprites/Parts/trail_compass.png,액티브가 닿는 거리를 늘리는 나침반.,정교화 대기
-star_map,별자리 지도,1,범위,Assets/_Project/Resources/Sprites/Parts/star_map.png,사거리와 전리품 획득을 보조하는 지도.,정교화 대기
-long_reed,갈대 관,1,범위,Assets/_Project/Resources/Sprites/Parts/long_reed.png,사거리와 투사체 피해를 보조한다.,정교화 대기
-amber_mirror,호박 거울,1,범위,Assets/_Project/Resources/Sprites/Parts/amber_mirror.png,사거리와 액티브 위력을 보조한다.,정교화 대기
-frost_shard,서리 결정,1,제어,Assets/_Project/Resources/Sprites/Parts/frost_shard.png,냉기와 기절 등 액티브 제어 시간을 늘린다.,정교화 대기
-anchor_hook,닻 갈고리,1,제어,Assets/_Project/Resources/Sprites/Parts/anchor_hook.png,제어 지속시간과 근접 액티브 위력을 보조한다.,정교화 대기
-thunder_pin,뇌전 침,1,제어,Assets/_Project/Resources/Sprites/Parts/thunder_pin.png,제어 지속시간과 원소 공격을 보조한다.,정교화 대기
-gravity_stone,중력석,1,제어,Assets/_Project/Resources/Sprites/Parts/gravity_stone.png,제어 지속시간과 사거리를 보조한다.,정교화 대기
-ward_buckle,수호 버클,1,방어,Assets/_Project/Resources/Sprites/Parts/ward_buckle.png,액티브를 시전하면 짧은 보호막을 얻는다.,정교화 대기
-vital_vial,생명의 약병,1,방어,Assets/_Project/Resources/Sprites/Parts/vital_vial.png,액티브 적중 시 시전당 한 번 회복한다.,정교화 대기
-iron_plate,철갑 조각,1,방어,Assets/_Project/Resources/Sprites/Parts/iron_plate.png,받는 피해를 줄이는 작은 갑옷 조각.,정교화 대기
-heart_lock,심장 자물쇠,1,방어,Assets/_Project/Resources/Sprites/Parts/heart_lock.png,최대 체력과 작은 시전 보호막을 보조한다.,정교화 대기
-wind_boot,바람 장화,1,이동,Assets/_Project/Resources/Sprites/Parts/wind_boot.png,이동 속도를 보조하는 가벼운 장화.,정교화 대기
-silk_grip,비단 손잡이,1,이동,Assets/_Project/Resources/Sprites/Parts/silk_grip.png,공격 속도와 이동 속도를 조금씩 보조한다.,정교화 대기
-feather_ring,깃털 고리,1,이동,Assets/_Project/Resources/Sprites/Parts/feather_ring.png,대시 재충전 시간을 줄이는 고리.,정교화 대기
-breeze_ribbon,산들바람 리본,1,이동,Assets/_Project/Resources/Sprites/Parts/breeze_ribbon.png,이동과 대시 재충전을 함께 보조한다.,정교화 대기
+focus_lens,집중 렌즈,1,위력,Assets/_Project/Resources/Sprites/Parts/focus_lens.png,조준선을 한 점에 모으는 수정 렌즈 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
+sword_knot,검사의 매듭,1,위력,Assets/_Project/Resources/Sprites/Parts/sword_knot.png,검 손잡이를 묶고 칼끝을 당기는 단단한 매듭 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
+ember_crucible,불씨 도가니,1,위력,Assets/_Project/Resources/Sprites/Parts/ember_crucible.png,불씨 하나를 담은 작은 도가니 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
+prism_core,분광 핵,1,위력,Assets/_Project/Resources/Sprites/Parts/prism_core.png,서로 다른 두 빛을 교차시키는 분광 수정 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
+moon_charm,초승달 부적,1,치명타,Assets/_Project/Resources/Sprites/Parts/moon_charm.png,등 뒤를 비추는 초승달 은 부적 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
+lucky_die,흑요석 주사위,1,치명타,Assets/_Project/Resources/Sprites/Parts/lucky_die.png,다섯 번째 눈이 빛나는 흑요석 주사위 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
+razor_gem,칼날 수정,1,치명타,Assets/_Project/Resources/Sprites/Parts/razor_gem.png,금이 간 적을 마무리하는 얇은 칼날 수정 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
+ruby_pin,홍옥 핀,1,치명타,Assets/_Project/Resources/Sprites/Parts/ruby_pin.png,치명타 에너지를 저장하는 홍옥 핀 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
+clock_spring,태엽 시계,1,재사용,Assets/_Project/Resources/Sprites/Parts/clock_spring.png,멈췄다가 다시 감기는 태엽 시계 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
+silver_gear,은빛 톱니,1,재사용,Assets/_Project/Resources/Sprites/Parts/silver_gear.png,평타와 스킬을 잇는 세 개 이빨의 은빛 톱니 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
+echo_bell,메아리 방울,1,재사용,Assets/_Project/Resources/Sprites/Parts/echo_bell.png,앞선 동작으로 소리를 되돌리는 메아리 방울 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
+hourglass_bead,모래시계 구슬,1,재사용,Assets/_Project/Resources/Sprites/Parts/hourglass_bead.png,빗나간 시간을 되돌리는 모래시계 구슬 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
+arrow_fletching,매깃 화살깃,1,투사체,Assets/_Project/Resources/Sprites/Parts/arrow_fletching.png,한 줄로 꿰뚫는 날카로운 화살깃 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
+falcon_sight,매눈 조준경,1,투사체,Assets/_Project/Resources/Sprites/Parts/falcon_sight.png,적을 쫓는 매의 눈 모양 조준경 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
+rune_scope,룬 조준경,1,투사체,Assets/_Project/Resources/Sprites/Parts/rune_scope.png,같은 표적 위에 겹쳐지는 두 개의 룬 조준선 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
+spiral_nozzle,나선 노즐,1,투사체,Assets/_Project/Resources/Sprites/Parts/spiral_nozzle.png,나선 홈이 파인 작은 발사 노즐 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
+trail_compass,길잡이 나침반,1,범위,Assets/_Project/Resources/Sprites/Parts/trail_compass.png,먼 조준점을 가리키는 길잡이 나침반 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
+star_map,별자리 지도,1,범위,Assets/_Project/Resources/Sprites/Parts/star_map.png,두 적중 지점을 별자리로 잇는 작은 지도 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
+long_reed,갈대 관,1,범위,Assets/_Project/Resources/Sprites/Parts/long_reed.png,긴 비행 거리를 만드는 속 빈 갈대 관 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
+amber_mirror,호박 거울,1,범위,Assets/_Project/Resources/Sprites/Parts/amber_mirror.png,공격 흔적을 품었다 돌려주는 호박 거울 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
+frost_shard,서리 결정,1,제어,Assets/_Project/Resources/Sprites/Parts/frost_shard.png,제어의 순간 대상을 얼리는 서리 결정 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
+anchor_hook,닻 갈고리,1,제어,Assets/_Project/Resources/Sprites/Parts/anchor_hook.png,움직인 적의 발을 붙잡는 닻 갈고리 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
+thunder_pin,뇌전 침,1,제어,Assets/_Project/Resources/Sprites/Parts/thunder_pin.png,표식을 찌르면 번쩍이는 뇌전 침 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
+gravity_stone,중력석,1,제어,Assets/_Project/Resources/Sprites/Parts/gravity_stone.png,안쪽으로 파편을 끌어모으는 중력석 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
+ward_buckle,수호 버클,1,방어,Assets/_Project/Resources/Sprites/Parts/ward_buckle.png,공격을 흘려 방패를 여는 수호 버클 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
+vital_vial,생명의 약병,1,방어,Assets/_Project/Resources/Sprites/Parts/vital_vial.png,빠진 체력을 채우는 작은 생명의 약병 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
+iron_plate,철갑 조각,1,방어,Assets/_Project/Resources/Sprites/Parts/iron_plate.png,가만히 버틸 때 겹쳐지는 철갑 조각 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
+heart_lock,심장 자물쇠,1,방어,Assets/_Project/Resources/Sprites/Parts/heart_lock.png,위험할 때 심장을 감싸 잠기는 자물쇠 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
+wind_boot,바람 장화,1,이동,Assets/_Project/Resources/Sprites/Parts/wind_boot.png,걸음을 모아 다음 일격으로 보내는 바람 장화 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
+silk_grip,비단 손잡이,1,이동,Assets/_Project/Resources/Sprites/Parts/silk_grip.png,손에 감을수록 단단해지는 비단 손잡이 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
+feather_ring,깃털 고리,1,이동,Assets/_Project/Resources/Sprites/Parts/feather_ring.png,회피의 순간 가벼워지는 깃털 고리 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
+breeze_ribbon,산들바람 리본,1,이동,Assets/_Project/Resources/Sprites/Parts/breeze_ribbon.png,이동이 끝나도 바람이 이어지는 리본 · 고유 능력 모티프가 읽히는 하나의 도구,정교화 대기
 power_power_t2,응축의 심장,2,위력 + 위력,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_power_t2.png,응축된 수정·작은 도가니 · T2 단계의 성장 실루엣,신규 제작 대기
 power_power_t3,각성한 응축의 심장,3,위력 + 위력,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_power_t3.png,응축된 수정·작은 도가니 · T3 단계의 성장 실루엣,신규 제작 대기
 power_power_t4,찬란한 응축의 심장,4,위력 + 위력,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_power_t4.png,응축된 수정·작은 도가니 · T4 단계의 성장 실루엣,신규 제작 대기

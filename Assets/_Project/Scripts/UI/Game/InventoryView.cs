@@ -173,7 +173,7 @@ namespace Diverse
         {
             if(item==null) return "아이템을 선택하면\n이곳에 설명이 나타나요.";
             string desc=item.kind switch {
-                ItemKind.Part=>$"등급 T{item.complexity}\n\n{item.Ability?.Explain()}",
+                ItemKind.Part=>item.Ability?.Explain(),
                 ItemKind.Skill=>$"{ "QWER"[item.skillSlot]} 스킬\n\n{SkillDB.Get(item)?.desc}"+(item.active==null?"":"\n\n<b>교환 규칙</b>\n"+ActiveSkillGenerator.ExchangeRule(item.active)),
                 ItemKind.Weapon=>$"{ActiveSkillGenerator.TypeName(ActiveSkillGenerator.TypeOf(item))} · 유형별 주변 공간\n\n{item.weapon.desc}",
                 _=>item.consumable=="xp"?$"경험치 +{InventoryState.Rules.xpPotionAmount}":item.consumable=="cleanse"?"상태 이상 제거":$"체력 {InventoryState.Rules.potionHealFraction*100:0}% 회복"

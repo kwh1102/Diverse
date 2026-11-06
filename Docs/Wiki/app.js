@@ -65,9 +65,15 @@
     // Same ordinal tie-break as the runtime (Korean BMP family names).
     const dominant=Object.entries(familyCounts).sort((a,b)=>b[1]-a[1]||(a[0]<b[0]?-1:1)).slice(0,2).map(x=>x[0]).sort();if(dominant.length===1)dominant.push(dominant[0]);
     const evolution=data.entries.find(e=>e.category==='진화 파츠'&&e.tier===tier&&e.data.familyA===dominant[0]&&e.data.familyB===dominant[1]);
-    const power=data.tierPower[tier-1], bonuses={}, mods={};
+    const power=data.tierPower[tier-1], bonuses={}, mods={}, traits=[];
     for(const [id,count] of Object.entries(ingredients)){
       const p=data.entries.find(e=>e.id===id),k=count/units*power;
+      const caps=data.traitCaps, strength=Math.min(caps.maxStrength,k), d=p.data;
+      const capByMechanic={FocusLens:'damageCap',SwordKnot:'damageCap',PrismCore:'damageCap',MoonCharm:'critChanceCap',RazorGem:'damageCap',RubyPin:'critChanceCap',ClockSpring:'refundCap',SilverGear:'refundCap',EchoBell:'refundCap',HourglassBead:'refundCap',RuneScope:'damageCap',TrailCompass:'rangeCap',StarMap:'rangeCap',LongReed:'damageCap',AnchorHook:'slowCap',GravityStone:'rangeCap',WardBuckle:'shieldCap',HeartLock:'shieldCap',BreezeRibbon:'speedCap'};
+      const amount=Math.min(Number(d.amount||0)*strength,caps[capByMechanic[d.mechanicName]]??Infinity);
+      const tokens={p:amount*100,s:Number(d.secondary||0)*strength*100,v:amount,t:Number(d.threshold||0)*100,d:Number(d.duration||0),c:Number(d.cooldown||0),r:Number(d.distance||0),n:d.mechanicName==='ArrowFletching'?Math.max(1,Math.round(Number(d.count)*strength)):Number(d.count),limit:caps.damageCap*100};
+      const text=(d.traitText||d.description||'').replace(/\{(\w+)\}/g,(match,key)=>key in tokens?String(Math.round(tokens[key]*10)/10):match);
+      traits.push(`<p><b>${esc(p.name)}</b><br>${esc(text)}</p>`);
       for(const key of ['skillDamage','projectileDamage','meleeDamage','shieldOnCast','healOnHit','rangeBonus','controlBonus'])bonuses[key]=(bonuses[key]||0)+Number(p.data[key]||0)*k;
       for(const m of p.raw.matchAll(/- stat: (\d+)\s+value: ([-.\d]+)\s+mul: (\d)/g)){const key=m[1]+':'+m[3];mods[key]=(mods[key]||0)+Number(m[2])*k;}
     }
@@ -75,7 +81,7 @@
     lastResult={id:'sim:'+Object.keys(ingredients).sort().map(id=>id+'*'+ingredients[id]).join('|'),name:evolution?.name||'진화 파츠',tier,ingredients};
     const lines=Object.entries(bonuses).filter(([,v])=>v).map(([k,v])=>`<span class="pill">${labels[k]} +${(v*100).toFixed(2)}%</span>`);
     Object.entries(mods).forEach(([k,v])=>{const [stat,mul]=k.split(':');lines.push(`<span class="pill">${statNames[Number(stat)]} ${v>0?'+':''}${(v*(Number(stat)===0&&mul==='0'?1:100)).toFixed(2)}${Number(stat)===0&&mul==='0'?'':'%'}</span>`);});
-    $('fusion-result').innerHTML=`<p class="eyebrow">T${tier} · T1 재료 ${units}개</p><h3>${esc(lastResult.name)}</h3><p class="muted">${esc(ingredientText(lastResult))}</p>${lines.join('')}<p><b>진화 특성</b> ${esc(evolution?.summary||'정의 없음')}</p><button type="button" id="see-evolution">특성 수치·전용 그림 경로 보기</button><div class="fusion-actions"><button type="button" data-material="a">결과를 재료 A에 넣기</button><button type="button" data-material="b">결과를 재료 B에 넣기</button></div><p class="muted">계승 능력의 합계이며 장착 전체 상한 적용 전입니다. T1 재료를 보존하므로 합성 순서가 달라도 같은 구성의 결과는 동일합니다.</p>`;
+    $('fusion-result').innerHTML=`<p class="eyebrow">T${tier} · T1 재료 ${units}개</p><h3>${esc(lastResult.name)}</h3><p class="muted">${esc(ingredientText(lastResult))}</p><h4>재료에서 계승한 고유 능력</h4>${traits.join('')}${lines.join('')}<p><b>진화 특성</b> ${esc(evolution?.summary||'정의 없음')}</p><button type="button" id="see-evolution">특성 수치·전용 그림 경로 보기</button><div class="fusion-actions"><button type="button" data-material="a">결과를 재료 A에 넣기</button><button type="button" data-material="b">결과를 재료 B에 넣기</button></div><p class="muted">개별 고유 능력 상한을 반영한 값입니다. 다른 장착 파츠와의 합계에는 별도 상한이 적용됩니다. T1 재료를 보존하므로 합성 순서가 달라도 같은 구성의 결과는 동일합니다.</p>`;
     $('see-evolution').addEventListener('click',()=>{if(evolution)openDetail(evolution.id);});
   });
   $('fusion-result').addEventListener('click',e=>{const button=e.target.closest('[data-material]');if(!button||!lastResult)return;let index=materials.findIndex(m=>m.id===lastResult.id);if(index<0){index=materials.length;materials.push(lastResult);}const a=Number($('material-a').value),b=Number($('material-b').value);updateMaterials(button.dataset.material==='a'?index:a,button.dataset.material==='b'?index:b);});

@@ -56,6 +56,7 @@ namespace Diverse
         bool queuedAttack; Vector2 queuedDir;
         Coroutine basicAttackRoutine;
         bool attackStrikePending;
+        public bool BasicLunging => lungeT > 0;
 
         // Dash
         float dashT, dashCd;
@@ -663,6 +664,7 @@ namespace Diverse
             Color32 col = Weapon.slashColor;
             var w = Weapon;
             float dmg = AttackPower * step.damage;
+            var partAttack = Abilities.BeginBasic(finisher);
             Sfx.Play(w.sfxSwing, 0.7f);
 
             if (step.projectile)
@@ -679,7 +681,7 @@ namespace Diverse
                 for (int i = 0; i < step.projectileCount; i++)
                 {
                     var d = dir.Rotate((i - (step.projectileCount - 1) / 2f) * step.projectileSpread);
-                    var info = new DamageInfo { amount = dmg, source = this, direction = d, knockback = step.knockback, hitstop = step.hitstop, canCrit = true, tags = w.tags, element = w.element };
+                    var info = new DamageInfo { amount = dmg, source = this, direction = d, knockback = step.knockback, hitstop = step.hitstop, canCrit = true, tags = w.tags + " BASIC", element = w.element, partAttack = partAttack };
                     var pr = Projectile.Spawn(Art.Bolt(), muzzle + d * 0.5f, d * 19f, Team.Enemy, this, info);
                     pr.color = trail; pr.life = step.range / 19f; pr.shake = step.shake; pr.kick = step.kick; pr.sfx = w.sfxHit;
                     pr.spin = DesignRuntime.ShotSpins;
@@ -731,7 +733,7 @@ namespace Diverse
                 foreach (var a in targets)
                 {
                     var el = AttackElement;
-                    var info = new DamageInfo { amount = dmg, source = this, direction = (a.Pos - Pos).SafeNormal(dir), knockback = step.knockback, hitstop = step.hitstop, canCrit = true, tags = w.tags, element = el };
+                    var info = new DamageInfo { amount = dmg, source = this, direction = (a.Pos - Pos).SafeNormal(dir), knockback = step.knockback, hitstop = step.hitstop, canCrit = true, tags = w.tags + " BASIC", element = el, partAttack = partAttack };
                     Combat.Hit(a, info, col, w.sfxHit, step.shake, step.kick);
                     if (el != Element.None && (el != w.element || Random.value < 0.2f)) Combat.ApplyElement(a, el, dmg * 0.5f, this, 0);
                     any = true;

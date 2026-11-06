@@ -24,6 +24,7 @@ namespace Diverse
         [SerializeField] SpriteRenderer warn;   // attack telegraph (prefab child, hidden until windup)
         bool aggro;
         public bool Aggro => aggro;
+        public bool Stunned => state == S.Stunned;
         int bossPhase;
         int bossAttack, lastBossAttack;
         float spawnT = 0.35f;
@@ -67,6 +68,7 @@ namespace Diverse
         {
             if (def.boss) t *= 0.35f;
             if (!Alive) return;
+            if (state == S.Stunned) t = Mathf.Max(t, stunT);
             state = S.Stunned; stunT = t; warn.enabled = false;
             CancelSignature();   // a stun interrupts any pattern (and its telegraphs)
             Fx.I?.Number(Pos + Vector2.up * 1.1f, "기절", new Color(1f, 0.95f, 0.5f), 0.8f, 0.6f);

@@ -29,12 +29,21 @@ def main():
     def add(id, category, name, summary, source, raw='', **extra):
         entries.append(dict(id=id,category=category,name=name,summary=summary,source=source,raw=decode(raw),**extra))
     ability=ROOT/'Assets/_Project/Data/AbilityRules.asset'; text=ability.read_text(encoding='utf-8')
+    trait_caps={k:float(v) for k,v in fields(text.split('    partTraits:\n',1)[1].split('    parts:',1)[0]).items()}
+    trait_source=(ROOT/'Assets/_Project/Scripts/Abilities/PartTraits.cs').read_text(encoding='utf-8')
+    trait_names=[name.strip() for name in re.search(r'enum PartMechanic\s*\{([^}]+)\}',trait_source,re.S)[1].split(',')]
     for b in blocks(text,'    parts:\n','    evolutions:'):
         d=fields(b)
         if 'id' not in d: continue
+        d['mechanicName']=trait_names[int(d['mechanic'])]
         image=d.get('sprite','')
         image='Assets/_Project/Resources/'+image+'.png' if image else ''
-        add('part:'+d['id'],'T1 파츠',d['name'],d.get('description',''),str(ability.relative_to(ROOT)),b,
+        effect=d.get('traitText',d.get('description',''))
+        for token,key,mul in [('p','amount',100),('s','secondary',100),('v','amount',1),('t','threshold',100),('d','duration',1),('c','cooldown',1),('r','distance',1),('n','count',1)]:
+            effect=effect.replace('{'+token+'}',f'{float(d.get(key,0))*mul:g}')
+        effect=effect.replace('{limit}',f"{float(re.search(r'^      damageCap: (.+)$',text,re.M)[1])*100:g}")
+        d['고유 능력']=effect; d['등장 시기']='초반부터' if d.get('requiresActive')=='0' else '5레벨부터'
+        add('part:'+d['id'],'T1 파츠',d['name'],d['등장 시기']+' · '+effect,str(ability.relative_to(ROOT)),b,
             tier=1,family=d.get('family'),image=image,art='임시 기존 그림 · 정교화 대기',data=d)
     for b in blocks(text,'    evolutions:\n','    weaponShapes:'):
         d=fields(b); tier=int(d['tier']); image='Assets/_Project/Resources/'+d['sprite']+'.png'
@@ -109,8 +118,10 @@ def main():
         add('consumable:'+id,'소비 아이템',name,desc,'Assets/_Project/Scripts/Core/InventoryState.cs',data={'id':id},image='Assets/_Project/Resources/Sprites/inventory_'+id+'.png')
     for p in sorted((ROOT/'Docs').glob('*.md')):
         add('doc:'+p.stem,'시스템 문서',p.stem,p.read_text(encoding='utf-8').splitlines()[0].lstrip('# '),str(p.relative_to(ROOT)),p.read_text(encoding='utf-8'))
+    prompt=ROOT/'ArtSource/Parts/IMAGEGEN_PROMPT.md'
+    add('doc:PartImagePrompt','시스템 문서','파츠 이미지 생성 프롬프트','다른 세션에 전달할 고유 능력 반영 아트 제작 지침',str(prompt.relative_to(ROOT)),prompt.read_text(encoding='utf-8'))
     tier_power=json.loads(re.search(r'partTierPower: (\[[^\]]+\])',text)[1])
-    data=dict(tierPower=tier_power,generated=datetime.now(timezone.utc).isoformat(timespec='seconds'),entries=entries,shapes=shapes)
+    data=dict(tierPower=tier_power,traitCaps=trait_caps,generated=datetime.now(timezone.utc).isoformat(timespec='seconds'),entries=entries,shapes=shapes)
     (OUT/'catalog.js').write_text('window.DIVERSE_WIKI = '+json.dumps(data,ensure_ascii=False,separators=(',',':'))+';\n',encoding='utf-8')
 
 

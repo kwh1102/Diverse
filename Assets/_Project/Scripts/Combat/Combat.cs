@@ -63,19 +63,22 @@ namespace Diverse
             if (target == null || !target.Alive) return 0;
             var p = Player.I;
             bool fromPlayerSide = d.source != null && d.source.team == Team.Player;
+            float partCrit = 0, partCritDamage = 0;
             if (fromPlayerSide && p != null)
             {
+                if (d.source == p) p.Abilities.ModifyPartHit(target, ref d, out partCrit, out partCritDamage);
                 d.amount *= p.DamageMultiplierAgainst(target, d.tags);
-                if (d.canCrit && Random.value < p.Stats[StatId.CritChance] + p.BonusCritAgainst(target))
+                if (d.canCrit && Random.value < p.Stats[StatId.CritChance] + p.BonusCritAgainst(target) + partCrit)
                 {
                     d.crit = true;
-                    d.amount *= 1.5f + p.Stats[StatId.CritDamage];
+                    d.amount *= 1.5f + p.Stats[StatId.CritDamage] + partCritDamage;
                 }
                 if (d.element != Element.None) d.amount *= 1 + p.Stats[StatId.ElementPower] * 0.5f;
             }
             d.amount = Mathf.Max(1, d.amount * Random.Range(0.92f, 1.08f));
             float dealt = target.TakeDamage(d);
             if (dealt <= 0) return 0;
+            if (p != null && d.source == p && !d.noEvents) p.Abilities.PartHit(target, d);
 
             Vector2 at = target.Pos + Vector2.up * 0.45f;
             // 연출 — 무기별 값으로 차등

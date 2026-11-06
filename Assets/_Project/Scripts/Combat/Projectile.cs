@@ -17,6 +17,7 @@ namespace Diverse
         public int pierce;
         public int bounces;
         public bool Expired { get; private set; }
+        public float Travelled { get; private set; }
         public float homing;            // 유도 강도
         public float explodeRadius;
         public DamageInfo dmg;
@@ -97,13 +98,14 @@ namespace Diverse
                     if (blockX || !blockY) vel.x = -vel.x;
                     if (blockY) vel.y = -vel.y;
                     p = current + vel * dt;
-                    if (!WorldStreamer.I.IsSolidObstacle(p)) { transform.position = p; return; }
+                    if (!WorldStreamer.I.IsSolidObstacle(p)) { Travelled += Vector2.Distance(transform.position, p); transform.position = p; return; }
                 }
                 // 나무·벽에 박힘 (물 위로는 날아간다)
                 Fx.I?.Burst(p, color, 4, 4, 0.25f);
                 End();
                 return;
             }
+            Travelled += Vector2.Distance(transform.position, p);
             transform.position = p;
             transform.rotation = spin ? Quaternion.Euler(0, 0, t * 900f) : Quaternion.Euler(0, 0, vel.Angle());
             sr.sortingOrder = Art.SortY(p.y - 0.5f) + 10;
@@ -123,6 +125,7 @@ namespace Diverse
                 hitSet.Add(a);
                 var d = dmg;
                 d.direction = vel.normalized;
+                d.travelled = Travelled;
                 if (resolveHit != null) resolveHit(this, a);
                 else if (owner != null && owner.team == Team.Player) Combat.Hit(a, d, color, sfx, shake, kick);
                 else

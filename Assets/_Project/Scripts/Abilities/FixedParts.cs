@@ -11,6 +11,11 @@ namespace Diverse
         public string id, name, description, sprite, family;
         public StatMod[] mods = Array.Empty<StatMod>();
         public float skillDamage, projectileDamage, meleeDamage, shieldOnCast, healOnHit, rangeBonus, controlBonus;
+        public PartMechanic mechanic;
+        public bool requiresActive;
+        public string traitText, artBrief;
+        public float amount, secondary, threshold, duration, cooldown, distance;
+        public int count = 1;
     }
 
     [Serializable]
@@ -127,20 +132,31 @@ namespace Diverse
         public static string Explain(AbilityDef a)
         {
             if (a == null) return "고정 파츠";
-            var d = Resolve(a); float k = 1; var lines = new List<string> { d.description, "", "<b>능력</b>" };
+            var d = Resolve(a); float k = 1; var lines = new List<string>();
             foreach (var m in d.mods) lines.Add($"{Stats.Label(m.stat)} {m.value * k * (m.mul || Stats.IsPercent(m.stat) ? 100 : 1):+0.#;-0.#;0}{(m.mul || Stats.IsPercent(m.stat) ? "%" : "")}");
             if (d.skillDamage != 0) lines.Add($"액티브 피해 +{d.skillDamage * k * 100:0.#}%");
             if (d.projectileDamage != 0) lines.Add($"투사체 액티브 피해 +{d.projectileDamage * k * 100:0.#}%");
             if (d.meleeDamage != 0) lines.Add($"근접 액티브 피해 +{d.meleeDamage * k * 100:0.#}%");
-            if (d.shieldOnCast != 0) lines.Add($"액티브 시전 시 공격력의 {d.shieldOnCast * k * 100:0.#}% 보호막");
-            if (d.healOnHit != 0) lines.Add($"액티브 적중 시 공격력의 {d.healOnHit * k * 100:0.#}% 회복 (시전당 1회)");
+            if (d.shieldOnCast != 0) lines.Add($"스킬 사용 시 보호막: 공격력의 {d.shieldOnCast * k * 100:0.#}%");
+            if (d.healOnHit != 0) lines.Add($"스킬 첫 적중 시 체력 회복: 공격력의 {d.healOnHit * k * 100:0.#}%");
             if (d.rangeBonus != 0) lines.Add($"액티브 사거리 +{d.rangeBonus * 100:0.#}%");
-            if (d.controlBonus != 0) lines.Add($"액티브 제어 지속시간 +{d.controlBonus * 100:0.#}%");
-            if (a.tier > 1) lines.Insert(0, PartEvolution.Explain(a) + "\n");
-            lines.Add("\n<b>구성 재료</b>\n" + string.Join("\n", a.ingredients.Select(i => Find(i.id).name + " ×" + i.count)));
-            lines.Add($"\n<b>합성 규칙</b>\nT{a.tier} · T1 재료 {Units(a.tier)}개" + (a.tier >= InventoryState.Rules.maxPartTier ? " · 최종 등급" : $"\n같은 등급 두 개 → T{a.tier + 1}\n같은 종류와 다른 종류 모두 가능"));
-            return string.Join("\n", lines);
+            if (d.controlBonus != 0) lines.Add($"기절·표식 등 지속시간 +{d.controlBonus * 100:0.#}%");
+            var sections = new List<string>();
+            if (lines.Count > 0) sections.Add("<b>기본 효과 · 장착 중 적용</b>\n" + string.Join("\n", lines.Select(line => "· " + line)));
+            var traits = a.ingredients.Select(i => {
+                var part = Find(i.id); float strength = Mathf.Min(DB.Asset.abilityRules.def.partTraits.maxStrength, i.count / (float)Units(a.tier) * Rank(a));
+                return "<b>" + part.name + "</b>\n" + PartTraits.Text(part, strength);
+            }).ToArray();
+            sections.Add(a.tier == 1 ? "<b>고유 능력</b>\n" + PartTraits.Text(Find(a.ingredients[0].id), 1) :
+                "<b>고유 능력 · 재료에서 계승</b>\n" + string.Join("\n\n", traits));
+            if (a.tier > 1) sections.Add(PartEvolution.Explain(a));
+            if (a.tier > 1) sections.Add("<b>합성 재료</b>\n" + string.Join("\n", a.ingredients.Select(i => "· " + Find(i.id).name + " ×" + i.count)));
+            sections.Add(a.tier >= InventoryState.Rules.maxPartTier ? "<b>합성</b>\n최고 등급 · 더 합성할 수 없습니다." :
+                $"<b>다음 합성</b>\n다른 T{a.tier} 파츠 1개와 합치면 T{a.tier + 1}\n종류는 같아도, 달라도 됩니다.");
+            return string.Join("\n\n", sections.Where(s => !string.IsNullOrEmpty(s)));
         }
-        public static List<AbilityDef> Offer(System.Random random, int count) => All.OrderBy(_ => random.Next()).Take(count).Select(d => Create(d.id)).ToList();
+        public static List<AbilityDef> Offer(System.Random random, int count, int level = int.MaxValue) => All
+            .Where(d => level >= DB.Progression.skillLevels[0] || !d.requiresActive)
+            .OrderBy(_ => random.Next()).Take(count).Select(d => Create(d.id)).ToList();
     }
 }

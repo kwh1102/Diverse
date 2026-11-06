@@ -38,9 +38,10 @@ namespace Diverse
                 return;
             }
             if (Player.PendingEvolutions <= 0) { State = GameState.Playing; GameTime.Resume("evolve"); return; }
-            Offer = PartCatalog.Offer(rnd, Player.Abilities.OfferCount);
+            Offer = PartCatalog.Offer(rnd, Player.Abilities.OfferCount, Player.Level);
             OfferShownAt = Time.unscaledTime; OfferStatus = null;
-            OfferSummary = "T1 파츠 32종 중 하나를 선택하세요. 같은 등급의 모든 파츠를 합성해 T5까지 성장시킬 수 있습니다.";
+            OfferSummary = Player.Level < DB.Progression.skillLevels[0] ? "초반 파츠 선택 · 평타와 이동·방어로 바로 활용할 수 있는 파츠만 등장합니다." :
+                "고유 능력을 가진 T1 파츠 32종 중 선택 · 같은 등급 두 개를 합성해 T5까지 성장";
             PipelineLog.Clear(); PipelineLog.Add("고정 파츠 목록 → 중복 없는 후보 → 장착 시 보조 효과 적용");
             Ui.OnOverlayOpened(GameState.Evolving, null); Sfx.Play("evolve", .6f);
         }

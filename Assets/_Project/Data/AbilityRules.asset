@@ -112,314 +112,28 @@ MonoBehaviour:
       guardCooldown: 1.3
       mobilityCooldown: 0.85
       trapCooldown: 1.15
+    partTraits:
+      maxStrength: 2
+      damageCap: 0.65
+      critChanceCap: 0.5
+      critDamageCap: 0.5
+      reductionCap: 0.5
+      speedCap: 0.35
+      refundCap: 0.3
+      rangeCap: 0.5
+      healCap: 0.08
+      shieldCap: 0.75
+      stationaryTolerance: 0.03
+      slowCap: 0.6
+      homingCap: 3
+      spiralFrequency: 8
+      procDamageCap: 0.3
     parts:
-    - id: focus_lens
-      name: 집중 렌즈
-      family: 위력
-      description: 액티브 피해를 모으는 수정 렌즈.
-      sprite: Sprites/Parts/focus_lens
-      mods: []
-      skillDamage: 0.08
-      projectileDamage: 0
-      meleeDamage: 0
-      shieldOnCast: 0
-      healOnHit: 0
-      rangeBonus: 0
-      controlBonus: 0
-    - id: sword_knot
-      name: 검사의 매듭
-      family: 위력
-      description: 근접 액티브의 칼끝을 강화하는 매듭.
-      sprite: Sprites/Parts/sword_knot
-      mods: []
-      skillDamage: 0
-      projectileDamage: 0
-      meleeDamage: 0.1
-      shieldOnCast: 0
-      healOnHit: 0
-      rangeBonus: 0
-      controlBonus: 0
-    - id: ember_crucible
-      name: 불씨 도가니
-      family: 위력
-      description: 원소 공격을 보조하는 작은 도가니.
-      sprite: Sprites/Parts/ember_crucible
-      mods:
-      - stat: 12
-        value: 0.08
-        mul: 0
-      skillDamage: 0
-      projectileDamage: 0
-      meleeDamage: 0
-      shieldOnCast: 0
-      healOnHit: 0
-      rangeBonus: 0
-      controlBonus: 0
-    - id: prism_core
-      name: 분광 핵
-      family: 위력
-      description: 액티브 위력과 작은 시전 보호막을 제공한다.
-      sprite: Sprites/Parts/focus_lens
-      mods: []
-      skillDamage: 0.04
-      projectileDamage: 0
-      meleeDamage: 0
-      shieldOnCast: 0.08
-      healOnHit: 0
-      rangeBonus: 0
-      controlBonus: 0
-    - id: moon_charm
-      name: 초승달 부적
-      family: 치명타
-      description: 치명타 확률을 보조하는 은빛 부적.
-      sprite: Sprites/Parts/moon_charm
-      mods:
-      - stat: 4
-        value: 0.018
-        mul: 0
-      skillDamage: 0
-      projectileDamage: 0
-      meleeDamage: 0
-      shieldOnCast: 0
-      healOnHit: 0
-      rangeBonus: 0
-      controlBonus: 0
-    - id: lucky_die
-      name: 흑요석 주사위
-      family: 치명타
-      description: 치명타 피해를 보조하는 주사위.
-      sprite: Sprites/Parts/mint_coin
-      mods:
-      - stat: 5
-        value: 0.06
-        mul: 0
-      skillDamage: 0
-      projectileDamage: 0
-      meleeDamage: 0
-      shieldOnCast: 0
-      healOnHit: 0
-      rangeBonus: 0
-      controlBonus: 0
-    - id: razor_gem
-      name: 칼날 수정
-      family: 치명타
-      description: 치명타 확률과 근접 액티브 피해를 보조한다.
-      sprite: Sprites/Parts/moon_charm
-      mods:
-      - stat: 4
-        value: 0.009
-        mul: 0
-      skillDamage: 0
-      projectileDamage: 0
-      meleeDamage: 0.04
-      shieldOnCast: 0
-      healOnHit: 0
-      rangeBonus: 0
-      controlBonus: 0
-    - id: ruby_pin
-      name: 홍옥 핀
-      family: 치명타
-      description: 치명타 피해와 액티브 위력을 함께 보조한다.
-      sprite: Sprites/Parts/heart_lock
-      mods:
-      - stat: 5
-        value: 0.03
-        mul: 0
-      skillDamage: 0.035
-      projectileDamage: 0
-      meleeDamage: 0
-      shieldOnCast: 0
-      healOnHit: 0
-      rangeBonus: 0
-      controlBonus: 0
-    - id: clock_spring
-      name: 태엽 시계
-      family: 재사용
-      description: 액티브 재사용 대기시간을 줄이는 시계.
-      sprite: Sprites/Parts/clock_spring
-      mods:
-      - stat: 6
-        value: 0.025
-        mul: 0
-      skillDamage: 0
-      projectileDamage: 0
-      meleeDamage: 0
-      shieldOnCast: 0
-      healOnHit: 0
-      rangeBonus: 0
-      controlBonus: 0
-    - id: silver_gear
-      name: 은빛 톱니
-      family: 재사용
-      description: 재사용 간격과 공격 흐름을 보조한다.
-      sprite: Sprites/Parts/clock_spring
-      mods:
-      - stat: 6
-        value: 0.012
-        mul: 0
-      - stat: 2
-        value: 0.025
-        mul: 1
-      skillDamage: 0
-      projectileDamage: 0
-      meleeDamage: 0
-      shieldOnCast: 0
-      healOnHit: 0
-      rangeBonus: 0
-      controlBonus: 0
-    - id: echo_bell
-      name: 메아리 방울
-      family: 재사용
-      description: 재사용 간격과 시전 보호막을 보조한다.
-      sprite: Sprites/Parts/ward_buckle
-      mods:
-      - stat: 6
-        value: 0.012
-        mul: 0
-      skillDamage: 0
-      projectileDamage: 0
-      meleeDamage: 0
-      shieldOnCast: 0.08
-      healOnHit: 0
-      rangeBonus: 0
-      controlBonus: 0
-    - id: hourglass_bead
-      name: 모래시계 구슬
-      family: 재사용
-      description: 재사용 간격과 성장 경험치를 보조한다.
-      sprite: Sprites/Parts/scholar_quill
-      mods:
-      - stat: 6
-        value: 0.012
-        mul: 0
-      - stat: 8
-        value: 0.04
-        mul: 0
-      skillDamage: 0
-      projectileDamage: 0
-      meleeDamage: 0
-      shieldOnCast: 0
-      healOnHit: 0
-      rangeBonus: 0
-      controlBonus: 0
-    - id: arrow_fletching
-      name: 매깃 화살깃
-      family: 투사체
-      description: 투사체 액티브의 피해를 강화한다.
-      sprite: Sprites/Parts/arrow_fletching
-      mods: []
-      skillDamage: 0
-      projectileDamage: 0.1
-      meleeDamage: 0
-      shieldOnCast: 0
-      healOnHit: 0
-      rangeBonus: 0
-      controlBonus: 0
-    - id: falcon_sight
-      name: 매눈 조준경
-      family: 투사체
-      description: 투사체 피해와 치명타 확률을 보조한다.
-      sprite: Sprites/Parts/arrow_fletching
-      mods:
-      - stat: 4
-        value: 0.009
-        mul: 0
-      skillDamage: 0
-      projectileDamage: 0.045
-      meleeDamage: 0
-      shieldOnCast: 0
-      healOnHit: 0
-      rangeBonus: 0
-      controlBonus: 0
-    - id: rune_scope
-      name: 룬 조준경
-      family: 투사체
-      description: 투사체 액티브의 사거리와 피해를 보조한다.
-      sprite: Sprites/Parts/focus_lens
-      mods: []
-      skillDamage: 0
-      projectileDamage: 0.045
-      meleeDamage: 0
-      shieldOnCast: 0
-      healOnHit: 0
-      rangeBonus: 0.035
-      controlBonus: 0
-    - id: spiral_nozzle
-      name: 나선 노즐
-      family: 투사체
-      description: 투사체 위력과 재사용 간격을 보조한다.
-      sprite: Sprites/Parts/silk_grip
-      mods:
-      - stat: 6
-        value: 0.012
-        mul: 0
-      skillDamage: 0
-      projectileDamage: 0.045
-      meleeDamage: 0
-      shieldOnCast: 0
-      healOnHit: 0
-      rangeBonus: 0
-      controlBonus: 0
-    - id: trail_compass
-      name: 길잡이 나침반
-      family: 범위
-      description: 액티브가 닿는 거리를 늘리는 나침반.
-      sprite: Sprites/Parts/trail_compass
-      mods: []
-      skillDamage: 0
-      projectileDamage: 0
-      meleeDamage: 0
-      shieldOnCast: 0
-      healOnHit: 0
-      rangeBonus: 0.07
-      controlBonus: 0
-    - id: star_map
-      name: 별자리 지도
-      family: 범위
-      description: 사거리와 전리품 획득을 보조하는 지도.
-      sprite: Sprites/Parts/trail_compass
-      mods:
-      - stat: 9
-        value: 0.04
-        mul: 0
-      skillDamage: 0
-      projectileDamage: 0
-      meleeDamage: 0
-      shieldOnCast: 0
-      healOnHit: 0
-      rangeBonus: 0.035
-      controlBonus: 0
-    - id: long_reed
-      name: 갈대 관
-      family: 범위
-      description: 사거리와 투사체 피해를 보조한다.
-      sprite: Sprites/Parts/scholar_quill
-      mods: []
-      skillDamage: 0
-      projectileDamage: 0.045
-      meleeDamage: 0
-      shieldOnCast: 0
-      healOnHit: 0
-      rangeBonus: 0.035
-      controlBonus: 0
-    - id: amber_mirror
-      name: 호박 거울
-      family: 범위
-      description: 사거리와 액티브 위력을 보조한다.
-      sprite: Sprites/Parts/focus_lens
-      mods: []
-      skillDamage: 0.035
-      projectileDamage: 0
-      meleeDamage: 0
-      shieldOnCast: 0
-      healOnHit: 0
-      rangeBonus: 0.035
-      controlBonus: 0
-    - id: frost_shard
-      name: 서리 결정
-      family: 제어
-      description: 냉기와 기절 등 액티브 제어 시간을 늘린다.
-      sprite: Sprites/Parts/focus_lens
+    - id: "focus_lens"
+      name: "집중 렌즈"
+      family: "위력"
+      description: "조준선을 한 점에 모으는 수정 렌즈."
+      sprite: "Sprites/Parts/focus_lens"
       mods: []
       skillDamage: 0
       projectileDamage: 0
@@ -427,84 +141,96 @@ MonoBehaviour:
       shieldOnCast: 0
       healOnHit: 0
       rangeBonus: 0
-      controlBonus: 0.1
-    - id: anchor_hook
-      name: 닻 갈고리
-      family: 제어
-      description: 제어 지속시간과 근접 액티브 위력을 보조한다.
-      sprite: Sprites/Parts/iron_plate
-      mods: []
-      skillDamage: 0
-      projectileDamage: 0
-      meleeDamage: 0.045
-      shieldOnCast: 0
-      healOnHit: 0
-      rangeBonus: 0
-      controlBonus: 0.05
-    - id: thunder_pin
-      name: 뇌전 침
-      family: 제어
-      description: 제어 지속시간과 원소 공격을 보조한다.
-      sprite: Sprites/Parts/ember_crucible
-      mods:
-      - stat: 12
-        value: 0.04
-        mul: 0
-      skillDamage: 0
-      projectileDamage: 0
-      meleeDamage: 0
-      shieldOnCast: 0
-      healOnHit: 0
-      rangeBonus: 0
-      controlBonus: 0.05
-    - id: gravity_stone
-      name: 중력석
-      family: 제어
-      description: 제어 지속시간과 사거리를 보조한다.
-      sprite: Sprites/Parts/iron_plate
+      controlBonus: 0
+      mechanic: 1
+      requiresActive: 1
+      traitText: "제자리에서 {d}초 기다린 뒤 사용한 액티브의 첫 적중 피해 +{p}%."
+      artBrief: "조준선을 한 점에 모으는 수정 렌즈"
+      amount: 0.3
+      secondary: 0
+      threshold: 0
+      duration: 0.8
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "sword_knot"
+      name: "검사의 매듭"
+      family: "위력"
+      description: "검 손잡이를 묶고 칼끝을 당기는 단단한 매듭."
+      sprite: "Sprites/Parts/sword_knot"
       mods: []
       skillDamage: 0
       projectileDamage: 0
       meleeDamage: 0
       shieldOnCast: 0
       healOnHit: 0
-      rangeBonus: 0.035
-      controlBonus: 0.05
-    - id: ward_buckle
-      name: 수호 버클
-      family: 방어
-      description: 액티브를 시전하면 짧은 보호막을 얻는다.
-      sprite: Sprites/Parts/ward_buckle
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 2
+      requiresActive: 0
+      traitText: "평타 연계의 마지막 공격 피해 +{p}%."
+      artBrief: "검 손잡이를 묶고 칼끝을 당기는 단단한 매듭"
+      amount: 0.25
+      secondary: 0
+      threshold: 0
+      duration: 0
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "ember_crucible"
+      name: "불씨 도가니"
+      family: "위력"
+      description: "불씨 하나를 담은 작은 도가니."
+      sprite: "Sprites/Parts/ember_crucible"
       mods: []
       skillDamage: 0
       projectileDamage: 0
       meleeDamage: 0
-      shieldOnCast: 0.18
+      shieldOnCast: 0
       healOnHit: 0
       rangeBonus: 0
       controlBonus: 0
-    - id: vital_vial
-      name: 생명의 약병
-      family: 방어
-      description: 액티브 적중 시 시전당 한 번 회복한다.
-      sprite: Sprites/Parts/vital_vial
+      mechanic: 3
+      requiresActive: 1
+      traitText: "원소 액티브의 첫 적중에 불씨를 붙여 {d}초 동안 매초 공격력의 {p}% 화상 피해."
+      artBrief: "불씨 하나를 담은 작은 도가니"
+      amount: 0.12
+      secondary: 0
+      threshold: 0
+      duration: 2
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "prism_core"
+      name: "분광 핵"
+      family: "위력"
+      description: "서로 다른 두 빛을 교차시키는 분광 수정."
+      sprite: "Sprites/Parts/focus_lens"
       mods: []
       skillDamage: 0
       projectileDamage: 0
       meleeDamage: 0
       shieldOnCast: 0
-      healOnHit: 0.025
+      healOnHit: 0
       rangeBonus: 0
       controlBonus: 0
-    - id: iron_plate
-      name: 철갑 조각
-      family: 방어
-      description: 받는 피해를 줄이는 작은 갑옷 조각.
-      sprite: Sprites/Parts/iron_plate
-      mods:
-      - stat: 7
-        value: 0.025
-        mul: 0
+      mechanic: 4
+      requiresActive: 1
+      traitText: "{d}초 안에 직전과 다른 원소의 액티브를 사용하면 그 스킬 피해 +{p}%. 무속성 스킬은 연결을 끊습니다."
+      artBrief: "서로 다른 두 빛을 교차시키는 분광 수정"
+      amount: 0.22
+      secondary: 0
+      threshold: 0
+      duration: 6
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "moon_charm"
+      name: "초승달 부적"
+      family: "치명타"
+      description: "등 뒤를 비추는 초승달 은 부적."
+      sprite: "Sprites/Parts/moon_charm"
+      mods: []
       skillDamage: 0
       projectileDamage: 0
       meleeDamage: 0
@@ -512,31 +238,23 @@ MonoBehaviour:
       healOnHit: 0
       rangeBonus: 0
       controlBonus: 0
-    - id: heart_lock
-      name: 심장 자물쇠
-      family: 방어
-      description: 최대 체력과 작은 시전 보호막을 보조한다.
-      sprite: Sprites/Parts/heart_lock
-      mods:
-      - stat: 0
-        value: 6
-        mul: 0
-      skillDamage: 0
-      projectileDamage: 0
-      meleeDamage: 0
-      shieldOnCast: 0.08
-      healOnHit: 0
-      rangeBonus: 0
-      controlBonus: 0
-    - id: wind_boot
-      name: 바람 장화
-      family: 이동
-      description: 이동 속도를 보조하는 가벼운 장화.
-      sprite: Sprites/Parts/wind_boot
-      mods:
-      - stat: 3
-        value: 0.035
-        mul: 1
+      mechanic: 5
+      requiresActive: 0
+      traitText: "적의 등 뒤에서 맞히는 평타의 치명타 확률 +{p}%p."
+      artBrief: "등 뒤를 비추는 초승달 은 부적"
+      amount: 0.3
+      secondary: 0
+      threshold: -0.25
+      duration: 0
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "lucky_die"
+      name: "흑요석 주사위"
+      family: "치명타"
+      description: "다섯 번째 눈이 빛나는 흑요석 주사위."
+      sprite: "Sprites/Parts/mint_coin"
+      mods: []
       skillDamage: 0
       projectileDamage: 0
       meleeDamage: 0
@@ -544,18 +262,23 @@ MonoBehaviour:
       healOnHit: 0
       rangeBonus: 0
       controlBonus: 0
-    - id: silk_grip
-      name: 비단 손잡이
-      family: 이동
-      description: 공격 속도와 이동 속도를 조금씩 보조한다.
-      sprite: Sprites/Parts/silk_grip
-      mods:
-      - stat: 2
-        value: 0.025
-        mul: 1
-      - stat: 3
-        value: 0.015
-        mul: 1
+      mechanic: 6
+      requiresActive: 0
+      traitText: "명중한 평타를 세어 {n}번째마다 확정 치명타. 그 타격의 치명타 피해 +{p}%."
+      artBrief: "다섯 번째 눈이 빛나는 흑요석 주사위"
+      amount: 0.1
+      secondary: 0
+      threshold: 0
+      duration: 0
+      cooldown: 0
+      distance: 0
+      count: 5
+    - id: "razor_gem"
+      name: "칼날 수정"
+      family: "치명타"
+      description: "금이 간 적을 마무리하는 얇은 칼날 수정."
+      sprite: "Sprites/Parts/moon_charm"
+      mods: []
       skillDamage: 0
       projectileDamage: 0
       meleeDamage: 0
@@ -563,15 +286,23 @@ MonoBehaviour:
       healOnHit: 0
       rangeBonus: 0
       controlBonus: 0
-    - id: feather_ring
-      name: 깃털 고리
-      family: 이동
-      description: 대시 재충전 시간을 줄이는 고리.
-      sprite: Sprites/Parts/arrow_fletching
-      mods:
-      - stat: 11
-        value: -0.04
-        mul: 1
+      mechanic: 7
+      requiresActive: 0
+      traitText: "체력이 {t}% 이하인 적에게 평타 피해 +{p}%."
+      artBrief: "금이 간 적을 마무리하는 얇은 칼날 수정"
+      amount: 0.35
+      secondary: 0
+      threshold: 0.3
+      duration: 0
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "ruby_pin"
+      name: "홍옥 핀"
+      family: "치명타"
+      description: "치명타 에너지를 저장하는 홍옥 핀."
+      sprite: "Sprites/Parts/heart_lock"
+      mods: []
       skillDamage: 0
       projectileDamage: 0
       meleeDamage: 0
@@ -579,18 +310,23 @@ MonoBehaviour:
       healOnHit: 0
       rangeBonus: 0
       controlBonus: 0
-    - id: breeze_ribbon
-      name: 산들바람 리본
-      family: 이동
-      description: 이동과 대시 재충전을 함께 보조한다.
-      sprite: Sprites/Parts/sword_knot
-      mods:
-      - stat: 3
-        value: 0.018
-        mul: 1
-      - stat: 11
-        value: -0.02
-        mul: 1
+      mechanic: 8
+      requiresActive: 1
+      traitText: "치명타를 내면 홍옥이 충전됩니다. {d}초 안에 다음 액티브를 쓰면 그 스킬의 치명타 확률 +{p}%p."
+      artBrief: "치명타 에너지를 저장하는 홍옥 핀"
+      amount: 0.25
+      secondary: 0
+      threshold: 0
+      duration: 5
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "clock_spring"
+      name: "태엽 시계"
+      family: "재사용"
+      description: "멈췄다가 다시 감기는 태엽 시계."
+      sprite: "Sprites/Parts/clock_spring"
+      mods: []
       skillDamage: 0
       projectileDamage: 0
       meleeDamage: 0
@@ -598,12 +334,569 @@ MonoBehaviour:
       healOnHit: 0
       rangeBonus: 0
       controlBonus: 0
-    evolutionComboWindow: 6
-    evolutionAimDistance: 2
-    evolutionDamageCap: 0.35
-    evolutionRangeCap: 0.2
-    evolutionControlCap: 0.3
-    evolutionCooldownCap: 0.2
+      mechanic: 9
+      requiresActive: 1
+      traitText: "액티브를 {d}초 쉬었다가 사용하면 그 스킬의 남은 대기시간 {p}% 감소. 첫 사용에도 적용."
+      artBrief: "멈췄다가 다시 감기는 태엽 시계"
+      amount: 0.15
+      secondary: 0
+      threshold: 0
+      duration: 4
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "silver_gear"
+      name: "은빛 톱니"
+      family: "재사용"
+      description: "평타와 스킬을 잇는 세 개 이빨의 은빛 톱니."
+      sprite: "Sprites/Parts/clock_spring"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 10
+      requiresActive: 1
+      traitText: "평타를 {n}회 맞히면 톱니가 맞물립니다. 다음 액티브의 남은 대기시간 {p}% 감소 후 횟수 초기화."
+      artBrief: "평타와 스킬을 잇는 세 개 이빨의 은빛 톱니"
+      amount: 0.18
+      secondary: 0
+      threshold: 0
+      duration: 0
+      cooldown: 0
+      distance: 0
+      count: 3
+    - id: "echo_bell"
+      name: "메아리 방울"
+      family: "재사용"
+      description: "앞선 동작으로 소리를 되돌리는 메아리 방울."
+      sprite: "Sprites/Parts/ward_buckle"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 11
+      requiresActive: 1
+      traitText: "{d}초 안에 다른 QWER을 이어 쓰면 직전에 쓴 슬롯의 남은 대기시간 {p}% 감소. 재발동 대기 {c}초."
+      artBrief: "앞선 동작으로 소리를 되돌리는 메아리 방울"
+      amount: 0.18
+      secondary: 0
+      threshold: 0
+      duration: 6
+      cooldown: 2
+      distance: 0
+      count: 1
+    - id: "hourglass_bead"
+      name: "모래시계 구슬"
+      family: "재사용"
+      description: "빗나간 시간을 되돌리는 모래시계 구슬."
+      sprite: "Sprites/Parts/scholar_quill"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 12
+      requiresActive: 1
+      traitText: "공격 액티브가 끝날 때 아무 적도 맞히지 못했다면 그 슬롯의 남은 대기시간 {p}% 회수. 중단·무기 교체에는 미적용."
+      artBrief: "빗나간 시간을 되돌리는 모래시계 구슬"
+      amount: 0.25
+      secondary: 0
+      threshold: 0
+      duration: 0
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "arrow_fletching"
+      name: "매깃 화살깃"
+      family: "투사체"
+      description: "한 줄로 꿰뚫는 날카로운 화살깃."
+      sprite: "Sprites/Parts/arrow_fletching"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 13
+      requiresActive: 1
+      traitText: "각 액티브에서 처음 발사한 투사체가 적 {n}명을 추가 관통합니다."
+      artBrief: "한 줄로 꿰뚫는 날카로운 화살깃"
+      amount: 0
+      secondary: 0
+      threshold: 0
+      duration: 0
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "falcon_sight"
+      name: "매눈 조준경"
+      family: "투사체"
+      description: "적을 쫓는 매의 눈 모양 조준경."
+      sprite: "Sprites/Parts/arrow_fletching"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 14
+      requiresActive: 1
+      traitText: "액티브 투사체가 가까운 적을 향해 완만하게 방향을 보정합니다."
+      artBrief: "적을 쫓는 매의 눈 모양 조준경"
+      amount: 1.5
+      secondary: 0
+      threshold: 0
+      duration: 0
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "rune_scope"
+      name: "룬 조준경"
+      family: "투사체"
+      description: "같은 표적 위에 겹쳐지는 두 개의 룬 조준선."
+      sprite: "Sprites/Parts/focus_lens"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 15
+      requiresActive: 1
+      traitText: "한 번 사용한 액티브의 투사체로 같은 적을 다시 맞히면 후속 탄의 피해 +{p}%."
+      artBrief: "같은 표적 위에 겹쳐지는 두 개의 룬 조준선"
+      amount: 0.25
+      secondary: 0
+      threshold: 0
+      duration: 0
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "spiral_nozzle"
+      name: "나선 노즐"
+      family: "투사체"
+      description: "나선 홈이 파인 작은 발사 노즐."
+      sprite: "Sprites/Parts/silk_grip"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 16
+      requiresActive: 1
+      traitText: "액티브 투사체가 작은 나선 궤적으로 휘어 날아가며 명중 폭이 넓어집니다."
+      artBrief: "나선 홈이 파인 작은 발사 노즐"
+      amount: 12
+      secondary: 0.04
+      threshold: 0
+      duration: 0
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "trail_compass"
+      name: "길잡이 나침반"
+      family: "범위"
+      description: "먼 조준점을 가리키는 길잡이 나침반."
+      sprite: "Sprites/Parts/trail_compass"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 17
+      requiresActive: 1
+      traitText: "자신에게서 {r}칸 이상 떨어진 곳을 조준해 사용한 액티브의 사거리 +{p}%."
+      artBrief: "먼 조준점을 가리키는 길잡이 나침반"
+      amount: 0.2
+      secondary: 0
+      threshold: 0
+      duration: 0
+      cooldown: 0
+      distance: 3
+      count: 1
+    - id: "star_map"
+      name: "별자리 지도"
+      family: "범위"
+      description: "두 적중 지점을 별자리로 잇는 작은 지도."
+      sprite: "Sprites/Parts/trail_compass"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 18
+      requiresActive: 1
+      traitText: "스킬로 첫 피해를 준 위치를 {d}초 기억합니다. 그 지점 {r}칸 안을 다시 조준하면 다음 액티브 사거리 +{p}%, 첫 적중 피해 +{s}%."
+      artBrief: "두 적중 지점을 별자리로 잇는 작은 지도"
+      amount: 0.15
+      secondary: 0.2
+      threshold: 0
+      duration: 5
+      cooldown: 0
+      distance: 0.8
+      count: 1
+    - id: "long_reed"
+      name: "갈대 관"
+      family: "범위"
+      description: "긴 비행 거리를 만드는 속 빈 갈대 관."
+      sprite: "Sprites/Parts/scholar_quill"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 19
+      requiresActive: 1
+      traitText: "{r}칸 이상 날아간 액티브 투사체의 피해 +{p}%. 가까운 적에게는 보너스가 없습니다."
+      artBrief: "긴 비행 거리를 만드는 속 빈 갈대 관"
+      amount: 0.3
+      secondary: 0
+      threshold: 0
+      duration: 0
+      cooldown: 0
+      distance: 2
+      count: 1
+    - id: "amber_mirror"
+      name: "호박 거울"
+      family: "범위"
+      description: "공격 흔적을 품었다 돌려주는 호박 거울."
+      sprite: "Sprites/Parts/focus_lens"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 20
+      requiresActive: 1
+      traitText: "받은 체력 피해의 {p}%를 저장합니다(최대 공격력의 {limit}%). {d}초 안에 다음 액티브를 쓰면 첫 적중에 저장한 피해를 추가."
+      artBrief: "공격 흔적을 품었다 돌려주는 호박 거울"
+      amount: 0.35
+      secondary: 0
+      threshold: 0
+      duration: 4
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "frost_shard"
+      name: "서리 결정"
+      family: "제어"
+      description: "제어의 순간 대상을 얼리는 서리 결정."
+      sprite: "Sprites/Parts/focus_lens"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 21
+      requiresActive: 1
+      traitText: "액티브로 끌기·밀기·기절·표식을 주는 첫 대상을 {v}초 얼려 멈춥니다. 재발동 대기 {c}초."
+      artBrief: "제어의 순간 대상을 얼리는 서리 결정"
+      amount: 0.3
+      secondary: 0
+      threshold: 0
+      duration: 0
+      cooldown: 3
+      distance: 0
+      count: 1
+    - id: "anchor_hook"
+      name: "닻 갈고리"
+      family: "제어"
+      description: "움직인 적의 발을 붙잡는 닻 갈고리."
+      sprite: "Sprites/Parts/iron_plate"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 22
+      requiresActive: 1
+      traitText: "액티브로 적을 밀거나 당긴 뒤 {d}초 동안 이동 속도 {p}% 감소."
+      artBrief: "움직인 적의 발을 붙잡는 닻 갈고리"
+      amount: 0.45
+      secondary: 0
+      threshold: 0
+      duration: 1
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "thunder_pin"
+      name: "뇌전 침"
+      family: "제어"
+      description: "표식을 찌르면 번쩍이는 뇌전 침."
+      sprite: "Sprites/Parts/ember_crucible"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 23
+      requiresActive: 1
+      traitText: "이미 표식이 있는 적에게 액티브의 첫 피해를 주면 {v}초 기절. 재발동 대기 {c}초."
+      artBrief: "표식을 찌르면 번쩍이는 뇌전 침"
+      amount: 0.25
+      secondary: 0
+      threshold: 0
+      duration: 0
+      cooldown: 3
+      distance: 0
+      count: 1
+    - id: "gravity_stone"
+      name: "중력석"
+      family: "제어"
+      description: "안쪽으로 파편을 끌어모으는 중력석."
+      sprite: "Sprites/Parts/iron_plate"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 24
+      requiresActive: 1
+      traitText: "액티브의 끌어당기는 힘 +{p}%. 밀쳐내기에는 적용되지 않습니다."
+      artBrief: "안쪽으로 파편을 끌어모으는 중력석"
+      amount: 0.45
+      secondary: 0
+      threshold: 0
+      duration: 0
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "ward_buckle"
+      name: "수호 버클"
+      family: "방어"
+      description: "공격을 흘려 방패를 여는 수호 버클."
+      sprite: "Sprites/Parts/ward_buckle"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 25
+      requiresActive: 0
+      traitText: "완벽한 회피에 성공하면 공격력의 {p}% 보호막을 {d}초 획득. 재발동 대기 {c}초."
+      artBrief: "공격을 흘려 방패를 여는 수호 버클"
+      amount: 0.35
+      secondary: 0
+      threshold: 0
+      duration: 3
+      cooldown: 6
+      distance: 0
+      count: 1
+    - id: "vital_vial"
+      name: "생명의 약병"
+      family: "방어"
+      description: "빠진 체력을 채우는 작은 생명의 약병."
+      sprite: "Sprites/Parts/vital_vial"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 26
+      requiresActive: 0
+      traitText: "평타를 맞히면 잃은 체력의 {p}% 회복. 재발동 대기 {c}초."
+      artBrief: "빠진 체력을 채우는 작은 생명의 약병"
+      amount: 0.04
+      secondary: 0
+      threshold: 0
+      duration: 0
+      cooldown: 2
+      distance: 0
+      count: 1
+    - id: "iron_plate"
+      name: "철갑 조각"
+      family: "방어"
+      description: "가만히 버틸 때 겹쳐지는 철갑 조각."
+      sprite: "Sprites/Parts/iron_plate"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 27
+      requiresActive: 0
+      traitText: "제자리에서 {d}초 버티면 다음에 받는 공격 피해 {p}% 감소. 재발동 대기 {c}초."
+      artBrief: "가만히 버틸 때 겹쳐지는 철갑 조각"
+      amount: 0.2
+      secondary: 0
+      threshold: 0
+      duration: 0.8
+      cooldown: 6
+      distance: 0
+      count: 1
+    - id: "heart_lock"
+      name: "심장 자물쇠"
+      family: "방어"
+      description: "위험할 때 심장을 감싸 잠기는 자물쇠."
+      sprite: "Sprites/Parts/heart_lock"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 28
+      requiresActive: 0
+      traitText: "체력이 {t}% 이하가 될 공격을 받으면 공격력의 {p}% 보호막을 {d}초 획득. 재발동 대기 {c}초."
+      artBrief: "위험할 때 심장을 감싸 잠기는 자물쇠"
+      amount: 0.45
+      secondary: 0
+      threshold: 0.35
+      duration: 3
+      cooldown: 12
+      distance: 0
+      count: 1
+    - id: "wind_boot"
+      name: "바람 장화"
+      family: "이동"
+      description: "걸음을 모아 다음 일격으로 보내는 바람 장화."
+      sprite: "Sprites/Parts/wind_boot"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 29
+      requiresActive: 0
+      traitText: "{r}칸 이동하면 바람을 충전합니다. {d}초 안에 다음 평타를 맞히면 첫 적중 피해 +{p}%."
+      artBrief: "걸음을 모아 다음 일격으로 보내는 바람 장화"
+      amount: 0.3
+      secondary: 0
+      threshold: 0
+      duration: 4
+      cooldown: 0
+      distance: 3
+      count: 1
+    - id: "silk_grip"
+      name: "비단 손잡이"
+      family: "이동"
+      description: "손에 감을수록 단단해지는 비단 손잡이."
+      sprite: "Sprites/Parts/silk_grip"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 30
+      requiresActive: 0
+      traitText: "제자리에서 {d}초 멈춘 뒤 평타를 맞힐 때마다 공격 속도 +{p}%, 최대 {n}중첩. 움직이면 초기화."
+      artBrief: "손에 감을수록 단단해지는 비단 손잡이"
+      amount: 0.06
+      secondary: 0
+      threshold: 0
+      duration: 0.4
+      cooldown: 0
+      distance: 0
+      count: 3
+    - id: "feather_ring"
+      name: "깃털 고리"
+      family: "이동"
+      description: "회피의 순간 가벼워지는 깃털 고리."
+      sprite: "Sprites/Parts/arrow_fletching"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 31
+      requiresActive: 0
+      traitText: "완벽한 회피에 성공하면 Space 이동 충전 시간을 {v}초 회복. 재발동 대기 {c}초."
+      artBrief: "회피의 순간 가벼워지는 깃털 고리"
+      amount: 1.2
+      secondary: 0
+      threshold: 0
+      duration: 0
+      cooldown: 4
+      distance: 0
+      count: 1
+    - id: "breeze_ribbon"
+      name: "산들바람 리본"
+      family: "이동"
+      description: "이동이 끝나도 바람이 이어지는 리본."
+      sprite: "Sprites/Parts/sword_knot"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 32
+      requiresActive: 0
+      traitText: "Space 이동이 끝난 뒤 {d}초 동안 이동 속도 +{p}%. 재발동 대기 {c}초."
+      artBrief: "이동이 끝나도 바람이 이어지는 리본"
+      amount: 0.25
+      secondary: 0
+      threshold: 0
+      duration: 2
+      cooldown: 3
+      distance: 0
+      count: 1
     evolutions:
     - id: "power_power_t2"
       familyA: "위력"
