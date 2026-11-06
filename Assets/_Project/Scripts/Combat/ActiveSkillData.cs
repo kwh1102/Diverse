@@ -54,6 +54,7 @@ namespace Diverse
         public string iconImage, projectileImage;
         public string[] effectImages;
         public string color = "c9b8ff";
+        public string[] visualPalette;
         public bool ArtReady => !string.IsNullOrEmpty(iconImage) && iconRevision >= 2;
         public string Signature() => input + ":" + string.Join("|", steps.Select(s => $"{s.delivery}:{s.pattern}:{s.effect}:{s.condition}:{s.timing}:{s.consume}:{s.origin}:{s.trigger}"));
         public string Links => string.Concat(Enumerable.Range(0, 4).Where(i => (linkedMask & (1 << i)) != 0).Select(i => "QWER"[i]));
@@ -66,6 +67,8 @@ namespace Diverse
         public float chargeDuration = 1.1f, chargeBonus = .5f, channelDuration = 1.5f, recastWindow = 3;
         public float curveStrength = 65, maxCastDuration = 8, anchorWidth = .6f;
         public int maxConcurrentCasts = 4, generationAttempts = 3, recentSignatures = 32;
+        public bool prefetchSkills = true;
+        public int skillPrefetchLeadLevels = 4;
         public int iconPixels = 32, projectilePixels = 16, effectPixels = 48, artParallel = 2;
         public float baseCooldown = 7, ultimateCooldown = 22, minCooldown = 4, maxCooldown = 35;
         public float basePower = 3.8f, ultimatePower = 8.5f, maxDamage = 12;
@@ -81,6 +84,9 @@ namespace Diverse
         public string iconQuality = "low", effectQuality = "medium";
         public int effectMinPixels = 8;
         public float effectFramesPerSecond = 20;
+        public float castVisualDuration = .34f, impactVisualDuration = .22f, actionHeight = .45f, movementTrailSpacing = .35f;
+        public int weaponSwingPixels = 32, impactPixels = 24;
+        public float arcTrailDegrees = 105, arcThickness = .4f;
         public float effectSolidLimit = .8f;
         public float effectEdgeLimit = .08f, effectMatteTolerance = 48;
         public int visualFrames = 6, maxVisualPixels = 128, visualCacheLimit = 192, iconPaletteColors = 12;

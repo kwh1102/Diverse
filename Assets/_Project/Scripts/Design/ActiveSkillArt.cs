@@ -30,7 +30,7 @@ namespace Diverse
                 "Each cell has a SINGLE centered isolated skill symbol occupying at most 65% of its cell, generous completely transparent gutters on ALL sides. " +
                 "Cozy cute top-down pixel RPG style. Moderately detailed chunky pixel art, readable at 32px, dark muted purple outlines, 3-4 flat shading tones, restrained warm palette. " +
                 "Avoid gradients, photorealism, ornate emblems, excessive particles, bright halos, decorative frames and painted checkerboards. Transparent pixels must have alpha zero. " +
-                string.Join(" ", pending.Select((a, i) => $"{new[] { "Top-left", "Top-right", "Bottom-left" }[i]} cell: {a.iconPrompt}. Behavior: {ActiveSkillGenerator.VisualSummary(a)}.")) +
+                string.Join(" ", pending.Select((a, i) => $"{new[] { "Top-left", "Top-right", "Bottom-left" }[i]} cell: {a.iconPrompt}. Main body colour #{a.color}, pale highlights and dark muted outlines. Behavior: {ActiveSkillGenerator.VisualSummary(a)}.")) +
                 " All unused cells, including bottom-right, must be empty transparent pixels.";
             yield return ImageClient.Generate(prompt, t => sheet = t, model: rules.imageModel, quality: rules.iconQuality, usage: usage =>
             {
@@ -56,6 +56,7 @@ namespace Diverse
                     if (cv != null) { a.iconImage = DesignStore.SaveImage(cv); a.iconRevision = 2; }
                     else { a.iconImage = null; a.iconRevision = 0; }
                     a.artStatus = cv != null ? "전용 아이콘 준비 완료" : "배경 검사 실패 · 로컬 도트 사용";
+                    a.visualPalette = null; ActiveSkillStyle.Ensure(a);
                     trace?.Invoke($"[{a.name}] {why}{(cv == null ? " · 유료 재시도 없이 로컬 아이콘" : "")}");
                 }
             }
@@ -65,6 +66,7 @@ namespace Diverse
         public static Sprite Icon(ActiveSkillData a)
         {
             if (a == null) return null;
+            ActiveSkillStyle.Ensure(a);
             if (a.ArtReady)
             {
                 if (icons.TryGetValue(a.iconImage, out var cached) && cached != null) return cached;
@@ -92,9 +94,10 @@ namespace Diverse
                 a.iconRevision = clean != null ? 2 : 0;
                 a.artStatus = "기존 아이콘 검사: " + why;
             }
+            ActiveSkillStyle.Ensure(a);
         }
-        public static Sprite[] FlyingFrames(ActiveSkillData a, ActiveStep step) => ActiveEffectArt.Frames(a, step, 2, ActiveSkillGenerator.Rules.projectilePixels);
+        public static Sprite[] FlyingFrames(ActiveSkillData a, ActiveStep step) => ActiveSkillPresentation.Effect(a, step, 2, ActiveSkillGenerator.Rules.projectilePixels);
         public static Sprite Shot(ActiveSkillData a, ActiveStep step) => FlyingFrames(a, step)?[1] ?? ActiveSkillVisuals.Shot(a, step);
-        public static Sprite[] Effect(ActiveSkillData a, ActiveStep step, int cell, int size) => ActiveEffectArt.Frames(a, step, cell, step.delivery == "projectile" && cell >= 2 ? ActiveSkillGenerator.Rules.projectilePixels : 0) ?? ActiveSkillVisuals.Effect(a, step, cell, size);
+        public static Sprite[] Effect(ActiveSkillData a, ActiveStep step, int cell, int size) => ActiveSkillPresentation.Effect(a, step, cell, size);
     }
 }

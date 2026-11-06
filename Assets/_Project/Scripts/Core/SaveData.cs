@@ -67,6 +67,7 @@ namespace Diverse
         public int rewardVersion, claimedSkillMask;
         public List<int> pendingRewardLevels = new List<int>();
         public SkillOfferSave skillOffer;
+        public SkillOfferSave skillPrefetch;
         public float hp;
         public int dashMax = 2;
         public float x, y;

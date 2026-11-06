@@ -6,24 +6,25 @@ namespace Diverse.EditorTools
 {
     public static partial class UIBuilder
     {
-        internal static void RepairInventoryDetails(InventoryView view)
+        internal static bool RepairInventoryDetails(InventoryView view)
         {
             var data = new SerializedObject(view);
             var body = data.FindProperty("details").objectReferenceValue as Text;
             var preview = data.FindProperty("preview").objectReferenceValue as Image;
             var glyph = data.FindProperty("previewGlyph").objectReferenceValue as Text;
-            if (body == null || preview == null) return;
+            if (body == null || preview == null) return false;
             var box = view.transform.Find("Panel/ItemBox") as RectTransform;
-            var scroll = body.GetComponentInParent<ScrollRect>();
+            var scroll = body.GetComponentInParent<ScrollRect>(true);
             var actions = box?.Find("Actions") as RectTransform;
-            if (box == null || scroll == null || actions == null) return;
+            if (box == null || scroll == null || actions == null) return false;
             var layout = InventoryComponent<VerticalLayoutGroup>(box.gameObject);
             layout.padding = new RectOffset(8,8,8,8); layout.spacing = 6;
             layout.childControlWidth = layout.childControlHeight = true;
             layout.childForceExpandWidth = true; layout.childForceExpandHeight = false;
+            layout.childAlignment = TextAnchor.UpperLeft;
             var header = box.Find("ItemHeader") as RectTransform ?? Node(box,"ItemHeader",TL,Vector2.zero,new Vector2(160,48));
             header.SetAsFirstSibling();
-            var headerSize = InventoryComponent<LayoutElement>(header.gameObject); headerSize.preferredHeight = 48; headerSize.flexibleHeight = 0;
+            var headerSize = InventoryComponent<LayoutElement>(header.gameObject); headerSize.minHeight = headerSize.preferredHeight = 48; headerSize.flexibleHeight = 0;
             InventoryRect(preview.rectTransform,header,0,4,36,36);
             if (glyph != null) InventoryRect(glyph.rectTransform,header,0,4,36,36);
             Text Title(string id, float y, float height, int size)
@@ -39,7 +40,7 @@ namespace Diverse.EditorTools
             Wire(view,"itemHeading",Title("Name",0,30,10));
             Wire(view,"itemMeta",Title("TypeTier",32,14,8));
             ((RectTransform)scroll.transform).SetParent(box,false); scroll.transform.SetSiblingIndex(1);
-            var bodySize = InventoryComponent<LayoutElement>(scroll.gameObject); bodySize.minHeight = 60; bodySize.flexibleHeight = 1;
+            var bodySize = InventoryComponent<LayoutElement>(scroll.gameObject); bodySize.minHeight = 60; bodySize.preferredHeight = -1; bodySize.flexibleHeight = 1;
             if (scroll.verticalScrollbar == null)
             {
                 var rail = Node(scroll.transform,"Scrollbar",TL,Vector2.zero,new Vector2(5,100));
@@ -54,12 +55,15 @@ namespace Diverse.EditorTools
             Wire(view,"detailsScroll",scroll);
             actions.SetAsLastSibling();
             var footer = InventoryComponent<VerticalLayoutGroup>(actions.gameObject);
+            var footerSize = actions.GetComponent<LayoutElement>();
+            if (footerSize != null) { footerSize.minHeight = footerSize.preferredHeight = -1; footerSize.flexibleHeight = 0; }
             footer.spacing = 3; footer.padding = new RectOffset();
             footer.childControlWidth = footer.childControlHeight = true; footer.childForceExpandWidth = true; footer.childForceExpandHeight = false;
             foreach (var button in actions.GetComponentsInChildren<Button>(true))
-            { var size = InventoryComponent<LayoutElement>(button.gameObject); size.preferredHeight = 20; size.flexibleHeight = 0; }
+            { var size = InventoryComponent<LayoutElement>(button.gameObject); size.minHeight = size.preferredHeight = 20; size.flexibleHeight = 0; }
             var oldFitter = actions.GetComponent<ContentSizeFitter>(); if (oldFitter != null) oldFitter.enabled = false;
             body.fontSize = 9;
+            return true;
         }
     }
 }

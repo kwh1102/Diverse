@@ -63,12 +63,14 @@ namespace Diverse
                 rows = Plan(a);
                 string size = "1024x1024";
                 string prompt = $"Transparent PNG pixel animation sheet, exactly FOUR columns and {rows.Length} equal-height rows, all cells used. Canvas {size}. No grid lines, text, background, checkerboard or badges. " +
+                    ActiveSkillStyle.Prompt(a) +
                     "Each ROW is ONE four-frame animation, read LEFT TO RIGHT: anticipation, expansion, peak, dissipation. First/last frames may fade to transparency; middle frames must show distinct animation. " +
                     "Use consistent centered pivot and apparent scale within each row, keep all art inside its cell with 15 percent transparent gutters. Motion faces RIGHT. Cells may be rectangular; preserve natural effect proportions and fit inside the shorter cell dimension. " +
                     "Polished cute top-down pixel action RPG effects, chunky silhouettes, 3-4 tones, muted purple edges, crisp highlights, restrained sparks. No skill icons, scenery or painted light blobs. " +
                     string.Join(" ", rows.Select((r, i) => {
                         var s = a.steps[r / 3]; string motif = r % 3 == 0 ? "casting/action" : r % 3 == 1 ? "impact/activation burst" : s.delivery == "projectile" ? "flying projectile body with short trail, visible in ALL four looping frames" : "movement trail";
-                        return $"Row {i + 1}: {motif} for step {r / 3 + 1}: {s.delivery}/{s.pattern}/{s.effect}/{s.element}.";
+                        string motion = s.delivery == "arc" ? "A broad sharp crescent sweeps from upper-right to lower-right around the weapon hand; NO detached orb." : s.delivery == "line" ? "A low elongated horizontal thrust grows outward then contracts; NO detached orb." : s.delivery is "nova" or "field" or "trap" ? "A low ground-plane ellipse expands; no upright floating sphere." : "Readable anticipation, strong directional motion, clean dissolving tail.";
+                        return $"Row {i + 1}: {motif} for step {r / 3 + 1}: {s.delivery}/{s.pattern}/{s.effect}/{s.element}. {motion}";
                     })) + $" Executable skill: {ActiveSkillGenerator.VisualSummary(a)}.";
                 var world = Game.I?.World;
                 trace?.Invoke($"선택한 [{a.name}] 전용 이펙트 {rows.Length}행×4프레임 1장 제작 · {cfg.imageModel}/{cfg.effectQuality}/{size} · 필요한 동작만 요청");

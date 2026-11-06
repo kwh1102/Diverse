@@ -93,7 +93,7 @@ namespace Diverse.EditorTools
         {
             var body=new SerializedObject(card).FindProperty("desc").objectReferenceValue as Text;
             float width=((RectTransform)card.transform).rect.width;
-            var scroll=body.GetComponentInParent<ScrollRect>();
+            var scroll=body.GetComponentInParent<ScrollRect>(true);
             if(scroll==null)
             {
                 var area=Node(card.transform,"DescriptionScroll",TL,new Vector2(6,64),new Vector2(width-12,70));

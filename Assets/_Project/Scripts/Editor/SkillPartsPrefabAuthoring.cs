@@ -30,7 +30,10 @@ namespace Diverse.EditorTools
             var cards = asset.GetComponentsInChildren<EvolveCard>(true);
             if (view == null || cards.Length != 3 || asset.GetComponentInChildren<EvolveView>(true) == null) return;
             var installed = new SerializedObject(asset.GetComponentInChildren<EvolveView>(true));
-            if (installed.FindProperty("uiRevision").intValue >= 4 && view != null && new SerializedObject(view).FindProperty("footprintView").objectReferenceValue != null &&
+            var inventoryData = new SerializedObject(view);
+            if (installed.FindProperty("uiRevision").intValue >= 5 && inventoryData.FindProperty("itemHeading").objectReferenceValue != null &&
+                inventoryData.FindProperty("detailsScroll").objectReferenceValue is ScrollRect details && details.verticalScrollbar != null &&
+                view != null && inventoryData.FindProperty("footprintView").objectReferenceValue != null &&
                 cards.Length == 3 && cards.All(c => new SerializedObject(c).FindProperty("pin").objectReferenceValue != null)) return;
             var root = PrefabUtility.LoadPrefabContents(Path);
             try
@@ -38,9 +41,10 @@ namespace Diverse.EditorTools
                 if (installed.FindProperty("uiRevision").intValue >= 3)
                 {
                     var chatView = root.GetComponentInChildren<EvolveView>(true);
-                    UIBuilder.RepairEvolutionChat(chatView);
+                    if (!UIBuilder.RepairInventoryDetails(root.GetComponentInChildren<InventoryView>(true)) ||
+                        !UIBuilder.RepairEvolutionChat(chatView)) throw new System.InvalidOperationException("설명란/채팅 참조를 찾지 못해 UI 수정 완료 표시를 저장하지 않았습니다.");
                     var chatData = new SerializedObject(chatView);
-                    chatData.FindProperty("uiRevision").intValue = 4; chatData.ApplyModifiedPropertiesWithoutUndo();
+                    chatData.FindProperty("uiRevision").intValue = 5; chatData.ApplyModifiedPropertiesWithoutUndo();
                     PrefabUtility.SaveAsPrefabAsset(root, Path);
                     return;
                 }
@@ -107,9 +111,9 @@ namespace Diverse.EditorTools
                 if (input?.placeholder is Text placeholder) placeholder.text = "예) 검 Q · 충전 후 돌진하고 재입력하면 돌아오기";
                 var log = evolveData.FindProperty("chatLog").objectReferenceValue as Text;
                 if (log != null) log.text = "고정하지 않은 후보에 원하는 조작과 전술을 요청하세요.";
-                UIBuilder.RepairInventoryDetails(view);
-                UIBuilder.RepairEvolutionChat(evolve);
-                evolveData.Update(); evolveData.FindProperty("uiRevision").intValue = 4; evolveData.ApplyModifiedPropertiesWithoutUndo();
+                if (!UIBuilder.RepairInventoryDetails(view) || !UIBuilder.RepairEvolutionChat(evolve))
+                    throw new System.InvalidOperationException("설명란/채팅 UI 참조 누락");
+                evolveData.Update(); evolveData.FindProperty("uiRevision").intValue = 5; evolveData.ApplyModifiedPropertiesWithoutUndo();
                 PrefabUtility.SaveAsPrefabAsset(root, Path);
                 Debug.Log("T1 합성·액티브 후보 선택 UI를 기존 프리팹에 추가했습니다. 게임/테스트는 실행하지 않았습니다.");
             }
@@ -123,7 +127,7 @@ namespace Diverse.EditorTools
         {
             body.supportRichText = false; body.resizeTextForBestFit = false; body.fontSize = 9;
             body.horizontalOverflow = HorizontalWrapMode.Wrap; body.verticalOverflow = VerticalWrapMode.Overflow;
-            var scroll = body.GetComponentInParent<ScrollRect>();
+            var scroll = body.GetComponentInParent<ScrollRect>(true);
             if (scroll == null)
             {
                 var obj = new GameObject("GenerationLog", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(RectMask2D), typeof(ScrollRect));

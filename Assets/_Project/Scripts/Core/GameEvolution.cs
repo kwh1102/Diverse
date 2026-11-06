@@ -17,17 +17,17 @@ namespace Diverse
         public bool CanChat => IsSkillOffer && !ChatBusy && !Generating;
         public int RerollCost => Mathf.RoundToInt(15 + Player.Level * 3);
         public bool OfferLocked => HasOffer && Time.unscaledTime - OfferShownAt < OfferLockSeconds;
-        void ResetPrefetch() { }
-        public void RequestPrefetch() { }
         public void BeginEvolution()
         {
             if (Generating || Player == null) return;
             State = GameState.Evolving; GameTime.Pause("evolve");
             if (SkillOffer != null || Player.pendingRewardLevels.Count > 0 && DB.Progression.SkillSlotAt(Player.pendingRewardLevels[0]) >= 0)
             {
-                SkillOffer ??= new SkillOfferSave { slot = DB.Progression.SkillSlotAt(Player.pendingRewardLevels[0]) };
+                SkillOffer ??= TakeSkillPrefetch(DB.Progression.SkillSlotAt(Player.pendingRewardLevels[0])) ?? new SkillOfferSave { slot = DB.Progression.SkillSlotAt(Player.pendingRewardLevels[0]) };
                 Offer = null;
+                if (WaitForSkillPrefetch()) return;
                 if (SkillOffer.candidates.Count != 3) BeginSkillCandidates(null);
+                else if (SkillOffer.prefetchStarted) BeginSkillCandidates(null, true);
                 else
                 {
                     PipelineLog.Clear(); PipelineLog.AddRange(SkillOffer.process);

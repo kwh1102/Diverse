@@ -36,6 +36,8 @@ MonoBehaviour:
       maxProjectiles: 5
       maxPulses: 3
       maxConcurrentCasts: 4
+      prefetchSkills: 1
+      skillPrefetchLeadLevels: 4
       generationAttempts: 3
       recentSignatures: 32
       iconPixels: 32
@@ -84,6 +86,14 @@ MonoBehaviour:
       effectQuality: medium
       effectMinPixels: 8
       effectFramesPerSecond: 20
+      castVisualDuration: 0.34
+      impactVisualDuration: 0.22
+      actionHeight: 0.45
+      movementTrailSpacing: 0.35
+      weaponSwingPixels: 32
+      impactPixels: 24
+      arcTrailDegrees: 105
+      arcThickness: 0.4
       effectSolidLimit: 0.8
       effectEdgeLimit: 0.08
       effectMatteTolerance: 48

@@ -99,9 +99,11 @@ namespace Diverse
                     bool grew = lastChat < 0 || n / 8 != lastChat / 8;
                     lastChat = n;
                     var lines = g.Chat.Select(c => c.player ? $"<color=#fff2b3>나:</color> {c.text}" : $"<color=#c9b8ff>이야기꾼:</color> <color=#e6dcff>{c.text}</color>").ToList();
+                    if (lines.Count == 0 && !g.ChatBusy) lines.Add("<color=#c9b8ff>이야기꾼:</color> 원하는 동작을 아래에 적어 줘. 고정하지 않은 후보에 요청을 반영할게.");
                     if (g.ChatBusy) lines.Add("<color=#8c7aa8>이야기꾼이 생각하는 중" + new string('.', dots) + "</color>");
                     UIKit.Set(chatLog, string.Join("\n", lines));
-                    if (grew && chatScroll != null) { Canvas.ForceUpdateCanvases(); chatScroll.verticalNormalizedPosition = 0; }
+                    if (grew && chatScroll != null)
+                    { LayoutRebuilder.ForceRebuildLayoutImmediate(chatScroll.content); Canvas.ForceUpdateCanvases(); chatScroll.StopMovement(); chatScroll.verticalNormalizedPosition = 0; }
                 }
                 UIKit.Label(send, "요청 반영");
                 send.interactable = g.CanChat && !string.IsNullOrWhiteSpace(chatInput.text);

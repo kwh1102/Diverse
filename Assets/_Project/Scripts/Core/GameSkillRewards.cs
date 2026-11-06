@@ -15,6 +15,7 @@ namespace Diverse
         public bool[] pinned = new bool[3];
         public List<string> process = new List<string>();
         public bool iconsPrepared, iconRequestStarted;
+        public bool prefetchStarted;
         public int productionVersion = 1, selectedIndex = -1;
         public bool effectRequestStarted;
         public string productionStatus, request, requirements;
@@ -57,10 +58,19 @@ namespace Diverse
             }
             try
             {
+                // Separate commissions wait for the background draft, avoiding overlapping candidate/icon requests.
+                while (warmingSkill != null && warmingSkill != draft)
+                {
+                    OfferStatus = "전투 중 시작한 후보 준비를 마친 뒤 의뢰를 진행하는 중…";
+                    yield return null;
+                    if (Player != owner || SkillOffer != draft) yield break;
+                }
                 if (!resume)
                 {
                     List<ActiveSkillData> choices = null;
-                    yield return ActiveSkillGenerator.GenerateChoices(owner, draft.slot, request, draft.candidates, draft.pinned, a => choices = a, Trace);
+                    bool interruptedPrefetch = draft.prefetchStarted && draft.candidates.Count == 0 && string.IsNullOrEmpty(request);
+                    if (interruptedPrefetch) Trace("중단된 사전 설계 · 자동 유료 재요청 없이 로컬 후보 준비 (요청 반영/다시 뽑기로 새 설계 가능)");
+                    yield return ActiveSkillGenerator.GenerateChoices(owner, draft.slot, request, draft.candidates, draft.pinned, a => choices = a, Trace, !interruptedPrefetch);
                     if (Player != owner || SkillOffer != draft) yield break;
                     if (choices == null)
                     {
@@ -68,6 +78,7 @@ namespace Diverse
                         Chat.Add((false, reason)); OfferSummary = reason; SaveRun(); yield break;
                     }
                     draft.candidates = choices; draft.iconsPrepared = draft.iconRequestStarted = false;
+                    if (interruptedPrefetch) draft.iconRequestStarted = true;
                     SaveRun(); // Text candidates survive a slow or interrupted image request.
                 }
                 if (!draft.iconRequestStarted)
@@ -78,6 +89,7 @@ namespace Diverse
                 else if (!draft.iconsPrepared) Trace("중단된 아이콘 요청 · 자동 유료 재요청 없이 로컬 도트 사용 (인벤토리에서 재요청 가능)");
                 if (Player != owner || SkillOffer != draft) yield break;
                 draft.iconsPrepared = true; OfferShownAt = Time.unscaledTime;
+                draft.prefetchStarted = false;
                 OfferSummary = $"{ActiveSkillGenerator.SlotName(draft.slot)} 액티브 선택 · 원하는 후보를 고정하고 아래에서 요청하세요.";
                 foreach (var a in draft.candidates)
                     if (!a.ArtReady && string.IsNullOrEmpty(a.artStatus)) a.artStatus = "로컬 도트 아이콘 · 선택 후 전용 이펙트 제작";

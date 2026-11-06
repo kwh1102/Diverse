@@ -48,6 +48,7 @@ namespace Diverse
         public static void Cast(Player p, ActiveSkillData skill, Vector2 dir, Vector2 aim)
         {
             if (!CanCast(p, skill)) return;
+            ActiveSkillStyle.Ensure(skill);
             var ctx = new CastContext { player = p, skill = skill, weaponId = p.Inventory.Active.id, attack = p.AttackPower,
                 power = ActiveSkillGenerator.Magnitude(skill), deadline = Time.time + C.maxCastDuration,
                 control = p.Abilities.ActiveControl, range = p.Abilities.ActiveRange };
@@ -161,20 +162,28 @@ namespace Diverse
             }
             for (int pulse = 0; pulse < pulses && ctx.Valid; pulse++)
             {
+                p.PresentSkill(ctx.skill, step, dir);
+                // A projected slash still starts with a real swing at the hand. Its target-area visual and hit origin stay intact.
+                if (step.delivery == "arc" && Vector2.Distance(origin, p.Pos) > C.weaponSwingPixels / (2f * Art.PPU))
+                    Play(ctx, step, 0, p.Pos, dir, C.weaponSwingPixels, followCaster: true);
                 if (ActiveSkillGenerator.Moving(step))
                 {
                     Vector2 from = p.Pos;
                     Vector2 delta = returnTo.HasValue ? Vector2.ClampMagnitude(returnTo.Value - from, C.movementDistance * ctx.range) :
                         (step.delivery == "retreat" ? -dir : dir) * Mathf.Min(C.movementDistance * ctx.range, range);
-                    Play(ctx, step, 2, from, delta, C.effectPixels);
+                    int trailPixels = Mathf.RoundToInt(C.movementTrailSpacing * Art.PPU);
+                    Play(ctx, step, 2, from, delta, trailPixels);
+                    var ghost = (Color)Pal.Hex(ctx.skill.color); ghost.a = .45f; p.SkillAfterimage(ghost);
                     if (step.delivery == "blink") p.Pos = WorldStreamer.I.Move(from, delta, p.radius, bound: p.Bound);
                     else
                     {
-                        float elapsed = 0;
+                        float elapsed = 0; Vector2 trailAt = from;
                         while (elapsed < C.movementDuration && ctx.Valid)
                         {
                             float dt = Mathf.Min(Time.deltaTime, C.movementDuration - elapsed); elapsed += dt;
                             p.HoldSkillAction(); p.Pos = WorldStreamer.I.Move(p.Pos, delta / Mathf.Max(.01f, C.movementDuration) * dt, p.radius, bound: p.Bound);
+                            if (Vector2.Distance(trailAt, p.Pos) >= C.movementTrailSpacing)
+                            { Play(ctx, step, 2, p.Pos, delta, trailPixels); p.SkillAfterimage(ghost); trailAt = p.Pos; }
                             yield return null;
                         }
                     }
@@ -209,11 +218,18 @@ namespace Diverse
             }
             if (stage.live == 0) stage.finished = true;
         }
-        static void Play(CastContext ctx, ActiveStep step, int cell, Vector2 at, Vector2 dir, int size, float duration = 0)
+        static void Play(CastContext ctx, ActiveStep step, int cell, Vector2 at, Vector2 dir, int size, float duration = 0, bool followCaster = false)
         {
+            if (cell == 1) size = C.impactPixels;
             var frames = ActiveSkillArt.Effect(ctx.skill, step, cell, size);
             float scale = Mathf.Max(8, size) / Mathf.Max(1f, frames[0].rect.width - 6);
-            Fx.I?.Play(frames, at, dir.Angle(), duration > 0 ? frames.Length / duration : C.effectFramesPerSecond, scale, null, false);
+            bool ground = cell == 0 && step.delivery is "field" or "trap" or "nova" or "wall";
+            bool attached = followCaster || cell == 0 && step.origin == "caster" && step.delivery is "arc" or "guard";
+            Vector2 position = at + (ground ? Vector2.zero : Vector2.up * C.actionHeight);
+            if (cell == 0 && step.delivery == "arc") position = Combat.MeleeFxOrigin(position, dir);
+            float seconds = duration > 0 ? duration : cell == 1 ? C.impactVisualDuration : C.castVisualDuration;
+            Fx.I?.Play(frames, position, ground && step.delivery != "wall" || step.delivery == "guard" ? 0 : dir.Angle(), frames.Length / Mathf.Max(.01f, seconds), scale, null, false,
+                Art.SortY(at.y) + (ground ? -1 : 5), attached ? ctx.player.transform : null);
         }
         static string Status(string condition) => condition switch { "marked" => "mark", "burning" => "burn", "chilled" => "chill", "poisoned" => "poison", _ => null };
         static string Mark(ActiveSkillData a) => a.linkedMask == 0 ? "mark" : "active:" + a.linkId;
@@ -272,7 +288,9 @@ namespace Diverse
                 projectile.life = range / C.projectileSpeed * (step.pattern == "return" ? 2 : 1);
                 projectile.radius = C.projectileRadius; projectile.pierce = step.pattern is "pierce" or "return" ? C.maxTargets : 0;
                 projectile.bounces = step.pattern == "bounce" ? 1 : 0;
-                projectile.color = Pal.Hex(ctx.skill.color); projectile.trailFx = ActiveSkillArt.Effect(ctx.skill, step, 2, C.projectilePixels); projectile.normalTrailBlend = true;
+                projectile.color = Pal.Hex(ctx.skill.color);
+                // Dissipating impact flecks form the trail; don't leave copies of the flying body behind.
+                projectile.trailFx = ActiveSkillArt.Effect(ctx.skill, step, 1, C.projectilePixels); projectile.normalTrailBlend = true;
                 projectile.canHit = (_, target) => ctx.Valid && Eligible(ctx, step, target);
                 projectile.resolveHit = (pr, target) => ApplyTargets(ctx, step, stage, new[] { target }, pr.vel.normalized, divisions * count * (step.pattern == "return" ? 2 : 1));
                 projectile.onEnd = pr =>

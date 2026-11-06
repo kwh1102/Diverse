@@ -840,6 +840,18 @@ namespace Diverse
         // ───────────────────────── Skills ─────────────────────────
 
         public void HoldSkillAction() => actionLock = Mathf.Max(actionLock, Time.deltaTime * 2);
+        public void PresentSkill(ActiveSkillData skill, ActiveStep step, Vector2 dir)
+        {
+            Facing = dir.SafeNormal(Facing);
+            var feel = DB.Asset.feel ?? new FeelDef();
+            float duration = ActiveSkillGenerator.Rules.castVisualDuration, angle = Facing.Angle();
+            SetSwing(angle + (step.delivery == "arc" ? 70 : 0), angle - (step.delivery == "arc" ? 70 : 0), duration);
+            Motion((Facing.x >= 0 ? -1 : 1) * feel.attackTwist, 0, -.15f);
+            skillSwingColor = Pal.Hex(skill.color); skillSwingUntil = Time.time + duration;
+        }
+        Color skillSwingColor;
+        float skillSwingUntil;
+        public void SkillAfterimage(Color color) => Fx.I?.Afterimage(body, color, ActiveSkillGenerator.Rules.castVisualDuration);
 
         void CastSkill(int i)
         {
@@ -986,7 +998,7 @@ namespace Diverse
                     if (swingGhostT <= 0 && weaponSr.enabled && Mathf.Abs(weaponTo - weaponFrom) > 1f)
                     {
                         swingGhostT = 0.016f;
-                        Color c = Weapon.slashColor; c.a = 0.55f;
+                        Color c = Time.time < skillSwingUntil ? skillSwingColor : Weapon.slashColor; c.a = 0.55f;
                         Fx.I?.Afterimage(weaponSr, c, 0.12f);
                     }
                 }

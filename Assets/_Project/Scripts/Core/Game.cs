@@ -99,6 +99,7 @@ namespace Diverse
                 saveT -= Time.unscaledDeltaTime;
                 if (saveT <= 0) { saveT = 20; SaveSystem.SaveWorld(World); SaveRun(); }
                 UpdateFrontier(dt);
+                RequestPrefetch();
                 if (State == GameState.Playing && (Player.PendingEvolutions > 0 || SkillOffer != null) && !Generating && Offer == null && Actor.Nearest(Player.Pos, 7, Team.Enemy) == null)
                     BeginEvolution();
             }
@@ -279,6 +280,7 @@ namespace Diverse
                 rewardVersion = 1, claimedSkillMask = p.claimedSkillMask,
                 pendingRewardLevels = new List<int>(p.pendingRewardLevels),
                 skillOffer = SkillOffer == null ? null : JsonUtility.FromJson<SkillOfferSave>(JsonUtility.ToJson(SkillOffer)),
+                skillPrefetch = SkillPrefetch == null ? null : JsonUtility.FromJson<SkillOfferSave>(JsonUtility.ToJson(SkillPrefetch)),
             };
             foreach (var a in p.Abilities.Owned.Where(a => !p.Inventory.items.Any(i => i.Ability == a))) r.abilities.Add(AbilityRecord.From(a));
             foreach (var kv in p.Telemetry.intent) r.intent.Add(kv.Key + "=" + kv.Value);
@@ -337,6 +339,7 @@ namespace Diverse
             PrewarmRun();
             Offer = null; Generating = false; Boss = null; ChatBusy = false;
             ResetPrefetch();
+            RestoreSkillPrefetch(r.skillPrefetch);
             State = GameState.Playing;
             GameTime.ClearPauses();
             Ui.Toast($"{Ko.I(HeroName)} 다시 길을 나선다. (Lv.{p.Level})");

@@ -38,6 +38,7 @@ Non-damage effects use single pattern, instant timing, no element. guard is shie
 Shield and heal are self effects: caster origin, always condition, guard/nova/field delivery (guard is shield only). wall always blocks unconditionally. Chain is line only.
 wall MUST use block effect, single pattern, instant timing, no element. block is wall only. At most two movement steps and one defensive step. R can be powerful but has a long cooldown.
 Match weapon type: Sword/Dagger use arcs, lines and movement; Bow/Gun use projectiles, lines and retreat; Staff uses any delivery.
+For physical weapon slashes use arc with caster origin, including after movement. Use aim origin only for an explicitly projected or remote slash and describe that distinction in intent and iconPrompt.
 Respect the player's requested concept only when expressible in this schema. Visual descriptions must match executable steps.
 Never repeat a structural signature supplied in RECENT or EXISTING. Different element/colors/names do NOT count as different behavior. Avoid generic damage-plus-free-shield designs.
 Visuals: restrained cute chunky pixel art, one clear symbol, 3-4 tones, no ornate emblems, excessive flames, particle storms, gradients or photorealistic materials. Combat effects are rendered from EACH executable step; do not invent a visual action that the graph cannot perform.
@@ -50,7 +51,7 @@ Required role semantics (the engine infers these in this priority): mobility has
         public static WeaponFootprint Shape(InventoryItem w) => DB.Asset.abilityRules.def.weaponShapes.First(s => s.type == TypeOf(w));
         public static string SlotName(int slot) => slot >= 0 && slot < 4 ? "QWER"[slot].ToString() : "?";
 
-        public static IEnumerator GenerateChoices(Player owner, int slot, string request, List<ActiveSkillData> old, bool[] pinned, Action<List<ActiveSkillData>> done, Action<string> trace = null)
+        public static IEnumerator GenerateChoices(Player owner, int slot, string request, List<ActiveSkillData> old, bool[] pinned, Action<List<ActiveSkillData>> done, Action<string> trace = null, bool allowAi = true)
         {
             var owned = owner.Inventory.items.Where(i => i.kind == ItemKind.Weapon).Select(TypeOf).Distinct().ToList();
             var current = TypeOf(owner.Inventory.Active); owned.Remove(current); owned.Insert(0, current);
@@ -60,7 +61,7 @@ Required role semantics (the engine infers these in this priority): mobility has
             var result = new ActiveSkillData[3];
             for (int i = 0; i < 3; i++) if (pinned[i] && old != null && i < old.Count) { result[i] = old[i]; types[i] = old[i].weaponType; }
             var constraint = ActiveSkillRequest.Read(request);
-            yield return constraint.Interpret(request, trace);
+            if (allowAi) yield return constraint.Interpret(request, trace);
             if (constraint.unsupported != null) { trace?.Invoke(constraint.unsupported); done(null); yield break; }
             var roles = PlanRoles(result);
             if (constraint.Constrained) for (int i = 0; i < 3; i++) if (result[i] == null) roles[i] = constraint.Role;
@@ -71,9 +72,9 @@ Required role semantics (the engine infers these in this priority): mobility has
                 trace?.Invoke($"후보 {i + 1}: {TypeName(types[i])} · {RoleName(roles[i])}{(result[i] != null ? " · 고정 유지" : "")}");
                 if (result[i] != null) trace?.Invoke($"[{result[i].name}] 유지 · {result[i].designReason}\n실행: {VisualSummary(result[i])}");
             }
-            if (!AiClient.Enabled) trace?.Invoke("AI 연결 없음 · 실행 조건을 검사한 로컬 설계 후보 준비");
+            if (!allowAi || !AiClient.Enabled) trace?.Invoke("AI 요청 보류/연결 없음 · 실행 조건을 검사한 로컬 설계 후보 준비");
             string rejection = "";
-            if (AiClient.Enabled)
+            if (allowAi && AiClient.Enabled)
             {
                 for (int attempt = 0; attempt < Rules.generationAttempts && result.Any(a => a == null); attempt++)
                 {
