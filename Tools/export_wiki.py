@@ -25,6 +25,7 @@ def blocks(text, start, end):
 
 def main():
     OUT.mkdir(exist_ok=True)
+    art_manifest={r['id']:r['status'] for r in csv.DictReader((ROOT/'ArtSource/Parts/image_manifest.csv').open(encoding='utf-8-sig',newline=''))}
     entries=[]
     def add(id, category, name, summary, source, raw='', **extra):
         entries.append(dict(id=id,category=category,name=name,summary=summary,source=source,raw=decode(raw),**extra))
@@ -44,7 +45,7 @@ def main():
         effect=effect.replace('{limit}',f"{float(re.search(r'^      damageCap: (.+)$',text,re.M)[1])*100:g}")
         d['고유 능력']=effect; d['등장 시기']='초반부터' if d.get('requiresActive')=='0' else '5레벨부터'
         add('part:'+d['id'],'T1 파츠',d['name'],d['등장 시기']+' · '+effect,str(ability.relative_to(ROOT)),b,
-            tier=1,family=d.get('family'),image=image,art='임시 기존 그림 · 정교화 대기',data=d)
+            tier=1,family=d.get('family'),image=image,art='전용 T1 그림 준비 완료' if art_manifest.get(d['id'])=='제작 완료' and (ROOT/image).exists() else '임시 기존 그림 · 정교화 대기',data=d)
     for b in blocks(text,'    evolutions:\n','    weaponShapes:'):
         d=fields(b); tier=int(d['tier']); image='Assets/_Project/Resources/'+d['sprite']+'.png'
         add('evolution:'+d['id'],'진화 파츠',d['name'],d['conditionText'],str(ability.relative_to(ROOT)),b,

@@ -11,7 +11,7 @@ namespace Diverse.EditorTools
         {
             font=Resources.Load<Font>("Fonts/Galmuri11");fontBold=Resources.Load<Font>("Fonts/Galmuri11-Bold");BuildFrames();
             Patch(UIPrefabDir+"/GameCanvas.prefab",root=>{LayoutInventoryPolish(root);return true;});
-            Patch(UIPrefabDir+"/MenuCanvas.prefab",root=>{InstallHeroFacingButton(root);return true;});
+            Patch(UIPrefabDir+"/MenuCanvas.prefab",root=>{InstallHeroFacingButton(root);LayoutPartReadability(root);return true;});
             AssetDatabase.SaveAssets();Debug.Log("Item UI layout edits saved. No tests, play mode or previews executed.");
         }
 
@@ -60,7 +60,7 @@ namespace Diverse.EditorTools
                 UIKit.Show(panel.Find("Footer")?.gameObject,false);
             }
             var evolve=root.GetComponentInChildren<EvolveView>(true);
-            if(evolve==null) return;
+            if(evolve==null) {LayoutPartReadability(root);return;}
             var view=new SerializedObject(evolve);
             view.FindProperty("heightWithChat").floatValue=350;view.FindProperty("heightWithoutChat").floatValue=266;
             view.ApplyModifiedPropertiesWithoutUndo();
@@ -87,6 +87,7 @@ namespace Diverse.EditorTools
                 InventoryRect(tier.rectTransform,card.transform,6,140,width-12,12);
                 InventoryRect(tags.rectTransform,card.transform,6,156,width-12,10);
             }
+            LayoutPartReadability(root);
         }
 
         internal static void RepairPartCardScroll(EvolveCard card)

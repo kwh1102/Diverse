@@ -10,12 +10,14 @@ namespace Diverse
         [SerializeField] PartListItem partTemplate;
         [SerializeField] Image firstIcon,secondIcon,resultIcon;
         [SerializeField] Text firstText,secondText,resultText,status;
+        [SerializeField] Text firstTraits,secondTraits;
         [SerializeField] Button chooseFirst,chooseSecond,generate,confirm,cancel,back;
         readonly List<PartListItem> rows=new List<PartListItem>();
         Game g;
         string first,second;
         bool selectingFirst=true;
         int revision=-1;
+        readonly HashSet<ScrollRect> resetDescriptions=new HashSet<ScrollRect>();
         public void Init(Game game)
         {
             g=game;
@@ -55,7 +57,9 @@ namespace Diverse
             UIKit.Sprite(firstIcon,PartArt.For(a));UIKit.Sprite(secondIcon,PartArt.For(b));UIKit.Sprite(resultIcon,PartArt.For(result));
             UIKit.Set(firstText,a==null?"재료 A를 선택해 주세요":$"{a.name}\n등급 T{a.complexity}");
             UIKit.Set(secondText,b==null?"재료 B를 선택해 주세요":$"{b.name}\n등급 T{b.complexity}");
-            UIKit.Set(resultText,result==null?"같은 등급의 모든 파츠를 합성할 수 있어요.\n두 재료의 능력을 계승하고 등급이 1 올라요.\nT5는 최종 등급이에요.\n\n확정할 때만 재료와 골드가 소모돼요.":InventoryView.Description(result));
+            SetDescription(firstTraits,a?.Ability?.Explain()??"선택한 재료의 고유 능력이 표시됩니다.");
+            SetDescription(secondTraits,b?.Ability?.Explain()??"선택한 재료의 고유 능력이 표시됩니다.");
+            SetDescription(resultText,result==null?"같은 등급의 모든 파츠를 합성할 수 있어요.\n두 재료의 능력을 계승하고 등급이 1 올라요.\nT5는 최종 등급이에요.\n\n확정할 때만 재료와 골드가 소모돼요.":InventoryView.Description(result));
             string why=g.FusionUnavailableReason(first,second);
             int cost=a==null?0:InventoryState.Rules.FusionCost(a.complexity);
             UIKit.Set(status,(g.InventoryStatus??why??"합성 가능 · 확정할 때만 재료와 골드가 소모됩니다.")+$"\n보유 {g.Player.Gold}G"+(result!=null?$" / 필요 {cost}G":""));
@@ -67,6 +71,23 @@ namespace Diverse
             confirm.interactable=result!=null && why==null;
             UIKit.Label(confirm,$"합성 확정 · {cost}G");
             UIKit.Show(confirm,result!=null);UIKit.Show(cancel,result!=null);back.interactable=!g.InventoryBusy;
+        }
+        void SetDescription(Text target,string value)
+        {
+            if(target==null || target.text==value) return;
+            UIKit.Set(target,value);
+            var scroll=target.GetComponentInParent<ScrollRect>();
+            if(scroll!=null) resetDescriptions.Add(scroll);
+        }
+        void LateUpdate()
+        {
+            foreach(var scroll in resetDescriptions)
+            {
+                if(scroll==null || scroll.content==null) continue;
+                LayoutRebuilder.ForceRebuildLayoutImmediate(scroll.content);
+                scroll.StopMovement();scroll.verticalNormalizedPosition=1;
+            }
+            resetDescriptions.Clear();
         }
     }
 }

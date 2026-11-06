@@ -205,7 +205,7 @@ MonoBehaviour:
       name: "분광 핵"
       family: "위력"
       description: "서로 다른 두 빛을 교차시키는 분광 수정."
-      sprite: "Sprites/Parts/focus_lens"
+      sprite: "Sprites/Parts/prism_core"
       mods: []
       skillDamage: 0
       projectileDamage: 0
@@ -253,7 +253,7 @@ MonoBehaviour:
       name: "흑요석 주사위"
       family: "치명타"
       description: "다섯 번째 눈이 빛나는 흑요석 주사위."
-      sprite: "Sprites/Parts/mint_coin"
+      sprite: "Sprites/Parts/lucky_die"
       mods: []
       skillDamage: 0
       projectileDamage: 0
@@ -277,7 +277,7 @@ MonoBehaviour:
       name: "칼날 수정"
       family: "치명타"
       description: "금이 간 적을 마무리하는 얇은 칼날 수정."
-      sprite: "Sprites/Parts/moon_charm"
+      sprite: "Sprites/Parts/razor_gem"
       mods: []
       skillDamage: 0
       projectileDamage: 0
@@ -301,7 +301,7 @@ MonoBehaviour:
       name: "홍옥 핀"
       family: "치명타"
       description: "치명타 에너지를 저장하는 홍옥 핀."
-      sprite: "Sprites/Parts/heart_lock"
+      sprite: "Sprites/Parts/ruby_pin"
       mods: []
       skillDamage: 0
       projectileDamage: 0
@@ -349,7 +349,7 @@ MonoBehaviour:
       name: "은빛 톱니"
       family: "재사용"
       description: "평타와 스킬을 잇는 세 개 이빨의 은빛 톱니."
-      sprite: "Sprites/Parts/clock_spring"
+      sprite: "Sprites/Parts/silver_gear"
       mods: []
       skillDamage: 0
       projectileDamage: 0
@@ -373,7 +373,7 @@ MonoBehaviour:
       name: "메아리 방울"
       family: "재사용"
       description: "앞선 동작으로 소리를 되돌리는 메아리 방울."
-      sprite: "Sprites/Parts/ward_buckle"
+      sprite: "Sprites/Parts/echo_bell"
       mods: []
       skillDamage: 0
       projectileDamage: 0
@@ -397,7 +397,7 @@ MonoBehaviour:
       name: "모래시계 구슬"
       family: "재사용"
       description: "빗나간 시간을 되돌리는 모래시계 구슬."
-      sprite: "Sprites/Parts/scholar_quill"
+      sprite: "Sprites/Parts/hourglass_bead"
       mods: []
       skillDamage: 0
       projectileDamage: 0
@@ -445,7 +445,7 @@ MonoBehaviour:
       name: "매눈 조준경"
       family: "투사체"
       description: "적을 쫓는 매의 눈 모양 조준경."
-      sprite: "Sprites/Parts/arrow_fletching"
+      sprite: "Sprites/Parts/falcon_sight"
       mods: []
       skillDamage: 0
       projectileDamage: 0
@@ -469,7 +469,7 @@ MonoBehaviour:
       name: "룬 조준경"
       family: "투사체"
       description: "같은 표적 위에 겹쳐지는 두 개의 룬 조준선."
-      sprite: "Sprites/Parts/focus_lens"
+      sprite: "Sprites/Parts/rune_scope"
       mods: []
       skillDamage: 0
       projectileDamage: 0
@@ -493,7 +493,7 @@ MonoBehaviour:
       name: "나선 노즐"
       family: "투사체"
       description: "나선 홈이 파인 작은 발사 노즐."
-      sprite: "Sprites/Parts/silk_grip"
+      sprite: "Sprites/Parts/spiral_nozzle"
       mods: []
       skillDamage: 0
       projectileDamage: 0
@@ -541,7 +541,7 @@ MonoBehaviour:
       name: "별자리 지도"
       family: "범위"
       description: "두 적중 지점을 별자리로 잇는 작은 지도."
-      sprite: "Sprites/Parts/trail_compass"
+      sprite: "Sprites/Parts/star_map"
       mods: []
       skillDamage: 0
       projectileDamage: 0
@@ -565,7 +565,7 @@ MonoBehaviour:
       name: "갈대 관"
       family: "범위"
       description: "긴 비행 거리를 만드는 속 빈 갈대 관."
-      sprite: "Sprites/Parts/scholar_quill"
+      sprite: "Sprites/Parts/long_reed"
       mods: []
       skillDamage: 0
       projectileDamage: 0
@@ -589,7 +589,7 @@ MonoBehaviour:
       name: "호박 거울"
       family: "범위"
       description: "공격 흔적을 품었다 돌려주는 호박 거울."
-      sprite: "Sprites/Parts/focus_lens"
+      sprite: "Sprites/Parts/amber_mirror"
       mods: []
       skillDamage: 0
       projectileDamage: 0
@@ -613,7 +613,7 @@ MonoBehaviour:
       name: "서리 결정"
       family: "제어"
       description: "제어의 순간 대상을 얼리는 서리 결정."
-      sprite: "Sprites/Parts/focus_lens"
+      sprite: "Sprites/Parts/frost_shard"
       mods: []
       skillDamage: 0
       projectileDamage: 0
@@ -637,7 +637,7 @@ MonoBehaviour:
       name: "닻 갈고리"
       family: "제어"
       description: "움직인 적의 발을 붙잡는 닻 갈고리."
-      sprite: "Sprites/Parts/iron_plate"
+      sprite: "Sprites/Parts/anchor_hook"
       mods: []
       skillDamage: 0
       projectileDamage: 0
@@ -661,7 +661,7 @@ MonoBehaviour:
       name: "뇌전 침"
       family: "제어"
       description: "표식을 찌르면 번쩍이는 뇌전 침."
-      sprite: "Sprites/Parts/ember_crucible"
+      sprite: "Sprites/Parts/thunder_pin"
       mods: []
       skillDamage: 0
       projectileDamage: 0
@@ -685,7 +685,7 @@ MonoBehaviour:
       name: "중력석"
       family: "제어"
       description: "안쪽으로 파편을 끌어모으는 중력석."
-      sprite: "Sprites/Parts/iron_plate"
+      sprite: "Sprites/Parts/gravity_stone"
       mods: []
       skillDamage: 0
       projectileDamage: 0
@@ -853,7 +853,7 @@ MonoBehaviour:
       name: "깃털 고리"
       family: "이동"
       description: "회피의 순간 가벼워지는 깃털 고리."
-      sprite: "Sprites/Parts/arrow_fletching"
+      sprite: "Sprites/Parts/feather_ring"
       mods: []
       skillDamage: 0
       projectileDamage: 0
@@ -877,7 +877,7 @@ MonoBehaviour:
       name: "산들바람 리본"
       family: "이동"
       description: "이동이 끝나도 바람이 이어지는 리본."
-      sprite: "Sprites/Parts/sword_knot"
+      sprite: "Sprites/Parts/breeze_ribbon"
       mods: []
       skillDamage: 0
       projectileDamage: 0

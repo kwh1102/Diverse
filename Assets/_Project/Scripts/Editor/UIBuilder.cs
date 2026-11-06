@@ -274,6 +274,7 @@ namespace Diverse.EditorTools
             // ScrollRect needs a raycast target to receive the wheel
             var hit = go.GetComponent<Image>() ?? Box(area, whiteSpr, new Color(0, 0, 0, 0));
             hit.raycastTarget = true;
+            EnsureReadabilityScrollbars(scroll);
             return t;
         }
 

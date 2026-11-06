@@ -1,0 +1,13 @@
+{
+  "pngs": 176,
+  "t1_size": 64,
+  "evolution_size": 96,
+  "alpha": "binary",
+  "material_ramps": 4,
+  "preserved_guids": 180,
+  "gameplay_data": "unchanged",
+  "authoring_scripts": "unchanged",
+  "unity_started": false,
+  "compiled": false,
+  "tests_run": false
+}

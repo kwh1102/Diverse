@@ -16,7 +16,8 @@ namespace Diverse
             item.name=PartPresentation.DisplayName(item.Ability);
             item.iconKey=item.Ability?.partImage;
         }
-        public static Sprite For(InventoryItem item)=>CenterIcon(Raw(item));
+        // Catalog parts are authored with a centered, padded canvas. Preserve it in every UI.
+        public static Sprite For(InventoryItem item)=>item?.kind==ItemKind.Part?Raw(item):CenterIcon(Raw(item));
 
         static Sprite CenterIcon(Sprite source)
         {

@@ -92,7 +92,7 @@ namespace Diverse.EditorTools
             var scroll=InventoryFind<ScrollRect>(search,name);
             Text text;
             if(scroll==null) text=ScrollText(parent,name,Node(parent,name,TL,new Vector2(x,y),new Vector2(w,h)),out scroll);
-            else text=scroll.content.GetComponent<Text>();
+            else text=scroll.content.GetComponent<Text>()??scroll.content.GetComponentInChildren<Text>(true);
             InventoryRect(scroll.GetComponent<RectTransform>(),parent,x,y,w,h);text.fontSize=9;return text;
         }
         static RectTransform InventoryOutline(Transform parent,string name,Color color)

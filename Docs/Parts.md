@@ -49,6 +49,6 @@ T1 32종은 각자 고정된 고유 능력을 가진다. 5레벨 전 보상에�
 
 ## 편집과 제작
 
-`AbilityRules.asset / parts`에서 고유 능력·초반 등장 여부·수치·문구·아트 모티프, `partTraits`에서 상한을 편집한다. 기존 재료 ID는 보존하므로 세이브의 합성 구성은 새 능력을 계승한다. 이미지 제작은 보류 상태다. [제작 프롬프트](../ArtSource/Parts/IMAGEGEN_PROMPT.md), [파츠 진화](PartEvolution.md), [위키](Wiki/index.html)를 참고한다.
+`AbilityRules.asset / parts`에서 고유 능력·초반 등장 여부·수치·문구·아트 모티프, `partTraits`에서 상한을 편집한다. 기존 재료 ID는 보존하므로 세이브의 합성 구성은 새 능력을 계승한다. T1 32종과 진화 144종의 전용 투명 PNG를 제작해 연결했다. [제작 기록](../ArtSource/Parts/README.md), [파츠 진화](PartEvolution.md), [위키](Wiki/index.html)를 참고한다.
 
 `author_part_catalog.py`는 이전 수치형 파츠의 초기 저작 도구로 현재 데이터에 실행하면 안 된다. `author_part_traits.py`도 의도적으로 능력을 재저작할 때만 사용한다. 도감 갱신은 `export_wiki.py`다.
