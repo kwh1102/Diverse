@@ -24,7 +24,7 @@ Schema: {skills:[{slot:0,name:'Korean',intent:'tactic',role:'burst|precision|sus
 steps:[{delivery:'arc|line|projectile|nova|field|dash|retreat|blink|guard|trap|wall',pattern:'single|fan|ring|chain|return|pierce|seek|curve|bounce|converge',
 effect:'damage|shield|heal|pull|push|stun|mark|block',element:'None|Fire|Frost|Lightning|Shadow|Holy|Poison|Wind|Blood|Void|Arcane',
 condition:'always|marked|burning|chilled|poisoned',timing:'instant|delayed|repeat',origin:'caster|aim|previous|impact',trigger:'after|hit|arrive|expire|recast',consume:false}],linkedMask:0,
-iconPrompt:'one distinct isolated skill symbol matching executable operations'}]}.
+iconPrompt:'one distinct isolated skill symbol matching executable operations',projectilePrompt:'concrete visible flying body motif, same materials and colours as icon, no trail-only description',effectPrompt:'distinct moving silhouette and layered action/impact motif matching this icon and supported operations'}]}.
 Use valid JSON with double quotes. Slot indices Q=0 W=1 E=2 R=3; slots never move.
 Most skills must work independently. Soft status synergies must include an unconditional useful step.
 Hard dependencies: only a reciprocal two-slot group within requested slots, linkedMask includes both slots.
@@ -293,7 +293,7 @@ Required role semantics (the engine infers these in this priority): mobility has
             bool ranged = type is WeaponType.Bow or WeaponType.Gun;
             var a = new ActiveSkillData { weaponType = type, slot = slot, source = "local", drawback = Pick(new[] { "recovery", "cooldown", "shortRange" }),
                 color = Pick(new[] { "c9b8ff", "b5cfa6", "edb18d", "99c9d2", "e5b4c7" }),
-                iconPrompt = "one simple chunky fantasy tool symbol, 3 tone shading", projectilePrompt = "one small readable object flying right", effectPrompt = "a compact soft crescent, sparse sparks, 3 tones" };
+                iconPrompt = "one moderately detailed chunky fantasy tool symbol, 3 tone material shading", projectilePrompt = "a solid bevelled flying head with visible side fins, same material and palette as the icon, facing right", effectPrompt = "a sharp layered leading stroke, shaped inner wake and separated resolving fragments, same materials as the icon" };
             role ??= Pick(new[] { "burst", "precision", "sustain", "control", "trap", "mobility", "guard" });
             string element = Pick(new[] { "Fire", "Frost", "Wind", "Arcane", "Shadow" });
             ActiveStep Op(string delivery, string effect = "damage", string pattern = "single", string origin = "caster", string trigger = "after") =>

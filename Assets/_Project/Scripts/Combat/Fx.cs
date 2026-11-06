@@ -89,7 +89,7 @@ namespace Diverse
 
         // ───────── 스프라이트 애니메이션 ─────────
 
-        public SpriteRenderer Play(Sprite[] frames, Vector2 pos, float angle = 0, float fps = 24, float scale = 1, Color? tint = null, bool additive = false, int order = 0, Transform follow = null, bool flipY = false)
+        public SpriteRenderer Play(Sprite[] frames, Vector2 pos, float angle = 0, float fps = 24, float scale = 1, Color? tint = null, bool additive = false, int order = 0, Transform follow = null, bool flipY = false, float delay = 0)
         {
             if (frames == null || frames.Length == 0) return null;
             Anim a = null;
@@ -104,7 +104,7 @@ namespace Diverse
             }
             a.active = true;
             a.frames = frames;
-            a.t = 0;
+            a.t = -Mathf.Max(0, delay);
             a.frameTime = 1f / fps;
             a.follow = follow;
             a.followOffset = follow != null ? (Vector3)pos - follow.position : Vector3.zero;
@@ -113,6 +113,7 @@ namespace Diverse
             a.go.transform.rotation = Quaternion.Euler(0, 0, angle);
             a.go.transform.localScale = new Vector3(scale, flipY ? -scale : scale, 1);
             a.sr.sprite = frames[0];
+            a.sr.enabled = delay <= 0;
             a.sr.color = tint ?? Color.white;
             a.sr.sharedMaterial = additive ? Art.AddMat : Art.SpriteMat;
             a.sr.sortingOrder = order != 0 ? order : Art.SortY(pos.y) + 40;
@@ -286,6 +287,8 @@ namespace Diverse
             {
                 if (!a.active) continue;
                 a.t += dt;
+                if (a.t < 0) continue;
+                a.sr.enabled = true;
                 int f = (int)(a.t / a.frameTime);
                 if (f >= a.frames.Length) { a.active = false; a.go.SetActive(false); continue; }
                 a.sr.sprite = a.frames[f];

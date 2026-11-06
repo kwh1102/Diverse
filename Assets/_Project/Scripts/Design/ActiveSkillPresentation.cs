@@ -20,13 +20,15 @@ namespace Diverse
         public static Sprite[] Effect(ActiveSkillData a, ActiveStep step, int kind, int pixels)
         {
             ActiveSkillStyle.Ensure(a);
+            if (kind == 2 && step.delivery == "projectile") return ActiveProjectileArt.Frames(a, step);
             pixels = Mathf.Clamp(kind == 1 ? C.impactPixels : pixels, 8, C.maxVisualPixels);
             string key = a.id + ":" + string.Join(",", a.visualPalette) + ":" + JsonUtility.ToJson(step) + ":" + kind + ":" + pixels + ":" + string.Join(",", a.effectImages ?? System.Array.Empty<string>());
             if (cache.TryGetValue(key, out var found)) return found;
             // Older paid sheets often contained icon-like poses. Use the registered project motion until regenerated.
-            var generated = a.effectPromptRevision >= 2 || step.delivery == "projectile" ? ActiveEffectArt.Frames(a, step, kind) : null;
+            var generated = a.effectPromptRevision >= 2 ? ActiveEffectArt.Frames(a, step, kind) : null;
             var authored=CombatVisuals.Frames(step,kind);
-            if(generated==null && authored!=null)return authored;
+            if(generated==null && authored!=null)return ActiveSkillPalette.Frames(a,authored);
+            if(generated!=null && a.effectPromptRevision<3)generated=ActiveSkillPalette.Frames(a,generated);
             var raw = generated ?? ActiveSkillVisuals.Effect(a, step, kind, pixels);
             if (raw == null || raw.Length == 0) return null;
             // Fit the complete registered cell; never crop each frame to a different opaque bounding box.

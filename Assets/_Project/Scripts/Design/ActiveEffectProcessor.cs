@@ -8,7 +8,7 @@ namespace Diverse
     /// <summary>Four frames per row; preserve the cell centre and one shared scale for each animation.</summary>
     public static class ActiveEffectProcessor
     {
-        public static PixelCanvas[] Read(Texture2D sheet, int[] rows, int steps, ActiveRules cfg, Action<string> trace, out string why)
+        public static PixelCanvas[] Read(Texture2D sheet, int[] rows, int steps, ActiveRules cfg, Action<string> trace, out string why, bool chunky = false)
         {
             why = "이펙트 시트 형식 오류 · 4열 시트와 행 정보를 읽지 못함";
             if (sheet == null || !sheet.isReadable || rows == null || rows.Length == 0 ||
@@ -78,6 +78,7 @@ namespace Diverse
                     foreach(var p in cv.Px)silhouette=(silhouette^(p.a>=128?1u:0u))*16777619;
                     silhouettes.Add(silhouette);
                 }
+                if (chunky) SnapPalette(frames);
                 if (hashes.Count < 2) { why = $"{label}: 유효 프레임이 같은 정지 그림 · 다른 동작 프레임 필요"; return null; }
                 if(key%3!=2 && silhouettes.Count<2)
                 {why=$"{label}: 색만 바뀌는 정지 아이콘 · 형태가 움직이는 동작 프레임 필요";return null;}
@@ -99,6 +100,20 @@ namespace Diverse
             }
             why = $"전용 이펙트 {rows.Length}개 애니메이션 처리 완료 · 동작/명중 분리, 필요 시 투사체·궤적 포함";
             return result;
+        }
+
+        static void SnapPalette(PixelCanvas[] frames)
+        {
+            // One palette for the WHOLE row avoids frame-to-frame colour flicker. No geometry is regenerated.
+            var palette=frames.SelectMany(f=>f.Px).Where(p=>p.a>=96)
+                .GroupBy(p=>(p.r/24,p.g/24,p.b/24)).OrderByDescending(g=>g.Count()).Take(12).Select(g=>g.First()).ToArray();
+            if(palette.Length==0)return;
+            foreach(var frame in frames)for(int i=0;i<frame.Px.Length;i++)
+            {
+                var p=frame.Px[i];if(p.a<96){frame.Px[i]=default;continue;}
+                var nearest=palette.OrderBy(c=>(c.r-p.r)*(c.r-p.r)+(c.g-p.g)*(c.g-p.g)+(c.b-p.b)*(c.b-p.b)).First();
+                nearest.a=255;frame.Px[i]=nearest;
+            }
         }
 
         static int RemoveMatte(Color32[] px, int w, int h, ActiveRules cfg)

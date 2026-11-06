@@ -93,7 +93,8 @@ namespace Diverse
                     CameraRig.I.Kick(d.direction, kick * (d.crit ? 1.5f : 1f) * s);
                     if (d.crit) CameraRig.I.Punch(0.5f);
                 }
-                if (d.impactFx != null) Fx.I?.Play(d.impactFx, at, d.direction.Angle(), 20, 1, null, !d.normalImpactBlend);
+                if (d.impactFx != null) Fx.I?.Play(d.impactFx, at, d.impactUnrotated?0:d.direction.Angle(),
+                    d.impactSeconds>0?d.impactFx.Length/d.impactSeconds:20,d.impactScale>0?d.impactScale:1,null,!d.normalImpactBlend);
                 else Fx.I?.HitSpark(at, d.direction.SafeNormal(Vector2.right), d.fxColor ?? fxColor, d.crit, d.crit ? 1.3f : 1f, Mathf.Clamp01(d.knockback / 5f));
                 Sfx.Play(d.crit ? "crit" : sfx, d.crit ? 0.9f : 0.7f);
             }

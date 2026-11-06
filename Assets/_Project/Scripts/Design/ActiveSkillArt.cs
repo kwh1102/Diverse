@@ -97,7 +97,7 @@ namespace Diverse
             ActiveSkillStyle.Ensure(a);
         }
         public static Sprite[] FlyingFrames(ActiveSkillData a, ActiveStep step) => ActiveSkillPresentation.Effect(a, step, 2, ActiveSkillGenerator.Rules.projectilePixels);
-        public static Sprite Shot(ActiveSkillData a, ActiveStep step) => FlyingFrames(a, step)?[1] ?? ActiveSkillVisuals.Shot(a, step);
+        public static Sprite Shot(ActiveSkillData a, ActiveStep step) => FlyingFrames(a, step)?[0] ?? ActiveSkillVisuals.Shot(a, step);
         public static Sprite[] Effect(ActiveSkillData a, ActiveStep step, int cell, int size) => ActiveSkillPresentation.Effect(a, step, cell, size);
     }
 }

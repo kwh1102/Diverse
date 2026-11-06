@@ -111,3 +111,231 @@ MonoBehaviour:
   - 52
   - 68
   - 68
+  skillSlash:
+  - {fileID: 21300000, guid: 8c00b178990d023f20700c986a78af69, type: 3}
+  - {fileID: 21300000, guid: e128629240a4bb2b4421bc60d2ad1d38, type: 3}
+  - {fileID: 21300000, guid: 81cf9fd7af4312b0b3bb3205d5bf0c0c, type: 3}
+  - {fileID: 21300000, guid: d02de11b6607662a97fd6408bc3d48c9, type: 3}
+  - {fileID: 21300000, guid: 1409b91a41ccd5931ca764478a864e40, type: 3}
+  - {fileID: 21300000, guid: 8e4e9f452005562529a9039ead4007d2, type: 3}
+  skillSpear:
+  - {fileID: 21300000, guid: a895b251c25a59a516cab37baae8b8ec, type: 3}
+  - {fileID: 21300000, guid: aa0f4a1675c252ff1b2c7b84710463cf, type: 3}
+  - {fileID: 21300000, guid: 30be328449b90b7a452ceb47e2fe81ac, type: 3}
+  - {fileID: 21300000, guid: 72e29cae45cd80753b4a55953982d48d, type: 3}
+  - {fileID: 21300000, guid: c1a77a7193beed28e9246ead8fd3ed09, type: 3}
+  - {fileID: 21300000, guid: d0df19c786deaba54dfb99d44a4a2862, type: 3}
+  skillArcane:
+  - {fileID: 21300000, guid: 30ce35f226b242fefef7d37b1a14298f, type: 3}
+  - {fileID: 21300000, guid: 85bc3b13c51e5a2aac2c6cf79056dfbf, type: 3}
+  - {fileID: 21300000, guid: 3d94032ae40c7c0724bbcba23e454202, type: 3}
+  - {fileID: 21300000, guid: 20c5d1b3890dc8bdb2dc6b954524ca31, type: 3}
+  - {fileID: 21300000, guid: 01c57b9577e4191ad06bdb12384f4386, type: 3}
+  - {fileID: 21300000, guid: 2780ac4b7a0f122b9661bf9cf5bbe959, type: 3}
+  skillFire:
+  - {fileID: 21300000, guid: 8a510eeb33838343be49ebdce2dc300e, type: 3}
+  - {fileID: 21300000, guid: 2585ebb2cedd84dbd30eda52ada2a2c5, type: 3}
+  - {fileID: 21300000, guid: 918ddbadf42b8b4cc539b2cd06ad576f, type: 3}
+  - {fileID: 21300000, guid: ec6747e435045d1ecb09219b94f02af7, type: 3}
+  - {fileID: 21300000, guid: 2370bd9b0bd67b70ee78013114603557, type: 3}
+  - {fileID: 21300000, guid: 4411a4a6bfb9222bfa3000f802dcdd0f, type: 3}
+  skillThrust:
+  - {fileID: 21300000, guid: a46fafc4a276f119ffdc6c839c9c936a, type: 3}
+  - {fileID: 21300000, guid: 7381577df8b9fb4ed6452a52ab0463a1, type: 3}
+  - {fileID: 21300000, guid: 49ab667c01f01ce4427d16935a0d0bb1, type: 3}
+  - {fileID: 21300000, guid: 2458a186b63a79cf1c53c9a26664feae, type: 3}
+  - {fileID: 21300000, guid: 39de77e3b985a7c55c50c02ec7eff639, type: 3}
+  - {fileID: 21300000, guid: 820eaf9fed58cd7656c32896adb94669, type: 3}
+  - {fileID: 21300000, guid: 3c96ce2782f00301dbf307197f113a08, type: 3}
+  - {fileID: 21300000, guid: 98ab0860e21d54e7532663b863253e75, type: 3}
+  skillMuzzle:
+  - {fileID: 21300000, guid: 707bbc47a98312e2f345d493b16e3eed, type: 3}
+  - {fileID: 21300000, guid: 9791517090e275199ff4b3906dbb5f2c, type: 3}
+  - {fileID: 21300000, guid: 9a90235b3a65d67e2aac790ecce0b0d5, type: 3}
+  - {fileID: 21300000, guid: 900e5de9f9fb6cdce6109927126e86a8, type: 3}
+  - {fileID: 21300000, guid: 1419d60a26d2140980f6986875fa9197, type: 3}
+  - {fileID: 21300000, guid: 537c0b143480d522f96e7e7bd376133d, type: 3}
+  - {fileID: 21300000, guid: acd60cb21fcb9266dd248d6fda97952e, type: 3}
+  - {fileID: 21300000, guid: 41369306e2672972c9c2bfb674933504, type: 3}
+  skillImpact:
+  - {fileID: 21300000, guid: b2d696b93b2ac1e262909a572703019d, type: 3}
+  - {fileID: 21300000, guid: e476c08166897799d735abbc50091db1, type: 3}
+  - {fileID: 21300000, guid: 5e1286b353cede6ecc1df0b2802a733c, type: 3}
+  - {fileID: 21300000, guid: 8deceb9f01f4c8c70873ff411b23476d, type: 3}
+  - {fileID: 21300000, guid: 4fc1e458b2b539ae20768eb078e214fe, type: 3}
+  - {fileID: 21300000, guid: 35540c54aff742ba8ae29c9e14125b02, type: 3}
+  - {fileID: 21300000, guid: 9fdc24688ce5f0419b8c43b35fec0e26, type: 3}
+  - {fileID: 21300000, guid: e8d4be960663885027ac1622f31cdbc4, type: 3}
+  skillShock:
+  - {fileID: 21300000, guid: cf5ac0ba2beedeedd73e9a874a400461, type: 3}
+  - {fileID: 21300000, guid: 1852dae0e57aff9bc8e8feed25648a18, type: 3}
+  - {fileID: 21300000, guid: 3d92806b4aeb01b18abb0ee77a1899fa, type: 3}
+  - {fileID: 21300000, guid: e706d7907b0a99c53e4c625d0034102b, type: 3}
+  - {fileID: 21300000, guid: aaa396757956addcdfeafbd4c5f701a0, type: 3}
+  - {fileID: 21300000, guid: 7bf73994ab38c4da030ffeb4e8746b05, type: 3}
+  - {fileID: 21300000, guid: 7a9fd0730516c678ab1b6c2c2fa070e7, type: 3}
+  - {fileID: 21300000, guid: 36c2df0f9bf04878074ae82763ee16cc, type: 3}
+  skillIce:
+  - {fileID: 21300000, guid: de22fb54c8cd56609ef773d64a743547, type: 3}
+  - {fileID: 21300000, guid: 5a576fb28124cdab9dac3a928573ab14, type: 3}
+  - {fileID: 21300000, guid: 87c152a9e3c1e977f9dc7b1b5e87ee6d, type: 3}
+  - {fileID: 21300000, guid: 23993ea4cb3d76000840bd77ca232972, type: 3}
+  - {fileID: 21300000, guid: f1e97835be316c82850de8db459d7f8e, type: 3}
+  - {fileID: 21300000, guid: 84aa628a44900c8475fe1ed859c21975, type: 3}
+  - {fileID: 21300000, guid: 93c7cf1d2c6e970e8d2692d7a1c030c1, type: 3}
+  - {fileID: 21300000, guid: 71a78e7962ebc7e46a3bcdf1d8f23b1a, type: 3}
+  skillLightning:
+  - {fileID: 21300000, guid: 0fcae27b4189f77f14a9c7b044ab6a98, type: 3}
+  - {fileID: 21300000, guid: a57c3c7bd798b249594ca48452f3a390, type: 3}
+  - {fileID: 21300000, guid: 08ac79b88130311f40d94a821bd56ac3, type: 3}
+  - {fileID: 21300000, guid: 5706d88fe60d1b2b0ec1c11e26162c0a, type: 3}
+  - {fileID: 21300000, guid: 90cb72649ff65d08325036975e610480, type: 3}
+  - {fileID: 21300000, guid: b1d479462ef1dddf01c2ede0f6d86967, type: 3}
+  - {fileID: 21300000, guid: 32e9bd08461486dd273bfdf1da329fa1, type: 3}
+  - {fileID: 21300000, guid: cf73d8733f0b75634f6e732f853a2775, type: 3}
+  skillEarth:
+  - {fileID: 21300000, guid: ada1d059be1a4b1c13734e4ab74d6402, type: 3}
+  - {fileID: 21300000, guid: 30fe1c54bad4db714f0fa23719ed785a, type: 3}
+  - {fileID: 21300000, guid: 80d0d7f286e5275b6e23ca02af866dfd, type: 3}
+  - {fileID: 21300000, guid: 0cb1f0e44cf14f9c016e43533038db68, type: 3}
+  - {fileID: 21300000, guid: 6943efc2d30b8fc03bc14da717f8cf86, type: 3}
+  - {fileID: 21300000, guid: 822e5216494bc90e11fb5eeacccad5b2, type: 3}
+  - {fileID: 21300000, guid: 393165d2090e611458f6bdae1e530a8e, type: 3}
+  - {fileID: 21300000, guid: d546c7b0b70c078d700865760a702879, type: 3}
+  skillWind:
+  - {fileID: 21300000, guid: 8fd9843c87dc335ea90d6e3c396d346f, type: 3}
+  - {fileID: 21300000, guid: e12d3317a9b4643cac203422e2aecb4a, type: 3}
+  - {fileID: 21300000, guid: 79a9d6f6de558974d333a5edcf811780, type: 3}
+  - {fileID: 21300000, guid: ae6e8227c29a13823d8fd302bc06e2b3, type: 3}
+  - {fileID: 21300000, guid: eecebf3b60a95639dad88e44576d0883, type: 3}
+  - {fileID: 21300000, guid: 90d63416441baa51b8a8fc5d0e03d5c9, type: 3}
+  - {fileID: 21300000, guid: 70fb25c9fcf0dad33e23ff72183f17b7, type: 3}
+  - {fileID: 21300000, guid: a27866614a3a0698ddeb5e76ac0c2fa8, type: 3}
+  skillPoison:
+  - {fileID: 21300000, guid: e787120b7575dbf170516b46e4b8bee9, type: 3}
+  - {fileID: 21300000, guid: b9bcad5076ac4e6ebe0e10a41b2f7352, type: 3}
+  - {fileID: 21300000, guid: 947ed1c608fdfb9b67a5ca3088238862, type: 3}
+  - {fileID: 21300000, guid: d62974033b0e47fc0d17d806f9771133, type: 3}
+  - {fileID: 21300000, guid: cff5a327a902e562a3e94c04bec53e87, type: 3}
+  - {fileID: 21300000, guid: fa9084e6de4c298a0f79d6d3a6cb36f3, type: 3}
+  - {fileID: 21300000, guid: 932a79721528a88e477fe85aca367aa8, type: 3}
+  - {fileID: 21300000, guid: 5ee4cbf755850e2f2f0bdfa54fc89e3b, type: 3}
+  skillHoly:
+  - {fileID: 21300000, guid: 5b89306714a90638b81255ebe1c7c1c5, type: 3}
+  - {fileID: 21300000, guid: 8abb35b0440340384ea6e037bdd6a5b2, type: 3}
+  - {fileID: 21300000, guid: 1d1047cbd38fd50b294f203bdf3050ea, type: 3}
+  - {fileID: 21300000, guid: 29bb24db4473fce31f74ebf051987f92, type: 3}
+  - {fileID: 21300000, guid: 94d0845ac4c44033ec60a72de2de90f9, type: 3}
+  - {fileID: 21300000, guid: 9d558cd0c51b2590c2b7b9ad1f801b6c, type: 3}
+  - {fileID: 21300000, guid: a283f977d4c9e1336202d7eac0706f47, type: 3}
+  - {fileID: 21300000, guid: 463aac401481bc1849477d60b132070a, type: 3}
+  skillPull:
+  - {fileID: 21300000, guid: c824151635c95fcf24c2fc42c6964f93, type: 3}
+  - {fileID: 21300000, guid: c294800107097c047b030c0149678de0, type: 3}
+  - {fileID: 21300000, guid: 0711ac860e15f2dd31cce80d8052d727, type: 3}
+  - {fileID: 21300000, guid: 3473261410ad2e3d982efc5dc5c92ded, type: 3}
+  - {fileID: 21300000, guid: cb633b072b8d5808c610180718b76e07, type: 3}
+  - {fileID: 21300000, guid: 4b2c5167ab3efb66e173ca1b57d64b3c, type: 3}
+  - {fileID: 21300000, guid: 90f3d4fd0faf6c4ddebae41c1259a1d2, type: 3}
+  - {fileID: 21300000, guid: 5845ee87c2df1dbd9c048503cf7a13f3, type: 3}
+  skillGuard:
+  - {fileID: 21300000, guid: 2391fe733b68ff00b51656c46133a3db, type: 3}
+  - {fileID: 21300000, guid: d9eb93aa7e35257f0dd266e050ce9364, type: 3}
+  - {fileID: 21300000, guid: 8f0b4d1fa2aa458acb752440a25203d8, type: 3}
+  - {fileID: 21300000, guid: 75de0dd7e716e188b75a4c6938c4a091, type: 3}
+  - {fileID: 21300000, guid: c1c4f666cc2c79b3747212a0ec0fd7a0, type: 3}
+  - {fileID: 21300000, guid: 20f78ffa4ef57cafc82e3ebc2ff3ffc8, type: 3}
+  - {fileID: 21300000, guid: fd9f30fecfa540d321935d784f30b690, type: 3}
+  - {fileID: 21300000, guid: cec18814bfa0af8af341935ef0f8115e, type: 3}
+  skillHeal:
+  - {fileID: 21300000, guid: 3aae5a49288948830703bd1abb6b5709, type: 3}
+  - {fileID: 21300000, guid: fd15fd47c92e580aa278f31952822c45, type: 3}
+  - {fileID: 21300000, guid: feea55f49ef9af8bd143c9e537a37bb4, type: 3}
+  - {fileID: 21300000, guid: 2e59c26db5c85e7da2a137cadfc993fc, type: 3}
+  - {fileID: 21300000, guid: 6e544926eb8764ef2fd2b173f6e1e22f, type: 3}
+  - {fileID: 21300000, guid: 692397e22b8af304600df97f781d1c8b, type: 3}
+  - {fileID: 21300000, guid: eb88ec04255eec5595181b4f3d1e9dcc, type: 3}
+  - {fileID: 21300000, guid: 6744d0e7d534fdb9aba4054c28c13309, type: 3}
+  skillField:
+  - {fileID: 21300000, guid: 521beb03da5741ebdc5569f348e9d0a3, type: 3}
+  - {fileID: 21300000, guid: 79a1905868c46574c74a90db5b2a0039, type: 3}
+  - {fileID: 21300000, guid: 91edb18212bbd0a31a1a7d7e1a598ec1, type: 3}
+  - {fileID: 21300000, guid: 748d4ed740e7c69dc39d7ca3ebe79e91, type: 3}
+  - {fileID: 21300000, guid: a4a7a183c880e89667fb7cbc474486e1, type: 3}
+  - {fileID: 21300000, guid: c9bdfa6cccc7c37ba7d44df9992c0e80, type: 3}
+  - {fileID: 21300000, guid: 98a4f90016096c953fa8ec1bee261889, type: 3}
+  - {fileID: 21300000, guid: 286929da15f9a6f9b42a78783a32c3f5, type: 3}
+  skillTrap:
+  - {fileID: 21300000, guid: 6d4dd320cc38513b3e4a68fcd74f4e09, type: 3}
+  - {fileID: 21300000, guid: 3b5226f692a9e63e92872a7fb8503499, type: 3}
+  - {fileID: 21300000, guid: 9345fb1337d2b8b0ff26a99d1ff1ea16, type: 3}
+  - {fileID: 21300000, guid: 47c0b61a22b587e716a1438d4c370df2, type: 3}
+  - {fileID: 21300000, guid: b5dcbbc3b8d88d325eb6a1a332d61836, type: 3}
+  - {fileID: 21300000, guid: b2b61a2d7204a35df2177360c78c2b31, type: 3}
+  - {fileID: 21300000, guid: 7e6228f3a7cc4082295328b22ab530db, type: 3}
+  - {fileID: 21300000, guid: 7d7a9882dacc5e8033bd81616bbe52f2, type: 3}
+  skillDash:
+  - {fileID: 21300000, guid: 7f3d68f39089e332d9e80a3f02bc7bd4, type: 3}
+  - {fileID: 21300000, guid: de9e66f09cf63a7b5e7e86db4e499985, type: 3}
+  - {fileID: 21300000, guid: 6082d28e3c94d6d48f348c4427f51188, type: 3}
+  - {fileID: 21300000, guid: c648a0989a104df0785543835f897890, type: 3}
+  - {fileID: 21300000, guid: f8b835c84beb95670e5b710567077d0b, type: 3}
+  - {fileID: 21300000, guid: d644215f5aa8e50fb0cb174e4a02aa75, type: 3}
+  - {fileID: 21300000, guid: 1f18490fd2ed1b5fa21e712b216e5e81, type: 3}
+  - {fileID: 21300000, guid: faf6a22a835a905ec6bb3b45a4a55c25, type: 3}
+  skillArrow:
+  - {fileID: 21300000, guid: 738cde181e301d3d965d07898906ddab, type: 3}
+  - {fileID: 21300000, guid: e5144b2a8876e2d58556b3fab64d2eba, type: 3}
+  - {fileID: 21300000, guid: dc9c70c66a3aeb4e5de1c3ae9fc33477, type: 3}
+  - {fileID: 21300000, guid: 93b8a34f89dada1d74ecafd4492f9e61, type: 3}
+  - {fileID: 21300000, guid: afff0c8a9a625829ff16806a7a92bb6f, type: 3}
+  - {fileID: 21300000, guid: 961f4e6f09abc88968288407986a7eab, type: 3}
+  - {fileID: 21300000, guid: 5d433adc0be697b47932481f2fd3f12b, type: 3}
+  - {fileID: 21300000, guid: ee0e04640863b58234f929226be964b5, type: 3}
+  skillBullet:
+  - {fileID: 21300000, guid: a74b5bb6c933916bb0d33941ae8a7b1a, type: 3}
+  - {fileID: 21300000, guid: 57f28fa0e66ccc5c1e5274d5a958262f, type: 3}
+  - {fileID: 21300000, guid: c4e467064082d339854c8627da178d93, type: 3}
+  - {fileID: 21300000, guid: c839b27a118198604f0beac25592ad68, type: 3}
+  - {fileID: 21300000, guid: d07ae126077f5063f378b81cbb557ea8, type: 3}
+  - {fileID: 21300000, guid: 876200746881e46b6a0e3bee8144045e, type: 3}
+  - {fileID: 21300000, guid: 8c56799715740a7cf6bc093b0687a4d7, type: 3}
+  - {fileID: 21300000, guid: d2d908151e7533363d4c22652087d22c, type: 3}
+  skillOrb:
+  - {fileID: 21300000, guid: 29f021e7c8d574d4b14a84cfc159c750, type: 3}
+  - {fileID: 21300000, guid: 48edef5aa4e2dcbc6b86611d46dc62bb, type: 3}
+  - {fileID: 21300000, guid: 9f75b0b0b5ca2b6bfd9a548793a72eba, type: 3}
+  - {fileID: 21300000, guid: 6352070e67d8dc3b21a92878d532ca00, type: 3}
+  - {fileID: 21300000, guid: 7ff2ed3deb4fac65fb156df72c0947a8, type: 3}
+  - {fileID: 21300000, guid: e1c61913d8eae82c1aae162d775ebe72, type: 3}
+  - {fileID: 21300000, guid: 7c164f142ea99345ee7cfe9103f971f9, type: 3}
+  - {fileID: 21300000, guid: bb14ed3799c52f3b9e91885cd6cb8d7b, type: 3}
+  skillBlade:
+  - {fileID: 21300000, guid: cb4fa54d2500261f243b3d794ddb1ba2, type: 3}
+  - {fileID: 21300000, guid: f35e4cf07f564289f6d198ef414d5a73, type: 3}
+  - {fileID: 21300000, guid: 9c98d00f5bd950142fc1485dd2fdad83, type: 3}
+  - {fileID: 21300000, guid: dfd8a1a2b52ac1693405134abb7b1f56, type: 3}
+  - {fileID: 21300000, guid: ac14343e1798f299f12afe8de4725a2e, type: 3}
+  - {fileID: 21300000, guid: 299af015890cb94df6d14cfc8c887b04, type: 3}
+  - {fileID: 21300000, guid: 32abe579aea76319b8cda218b57021d3, type: 3}
+  - {fileID: 21300000, guid: 2ce4a04757afd5b378be8e75a09b7625, type: 3}
+  skillTrail:
+  - {fileID: 21300000, guid: 020294af0d1a6b6f155982e9a0c19952, type: 3}
+  - {fileID: 21300000, guid: 5f0b3e1434dd9bd3b566a4adcf08d06d, type: 3}
+  - {fileID: 21300000, guid: fb4f7ec87d9e0f7eea32dd49730b586e, type: 3}
+  - {fileID: 21300000, guid: 7c5084b93f627a0db4b99095f0a00fdc, type: 3}
+  - {fileID: 21300000, guid: e1807a5603c3573e3b1d399e0932280b, type: 3}
+  - {fileID: 21300000, guid: 0d2ffc18520fc4e29312873c12e4eea0, type: 3}
+  - {fileID: 21300000, guid: 1262a6235dececba508bd3f9bc87a063, type: 3}
+  - {fileID: 21300000, guid: c54b699ebbaa4784b6a6158de7be1c7b, type: 3}
+  skillMainSeconds: 0.38
+  skillAfterSeconds: 0.24
+  skillImpactPixels: 30
+  skillProjectilePixels: 26
+  skillProjectileMinThickness: 5
+  skillProjectileMaxPixels: 40
+  skillMuzzlePixels: 28
+  skillTrailPixels: 20
+  skillTrailStartDistance: 0.3
+  skillTrailInterval: 0.055
+  skillUltimateScale: 1.15

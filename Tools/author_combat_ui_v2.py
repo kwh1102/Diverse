@@ -150,7 +150,11 @@ def library(result):
     data='%YAML 1.1\n%TAG !u! tag:unity3d.com,2011:\n--- !u!114 &11400000\nMonoBehaviour:\n  m_ObjectHideFlags: 0\n  m_CorrespondingSourceObject: {fileID: 0}\n  m_PrefabInstance: {fileID: 0}\n  m_PrefabAsset: {fileID: 0}\n  m_GameObject: {fileID: 0}\n  m_Enabled: 1\n  m_EditorHideFlags: 0\n  m_Script: {fileID: 11500000, guid: '+script+', type: 3}\n  m_Name: CombatVisualLibrary\n  m_EditorClassIdentifier: \n'
     for name,ids in result.items():data+='  '+name+':\n'+''.join('  - {fileID: 21300000, guid: '+v+', type: 3}\n' for v in ids)
     data+='  framesPerSecond: 30\n  contactScale: 0.55\n  accentScale: 0.8\n  slashReferenceRadius: 24\n  trailStartDistance: 1.25\n  barrierReferenceLengths:\n  - 64\n  - 52\n  - 68\n  - 68\n'
-    asset=ROOT/'Assets/_Project/Resources/CombatVisualLibrary.asset';write(asset,data);key=guid(asset)
+    asset=ROOT/'Assets/_Project/Resources/CombatVisualLibrary.asset'
+    if asset.exists():
+        # The skill authoring pass owns these arrays/settings; rebuilding older UI/basic art must retain them.
+        data+=''.join(re.findall(r'^  skill\w+:.*(?:\n  -[^\n]*)*\n',asset.read_text(encoding='utf-8'),re.M))
+    write(asset,data);key=guid(asset)
     db=ROOT/'Assets/_Project/Resources/GameDatabase.asset';s=db.read_text(encoding='utf-8')
     line='  combatVisuals: {fileID: 11400000, guid: '+key+', type: 2}\n'
     if '  combatVisuals:' not in s:s+=line

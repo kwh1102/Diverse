@@ -27,7 +27,8 @@ namespace Diverse
         {
             Ensure(a);
             return "Use this primary material shade ramp: " + string.Join(", ", a.visualPalette.Select(c => "#" + c)) +
-                ". Keep the icon concept's secondary material colours, 3-4 flat tones per material; no global monochrome recolouring. Main body colour #" + a.color + ". Keep the same material, shape language and chunky silhouettes as its icon concept: " + a.iconPrompt + ". ";
+                ". Secondary accent sampled from the icon: #" + ColorUtility.ToHtmlStringRGB(ActiveSkillPalette.Secondary(a)) +
+                ". Keep 3-4 flat tones per material. Main body colour #" + a.color + ". Preserve this icon's shape/motif language in MOVING strokes, not a static copy of the icon: " + a.iconPrompt + ". ";
         }
         public static Color32 Tone(ActiveSkillData a, float value)
         {

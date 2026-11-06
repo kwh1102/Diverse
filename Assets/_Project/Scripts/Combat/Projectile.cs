@@ -29,6 +29,8 @@ namespace Diverse
         public float animationFps;
         public Sprite[] trailFx;        // designed weapons: generated trail effect instead of dot particles
         public bool normalTrailBlend;
+        public float trailInterval = .06f, trailScale = 1, trailStartDistance = -1;
+        public Color? trailTint;
         public bool spin;
         public System.Action<Projectile, Actor> onHit;
         public System.Func<Projectile, Actor, bool> canHit;
@@ -51,6 +53,16 @@ namespace Diverse
         [SerializeField] SpriteRenderer sr;
         float trailT;
         float t;
+
+        public void SetFlightVisual(Sprite[] frames, float scale, float fps, Color tint)
+        {
+            if (frames == null || frames.Length == 0) return;
+            animationFrames = frames; animationFps = fps;
+            sr.sprite = frames[0]; sr.color = tint; sr.sharedMaterial = Art.SpriteMat;
+            sr.enabled = true; sr.sortingOrder = Art.SortY(transform.position.y - .5f) + 10;
+            // Collision uses explicit world-space radius; this transform scale only changes the rendered body.
+            sr.transform.localScale = Vector3.one * scale;
+        }
 
         public static Projectile Spawn(Sprite s, Vector2 pos, Vector2 vel, Team target, Actor owner, DamageInfo dmg, bool additive = false)
         {
@@ -111,11 +123,11 @@ namespace Diverse
             transform.rotation = spin ? Quaternion.Euler(0, 0, t * 900f) : Quaternion.Euler(0, 0, vel.Angle());
             sr.sortingOrder = Art.SortY(p.y - 0.5f) + 10;
 
-            float trailDistance=normalTrailBlend && CombatVisuals.Library!=null?CombatVisuals.Library.trailStartDistance:0;
+            float trailDistance=trailStartDistance>=0?trailStartDistance:normalTrailBlend && CombatVisuals.Library!=null?CombatVisuals.Library.trailStartDistance:0;
             if (trail && Travelled>=trailDistance)
             {
                 trailT -= dt;
-                if (trailT <= 0 && trailFx != null) { trailT = 0.06f; Fx.I?.Play(trailFx, p, vel.Angle(), 18, 1, null, !normalTrailBlend); }
+                if (trailT <= 0 && trailFx != null) { trailT = trailInterval; Fx.I?.Play(trailFx, p, vel.Angle(), 24, trailScale, trailTint, !normalTrailBlend, sr.sortingOrder-1); }
                 else if (trailT <= 0) { trailT = 0.025f; Fx.I?.Burst(p, color, 1, 0.5f, 0.2f, 0, 1); }
             }
 

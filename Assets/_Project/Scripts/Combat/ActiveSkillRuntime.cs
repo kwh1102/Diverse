@@ -225,11 +225,13 @@ namespace Diverse
             bool attached = followCaster || cell == 0 && step.origin == "caster" && step.delivery is "arc" or "guard";
             Vector2 position = at + (ground ? Vector2.zero : Vector2.up * C.actionHeight);
             if (cell == 0 && step.delivery == "arc") position = Combat.MeleeFxOrigin(position, dir);
-            float seconds = duration > 0 ? duration : cell == 1 ? C.impactVisualDuration : C.castVisualDuration;
-            Color? tint=ctx.skill.effectPromptRevision<2?CombatVisuals.Tint(Pal.Hex(ctx.skill.color)):(Color?)null;
-            Fx.I?.Play(frames, position, ground && step.delivery != "wall" || step.delivery == "guard" ? 0 : dir.Angle(), frames.Length / Mathf.Max(.01f, seconds), scale, tint, false,
+            var visuals=CombatVisuals.Library;
+            float seconds = duration > 0 ? duration : cell == 1 ? C.impactVisualDuration : visuals!=null?visuals.skillMainSeconds:C.castVisualDuration;
+            Color? tint=null; // Generated sheets and authored motion already carry this skill's palette.
+            bool upright=ground || step.delivery=="guard" || cell==1 && (step.effect is "heal" or "shield");
+            Fx.I?.Play(frames, position, upright ? 0 : dir.Angle(), frames.Length / Mathf.Max(.01f, seconds), scale, tint, false,
                 Art.SortY(at.y) + (ground ? -1 : 5), attached ? ctx.player.transform : null);
-            if(cell==0)CombatVisuals.Accent(step,position,dir,scale,Pal.Hex(ctx.skill.color),Art.SortY(at.y)+(ground?-1:5),attached?ctx.player.transform:null);
+            if(cell==0)CombatVisuals.Accent(ctx.skill,step,position,dir,size,Pal.Hex(ctx.skill.color),Art.SortY(at.y)+(ground?-1:5),attached?ctx.player.transform:null);
         }
         static string Status(string condition) => condition switch { "marked" => "mark", "burning" => "burn", "chilled" => "chill", "poisoned" => "poison", _ => null };
         static string Mark(ActiveSkillData a) => a.linkedMask == 0 ? "mark" : "active:" + a.linkId;
@@ -238,13 +240,18 @@ namespace Diverse
             string status = step.condition == "marked" ? Mark(ctx.skill) : Status(step.condition);
             return target != null && target.Alive && (ctx.affected.Contains(target) || ctx.affected.Count < C.maxTargets) && (status == null || target.HasStatus(status));
         }
-        static DamageInfo Damage(CastContext ctx, ActiveStep step, Vector2 dir, int divisions) => new DamageInfo {
-            amount = ctx.attack * ctx.power * (step.condition == "always" ? 1 : 1 + C.conditionalBonus) / Mathf.Max(1, divisions),
-            source = ctx.player, direction = dir, knockback = 0, canCrit = true,
-            element = System.Enum.TryParse(step.element, out Element el) ? el : Element.None,
-            tags = "SKILL " + (step.delivery == "projectile" ? "PROJECTILE RANGED" : "MELEE"),
-            partAttack = ctx.parts,
-            impactFx = ActiveSkillArt.Effect(ctx.skill, step, 1, C.effectPixels), normalImpactBlend = true, hitstop = .02f };
+        static DamageInfo Damage(CastContext ctx, ActiveStep step, Vector2 dir, int divisions)
+        {
+            var frames=ActiveSkillArt.Effect(ctx.skill,step,1,C.effectPixels);
+            return new DamageInfo {
+                amount = ctx.attack * ctx.power * (step.condition == "always" ? 1 : 1 + C.conditionalBonus) / Mathf.Max(1, divisions),
+                source = ctx.player, direction = dir, knockback = 0, canCrit = true,
+                element = System.Enum.TryParse(step.element, out Element el) ? el : Element.None,
+                tags = "SKILL " + (step.delivery == "projectile" ? "PROJECTILE RANGED" : "MELEE"),
+                partAttack = ctx.parts, impactFx=frames,normalImpactBlend=true,hitstop=.02f,
+                impactScale=frames?.Length>0?(CombatVisuals.Library!=null?CombatVisuals.Library.skillImpactPixels:C.impactPixels)/Mathf.Max(1f,frames[0].rect.width-6):1,
+                impactSeconds=C.impactVisualDuration,impactUnrotated=step.element!="None" };
+        }
         static void ApplyTargets(CastContext ctx, ActiveStep step, Stage stage, IEnumerable<Actor> targets, Vector2 dir, int divisions, float travelled = 0)
         {
             foreach (var target in targets.Take(C.maxTargets).ToList())
@@ -254,6 +261,7 @@ namespace Diverse
                 {
                     var hit = Damage(ctx, step, dir, divisions); hit.travelled = travelled;
                     if (Combat.Hit(target, hit, Pal.Hex(ctx.skill.color)) <= 0) continue;
+                    CombatVisuals.SkillImpact(ctx.skill,step,target.Pos+Vector2.up*C.actionHeight,dir);
                 }
                 if (!stage.hit) { stage.hit = true; stage.impact = target.Pos; }
                 ctx.affected.Add(target);
@@ -281,7 +289,9 @@ namespace Diverse
         {
             int count = step.pattern is "fan" or "ring" or "converge" ? C.maxProjectiles : 1;
             count = Mathf.Min(count, C.maxProjectiles * C.maxPulses - ctx.shots); if (count <= 0) return;
-            Play(ctx, step, step.pattern is "fan" or "ring" or "converge" ? 0 : 3, origin, dir, C.projectilePixels);
+            int muzzlePixels=CombatVisuals.Library!=null?Mathf.RoundToInt(CombatVisuals.Library.skillMuzzlePixels):C.projectilePixels;
+            Vector2 muzzle=step.origin=="caster"?origin+dir*(ctx.player.radius+C.projectileRadius):origin;
+            if(step.pattern!="converge")Play(ctx,step,3,muzzle,dir,muzzlePixels);
             for (int i = 0; i < count; i++)
             {
                 float angle = dir.Angle() + (step.pattern is "ring" or "converge" ? i * 360f / count : step.pattern == "fan" ? (i - (count - 1) * .5f) * 15 : 0);
@@ -290,8 +300,9 @@ namespace Diverse
                 float muzzleOffset=step.origin=="caster"?ctx.player.radius+C.projectileRadius:0;
                 Vector2 start = step.pattern == "converge" ? castOrigin + shotDir * range : castOrigin+shotDir*muzzleOffset;
                 if (step.pattern == "converge") shotDir = -shotDir;
+                if(step.pattern=="converge")Play(ctx,step,3,start-Vector2.up*C.actionHeight,shotDir,muzzlePixels);
                 var projectile = Projectile.Spawn(ActiveSkillArt.Shot(ctx.skill, step), start, shotDir * C.projectileSpeed, Team.Enemy, ctx.player, Damage(ctx, step, shotDir, divisions * count), false);
-                projectile.animationFrames = ActiveSkillArt.FlyingFrames(ctx.skill, step); projectile.animationFps = C.effectFramesPerSecond;
+                ActiveProjectileArt.Apply(projectile,ctx.skill,step);
                 ctx.shots++; ctx.live++; stage.live++;
                 projectile.life = range / C.projectileSpeed * (step.pattern == "return" ? 2 : 1);
                 projectile.radius = C.projectileRadius; projectile.pierce = step.pattern is "pierce" or "return" ? C.maxTargets : 0;
@@ -299,7 +310,15 @@ namespace Diverse
                 ctx.player.Abilities.PreparePartProjectile(ctx.parts, projectile, ctx.shots == 1);
                 projectile.color = Pal.Hex(ctx.skill.color);
                 // Dissipating impact flecks form the trail; don't leave copies of the flying body behind.
-                projectile.trailFx = CombatVisuals.Library?.trail ?? ActiveSkillArt.Effect(ctx.skill, step, 1, C.projectilePixels); projectile.normalTrailBlend = true;
+                var library=CombatVisuals.Library;
+                projectile.trailFx = ActiveSkillPalette.Frames(ctx.skill,library?.skillTrail?.Length>0?library.skillTrail:library?.trail);
+                projectile.normalTrailBlend = true;
+                if(library!=null && projectile.trailFx?.Length>0)
+                {
+                    projectile.trailScale=library.skillTrailPixels/Mathf.Max(1f,projectile.trailFx[0].rect.width-6);
+                    projectile.trailInterval=library.skillTrailInterval;projectile.trailStartDistance=library.skillTrailStartDistance;
+                    projectile.trailTint=Color.white;
+                }
                 projectile.canHit = (_, target) => ctx.Valid && Eligible(ctx, step, target);
                 projectile.resolveHit = (pr, target) => ApplyTargets(ctx, step, stage, new[] { target }, pr.vel.normalized, divisions * count * (step.pattern == "return" ? 2 : 1), pr.Travelled);
                 projectile.onEnd = pr =>

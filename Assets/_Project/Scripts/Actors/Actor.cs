@@ -22,6 +22,8 @@ namespace Diverse
         public Color32? fxColor;
         public Sprite[] impactFx;       // dedicated active-skill impact, captured at cast time
         public bool normalImpactBlend;
+        public float impactScale, impactSeconds;
+        public bool impactUnrotated;
         public PartAttackState partAttack;
         public float travelled;
 
