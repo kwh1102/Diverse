@@ -19,6 +19,9 @@ namespace Diverse
         public float partShieldDuration = 2, partMaxShield = .75f, partMaxHeal = .15f;
         public float telemetryFullTrust = 25, telemetryMinSeconds = 30;
         public PartDef[] parts = Array.Empty<PartDef>();
+        public PartEvolutionDef[] evolutions = Array.Empty<PartEvolutionDef>();
+        public float evolutionComboWindow = 6, evolutionAimDistance = 2;
+        public float evolutionDamageCap = .35f, evolutionRangeCap = .2f, evolutionControlCap = .3f, evolutionCooldownCap = .2f;
         public WeaponFootprint[] weaponShapes = Array.Empty<WeaponFootprint>();
     }
 }

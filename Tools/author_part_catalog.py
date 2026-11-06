@@ -54,7 +54,7 @@ def sprite_for(id):
 def main():
     asset = ROOT/'Assets/_Project/Data/AbilityRules.asset'
     text = asset.read_text(encoding='utf-8')
-    text = re.sub(r'    parts:\n.*?(?=    weaponShapes:)', '', text, flags=re.S)
+    text = re.sub(r'    parts:\n.*?(?=    evolutions:|    weaponShapes:)', '', text, flags=re.S)
     rows=['    parts:']
     keys=['skillDamage','projectileDamage','meleeDamage','shieldOnCast','healOnHit','rangeBonus','controlBonus']
     for id,name,family,desc,mods,bonuses in PARTS:
@@ -62,7 +62,8 @@ def main():
         rows += ['      mods:' if mods else '      mods: []']
         for stat,value,mul in mods: rows += [f'      - stat: {stat}',f'        value: {value}',f'        mul: {int(mul)}']
         rows += [f'      {key}: {bonuses.get(key,0)}' for key in keys]
-    text=text.replace('    weaponShapes:', '\n'.join(rows)+'\n    weaponShapes:')
+    target = '    evolutions:' if '    evolutions:' in text else '    weaponShapes:'
+    text=text.replace(target, '\n'.join(rows)+'\n'+target, 1)
     if '    partTierPower:' not in text:
         text=text.replace('    partRankBonus: 0.12','    partRankBonus: 0.12\n    partTierPower: [1, 1.8, 3, 4.5, 6.4]\n    maxRangeBonus: 0.5\n    maxControlBonus: 0.5')
     text=text.replace('      maxSteps: 3','      maxSteps: 4')
@@ -104,13 +105,12 @@ def main():
       '재료별 기여 = 해당 T1 능력 × 해당 재료 개수 ÷ 전체 재료 수 × 현재 등급의 위력 예산. 같은 스탯은 합산하며 서로 다른 능력도 모두 보존한다.', '',
       '집중 렌즈 + 수호 버클 = T2: 액티브 피해 7.2%, 시전 보호막/공격력 16.2%. 렌즈 2개 = T2: 액티브 피해 14.4%.', '',
       '(렌즈+렌즈)+(버클+시계)와 (렌즈+버클)+(렌즈+시계)는 모두 같은 T3이다. 정렬된 재료 ID·개수만으로 이름·그림·능력을 결정한다.', '',
-      '아이콘은 가장 많이 들어간 재료의 본체와 최대 3개 보조 재료 배지, T2~T5 장식을 조합한다. 표시하지 못한 재료도 능력과 설명에는 모두 남는다.', '',
+      'T2~T5는 계열 조합·등급별 전용 진화 그림과 조건부 액티브 보조 특성을 사용한다. 자세한 정의는 [파츠 진화](PartEvolution.md)와 [로컬 위키](Wiki/index.html)를 본다. 이미지 생성은 보류되어 있다.', '',
       '같은 재료 구성의 파츠를 중복 장착하면 하나만 적용한다. 다른 구성은 함께 적용하되 액티브 피해·사거리·제어·보호막·회복은 데이터의 전체 상한을 따른다.', '',
       '## 편집 위치', '', '기본 파츠·위력 예산·전체 상한: `Assets/_Project/Data/AbilityRules.asset`. 최고 등급·비용: `Assets/_Project/Resources/GameDatabase.asset / Inventory`.', '',
       'CSV 원본: [PartsCatalog.csv](PartsCatalog.csv). 원본 데이터 제작 도구: `Tools/author_part_catalog.py`. 기존 세이브의 고정 파츠는 등급에 맞는 동일 T1 재료 개수로 이관한다.']
     (ROOT/'Docs/Parts.md').write_text('\n'.join(rows)+'\n',encoding='utf-8')
-    with (ROOT/'ArtSource/Parts/image_manifest.csv').open('w',encoding='utf-8-sig',newline='') as f:
-        w=csv.writer(f);w.writerow(['ID','이름','계열','최종 PNG','현재 임시 원본'])
-        for id,name,family,*_ in PARTS:w.writerow([id,name,family,f'Assets/_Project/Resources/Sprites/Parts/{id}.png',sprite_for(id)])
+    from author_part_evolutions import main as author_evolutions
+    author_evolutions()
 
 if __name__=='__main__': main()

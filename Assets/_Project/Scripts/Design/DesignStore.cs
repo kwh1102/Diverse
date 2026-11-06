@@ -95,6 +95,20 @@ namespace Diverse
 
         static readonly Dictionary<string, Texture2D> images = new Dictionary<string, Texture2D>();
         static string ImageDir => Path.Combine(SaveSystem.DesignDir, "img");
+        public static bool ImagePersisted(string id) => !string.IsNullOrEmpty(id) && File.Exists(Path.Combine(ImageDir, id + ".png"));
+
+        // The caller retains texture ownership. Keep paid source pixels even when frame validation fails.
+        public static string SaveSourceImage(Texture2D source)
+        {
+            string id = Guid.NewGuid().ToString("N").Substring(0, 12);
+            try
+            {
+                Directory.CreateDirectory(ImageDir);
+                File.WriteAllBytes(Path.Combine(ImageDir, id + ".png"), source.EncodeToPNG());
+                return id;
+            }
+            catch (Exception e) { Debug.LogWarning("Design source save failed: " + e.Message); return null; }
+        }
 
         public static string SaveImage(PixelCanvas cv)
         {

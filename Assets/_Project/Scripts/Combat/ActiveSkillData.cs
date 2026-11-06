@@ -40,6 +40,10 @@ namespace Diverse
         public string name, intent, source = "local", drawback = "recovery", input = "tap";
         public string role, designReason, artStatus;
         public int iconRevision;
+        public int effectRevision, effectFrames;
+        public string effectSourceImage, effectSourceSignature;
+        public int[] effectSourceRows;
+        public int effectProcessedRevision;
         public WeaponType weaponType;
         public int slot;
         public List<ActiveStep> steps = new List<ActiveStep>();
@@ -74,7 +78,11 @@ namespace Diverse
         public float markBonus = .25f, passiveBonusCap = .65f, projectileRadius = .2f;
         public float guardInvulnerability = .25f;
         public string imageModel = "gpt-image-2.5-flare";
-        public string iconQuality = "low";
+        public string iconQuality = "low", effectQuality = "medium";
+        public int effectMinPixels = 8;
+        public float effectFramesPerSecond = 20;
+        public float effectSolidLimit = .8f;
+        public float effectEdgeLimit = .08f, effectMatteTolerance = 48;
         public int visualFrames = 6, maxVisualPixels = 128, visualCacheLimit = 192, iconPaletteColors = 12;
         public float minChoiceDistance = .38f, iconBorderLimit = .08f, iconSolidLimit = .92f;
         public float inputDistanceWeight = .15f, roleDistanceWeight = .25f;

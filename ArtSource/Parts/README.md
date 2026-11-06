@@ -1,11 +1,15 @@
-# 파츠 아트 제작 인계
+# 파츠 아트 인계
 
-현재 카탈로그는 T1 32종이다. 이미지 생성은 사용자 요청으로 보류했으며 신규 원본이 없는 파츠는 기존 PNG를 임시 공유한다. 기존 catalog.png는 이전 16종 시안이므로 최신 도감은 Docs/Parts.md를 본다.
+이미지 생성은 사용자 요청으로 보류했다. T1은 기존 임시 PNG를 사용하며 T2 이상은 전용 그림이 없으면 준비 중 아이콘을 표시한다. 이전 T1 콜라주와 등급 테두리 합성은 사용하지 않는다.
 
-- 다른 세션에 붙여 넣기: [IMAGEGEN_PROMPT.md](IMAGEGEN_PROMPT.md)
-- 32개 파일명·이름·최종 경로·임시 원본: [image_manifest.csv](image_manifest.csv)
-- 데이터와 합성 규칙: Docs/Parts.md, Docs/PartsCatalog.csv
+- 다른 세션용 짧은 프롬프트: [IMAGEGEN_PROMPT.md](IMAGEGEN_PROMPT.md)
+- 전체 176개 파일명·설명·경로: [image_manifest.csv](image_manifest.csv)
+- 진화 초기 정의: [evolutions.json](evolutions.json)
+- 실행 데이터: `Assets/_Project/Data/AbilityRules.asset`
+- 규칙 설명: [파츠 진화](../../Docs/PartEvolution.md), [로컬 위키](../../Docs/Wiki/index.html)
 
-T1 원본은 투명 32×32 PNG로 제작한다. T2~T5는 주재료와 배지를 합성하므로 결과별 이미지를 생성하지 않는다. 선택적으로 48×48 투명 장식 trim_t2.png~trim_t5.png를 추가한다.
+T1 32종은 32×32, 진화 36계열 쌍 × 4등급은 48×48 투명 PNG로 제작한다. 진화 외형은 계열 조합·등급별로 공유하며 실제 T1 재료 구성과 능력은 유지한다. 재료 그림을 붙인 배지·장식으로 대신하지 않는다.
 
-원본을 교체할 때 기존 .meta GUID를 유지한다. Sprite Single, 16 PPU, Point 필터, readable, 무압축, 알파 투명도를 사용한다. 이미지 제작 후 Tools/author_part_catalog.py를 실행하면 존재하는 신규 PNG를 연결하고 도감을 갱신한다. 이 도구는 데이터 에셋도 다시 작성하므로 Inspector에서 조정한 값이 있다면 차이를 확인한다. Tools/author_fixed_parts.py는 같은 도구로 연결하는 호환 진입점이다.
+기존 `.meta` GUID를 보존한다. Sprite Single, 16 PPU, Point, readable, 무압축, 알파 투명도로 가져온다. T1은 `parts[].sprite`를 해당 ID 경로로 연결하고 진화는 지정된 경로에 저장한다. 파일 추가만으로 Sprite 설정이 보장되지는 않으므로 제작 세션에서 TextureImporter도 설정한다.
+
+`Tools/export_wiki.py`는 읽기 전용 도감 추출기다. `author_part_catalog.py`, `author_part_evolutions.py`는 **초기 데이터 재저작 도구**여서 Inspector에서 수정한 값을 덮어쓴다. 이미지 연결이나 일반 위키 갱신을 위해 실행하지 않는다.

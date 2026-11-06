@@ -93,8 +93,10 @@ namespace Diverse
             var dominant = Dominant(a).ToList(); var d = Find(dominant[0].id);
             a.catalogId = a.tier == 1 ? d.id : "mix:" + CompositionKey(a);
             a.name = a.tier == 1 ? d.name : string.Join("·", dominant.Take(2).Select(i => Find(i.id).name)) + " 결합체";
-            a.partName = a.name; a.partImage = d.sprite; a.source = "catalog";
-            a.desc = a.tier == 1 ? d.description : "재료의 모든 능력을 비율에 따라 계승한 고정 규칙 합성 파츠.";
+            var evolution = PartEvolution.Find(a);
+            if (evolution != null) a.name = evolution.name;
+            a.partName = a.name; a.partImage = evolution?.sprite ?? d.sprite; a.source = "catalog";
+            a.desc = a.tier == 1 ? d.description : "재료 능력 계승 + 수동 액티브 진화 특성.";
             a.tags = new List<string> { "PART", "T" + a.tier }; a.tags.AddRange(dominant.Select(i => Find(i.id).family).Distinct());
         }
         public static AbilityDef Fuse(AbilityDef a, AbilityDef b)
@@ -134,6 +136,7 @@ namespace Diverse
             if (d.healOnHit != 0) lines.Add($"액티브 적중 시 공격력의 {d.healOnHit * k * 100:0.#}% 회복 (시전당 1회)");
             if (d.rangeBonus != 0) lines.Add($"액티브 사거리 +{d.rangeBonus * 100:0.#}%");
             if (d.controlBonus != 0) lines.Add($"액티브 제어 지속시간 +{d.controlBonus * 100:0.#}%");
+            if (a.tier > 1) lines.Insert(0, PartEvolution.Explain(a) + "\n");
             lines.Add("\n<b>구성 재료</b>\n" + string.Join("\n", a.ingredients.Select(i => Find(i.id).name + " ×" + i.count)));
             lines.Add($"\n<b>합성 규칙</b>\nT{a.tier} · T1 재료 {Units(a.tier)}개" + (a.tier >= InventoryState.Rules.maxPartTier ? " · 최종 등급" : $"\n같은 등급 두 개 → T{a.tier + 1}\n같은 종류와 다른 종류 모두 가능"));
             return string.Join("\n", lines);

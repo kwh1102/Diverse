@@ -24,6 +24,8 @@ namespace Diverse
         public string sfx = "hit";
         public float shake = 0.08f, kick = 1.5f;
         public bool trail = true;
+        public Sprite[] animationFrames;
+        public float animationFps;
         public Sprite[] trailFx;        // designed weapons: generated trail effect instead of dot particles
         public bool normalTrailBlend;
         public bool spin;
@@ -68,6 +70,7 @@ namespace Diverse
             float dt = Time.deltaTime;
             if (dt <= 0) return;
             t += dt;
+            if (animationFrames?.Length > 0) sr.sprite = animationFrames[Mathf.FloorToInt(t * animationFps) % animationFrames.Length];
             if (t >= life) { Expired = true; End(); return; }
 
             onUpdate?.Invoke(this, t);

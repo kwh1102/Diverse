@@ -31,7 +31,7 @@ namespace Diverse
                 else
                 {
                     PipelineLog.Clear(); PipelineLog.AddRange(SkillOffer.process);
-                    OfferShownAt = Time.unscaledTime; OfferSummary = $"{ActiveSkillGenerator.SlotName(SkillOffer.slot)} 액티브 선택";
+                    OfferShownAt = Time.unscaledTime; OfferSummary = SkillOffer.productionStatus ?? $"{ActiveSkillGenerator.SlotName(SkillOffer.slot)} 액티브 선택";
                     if (!SkillOffer.iconsPrepared) BeginSkillCandidates(null, true);
                     else Ui.OnOverlayOpened(GameState.Evolving, null);
                 }
@@ -56,9 +56,11 @@ namespace Diverse
         }
         public void RerollEvolution()
         {
-            if (Player == null || !HasOffer || ChatBusy || Player.Gold < RerollCost || OfferLocked) return;
+            if (Player == null || !HasOffer || ChatBusy || OfferLocked) return;
+            if (!(IsSkillOffer && SkillOffer.selectedIndex >= 0) && Player.Gold < RerollCost) return;
             if (IsSkillOffer)
             {
+                if (SkillOffer.selectedIndex >= 0) { RetrySkillProduction(); return; }
                 if (SkillOffer.pinned.All(p => p)) { OfferStatus = "고정하지 않은 후보가 필요합니다."; return; }
                 Player.Gold -= RerollCost; BeginSkillCandidates(null); SaveRun(); return;
             }

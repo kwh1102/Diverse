@@ -143,6 +143,7 @@ namespace Diverse
 
         public void CloseOverlay()
         {
+            if (State == GameState.Evolving && (ChatBusy || Generating)) return;
             if ((State == GameState.Inventory || State == GameState.PartFusion || State == GameState.WeaponDesign) && InventoryBusy) return;
             if(State==GameState.PartFusion) { CancelFusion();OpenOverlay(GameState.Inventory);return; }
             if(State==GameState.WeaponDesign) CancelWeaponReward();

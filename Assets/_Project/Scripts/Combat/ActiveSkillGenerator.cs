@@ -59,26 +59,33 @@ Required role semantics (the engine infers these in this priority): mobility has
             var types = Enumerable.Range(0, 3).Select(i => explicitType ? requested : owned[i % owned.Count]).ToArray();
             var result = new ActiveSkillData[3];
             for (int i = 0; i < 3; i++) if (pinned[i] && old != null && i < old.Count) { result[i] = old[i]; types[i] = old[i].weaponType; }
+            var constraint = ActiveSkillRequest.Read(request);
+            yield return constraint.Interpret(request, trace);
+            if (constraint.unsupported != null) { trace?.Invoke(constraint.unsupported); done(null); yield break; }
             var roles = PlanRoles(result);
+            if (constraint.Constrained) for (int i = 0; i < 3; i++) if (result[i] == null) roles[i] = constraint.Role;
+            trace?.Invoke(constraint.Constrained ? "필수 실행 조건: " + constraint.Summary + " · 고정하지 않은 모든 후보에서 검사" : "명시 동작 조건 없음 · 자유 요청을 설계에 전달 (반영 내용은 후보 실행 단계에서 확인)");
             trace?.Invoke("요청: " + (string.IsNullOrWhiteSpace(request) ? "새로운 전술 후보" : request));
             for (int i = 0; i < 3; i++)
             {
                 trace?.Invoke($"후보 {i + 1}: {TypeName(types[i])} · {RoleName(roles[i])}{(result[i] != null ? " · 고정 유지" : "")}");
                 if (result[i] != null) trace?.Invoke($"[{result[i].name}] 유지 · {result[i].designReason}\n실행: {VisualSummary(result[i])}");
             }
+            if (!AiClient.Enabled) trace?.Invoke("AI 연결 없음 · 실행 조건을 검사한 로컬 설계 후보 준비");
             string rejection = "";
             if (AiClient.Enabled)
             {
                 for (int attempt = 0; attempt < Rules.generationAttempts && result.Any(a => a == null); attempt++)
                 {
                     string context = $"Create exactly THREE independent alternatives for slot {slot}. This is a selection screen, NOT a QWER set. linkedMask MUST be 0.\n" +
-                        "Index weapon types and REQUIRED roles: " + string.Join(",", Enumerable.Range(0,3).Select(i => $"{i}={types[i]}/{roles[i]}")) +
+                        "Index weapon types and role assignments: " + string.Join(",", Enumerable.Range(0,3).Select(i => constraint.Constrained ? $"{i}={types[i]} (role unrestricted; infer from mandatory operations)" : $"{i}={types[i]}/{roles[i]}")) +
                         $"\nPLAYER: {owner.Telemetry.Summary()}\nREQUEST: {request}\n" +
                         "Pinned signatures to avoid: " + string.Join(";", result.Where(a => a != null).Select(a => a.Signature())) +
                         "\nEXISTING: " + string.Join(";", owner.Inventory.items.Where(i => i.active != null).Select(i => i.active.Signature())) +
                         "\nRECENT: " + string.Join(";", recent) + "\nREJECTION: " + rejection +
-                        "\nUse different input styles, stage dependencies, trajectories and tactical roles across the three alternatives. Never change weapon type outside this list.";
-                    trace?.Invoke($"AI 설계 요청 {attempt + 1}/{Rules.generationAttempts} · 역할을 유지하며 실행 그래프 작성");
+                        "\nMANDATORY executable constraints for EVERY unpinned alternative: " + constraint.MachineSummary +
+                        "\nRequested constraints take priority over role variety. A dash request MUST contain dash, never substitute blink/retreat. Vary input styles, stage dependencies and followups within these constraints. Never change weapon type outside this list.";
+                    trace?.Invoke($"AI 설계 요청 {attempt + 1}/{Rules.generationAttempts} · 필수 요청 조건과 실행 그래프 작성");
                     string json = null; yield return AiClient.Complete(Prompt, context, .9f, 4800, s => json = s);
                     if (json != null && Game.I?.World != null)
                     {
@@ -95,7 +102,8 @@ Required role semantics (the engine infers these in this priority): mobility has
                             if (a == null || a.linkedMask != 0 || !ValidateSet(new List<ActiveSkillData> { a }, types[i], new[] { slot }, out rejection))
                             { trace?.Invoke($"후보 {i + 1} 제외 · 실행 규칙/독립성 검사 실패 ({rejection})"); continue; }
                             a.role = InferRole(a);
-                            if (a.role != roles[i]) { rejection = "role mismatch: " + roles[i]; trace?.Invoke($"후보 {i + 1} 제외 · 요청한 {RoleName(roles[i])} 동작 부족"); continue; }
+                            if (!constraint.Matches(a)) { rejection = "missing requested executable operations: " + constraint.Summary; trace?.Invoke($"후보 {i + 1} 제외 · 필수 동작 부족 ({constraint.Summary})"); continue; }
+                            if (!constraint.Constrained && a.role != roles[i]) { rejection = "role mismatch: " + roles[i]; trace?.Invoke($"후보 {i + 1} 제외 · 요청한 {RoleName(roles[i])} 동작 부족"); continue; }
                             if (result.Any(x => x != null && Distance(x, a) < Rules.minChoiceDistance) || recent.Contains(a.Signature()) || owner.Inventory.items.Any(x => x.active?.Signature() == a.Signature()))
                             { rejection = "too similar in geometry, input or operation graph"; trace?.Invoke($"후보 {i + 1} 제외 · 기존 동작과 지나치게 유사"); continue; }
                             a.source = "ai"; a.id = Guid.NewGuid().ToString("N"); result[i] = a;
@@ -103,7 +111,7 @@ Required role semantics (the engine infers these in this priority): mobility has
                             trace?.Invoke($"후보 {i + 1} [{a.name}] 채택 · {a.designReason}\n실행: {VisualSummary(a)}");
                         }
                     }
-                    else trace?.Invoke("응답 검사 실패 · 후보 3개의 JSON 형식이 아님");
+                    else trace?.Invoke(json == null ? "AI 요청 실패 · " + AiClient.LastStatus : "응답 검사 실패 · 후보 3개의 JSON 형식이 아님");
                     if (AiClient.LastFatal) break;
                 }
             }
@@ -111,13 +119,23 @@ Required role semantics (the engine infers these in this priority): mobility has
             {
                 if (result[i] == null)
                 {
-                    ActiveSkillData a; int attempts = 0;
-                    do { a = Local(types[i], slot, roles[i]); } while (result.Any(x => x != null && Distance(x, a) < Rules.minChoiceDistance) && ++attempts < 32);
+                    ActiveSkillData a = null;
+                    for (int attempt = 0; attempt < 32; attempt++)
+                    {
+                        var proposed = constraint.Constrained ? constraint.Local(types[i], slot, i + attempt) : Local(types[i], slot, roles[i]);
+                        if (!constraint.Matches(proposed) || !ValidateSet(new List<ActiveSkillData> { proposed }, types[i], new[] { slot }, out _) ||
+                            result.Any(x => x != null && Distance(x, proposed) < Rules.minChoiceDistance) ||
+                            recent.Contains(proposed.Signature()) || owner.Inventory.items.Any(x => x.active?.Signature() == proposed.Signature())) continue;
+                        a = proposed; break;
+                    }
+                    if (a == null)
+                    { trace?.Invoke("요청을 만족하면서 기존 동작과 구분되는 유효한 후보를 완성하지 못함 · 이전 후보 유지. 조건을 줄이거나 다른 조작을 요청해 주세요."); done(null); yield break; }
                     result[i] = a;
                     trace?.Invoke($"후보 {i + 1} 로컬 대체 · {RoleName(a.role)} · {a.designReason}\n실행: {VisualSummary(a)}");
                 }
-                recent.Enqueue(result[i].Signature()); while (recent.Count > Rules.recentSignatures) recent.Dequeue();
             }
+            foreach (var a in result) { recent.Enqueue(a.Signature()); while (recent.Count > Rules.recentSignatures) recent.Dequeue(); }
+            trace?.Invoke("완료: " + string.Join(" / ", result.Select((a, i) => $"{i + 1} {a.name}: {a.input} · {string.Join("→", a.steps.Select(s => s.delivery))} ({a.source})")));
             done(result.ToList());
         }
 

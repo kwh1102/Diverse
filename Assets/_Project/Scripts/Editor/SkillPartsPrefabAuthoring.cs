@@ -30,11 +30,20 @@ namespace Diverse.EditorTools
             var cards = asset.GetComponentsInChildren<EvolveCard>(true);
             if (view == null || cards.Length != 3 || asset.GetComponentInChildren<EvolveView>(true) == null) return;
             var installed = new SerializedObject(asset.GetComponentInChildren<EvolveView>(true));
-            if (installed.FindProperty("uiRevision").intValue >= 2 && view != null && new SerializedObject(view).FindProperty("footprintView").objectReferenceValue != null &&
+            if (installed.FindProperty("uiRevision").intValue >= 4 && view != null && new SerializedObject(view).FindProperty("footprintView").objectReferenceValue != null &&
                 cards.Length == 3 && cards.All(c => new SerializedObject(c).FindProperty("pin").objectReferenceValue != null)) return;
             var root = PrefabUtility.LoadPrefabContents(Path);
             try
             {
+                if (installed.FindProperty("uiRevision").intValue >= 3)
+                {
+                    var chatView = root.GetComponentInChildren<EvolveView>(true);
+                    UIBuilder.RepairEvolutionChat(chatView);
+                    var chatData = new SerializedObject(chatView);
+                    chatData.FindProperty("uiRevision").intValue = 4; chatData.ApplyModifiedPropertiesWithoutUndo();
+                    PrefabUtility.SaveAsPrefabAsset(root, Path);
+                    return;
+                }
                 view = root.GetComponentInChildren<InventoryView>(true);
                 var serialized = new SerializedObject(view);
                 var grid = serialized.FindProperty("grid").objectReferenceValue as GridLayoutGroup;
@@ -98,7 +107,9 @@ namespace Diverse.EditorTools
                 if (input?.placeholder is Text placeholder) placeholder.text = "예) 검 Q · 충전 후 돌진하고 재입력하면 돌아오기";
                 var log = evolveData.FindProperty("chatLog").objectReferenceValue as Text;
                 if (log != null) log.text = "고정하지 않은 후보에 원하는 조작과 전술을 요청하세요.";
-                evolveData.Update(); evolveData.FindProperty("uiRevision").intValue = 2; evolveData.ApplyModifiedPropertiesWithoutUndo();
+                UIBuilder.RepairInventoryDetails(view);
+                UIBuilder.RepairEvolutionChat(evolve);
+                evolveData.Update(); evolveData.FindProperty("uiRevision").intValue = 4; evolveData.ApplyModifiedPropertiesWithoutUndo();
                 PrefabUtility.SaveAsPrefabAsset(root, Path);
                 Debug.Log("T1 합성·액티브 후보 선택 UI를 기존 프리팹에 추가했습니다. 게임/테스트는 실행하지 않았습니다.");
             }

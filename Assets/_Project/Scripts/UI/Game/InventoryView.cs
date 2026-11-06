@@ -14,6 +14,9 @@ namespace Diverse
         [SerializeField] Button pendingTemplate;
         [SerializeField] Text title,details,status,pendingLabel,equipmentSummary;
         [SerializeField] Image preview;
+        [SerializeField] Text itemHeading, itemMeta;
+        [SerializeField] ScrollRect detailsScroll;
+        string detailsItem;
         [SerializeField] Text previewGlyph;
         [SerializeField] Button equip,use,discard,receive,openFusion,redraw,close;
         [SerializeField] RectTransform activeFrame,dragGhost;
@@ -148,7 +151,13 @@ namespace Diverse
             var item=Bag.Find(selected); var active=Bag.Active;
             UIKit.Set(title,$"{TravelTypes.Name(g.Player.MovementType)} · {Bag.width}×{Bag.height}");
             UIKit.Set(equipmentSummary,active==null?"사용 중인 무기가 없어.":$"<b>{active.name}</b>\n{ActiveSkillGenerator.TypeName(ActiveSkillGenerator.TypeOf(active))} · 사용 중인 무기\n\n무기 {Bag.items.Count(i=>i.kind==ItemKind.Weapon)}/{InventoryState.Rules.maxWeapons}\n보유 골드 {g.Player.Gold}G\n\n표시된 QWER 칸: 액티브\n◇ 칸: 고정 파츠\n같은 유형·같은 슬롯 교환\n종속 스킬은 함께 이동\n\n{string.Join("\n",Bag.Attached(active).Where(i=>i.kind==ItemKind.Part).Select(i=>"◆ "+i.name))}");
-            ItemIcons.Bind(preview,previewGlyph,item); UIKit.Set(details,Description(item));
+            ItemIcons.Bind(preview,previewGlyph,item);
+            UIKit.Set(itemHeading,item?.name ?? "아이템 선택");
+            UIKit.Set(itemMeta,item == null ? "" : item.kind == ItemKind.Part ? $"파츠 · T{item.complexity}" : item.kind == ItemKind.Skill && item.active != null ? ActiveSkillGenerator.TypeName(item.active.weaponType) + " · " + ActiveSkillGenerator.SlotName(item.skillSlot) : item.kind == ItemKind.Weapon ? ActiveSkillGenerator.TypeName(ActiveSkillGenerator.TypeOf(item)) : "소모품");
+            string description = Description(item);
+            if (itemHeading != null && item != null) description = description.Replace($"<b>{item.name}</b>\n\n", "");
+            UIKit.Set(details,description);
+            if (detailsItem != selected) { detailsItem = selected; if (detailsScroll != null) { Canvas.ForceUpdateCanvases(); detailsScroll.StopMovement(); detailsScroll.verticalNormalizedPosition = 1; } }
             UIKit.Set(status,(dragged!=null?hoverMessage:null)??message??(g.PartVisualBusy?"액티브 전용 그림을 준비하는 중…":g.Player.ActiveGenerationStatus??"드래그로 이동 · 빈 칸 클릭은 선택 해제\n유형별 색상 · 두꺼운 외곽선: 사용 중인 무기"));
             bool mutable=!Busy;
             UIKit.Show(equip,item?.kind==ItemKind.Weapon && item.Placed); equip.interactable=mutable && item?.id!=Bag.activeWeapon;

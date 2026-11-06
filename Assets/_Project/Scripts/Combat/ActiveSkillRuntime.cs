@@ -22,7 +22,7 @@ namespace Diverse
             public Player player;
             public ActiveSkillData skill;
             public string weaponId;
-            public float attack, power, deadline, control, range;
+            public float attack, power, deadline, control, range, evolutionHeal;
             public bool healed, closed, awaitingRecast, recast;
             public int live, shots;
             public readonly HashSet<Actor> affected = new HashSet<Actor>();
@@ -70,7 +70,12 @@ namespace Diverse
                     ctx.power *= 1 + C.chargeBonus * Mathf.Clamp01((Time.time - start) / Mathf.Max(.01f, C.chargeDuration));
                     aim = p.AimPoint; dir = (aim - p.Pos).SafeNormal(dir);
                 }
-                p.Abilities.OnActiveCast();
+                var evolution = p.Abilities.OnActiveCast(a, aim);
+                ctx.power *= 1 + evolution.damage;
+                ctx.range = Mathf.Min(1 + DB.Asset.abilityRules.def.maxRangeBonus, ctx.range + evolution.range);
+                ctx.control = Mathf.Min(1 + DB.Asset.abilityRules.def.maxControlBonus, ctx.control + evolution.control);
+                ctx.evolutionHeal = evolution.heal;
+                p.Skills[a.slot].cd *= 1 - evolution.cooldown;
                 int cycles = a.input == "channel" ? C.maxPulses : 1;
                 for (int cycle = 0; cycle < cycles && ctx.Valid; cycle++)
                 {
@@ -208,7 +213,7 @@ namespace Diverse
         {
             var frames = ActiveSkillArt.Effect(ctx.skill, step, cell, size);
             float scale = Mathf.Max(8, size) / Mathf.Max(1f, frames[0].rect.width - 6);
-            Fx.I?.Play(frames, at, dir.Angle(), duration > 0 ? frames.Length / duration : 20, scale, null, false);
+            Fx.I?.Play(frames, at, dir.Angle(), duration > 0 ? frames.Length / duration : C.effectFramesPerSecond, scale, null, false);
         }
         static string Status(string condition) => condition switch { "marked" => "mark", "burning" => "burn", "chilled" => "chill", "poisoned" => "poison", _ => null };
         static string Mark(ActiveSkillData a) => a.linkedMask == 0 ? "mark" : "active:" + a.linkId;
@@ -231,7 +236,7 @@ namespace Diverse
                 if (step.effect == "damage" && Combat.Hit(target, Damage(ctx, step, dir, divisions), Pal.Hex(ctx.skill.color)) <= 0) continue;
                 if (!stage.hit) { stage.hit = true; stage.impact = target.Pos; }
                 ctx.affected.Add(target);
-                if (!ctx.healed && step.effect == "damage") { ctx.healed = true; ctx.player.Abilities.OnActiveHit(); }
+                if (!ctx.healed && step.effect == "damage") { ctx.healed = true; ctx.player.Abilities.OnActiveHit(ctx.evolutionHeal); }
                 if (step.effect == "mark") target.AddStatus(Mark(ctx.skill), C.statusDuration * ctx.control, 0, 0, ctx.player, Pal.Hex(ctx.skill.color));
                 if (step.effect == "stun" && target is Enemy enemy) enemy.Stun(C.stunDuration * ctx.control);
                 if (step.effect == "pull") target.Knockback(stage.position - target.Pos, C.knockback);
@@ -262,6 +267,7 @@ namespace Diverse
                 Vector2 start = step.pattern == "converge" ? origin + shotDir * range : origin;
                 if (step.pattern == "converge") shotDir = -shotDir;
                 var projectile = Projectile.Spawn(ActiveSkillArt.Shot(ctx.skill, step), start, shotDir * C.projectileSpeed, Team.Enemy, ctx.player, Damage(ctx, step, shotDir, divisions * count), false);
+                projectile.animationFrames = ActiveSkillArt.FlyingFrames(ctx.skill, step); projectile.animationFps = C.effectFramesPerSecond;
                 ctx.shots++; ctx.live++; stage.live++;
                 projectile.life = range / C.projectileSpeed * (step.pattern == "return" ? 2 : 1);
                 projectile.radius = C.projectileRadius; projectile.pierce = step.pattern is "pierce" or "return" ? C.maxTargets : 0;

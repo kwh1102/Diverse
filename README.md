@@ -133,3 +133,7 @@ Q/W/E/R은 각각 5/10/15/20레벨에 무기 유형이 표시된 3개 후보 중
 
 - 폰트: [갈무리(Galmuri)](https://github.com/quiple/galmuri) (SIL Open Font License 1.1) — `Resources/Fonts/LICENSE.txt`
 - 기본 그래픽은 코드로 그리는 픽셀 아트와 ImageGen 원본 시트를 함께 사용한다. 현재 월드 원본·프롬프트는 `ArtSource/WorldOverhaul/`, 아트·배치·검증 안내는 [Docs/WorldArt.md](Docs/WorldArt.md), 8개 지역 군집·크기·도로 설정은 [Docs/WorldComposition.md](Docs/WorldComposition.md), 환경 움직임·효과·최적화는 [Docs/EnvironmentAnimation.md](Docs/EnvironmentAnimation.md). 사운드는 코드로 생성한다.
+
+## 개발 위키
+
+전체 목록과 원본 편집 경로는 [로컬 위키](Docs/Wiki/index.html)를 브라우저에서 연다. 데이터 변경 후 `python Tools/export_wiki.py`로 갱신한다. 파츠 진화 규칙은 [PartEvolution.md](Docs/PartEvolution.md), 다른 세션용 아트 프롬프트는 [IMAGEGEN_PROMPT.md](ArtSource/Parts/IMAGEGEN_PROMPT.md)를 본다.

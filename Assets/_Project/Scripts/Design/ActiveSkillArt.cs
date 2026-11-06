@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Diverse
 {
-    /// <summary>One low-quality sheet for changed candidate icons. Combat visuals are local stage animations.</summary>
+    /// <summary>Candidate icons are batched; only a selected skill receives a dedicated combat sheet.</summary>
     public static class ActiveSkillArt
     {
         static readonly Dictionary<string, Sprite> icons = new Dictionary<string, Sprite>();
@@ -60,7 +60,7 @@ namespace Diverse
                 }
             }
             finally { UnityEngine.Object.Destroy(sheet); }
-            trace?.Invoke("전투 이펙트는 각 단계의 형태·효과·궤적에서 즉시 생성 · 추가 이미지 비용 없음");
+            trace?.Invoke("아이콘 준비 완료 · 선택 후 해당 스킬의 전용 전투 시트를 제작합니다.");
         }
         public static Sprite Icon(ActiveSkillData a)
         {
@@ -93,7 +93,8 @@ namespace Diverse
                 a.artStatus = "기존 아이콘 검사: " + why;
             }
         }
-        public static Sprite Shot(ActiveSkillData a, ActiveStep step) => ActiveSkillVisuals.Shot(a, step);
-        public static Sprite[] Effect(ActiveSkillData a, ActiveStep step, int cell, int size) => ActiveSkillVisuals.Effect(a, step, cell, size);
+        public static Sprite[] FlyingFrames(ActiveSkillData a, ActiveStep step) => ActiveEffectArt.Frames(a, step, 2, ActiveSkillGenerator.Rules.projectilePixels);
+        public static Sprite Shot(ActiveSkillData a, ActiveStep step) => FlyingFrames(a, step)?[1] ?? ActiveSkillVisuals.Shot(a, step);
+        public static Sprite[] Effect(ActiveSkillData a, ActiveStep step, int cell, int size) => ActiveEffectArt.Frames(a, step, cell, step.delivery == "projectile" && cell >= 2 ? ActiveSkillGenerator.Rules.projectilePixels : 0) ?? ActiveSkillVisuals.Effect(a, step, cell, size);
     }
 }

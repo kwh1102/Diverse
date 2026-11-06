@@ -9,11 +9,13 @@ namespace Diverse
     {
         public readonly List<AbilityDef> Owned = new List<AbilityDef>();
         readonly Player player;
+        int previousSlot = -1;
+        float previousCastTime;
         public AbilityRuntime(Player owner) { player = owner; }
         public void Add(AbilityDef a) { Restore(a); Recompute(); }
         public void Restore(AbilityDef a) { if (a != null && !Owned.Contains(a)) Owned.Add(a); }
         public void AcquireOnce(AbilityDef a) { }
-        public void Clear() => Owned.Clear();
+        public void Clear() { Owned.Clear(); previousSlot = -1; previousCastTime = 0; }
         public void Remove(AbilityDef a, bool preserveState = false) { Owned.Remove(a); Recompute(); }
         public void Recompute() => player.RecalcStats();
         public void RefreshEquipmentStats() => Recompute();
@@ -58,9 +60,31 @@ namespace Diverse
             float shield = Mathf.Min(cfg.partMaxShield, Sum(d => d.shieldOnCast));
             if (shield > 0) player.AddShield(player.AttackPower * shield, cfg.partShieldDuration);
         }
-        public void OnActiveHit()
+        public PartCastBonus OnActiveCast(ActiveSkillData skill, Vector2 aim)
         {
-            float heal = Mathf.Min(DB.Asset.abilityRules.def.partMaxHeal, Sum(d => d.healOnHit));
+            OnActiveCast();
+            var cfg = DB.Asset.abilityRules.def; var bonus = new PartCastBonus();
+            foreach (var a in Equipped)
+            {
+                var d = PartEvolution.Find(a);
+                if (d == null || !PartEvolution.Matches(d.conditionA, player, skill, aim, previousSlot, previousCastTime) ||
+                    !PartEvolution.Matches(d.conditionB, player, skill, aim, previousSlot, previousCastTime)) continue;
+                float k = PartEvolution.Share(a, d);
+                bonus.damage += d.damage * k; bonus.range += d.range * k; bonus.control += d.control * k;
+                bonus.shield += d.shield * k; bonus.heal += d.heal * k; bonus.cooldown += d.cooldown * k;
+            }
+            previousSlot = skill.slot; previousCastTime = Time.time;
+            bonus.damage = Mathf.Min(cfg.evolutionDamageCap, bonus.damage);
+            bonus.range = Mathf.Min(cfg.evolutionRangeCap, bonus.range); bonus.control = Mathf.Min(cfg.evolutionControlCap, bonus.control);
+            bonus.shield = Mathf.Min(Mathf.Max(0, cfg.partMaxShield - Sum(d => d.shieldOnCast)), bonus.shield);
+            bonus.heal = Mathf.Min(Mathf.Max(0, cfg.partMaxHeal - Sum(d => d.healOnHit)), bonus.heal);
+            bonus.cooldown = Mathf.Min(cfg.evolutionCooldownCap, bonus.cooldown);
+            if (bonus.shield > 0) player.AddShield(player.AttackPower * Mathf.Min(cfg.partMaxShield, bonus.shield + Sum(d => d.shieldOnCast)), cfg.partShieldDuration);
+            return bonus;
+        }
+        public void OnActiveHit(float evolutionHeal = 0)
+        {
+            float heal = Mathf.Min(DB.Asset.abilityRules.def.partMaxHeal, Sum(d => d.healOnHit) + evolutionHeal);
             if (heal > 0) player.Heal(player.AttackPower * heal);
         }
         public static Color32 StatusColor(string status) => status switch {

@@ -215,6 +215,7 @@ namespace Diverse.EditorTools
             Wire(view,"preview",preview);Wire(view,"previewGlyph",previewGlyph);Wire(view,"equip",equip);Wire(view,"use",use);Wire(view,"discard",discard);Wire(view,"receive",receive);Wire(view,"redraw",redraw);Wire(view,"openFusion",workshop);Wire(view,"close",close);
             Wire(view,"activeFrame",frame);Wire(view,"pendingLabel",pendingLabel);Wire(view,"dragGhost",ghost);Wire(view,"dragImage",dragImage);Wire(view,"dragGlyph",dragGlyph);Wire(view,"dragGroup",dragGroup);
             Wire(view,"dropMarker",marker);Wire(view,"validDrop",valid.gameObject);Wire(view,"invalidDrop",invalid.gameObject);
+            RepairInventoryDetails(view);
         }
 
         static PartFusionView BuildPartFusion(Transform root)

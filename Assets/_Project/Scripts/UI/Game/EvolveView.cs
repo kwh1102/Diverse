@@ -114,8 +114,9 @@ namespace Diverse
             UIKit.Show(skip, offer);
             if (offer)
             {
-                UIKit.Label(reroll, $"다시 뽑기 ({g.RerollCost} 골드)");
-                reroll.interactable = g.Player.Gold >= g.RerollCost && !Locked;
+                bool production = g.IsSkillOffer && g.SkillOffer.selectedIndex >= 0;
+                UIKit.Label(reroll, production ? ActiveEffectArt.ReusesSavedArt(g.SkillOffer.candidates[g.SkillOffer.selectedIndex]) ? "저장 시트 재처리 (무료)" : "이펙트 새로 생성 (API 비용)" : $"다시 뽑기 ({g.RerollCost} 골드)");
+                reroll.interactable = (production || g.Player.Gold >= g.RerollCost) && !Locked;
                 skip.interactable = !g.ChatBusy;
                 UIKit.Label(skip, g.IsSkillOffer ? g.SkillOffer.commission ? "의뢰 취소" : "나중에 선택" : "넘기기 (+20G)");
             }

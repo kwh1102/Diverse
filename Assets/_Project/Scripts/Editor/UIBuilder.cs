@@ -852,6 +852,7 @@ namespace Diverse.EditorTools
             Wire(v, "chatPanel", chat.gameObject); Wire(v, "chatLog", log); Wire(v, "chatWarning", warn); Wire(v, "chatScroll", logScroll);
             Wire(v, "chatInput", input); Wire(v, "send", send);
             Wire(v, "reroll", reroll); Wire(v, "skip", skip); Wire(v, "panel", a);
+            RepairEvolutionChat(v);
             return v;
         }
 
