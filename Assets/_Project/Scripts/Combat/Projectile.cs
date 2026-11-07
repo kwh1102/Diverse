@@ -15,6 +15,9 @@ namespace Diverse
         public float life = 1.5f;
         public float radius = 0.25f;
         public int pierce;
+        public int bounces;
+        public bool Expired { get; private set; }
+        public float Travelled { get; private set; }
         public float homing;            // 유도 강도
         public float explodeRadius;
         public DamageInfo dmg;
@@ -22,30 +25,58 @@ namespace Diverse
         public string sfx = "hit";
         public float shake = 0.08f, kick = 1.5f;
         public bool trail = true;
-        public Sprite[] trailFx;        // designed weapons: generated trail effect instead of dot particles
+        public Sprite[] animationFrames;
+        public float animationFps;
         public bool spin;
         public System.Action<Projectile, Actor> onHit;
+        public System.Func<Projectile, Actor, bool> canHit;
+        public System.Action<Projectile, Actor> resolveHit;
         public System.Action<Projectile, float> onUpdate;    // steering (curving shots); gets the age in seconds
-        public System.Action<Projectile> onEnd;
+        public System.Action<Projectile> onEnd, onBounce;
         readonly HashSet<Actor> hitSet = new HashSet<Actor>();
+        bool ended;
+        public void ResetHits() => hitSet.Clear();
         public static readonly List<Projectile> Live = new List<Projectile>();
+        public static Vector2 TargetPoint(Actor actor) => actor.Pos + Vector2.up * .35f;
         void Awake() => Live.Add(this);
         void OnDestroy() => Live.Remove(this);
 
         /// <summary>Stopped by a barrier.</summary>
-        public void Block()
+        public void Block(bool flash = true)
         {
-            Fx.I?.Burst(transform.position, color, 6, 4, 0.25f);
+            if (flash) Fx.I?.Burst(transform.position, color, 6, 4, 0.25f);
             End();
         }
         [SerializeField] SpriteRenderer sr;
+        public int VisualOrder => sr.sortingOrder;
         float trailT;
         float t;
+
+        public void SetFlightVisual(Sprite[] frames, float scale, float fps, Color tint)
+        {
+            if (frames == null || frames.Length == 0) return;
+            animationFrames = frames; animationFps = fps;
+            sr.sprite = frames[0]; sr.color = tint; sr.sharedMaterial = Art.SpriteMat;
+            sr.enabled = true; sr.sortingOrder = Art.SortY(transform.position.y - .5f) + 10;
+            // Collision uses explicit world-space radius; this transform scale only changes the rendered body.
+            sr.transform.localScale = Vector3.one * scale;
+        }
+
+        public void RedirectFrom(Vector2 point, Vector2 direction)
+        {
+            transform.SetPositionAndRotation(point, Quaternion.Euler(0, 0, direction.Angle()));
+            vel = direction * vel.magnitude;
+            homing = 0;
+            onUpdate = null;
+            Fx.I?.ResetProjectileWake(this);
+        }
+
+        public void ScaleFlightVisual(float scale) => sr.transform.localScale *= scale;
 
         public static Projectile Spawn(Sprite s, Vector2 pos, Vector2 vel, Team target, Actor owner, DamageInfo dmg, bool additive = false)
         {
             var p = Instantiate(DB.Asset.projectilePrefab, pos, Quaternion.Euler(0, 0, vel.Angle()));
-            Art.Setup(p.sr, s, 0, additive);
+            Art.Setup(p.sr, s, Art.SortY(pos.y - .5f) + 10, additive);
             p.vel = vel;
             p.targetTeam = target;
             p.owner = owner;
@@ -61,27 +92,46 @@ namespace Diverse
             float dt = Time.deltaTime;
             if (dt <= 0) return;
             t += dt;
-            if (t >= life) { End(); return; }
+            if (animationFrames?.Length > 0) sr.sprite = animationFrames[Mathf.FloorToInt(t * animationFps) % animationFrames.Length];
+            if (t >= life) { Expired = true; End(); return; }
 
             onUpdate?.Invoke(this, t);
+            if (ended) return;
             if (homing > 0)
             {
                 var tgt = Actor.Nearest(transform.position, 6f, targetTeam);
                 if (tgt != null)
                 {
-                    var want = ((Vector2)tgt.Pos + Vector2.up * 0.3f - (Vector2)transform.position).normalized * vel.magnitude;
+                    var want = (TargetPoint(tgt) - (Vector2)transform.position).normalized * vel.magnitude;
                     vel = Vector2.Lerp(vel, want, 1 - Mathf.Exp(-homing * dt));
                 }
             }
 
-            Vector2 p = (Vector2)transform.position + vel * dt;
+            Vector2 previous = transform.position;
+            Vector2 p = previous + vel * dt;
+            if (ActiveSkillRuntime.InterceptShot(this, previous, p) || ActiveBarrier.TryBlock(this, previous, p)) return;
             if (WorldStreamer.I != null && WorldStreamer.I.IsSolidObstacle(p))
             {
-                // 나무·벽에 박힘 (물 위로는 날아간다)
-                Fx.I?.Burst(p, color, 4, 4, 0.25f);
-                End();
-                return;
+                if (bounces > 0)
+                {
+                    bounces--;
+                    Vector2 current = transform.position;
+                    bool blockX = WorldStreamer.I.IsSolidObstacle(new Vector2(p.x, current.y));
+                    bool blockY = WorldStreamer.I.IsSolidObstacle(new Vector2(current.x, p.y));
+                    if (blockX || !blockY) vel.x = -vel.x;
+                    if (blockY) vel.y = -vel.y;
+                    p = current + vel * dt;
+                    if (!WorldStreamer.I.IsSolidObstacle(p)) onBounce?.Invoke(this);
+                    else { Block(); return; }
+                }
+                else
+                {
+                    Fx.I?.Burst(p, color, 4, 4, 0.25f);
+                    End();
+                    return;
+                }
             }
+            Travelled += Vector2.Distance(previous, p);
             transform.position = p;
             transform.rotation = spin ? Quaternion.Euler(0, 0, t * 900f) : Quaternion.Euler(0, 0, vel.Angle());
             sr.sortingOrder = Art.SortY(p.y - 0.5f) + 10;
@@ -89,23 +139,25 @@ namespace Diverse
             if (trail)
             {
                 trailT -= dt;
-                if (trailT <= 0 && trailFx != null) { trailT = 0.06f; Fx.I?.Play(trailFx, p, vel.Angle(), 18, 1, null, true); }
-                else if (trailT <= 0) { trailT = 0.025f; Fx.I?.Burst(p, color, 1, 0.5f, 0.2f, 0, 1); }
+                if (trailT <= 0) { trailT = 0.025f; Fx.I?.Burst(p, color, 1, 0.5f, 0.2f, 0, 1); }
             }
 
             foreach (var a in Actor.All)
             {
                 if (a == null || !a.Alive || a.team != targetTeam || hitSet.Contains(a)) continue;
-                if (((Vector2)a.Pos + Vector2.up * 0.35f - p).sqrMagnitude > (radius + a.radius) * (radius + a.radius)) continue;
+                if (Combat.DistToSegment(TargetPoint(a), previous, p) > radius + a.radius) continue;
+                if (canHit != null && !canHit(this, a)) continue;
                 hitSet.Add(a);
                 var d = dmg;
                 d.direction = vel.normalized;
-                if (owner != null && owner.team == Team.Player) Combat.Hit(a, d, color, sfx, shake, kick);
+                d.travelled = Travelled;
+                if (resolveHit != null) resolveHit(this, a);
+                else if (owner != null && owner.team == Team.Player) Combat.Hit(a, d, color, sfx, shake, kick);
                 else
                 {
                     a.TakeDamage(d);
                 }
-                if (d.element != Element.None) Combat.ApplyElement(a, d.element, d.amount, owner, d.depth);
+                if (resolveHit == null && d.element != Element.None) Combat.ApplyElement(a, d.element, d.amount, owner, d.depth);
                 onHit?.Invoke(this, a);
                 if (explodeRadius > 0) { Explode(); return; }
                 if (pierce-- <= 0) { End(); return; }
@@ -115,8 +167,8 @@ namespace Diverse
         void Explode()
         {
             Vector2 p = transform.position;
-            Fx.I?.Play(Art.Shockwave(color, Mathf.RoundToInt(explodeRadius * Art.PPU)), p, 0, 24, 1, null, true);
-            Fx.I?.Burst(p, color, 14, 8, 0.4f);
+            if (!CombatVisuals.Explosion(p,explodeRadius,dmg.element,color))
+                Fx.I?.Play(Art.Shockwave(color, Mathf.RoundToInt(explodeRadius * Art.PPU)), p, 0, 24, 1, null, false);
             Sfx.Play("explode", 0.6f);
             foreach (var a in new List<Actor>(Actor.InRadius(p, explodeRadius, targetTeam)))
             {
@@ -130,6 +182,8 @@ namespace Diverse
 
         void End()
         {
+            if (ended) return;
+            ended = true;
             onEnd?.Invoke(this);
             Destroy(gameObject);
         }

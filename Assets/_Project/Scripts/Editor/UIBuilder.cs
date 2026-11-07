@@ -43,6 +43,8 @@ namespace Diverse.EditorTools
             if (!File.Exists(GameScenePath)) BuildGameScene(game);
             BuildSettings();
             UILayoutRepair.Run();
+            InstallInventory();
+            SkillPartsPrefabAuthoring.Install();
         }
 
         static GameObject Prefab(string path, System.Func<GameObject> build)
@@ -272,6 +274,7 @@ namespace Diverse.EditorTools
             // ScrollRect needs a raycast target to receive the wheel
             var hit = go.GetComponent<Image>() ?? Box(area, whiteSpr, new Color(0, 0, 0, 0));
             hit.raycastTarget = true;
+            EnsureReadabilityScrollbars(scroll);
             return t;
         }
 
@@ -372,7 +375,7 @@ namespace Diverse.EditorTools
             var slotB = B("ChangeSlot", "세계 선택");
             var settings = B("Settings", "설정");
             var quit = B("Quit", "종료");
-            var footer = Label(rt, "Footer", "AI 진화: 로컬 모드   ·   세계 시드 0", BL, new Vector2(8, -18), new Vector2(620, 14), 9);
+            var footer = Label(rt, "Footer", "AI 액티브: 로컬 모드   ·   세계 시드 0", BL, new Vector2(8, -18), new Vector2(620, 14), 9);
             footer.rectTransform.pivot = new Vector2(0, 0);
             footer.rectTransform.anchoredPosition = new Vector2(8, 4);
 
@@ -462,7 +465,7 @@ namespace Diverse.EditorTools
             Label(sp, "ShakeLabel", "화면 흔들림", TL, new Vector2(x, y), new Vector2(100, 14));
             var shake = MakeSlider(sp, "Shake", TL, new Vector2(x + 100, y + 1), new Vector2(150, 12), 0, 1.5f); y += 18;
             var dmg = Btn(sp, "DamageNumbers", "피해 숫자: 켜짐", TL, new Vector2(x, y), new Vector2(170, 18), 9); y += 26;
-            Label(sp, "AiHeading", "<b>AI 진화 (OpenAI)</b>", TL, new Vector2(x, y), new Vector2(430, 14)); y += 16;
+            Label(sp, "AiHeading", "<b>AI 액티브 (OpenAI)</b>", TL, new Vector2(x, y), new Vector2(430, 14)); y += 16;
             var keyState = Label(sp, "KeyState", "API 키 없음", TL, new Vector2(x, y), new Vector2(430, 12), 9); y += 13;
             var keyHint = Label(sp, "KeyHint", "키 위치: …", TL, new Vector2(x, y), new Vector2(430, 26), 9, color: UIKit.Muted); y += 28;
             var ai = Btn(sp, "AiToggle", "AI: 켜짐", TL, new Vector2(x, y), new Vector2(120, 18), 9);
@@ -479,7 +482,9 @@ namespace Diverse.EditorTools
             // Key bindings page
             var kp = Stretch(body, "KeysPage");
             Box(kp, slotSpr);
-            var grid = Node(kp, "Bindings", TL, new Vector2(8, 6), new Vector2(430, 150));
+            float bindingsHeight = Mathf.CeilToInt(Controls.Defaults.Length / 2f) * 21 - 3;
+            float keysFooterY = 6 + bindingsHeight + 15;
+            var grid = Node(kp, "Bindings", TL, new Vector2(8, 6), new Vector2(430, bindingsHeight));
             var gl = grid.gameObject.AddComponent<GridLayoutGroup>();
             gl.cellSize = new Vector2(211, 18); gl.spacing = new Vector2(8, 3); gl.constraint = GridLayoutGroup.Constraint.FixedColumnCount; gl.constraintCount = 2;
             // Row = button on the right with a "Label" text on its left
@@ -490,8 +495,8 @@ namespace Diverse.EditorTools
             var lbl = Label(row.transform, "Label", "동작", BL, Vector2.zero, new Vector2(130, 18), 9, TextAnchor.MiddleLeft);
             lbl.rectTransform.anchorMin = new Vector2(0, 0); lbl.rectTransform.anchorMax = new Vector2(0, 1);
             lbl.rectTransform.pivot = new Vector2(0, 0.5f); lbl.rectTransform.anchoredPosition = new Vector2(6, 0);
-            var reset = Btn(kp, "ResetKeys", "기본값으로", TL, new Vector2(8, 160), new Vector2(120, 18), 9);
-            Label(kp, "KeysHint", "<color=#8c7aa8>빨간색 = 다른 동작과 키가 겹침. Esc로 취소.</color>", TL, new Vector2(138, 162), new Vector2(300, 14), 9);
+            var reset = Btn(kp, "ResetKeys", "기본값으로", TL, new Vector2(8, keysFooterY), new Vector2(120, 18), 9);
+            Label(kp, "KeysHint", "<color=#8c7aa8>빨간색 = 다른 동작과 키가 겹침. Esc로 취소.</color>", TL, new Vector2(138, keysFooterY + 2), new Vector2(300, 14), 9);
             UIKit.Show(kp, false);
 
             Wire(v, "settingsPage", sp.gameObject);
@@ -599,13 +604,14 @@ namespace Diverse.EditorTools
                 var s = Node(bar, "Skill " + keys[i], TL, new Vector2(i * 34, 0), new Vector2(30, 30));
                 Box(s, slotSpr).raycastTarget = true;
                 var icon = TextOn(Stretch(s, "Icon"), "★", 16, TextAnchor.MiddleCenter, Pal.Hex("ffd27a"), bold: true);
+                var artwork = Box(Stretch(s, "Artwork", 5, 5, 5, 5), whiteSpr); artwork.preserveAspect = true; artwork.raycastTarget = false;
                 var shadeRt = Stretch(s, "Cooldown Shade", 2, 2, 2, 2);
                 var shade = Box(shadeRt, whiteSpr, new Color(0.05f, 0.03f, 0.1f, 0.7f));
                 shade.type = Image.Type.Filled; shade.fillMethod = Image.FillMethod.Vertical; shade.fillOrigin = (int)Image.OriginVertical.Top; shade.fillAmount = 0.4f;
                 var cd = TextOn(Stretch(s, "Cooldown"), "3", 11, TextAnchor.MiddleCenter);
                 var key = Label(s, "Key", keys[i], TL, new Vector2(2, 1), new Vector2(28, 10), 8, color: UIKit.Highlight);
                 slots[i] = s.gameObject.AddComponent<SkillSlot>();
-                Wire(slots[i], "icon", icon); Wire(slots[i], "cooldown", cd); Wire(slots[i], "key", key); Wire(slots[i], "cooldownShade", shade);
+                Wire(slots[i], "icon", icon); Wire(slots[i], "cooldown", cd); Wire(slots[i], "key", key); Wire(slots[i], "cooldownShade", shade); Wire(slots[i], "artwork", artwork);
             }
             var moveHint = Label(bar, "MoveHint", "<color=#8c7aa8>우클릭</color> 이동/공격", TL, new Vector2(138, 4), new Vector2(120, 12), 9);
             var dashHint = Label(bar, "DashHint", "<color=#8c7aa8>Space</color> 대시", TL, new Vector2(138, 16), new Vector2(120, 12), 9);
@@ -838,7 +844,7 @@ namespace Diverse.EditorTools
             // Pipeline log over the cards
             var pp = Node(a, "Pipeline", TL, new Vector2(12, 52), new Vector2(W - 24, H - 90));
             Box(pp, panelSpr).raycastTarget = true;
-            Label(pp, "Heading", "<b>AI 진화 과정</b> <color=#8c7aa8>— 플레이 기록 → 패턴 → AI 생성 → 검증 → 점수 → 이름</color>", TL, new Vector2(8, 6), new Vector2(W - 40, 12), 9);
+            Label(pp, "Heading", "후보 설계·검증 기록", TL, new Vector2(8, 6), new Vector2(W - 40, 12), 9);
             var pText = ScrollText(pp, "Log", Node(pp, "Log", TL, new Vector2(8, 22), new Vector2(W - 40, H - 120)), out _);
             UIKit.Show(pp, false);
 
@@ -847,6 +853,7 @@ namespace Diverse.EditorTools
             Wire(v, "chatPanel", chat.gameObject); Wire(v, "chatLog", log); Wire(v, "chatWarning", warn); Wire(v, "chatScroll", logScroll);
             Wire(v, "chatInput", input); Wire(v, "send", send);
             Wire(v, "reroll", reroll); Wire(v, "skip", skip); Wire(v, "panel", a);
+            RepairEvolutionChat(v);
             return v;
         }
 

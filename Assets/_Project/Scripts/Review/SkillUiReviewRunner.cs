@@ -1,0 +1,134 @@
+#if UNITY_EDITOR
+using System.Collections;
+using System.IO;
+using System.Linq;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.UI;
+
+namespace Diverse.EditorTools
+{
+    public class SkillUiReviewRunner : MonoBehaviour
+    {
+        bool failed;
+        const string Key = "Diverse.SkillUiReview";
+        string Output => SessionState.GetString(Key + ".Output", "Logs/SkillUiReview");
+        void OnEnable() => Application.logMessageReceived += Error;
+        void OnDisable() => Application.logMessageReceived -= Error;
+        void Error(string text, string trace, LogType type)
+        {
+            if (failed || type is not (LogType.Exception or LogType.Error or LogType.Assert)) return;
+            failed = true; File.WriteAllText(Output + "/error.txt", text + "\n" + trace); EditorApplication.ExitPlaymode();
+        }
+        static IEnumerator Frames(int n) { for (int i = 0; i < n; i++) yield return null; }
+        void Shot(string name) => ReferenceReviewRunner.Shot(name, true, Output, 360);
+        void Note(string text) => File.AppendAllText(Output + "/review.txt", text + "\n");
+        void Check(bool condition, string text) { if (!condition) throw new System.InvalidOperationException(text); Note(text + " OK"); }
+        static T View<T>() where T : Object => Object.FindFirstObjectByType<T>(FindObjectsInactive.Include);
+        static T Ref<T>(Object view, string field) where T : Object => new SerializedObject(view).FindProperty(field).objectReferenceValue as T;
+        void Footer(InventoryView view, params string[] fields)
+        {
+            var box = view.transform.Find("Panel/ItemBox") as RectTransform;
+            foreach (string field in fields)
+            {
+                var button = Ref<Button>(view, field);
+                var corners = new Vector3[4]; button.GetComponent<RectTransform>().GetWorldCorners(corners);
+                Check(button.gameObject.activeInHierarchy && box.InverseTransformPoint(corners[0]).y < box.rect.yMin + 78,
+                    field + " 버튼 실제 표시·하단 배치");
+            }
+        }
+
+        IEnumerator Start()
+        {
+            yield return Frames(90);
+            var g = Game.I; Check(g != null && !Game.Settings.aiEnabled, "실제 Game 씬 · AI 호출 차단");
+            Time.captureDeltaTime = 1f / 60;
+            var p = g.Player; p.Level = 20; p.Gold = 10000; p.invulnUntil = float.MaxValue;
+            foreach (var enemy in Actor.All.OfType<Enemy>().ToArray()) enemy.enabled = false;
+            PartTraitChecks.Run(p, (ok, message) => {
+                if (!ok) throw new System.InvalidOperationException(message);
+                if (!message.StartsWith("초반 후보")) Note(message + " OK");
+            });
+            p.Level = 2; p.pendingRewardLevels.Add(2); p.PendingEvolutions = 1; g.BeginEvolution();
+            yield return Frames(5); Shot("10_early_part_choices");
+            g.Offer = null; p.pendingRewardLevels.Clear(); p.PendingEvolutions = 0;
+            g.State = GameState.Playing; GameTime.ClearPauses(); g.Ui.OnOverlayOpened(GameState.Playing, null); p.Level = 20;
+            // Keep UI fixtures from starting extra drafts and consuming the recent-signature pool.
+            p.claimedSkillMask = 15;
+            string fixturePath = Output + "/Scratch/fixture.json";
+            var skill = File.Exists(fixturePath) ? JsonUtility.FromJson<ActiveSkillData>(File.ReadAllText(fixturePath)) : ActiveSkillGenerator.Local(WeaponType.Sword, 0);
+            skill.slot = 0; ActiveSkillArt.Restore(skill);
+            var item = p.GrantSkill(skill); g.InventoryChanged();
+            Note("저장 그림 사용: " + skill.name + " / icon=" + skill.ArtReady + " / AI effect=" + ActiveEffectArt.Ready(skill) + " / palette=" + string.Join(",", skill.visualPalette));
+            g.OpenOverlay(GameState.Inventory); yield return Frames(5);
+            var inventory = View<InventoryView>(); inventory.SelectItem(item.id); yield return Frames(6);
+            var heading = Ref<Text>(inventory, "itemHeading"); var scroll = Ref<ScrollRect>(inventory, "detailsScroll");
+            Check(heading != null && scroll != null && scroll.verticalScrollbar != null, "고정 헤더·본문·스크롤바 실제 참조");
+            Check(scroll.viewport.rect.height > 60, "설명 본문 가변 높이");
+            Shot("01_inventory_skill_top");
+            item.ancestor = string.Join("\n", Enumerable.Repeat("긴 설명 스크롤 확인 · 위쪽 이름과 아래쪽 동작 버튼은 고정되고, 이 본문만 스크롤합니다.", 16));
+            yield return Frames(5); Shot("02_inventory_long_top");
+            Check(scroll.content.rect.height > scroll.viewport.rect.height, "긴 본문 실제 스크롤 범위");
+            scroll.verticalNormalizedPosition = 0; yield return Frames(5); Shot("02_inventory_skill_bottom");
+            item.ancestor = null;
+            var discard = Ref<Button>(inventory, "discard"); var box = inventory.transform.Find("Panel/ItemBox") as RectTransform;
+            var corners = new Vector3[4]; discard.GetComponent<RectTransform>().GetWorldCorners(corners);
+            Check(box.InverseTransformPoint(corners[0]).y < box.rect.yMin + 35, "버리기 버튼 하단 배치");
+            var potion = p.Inventory.items.First(i => i.kind == ItemKind.Consumable);
+            inventory.SelectItem(potion.id); yield return Frames(5); Footer(inventory, "use", "discard"); Shot("03_inventory_use_discard");
+            inventory.SelectItem(p.Inventory.items.First(i => i.kind == ItemKind.Weapon && i.id != p.Inventory.activeWeapon && i.Placed).id);
+            yield return Frames(5); Footer(inventory, "equip", "discard"); Shot("04_inventory_equip_discard");
+            var pending = new InventoryItem { kind = ItemKind.Skill, skillSlot = 1, active = ActiveSkillGenerator.Local(WeaponType.Sword, 1), name = "그림 대기 스킬" };
+            p.Inventory.items.Add(pending); p.Inventory.Notify(); inventory.SelectItem(pending.id);
+            yield return Frames(5); Footer(inventory, "receive", "redraw", "discard"); Shot("04_inventory_receive_redraw_discard");
+
+            var fused = PartCatalog.Fuse(PartCatalog.Create("focus_lens"), PartCatalog.Create("ward_buckle"));
+            var fusionItem = InventoryItem.Part(fused); p.Inventory.items.Add(fusionItem); p.Inventory.Notify();
+            inventory.SelectItem(fusionItem.id); yield return Frames(5); Shot("08_part_t2_top");
+            scroll.verticalNormalizedPosition = 0; yield return Frames(5); Shot("08_part_t2_bottom");
+            var complex = PartCatalog.Fuse(PartCatalog.Create("rune_scope"), PartCatalog.Create("wind_boot"));
+            while (complex.tier < InventoryState.Rules.maxPartTier) complex = PartCatalog.Fuse(complex, complex.Clone());
+            var highPart = InventoryItem.Part(complex); p.Inventory.items.Add(highPart); p.Inventory.Notify();
+            inventory.SelectItem(highPart.id); yield return Frames(5); Shot("09_part_t5_top");
+            scroll.verticalNormalizedPosition = 0; yield return Frames(5); Shot("09_part_t5_bottom");
+            Note("T2/T5 실제 합성 결과 · 기본 효과/조건/추가 효과/재료 설명 캡처");
+
+            g.CloseOverlay(); yield return Frames(3);
+            // Use the actual prefetch path, then promote the same object into a milestone offer.
+            p.claimedSkillMask = 1;
+            g.RequestPrefetch();
+            for (int i = 0; i < 180 && g.SkillPrefetch?.iconsPrepared != true; i++) yield return null;
+            var prepared = g.SkillPrefetch;
+            Check(prepared?.candidates.Count == 3 && prepared.iconsPrepared && g.State == GameState.Playing && !g.Generating && !g.ChatBusy, "전투 중 사전 준비 · 전투/입력 유지");
+            p.pendingRewardLevels.Add(DB.Progression.skillLevels[prepared.slot]); p.PendingEvolutions = 1; g.BeginEvolution(); yield return Frames(8);
+            Check(ReferenceEquals(prepared, g.SkillOffer), "보상 창에서 동일한 사전 준비 결과 재사용");
+            g.SendChat($"검 {ActiveSkillGenerator.SlotName(prepared.slot)} · 적 탄환을 되돌리는 칼등 반사");
+            for (int i = 0; i < 120 && g.ChatBusy; i++) yield return null;
+            yield return Frames(6);
+            var evolve = View<EvolveView>(); var chat = Ref<ScrollRect>(evolve, "chatScroll");
+            Check(g.SkillOffer.candidates.Any(a => a.technique == Technique.BladeReflect), "이름을 지정한 요청이 실제 기술 후보에 반영됨");
+            Check(evolve.GetComponentsInChildren<Text>().All(t => t.text is not ("독립" or "종속")), "기존 독립·종속 라벨 제거");
+            Check(chat.viewport.rect.height > 0 && Ref<Text>(evolve, "chatLog").preferredHeight > 0, "채팅 영역 양수 높이 · 대화 내용 표시");
+            Shot("05_chat_history");
+            for (int i = 0; i < 12; i++) g.Chat.Add((i % 2 == 0, "긴 대화도 입력창을 가리지 않고 끝까지 읽을 수 있어야 해. 대화 스크롤 확인 " + i));
+            yield return Frames(5); Shot("06_chat_history_scrolled");
+            int chosen = g.SkillOffer.candidates.FindIndex(a => a.technique == Technique.BladeReflect);
+            for (int i = 0; i < 120 && g.OfferLocked; i++) yield return null;
+            g.ChooseEvolution(chosen);
+            for (int i = 0; i < 120 && g.SkillOffer != null; i++) yield return null;
+            Check(p.Inventory.items.Any(i => i.active?.technique == Technique.BladeReflect) && g.SkillOffer == null,
+                "AI를 끈 상태에서도 선택한 전용 기술을 획득함");
+
+            g.SkillOffer = null; g.Offer = null; p.pendingRewardLevels.Clear(); p.PendingEvolutions = 0;
+            p.claimedSkillMask = 15; g.State = GameState.Playing; GameTime.ClearPauses(); g.Ui.OnOverlayOpened(GameState.Playing, null);
+            p.Pos = WorldStreamer.I.NearestWalkable(new Vector2(24, -20), p.radius, 8); WorldStreamer.I.Warm(p.Pos); CameraRig.I.Snap(p.Pos);
+            yield return Frames(10);
+            ActiveSkillRuntime.Cast(p, skill, Vector2.right, p.Pos + Vector2.right * 2);
+            for (int i = 0; i < 6; i++) { yield return new WaitForSeconds(.04f); Shot("07_skill_motion_" + i); }
+            Check(g.World.designCalls == 0 && !Game.Settings.aiEnabled, "전체 화면 확인 중 외부 API 호출 0회");
+            File.WriteAllText(Output + "/result.txt", "PASS: inventory header/body/footer/scrollbar, chat visibility/scroll, prefetch promotion and actual skill motion captured. Offline scratch save only.");
+            SessionState.SetBool(Key + ".OK", true); EditorApplication.ExitPlaymode();
+        }
+    }
+}
+#endif

@@ -131,18 +131,22 @@ namespace Diverse
             if (h.perk != null && string.IsNullOrEmpty(h.perk.json)) h.perk = null;
 
             var w = p.weapon;
+            if (p.version < 2)
+            {
+                w.RestoreWeaponType();
+                p.version = DesignPack.Version;
+            }
             w.name = CleanName(w.name);
-            w.baseWeapon = OneOf(w.baseWeapon, Enum.GetNames(typeof(WeaponKind)), nameof(WeaponKind.Greatsword));
             w.shape = OneOf(w.shape, DesignArt.WeaponShapes, "builtin");
             w.length = w.length <= 0 ? 0 : Mathf.Clamp(w.length, 6, MaxWeaponLength);
             w.thickness = w.thickness <= 0 ? 0 : Mathf.Clamp(w.thickness, 1, MaxWeaponThickness);
             w.tip = OneOf(w.tip, DesignArt.Tips, "point");
             w.imagePrompt = CleanImagePrompt(w.imagePrompt);
-            // Attack parts: closed vocabulary, 1..4 moves; QWER ids are checked again by DesignCombat
+            // Basic attack parts only. Active skills are not stored on a design pack.
             w.moves = (w.moves ?? new List<string>()).Select(m => OneOf(m, DesignCombat.Moves, null)).Where(m => m != null).Take(4).ToList();
             w.weight = OneOf(w.weight, DesignCombat.Weights, "medium");
-            w.skills = w.skills?.Where(s => DesignCombat.AllSkills.Contains(s)).Take(4).ToArray();
-            w.skillNames = w.skillNames?.Take(4).Select(CleanName).ToArray();
+            if (!Enum.IsDefined(typeof(WeaponType), w.type)) w.type = WeaponType.Sword;
+            w.skills = null; w.skillNames = null;
             w.main = Hex(w.main); w.shade = Hex(w.shade); w.accent = Hex(w.accent); w.grip = Hex(w.grip); w.glow = Hex(w.glow);
             w.hold = OneOf(w.hold, DesignArt.Holds, "Hand");
             w.pixels = Grid(w.pixels, MaxGridW, MaxGridH);
@@ -162,7 +166,8 @@ namespace Diverse
             if (pr.pixels != null && (pr.palette == null || pr.palette.Length == 0)) pr.pixels = null;
 
             p.attack.effectPrompts = Prompts(p.attack.effectPrompts, 4);
-            p.attack.effectImages = Ids(p.attack.effectImages, 4);
+            p.attack.effectFrames = p.attack.effectFrames == 4 ? 4 : 0;
+            p.attack.effectImages = Ids(p.attack.effectImages, p.attack.effectFrames == 4 ? 16 : 4);
             if (p.hero.frames != null && p.hero.frames.Length != 4 && p.hero.frames.Length != 6 && p.hero.frames.Length != 8 && p.hero.frames.Length != 12) p.hero.frames = null;
             p.weapon.attackPose = CleanImagePrompt(p.weapon.attackPose);
         }

@@ -108,14 +108,12 @@ namespace Diverse
             foreach (var skill in p.Skills)
                 if (skill.def != null && GUILayout.Button("Remove: " + skill.def.name)) { skill.def = null; skill.cd = 0; }
             GUILayout.Space(12);
-            GUILayout.Label("Abilities / live states");
+            GUILayout.Label("Equipped fixed parts");
             foreach (var a in p.Abilities.Owned.ToArray())
             {
                 GUILayout.BeginVertical(GUI.skin.box);
                 GUILayout.Label(a.name);
-                foreach (var state in a.states.Where(s => s.type is "Counter" or "StoredValue" or "Charge" or "Timer"))
-                    GUILayout.Label($"{state.label ?? state.name}: {p.Abilities.GetState(a, state.name):0.##} / {state.max:0.##}" +
-                        (state.decay > 0 ? $" (-{state.decay:0.##}/s)" : ""));
+                GUILayout.Label(a.Explain());
                 if (GUILayout.Button("Remove ability")) p.Abilities.Remove(a);
                 GUILayout.EndVertical();
             }

@@ -1,0 +1,177 @@
+id,name,tier,families,final_png,art_brief,status
+focus_lens,집중 렌즈,1,위력,Assets/_Project/Resources/Sprites/Parts/focus_lens.png,조준선을 한 점에 모으는 수정 렌즈 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+sword_knot,검사의 매듭,1,위력,Assets/_Project/Resources/Sprites/Parts/sword_knot.png,검 손잡이를 묶고 칼끝을 당기는 단단한 매듭 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+ember_crucible,불씨 도가니,1,위력,Assets/_Project/Resources/Sprites/Parts/ember_crucible.png,불씨 하나를 담은 작은 도가니 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+prism_core,분광 핵,1,위력,Assets/_Project/Resources/Sprites/Parts/prism_core.png,서로 다른 두 빛을 교차시키는 분광 수정 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+moon_charm,초승달 부적,1,치명타,Assets/_Project/Resources/Sprites/Parts/moon_charm.png,등 뒤를 비추는 초승달 은 부적 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+lucky_die,흑요석 주사위,1,치명타,Assets/_Project/Resources/Sprites/Parts/lucky_die.png,다섯 번째 눈이 빛나는 흑요석 주사위 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+razor_gem,칼날 수정,1,치명타,Assets/_Project/Resources/Sprites/Parts/razor_gem.png,금이 간 적을 마무리하는 얇은 칼날 수정 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+ruby_pin,홍옥 핀,1,치명타,Assets/_Project/Resources/Sprites/Parts/ruby_pin.png,치명타 에너지를 저장하는 홍옥 핀 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+clock_spring,태엽 시계,1,재사용,Assets/_Project/Resources/Sprites/Parts/clock_spring.png,멈췄다가 다시 감기는 태엽 시계 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+silver_gear,은빛 톱니,1,재사용,Assets/_Project/Resources/Sprites/Parts/silver_gear.png,평타와 스킬을 잇는 세 개 이빨의 은빛 톱니 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+echo_bell,메아리 방울,1,재사용,Assets/_Project/Resources/Sprites/Parts/echo_bell.png,앞선 동작으로 소리를 되돌리는 메아리 방울 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+hourglass_bead,모래시계 구슬,1,재사용,Assets/_Project/Resources/Sprites/Parts/hourglass_bead.png,빗나간 시간을 되돌리는 모래시계 구슬 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+arrow_fletching,매깃 화살깃,1,투사체,Assets/_Project/Resources/Sprites/Parts/arrow_fletching.png,한 줄로 꿰뚫는 날카로운 화살깃 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+falcon_sight,매눈 조준경,1,투사체,Assets/_Project/Resources/Sprites/Parts/falcon_sight.png,적을 쫓는 매의 눈 모양 조준경 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+rune_scope,룬 조준경,1,투사체,Assets/_Project/Resources/Sprites/Parts/rune_scope.png,같은 표적 위에 겹쳐지는 두 개의 룬 조준선 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+spiral_nozzle,나선 노즐,1,투사체,Assets/_Project/Resources/Sprites/Parts/spiral_nozzle.png,나선 홈이 파인 작은 발사 노즐 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+trail_compass,길잡이 나침반,1,범위,Assets/_Project/Resources/Sprites/Parts/trail_compass.png,먼 조준점을 가리키는 길잡이 나침반 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+star_map,별자리 지도,1,범위,Assets/_Project/Resources/Sprites/Parts/star_map.png,두 적중 지점을 별자리로 잇는 작은 지도 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+long_reed,갈대 관,1,범위,Assets/_Project/Resources/Sprites/Parts/long_reed.png,긴 비행 거리를 만드는 속 빈 갈대 관 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+amber_mirror,호박 거울,1,범위,Assets/_Project/Resources/Sprites/Parts/amber_mirror.png,공격 흔적을 품었다 돌려주는 호박 거울 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+frost_shard,서리 결정,1,제어,Assets/_Project/Resources/Sprites/Parts/frost_shard.png,제어의 순간 대상을 얼리는 서리 결정 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+anchor_hook,닻 갈고리,1,제어,Assets/_Project/Resources/Sprites/Parts/anchor_hook.png,움직인 적의 발을 붙잡는 닻 갈고리 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+thunder_pin,뇌전 침,1,제어,Assets/_Project/Resources/Sprites/Parts/thunder_pin.png,표식을 찌르면 번쩍이는 뇌전 침 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+gravity_stone,중력석,1,제어,Assets/_Project/Resources/Sprites/Parts/gravity_stone.png,안쪽으로 파편을 끌어모으는 중력석 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+ward_buckle,수호 버클,1,방어,Assets/_Project/Resources/Sprites/Parts/ward_buckle.png,공격을 흘려 방패를 여는 수호 버클 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+vital_vial,생명의 약병,1,방어,Assets/_Project/Resources/Sprites/Parts/vital_vial.png,빠진 체력을 채우는 작은 생명의 약병 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+iron_plate,철갑 조각,1,방어,Assets/_Project/Resources/Sprites/Parts/iron_plate.png,가만히 버틸 때 겹쳐지는 철갑 조각 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+heart_lock,심장 자물쇠,1,방어,Assets/_Project/Resources/Sprites/Parts/heart_lock.png,위험할 때 심장을 감싸 잠기는 자물쇠 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+wind_boot,바람 장화,1,이동,Assets/_Project/Resources/Sprites/Parts/wind_boot.png,걸음을 모아 다음 일격으로 보내는 바람 장화 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+silk_grip,비단 손잡이,1,이동,Assets/_Project/Resources/Sprites/Parts/silk_grip.png,손에 감을수록 단단해지는 비단 손잡이 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+feather_ring,깃털 고리,1,이동,Assets/_Project/Resources/Sprites/Parts/feather_ring.png,회피의 순간 가벼워지는 깃털 고리 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+breeze_ribbon,산들바람 리본,1,이동,Assets/_Project/Resources/Sprites/Parts/breeze_ribbon.png,이동이 끝나도 바람이 이어지는 리본 · 고유 능력 모티프가 읽히는 하나의 도구,제작 완료
+power_power_t2,응축의 심장,2,위력 + 위력,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_power_t2.png,응축된 수정·작은 도가니 · T2 단계의 성장 실루엣,제작 완료
+power_power_t3,각성한 응축의 심장,3,위력 + 위력,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_power_t3.png,응축된 수정·작은 도가니 · T3 단계의 성장 실루엣,제작 완료
+power_power_t4,찬란한 응축의 심장,4,위력 + 위력,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_power_t4.png,응축된 수정·작은 도가니 · T4 단계의 성장 실루엣,제작 완료
+power_power_t5,완성된 응축의 심장,5,위력 + 위력,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_power_t5.png,응축된 수정·작은 도가니 · T5 단계의 성장 실루엣,제작 완료
+power_critical_t2,결정타의 렌즈,2,위력 + 치명타,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_critical_t2.png,응축된 수정·작은 도가니와 초승달·날카로운 홍옥를 결합한 하나의 새 도구 · T2 단계의 성장 실루엣,제작 완료
+power_critical_t3,각성한 결정타의 렌즈,3,위력 + 치명타,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_critical_t3.png,응축된 수정·작은 도가니와 초승달·날카로운 홍옥를 결합한 하나의 새 도구 · T3 단계의 성장 실루엣,제작 완료
+power_critical_t4,찬란한 결정타의 렌즈,4,위력 + 치명타,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_critical_t4.png,응축된 수정·작은 도가니와 초승달·날카로운 홍옥를 결합한 하나의 새 도구 · T4 단계의 성장 실루엣,제작 완료
+power_critical_t5,완성된 결정타의 렌즈,5,위력 + 치명타,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_critical_t5.png,응축된 수정·작은 도가니와 초승달·날카로운 홍옥를 결합한 하나의 새 도구 · T5 단계의 성장 실루엣,제작 완료
+power_reuse_t2,점화 태엽,2,위력 + 재사용,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_reuse_t2.png,응축된 수정·작은 도가니와 태엽·은빛 기어를 결합한 하나의 새 도구 · T2 단계의 성장 실루엣,제작 완료
+power_reuse_t3,각성한 점화 태엽,3,위력 + 재사용,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_reuse_t3.png,응축된 수정·작은 도가니와 태엽·은빛 기어를 결합한 하나의 새 도구 · T3 단계의 성장 실루엣,제작 완료
+power_reuse_t4,찬란한 점화 태엽,4,위력 + 재사용,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_reuse_t4.png,응축된 수정·작은 도가니와 태엽·은빛 기어를 결합한 하나의 새 도구 · T4 단계의 성장 실루엣,제작 완료
+power_reuse_t5,완성된 점화 태엽,5,위력 + 재사용,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_reuse_t5.png,응축된 수정·작은 도가니와 태엽·은빛 기어를 결합한 하나의 새 도구 · T5 단계의 성장 실루엣,제작 완료
+power_projectile_t2,파열의 노즐,2,위력 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_projectile_t2.png,응축된 수정·작은 도가니와 깃털·나선 발사구를 결합한 하나의 새 도구 · T2 단계의 성장 실루엣,제작 완료
+power_projectile_t3,각성한 파열의 노즐,3,위력 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_projectile_t3.png,응축된 수정·작은 도가니와 깃털·나선 발사구를 결합한 하나의 새 도구 · T3 단계의 성장 실루엣,제작 완료
+power_projectile_t4,찬란한 파열의 노즐,4,위력 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_projectile_t4.png,응축된 수정·작은 도가니와 깃털·나선 발사구를 결합한 하나의 새 도구 · T4 단계의 성장 실루엣,제작 완료
+power_projectile_t5,완성된 파열의 노즐,5,위력 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_projectile_t5.png,응축된 수정·작은 도가니와 깃털·나선 발사구를 결합한 하나의 새 도구 · T5 단계의 성장 실루엣,제작 완료
+power_reach_t2,지평의 수정,2,범위 + 위력,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_reach_t2.png,응축된 수정·작은 도가니와 나침반·호박 거울를 결합한 하나의 새 도구 · T2 단계의 성장 실루엣,제작 완료
+power_reach_t3,각성한 지평의 수정,3,범위 + 위력,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_reach_t3.png,응축된 수정·작은 도가니와 나침반·호박 거울를 결합한 하나의 새 도구 · T3 단계의 성장 실루엣,제작 완료
+power_reach_t4,찬란한 지평의 수정,4,범위 + 위력,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_reach_t4.png,응축된 수정·작은 도가니와 나침반·호박 거울를 결합한 하나의 새 도구 · T4 단계의 성장 실루엣,제작 완료
+power_reach_t5,완성된 지평의 수정,5,범위 + 위력,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_reach_t5.png,응축된 수정·작은 도가니와 나침반·호박 거울를 결합한 하나의 새 도구 · T5 단계의 성장 실루엣,제작 완료
+power_control_t2,결박 도가니,2,위력 + 제어,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_control_t2.png,응축된 수정·작은 도가니와 서리·닻·중력석를 결합한 하나의 새 도구 · T2 단계의 성장 실루엣,제작 완료
+power_control_t3,각성한 결박 도가니,3,위력 + 제어,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_control_t3.png,응축된 수정·작은 도가니와 서리·닻·중력석를 결합한 하나의 새 도구 · T3 단계의 성장 실루엣,제작 완료
+power_control_t4,찬란한 결박 도가니,4,위력 + 제어,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_control_t4.png,응축된 수정·작은 도가니와 서리·닻·중력석를 결합한 하나의 새 도구 · T4 단계의 성장 실루엣,제작 완료
+power_control_t5,완성된 결박 도가니,5,위력 + 제어,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_control_t5.png,응축된 수정·작은 도가니와 서리·닻·중력석를 결합한 하나의 새 도구 · T5 단계의 성장 실루엣,제작 완료
+power_guard_t2,가호의 렌즈,2,방어 + 위력,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_guard_t2.png,응축된 수정·작은 도가니와 버클·수호 성배를 결합한 하나의 새 도구 · T2 단계의 성장 실루엣,제작 완료
+power_guard_t3,각성한 가호의 렌즈,3,방어 + 위력,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_guard_t3.png,응축된 수정·작은 도가니와 버클·수호 성배를 결합한 하나의 새 도구 · T3 단계의 성장 실루엣,제작 완료
+power_guard_t4,찬란한 가호의 렌즈,4,방어 + 위력,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_guard_t4.png,응축된 수정·작은 도가니와 버클·수호 성배를 결합한 하나의 새 도구 · T4 단계의 성장 실루엣,제작 완료
+power_guard_t5,완성된 가호의 렌즈,5,방어 + 위력,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_guard_t5.png,응축된 수정·작은 도가니와 버클·수호 성배를 결합한 하나의 새 도구 · T5 단계의 성장 실루엣,제작 완료
+power_movement_t2,질풍의 핵,2,위력 + 이동,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_movement_t2.png,응축된 수정·작은 도가니와 깃털·바람 리본를 결합한 하나의 새 도구 · T2 단계의 성장 실루엣,제작 완료
+power_movement_t3,각성한 질풍의 핵,3,위력 + 이동,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_movement_t3.png,응축된 수정·작은 도가니와 깃털·바람 리본를 결합한 하나의 새 도구 · T3 단계의 성장 실루엣,제작 완료
+power_movement_t4,찬란한 질풍의 핵,4,위력 + 이동,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_movement_t4.png,응축된 수정·작은 도가니와 깃털·바람 리본를 결합한 하나의 새 도구 · T4 단계의 성장 실루엣,제작 완료
+power_movement_t5,완성된 질풍의 핵,5,위력 + 이동,Assets/_Project/Resources/Sprites/Parts/Evolutions/power_movement_t5.png,응축된 수정·작은 도가니와 깃털·바람 리본를 결합한 하나의 새 도구 · T5 단계의 성장 실루엣,제작 완료
+critical_critical_t2,운명의 월륜,2,치명타 + 치명타,Assets/_Project/Resources/Sprites/Parts/Evolutions/critical_critical_t2.png,초승달·날카로운 홍옥 · T2 단계의 성장 실루엣,제작 완료
+critical_critical_t3,각성한 운명의 월륜,3,치명타 + 치명타,Assets/_Project/Resources/Sprites/Parts/Evolutions/critical_critical_t3.png,초승달·날카로운 홍옥 · T3 단계의 성장 실루엣,제작 완료
+critical_critical_t4,찬란한 운명의 월륜,4,치명타 + 치명타,Assets/_Project/Resources/Sprites/Parts/Evolutions/critical_critical_t4.png,초승달·날카로운 홍옥 · T4 단계의 성장 실루엣,제작 완료
+critical_critical_t5,완성된 운명의 월륜,5,치명타 + 치명타,Assets/_Project/Resources/Sprites/Parts/Evolutions/critical_critical_t5.png,초승달·날카로운 홍옥 · T5 단계의 성장 실루엣,제작 완료
+critical_reuse_t2,기회의 톱니,2,재사용 + 치명타,Assets/_Project/Resources/Sprites/Parts/Evolutions/critical_reuse_t2.png,초승달·날카로운 홍옥와 태엽·은빛 기어를 결합한 하나의 새 도구 · T2 단계의 성장 실루엣,제작 완료
+critical_reuse_t3,각성한 기회의 톱니,3,재사용 + 치명타,Assets/_Project/Resources/Sprites/Parts/Evolutions/critical_reuse_t3.png,초승달·날카로운 홍옥와 태엽·은빛 기어를 결합한 하나의 새 도구 · T3 단계의 성장 실루엣,제작 완료
+critical_reuse_t4,찬란한 기회의 톱니,4,재사용 + 치명타,Assets/_Project/Resources/Sprites/Parts/Evolutions/critical_reuse_t4.png,초승달·날카로운 홍옥와 태엽·은빛 기어를 결합한 하나의 새 도구 · T4 단계의 성장 실루엣,제작 완료
+critical_reuse_t5,완성된 기회의 톱니,5,재사용 + 치명타,Assets/_Project/Resources/Sprites/Parts/Evolutions/critical_reuse_t5.png,초승달·날카로운 홍옥와 태엽·은빛 기어를 결합한 하나의 새 도구 · T5 단계의 성장 실루엣,제작 완료
+critical_projectile_t2,매의 송곳니,2,치명타 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/critical_projectile_t2.png,초승달·날카로운 홍옥와 깃털·나선 발사구를 결합한 하나의 새 도구 · T2 단계의 성장 실루엣,제작 완료
+critical_projectile_t3,각성한 매의 송곳니,3,치명타 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/critical_projectile_t3.png,초승달·날카로운 홍옥와 깃털·나선 발사구를 결합한 하나의 새 도구 · T3 단계의 성장 실루엣,제작 완료
+critical_projectile_t4,찬란한 매의 송곳니,4,치명타 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/critical_projectile_t4.png,초승달·날카로운 홍옥와 깃털·나선 발사구를 결합한 하나의 새 도구 · T4 단계의 성장 실루엣,제작 완료
+critical_projectile_t5,완성된 매의 송곳니,5,치명타 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/critical_projectile_t5.png,초승달·날카로운 홍옥와 깃털·나선 발사구를 결합한 하나의 새 도구 · T5 단계의 성장 실루엣,제작 완료
+critical_reach_t2,별을 꿰는 핀,2,범위 + 치명타,Assets/_Project/Resources/Sprites/Parts/Evolutions/critical_reach_t2.png,초승달·날카로운 홍옥와 나침반·호박 거울를 결합한 하나의 새 도구 · T2 단계의 성장 실루엣,제작 완료
+critical_reach_t3,각성한 별을 꿰는 핀,3,범위 + 치명타,Assets/_Project/Resources/Sprites/Parts/Evolutions/critical_reach_t3.png,초승달·날카로운 홍옥와 나침반·호박 거울를 결합한 하나의 새 도구 · T3 단계의 성장 실루엣,제작 완료
+critical_reach_t4,찬란한 별을 꿰는 핀,4,범위 + 치명타,Assets/_Project/Resources/Sprites/Parts/Evolutions/critical_reach_t4.png,초승달·날카로운 홍옥와 나침반·호박 거울를 결합한 하나의 새 도구 · T4 단계의 성장 실루엣,제작 완료
+critical_reach_t5,완성된 별을 꿰는 핀,5,범위 + 치명타,Assets/_Project/Resources/Sprites/Parts/Evolutions/critical_reach_t5.png,초승달·날카로운 홍옥와 나침반·호박 거울를 결합한 하나의 새 도구 · T5 단계의 성장 실루엣,제작 완료
+critical_control_t2,서리의 칼날,2,제어 + 치명타,Assets/_Project/Resources/Sprites/Parts/Evolutions/critical_control_t2.png,초승달·날카로운 홍옥와 서리·닻·중력석를 결합한 하나의 새 도구 · T2 단계의 성장 실루엣,제작 완료
+critical_control_t3,각성한 서리의 칼날,3,제어 + 치명타,Assets/_Project/Resources/Sprites/Parts/Evolutions/critical_control_t3.png,초승달·날카로운 홍옥와 서리·닻·중력석를 결합한 하나의 새 도구 · T3 단계의 성장 실루엣,제작 완료
+critical_control_t4,찬란한 서리의 칼날,4,제어 + 치명타,Assets/_Project/Resources/Sprites/Parts/Evolutions/critical_control_t4.png,초승달·날카로운 홍옥와 서리·닻·중력석를 결합한 하나의 새 도구 · T4 단계의 성장 실루엣,제작 완료
+critical_control_t5,완성된 서리의 칼날,5,제어 + 치명타,Assets/_Project/Resources/Sprites/Parts/Evolutions/critical_control_t5.png,초승달·날카로운 홍옥와 서리·닻·중력석를 결합한 하나의 새 도구 · T5 단계의 성장 실루엣,제작 완료
+critical_guard_t2,불굴의 홍옥,2,방어 + 치명타,Assets/_Project/Resources/Sprites/Parts/Evolutions/critical_guard_t2.png,초승달·날카로운 홍옥와 버클·수호 성배를 결합한 하나의 새 도구 · T2 단계의 성장 실루엣,제작 완료
+critical_guard_t3,각성한 불굴의 홍옥,3,방어 + 치명타,Assets/_Project/Resources/Sprites/Parts/Evolutions/critical_guard_t3.png,초승달·날카로운 홍옥와 버클·수호 성배를 결합한 하나의 새 도구 · T3 단계의 성장 실루엣,제작 완료
+critical_guard_t4,찬란한 불굴의 홍옥,4,방어 + 치명타,Assets/_Project/Resources/Sprites/Parts/Evolutions/critical_guard_t4.png,초승달·날카로운 홍옥와 버클·수호 성배를 결합한 하나의 새 도구 · T4 단계의 성장 실루엣,제작 완료
+critical_guard_t5,완성된 불굴의 홍옥,5,방어 + 치명타,Assets/_Project/Resources/Sprites/Parts/Evolutions/critical_guard_t5.png,초승달·날카로운 홍옥와 버클·수호 성배를 결합한 하나의 새 도구 · T5 단계의 성장 실루엣,제작 완료
+critical_movement_t2,달그림자 고리,2,이동 + 치명타,Assets/_Project/Resources/Sprites/Parts/Evolutions/critical_movement_t2.png,초승달·날카로운 홍옥와 깃털·바람 리본를 결합한 하나의 새 도구 · T2 단계의 성장 실루엣,제작 완료
+critical_movement_t3,각성한 달그림자 고리,3,이동 + 치명타,Assets/_Project/Resources/Sprites/Parts/Evolutions/critical_movement_t3.png,초승달·날카로운 홍옥와 깃털·바람 리본를 결합한 하나의 새 도구 · T3 단계의 성장 실루엣,제작 완료
+critical_movement_t4,찬란한 달그림자 고리,4,이동 + 치명타,Assets/_Project/Resources/Sprites/Parts/Evolutions/critical_movement_t4.png,초승달·날카로운 홍옥와 깃털·바람 리본를 결합한 하나의 새 도구 · T4 단계의 성장 실루엣,제작 완료
+critical_movement_t5,완성된 달그림자 고리,5,이동 + 치명타,Assets/_Project/Resources/Sprites/Parts/Evolutions/critical_movement_t5.png,초승달·날카로운 홍옥와 깃털·바람 리본를 결합한 하나의 새 도구 · T5 단계의 성장 실루엣,제작 완료
+reuse_reuse_t2,되울림 태엽,2,재사용 + 재사용,Assets/_Project/Resources/Sprites/Parts/Evolutions/reuse_reuse_t2.png,태엽·은빛 기어 · T2 단계의 성장 실루엣,제작 완료
+reuse_reuse_t3,각성한 되울림 태엽,3,재사용 + 재사용,Assets/_Project/Resources/Sprites/Parts/Evolutions/reuse_reuse_t3.png,태엽·은빛 기어 · T3 단계의 성장 실루엣,제작 완료
+reuse_reuse_t4,찬란한 되울림 태엽,4,재사용 + 재사용,Assets/_Project/Resources/Sprites/Parts/Evolutions/reuse_reuse_t4.png,태엽·은빛 기어 · T4 단계의 성장 실루엣,제작 완료
+reuse_reuse_t5,완성된 되울림 태엽,5,재사용 + 재사용,Assets/_Project/Resources/Sprites/Parts/Evolutions/reuse_reuse_t5.png,태엽·은빛 기어 · T5 단계의 성장 실루엣,제작 완료
+reuse_projectile_t2,연사의 기관,2,재사용 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/reuse_projectile_t2.png,태엽·은빛 기어와 깃털·나선 발사구를 결합한 하나의 새 도구 · T2 단계의 성장 실루엣,제작 완료
+reuse_projectile_t3,각성한 연사의 기관,3,재사용 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/reuse_projectile_t3.png,태엽·은빛 기어와 깃털·나선 발사구를 결합한 하나의 새 도구 · T3 단계의 성장 실루엣,제작 완료
+reuse_projectile_t4,찬란한 연사의 기관,4,재사용 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/reuse_projectile_t4.png,태엽·은빛 기어와 깃털·나선 발사구를 결합한 하나의 새 도구 · T4 단계의 성장 실루엣,제작 완료
+reuse_projectile_t5,완성된 연사의 기관,5,재사용 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/reuse_projectile_t5.png,태엽·은빛 기어와 깃털·나선 발사구를 결합한 하나의 새 도구 · T5 단계의 성장 실루엣,제작 완료
+reuse_reach_t2,궤도의 시계,2,범위 + 재사용,Assets/_Project/Resources/Sprites/Parts/Evolutions/reuse_reach_t2.png,태엽·은빛 기어와 나침반·호박 거울를 결합한 하나의 새 도구 · T2 단계의 성장 실루엣,제작 완료
+reuse_reach_t3,각성한 궤도의 시계,3,범위 + 재사용,Assets/_Project/Resources/Sprites/Parts/Evolutions/reuse_reach_t3.png,태엽·은빛 기어와 나침반·호박 거울를 결합한 하나의 새 도구 · T3 단계의 성장 실루엣,제작 완료
+reuse_reach_t4,찬란한 궤도의 시계,4,범위 + 재사용,Assets/_Project/Resources/Sprites/Parts/Evolutions/reuse_reach_t4.png,태엽·은빛 기어와 나침반·호박 거울를 결합한 하나의 새 도구 · T4 단계의 성장 실루엣,제작 완료
+reuse_reach_t5,완성된 궤도의 시계,5,범위 + 재사용,Assets/_Project/Resources/Sprites/Parts/Evolutions/reuse_reach_t5.png,태엽·은빛 기어와 나침반·호박 거울를 결합한 하나의 새 도구 · T5 단계의 성장 실루엣,제작 완료
+reuse_control_t2,속박의 진자,2,재사용 + 제어,Assets/_Project/Resources/Sprites/Parts/Evolutions/reuse_control_t2.png,태엽·은빛 기어와 서리·닻·중력석를 결합한 하나의 새 도구 · T2 단계의 성장 실루엣,제작 완료
+reuse_control_t3,각성한 속박의 진자,3,재사용 + 제어,Assets/_Project/Resources/Sprites/Parts/Evolutions/reuse_control_t3.png,태엽·은빛 기어와 서리·닻·중력석를 결합한 하나의 새 도구 · T3 단계의 성장 실루엣,제작 완료
+reuse_control_t4,찬란한 속박의 진자,4,재사용 + 제어,Assets/_Project/Resources/Sprites/Parts/Evolutions/reuse_control_t4.png,태엽·은빛 기어와 서리·닻·중력석를 결합한 하나의 새 도구 · T4 단계의 성장 실루엣,제작 완료
+reuse_control_t5,완성된 속박의 진자,5,재사용 + 제어,Assets/_Project/Resources/Sprites/Parts/Evolutions/reuse_control_t5.png,태엽·은빛 기어와 서리·닻·중력석를 결합한 하나의 새 도구 · T5 단계의 성장 실루엣,제작 완료
+reuse_guard_t2,수호의 종,2,방어 + 재사용,Assets/_Project/Resources/Sprites/Parts/Evolutions/reuse_guard_t2.png,태엽·은빛 기어와 버클·수호 성배를 결합한 하나의 새 도구 · T2 단계의 성장 실루엣,제작 완료
+reuse_guard_t3,각성한 수호의 종,3,방어 + 재사용,Assets/_Project/Resources/Sprites/Parts/Evolutions/reuse_guard_t3.png,태엽·은빛 기어와 버클·수호 성배를 결합한 하나의 새 도구 · T3 단계의 성장 실루엣,제작 완료
+reuse_guard_t4,찬란한 수호의 종,4,방어 + 재사용,Assets/_Project/Resources/Sprites/Parts/Evolutions/reuse_guard_t4.png,태엽·은빛 기어와 버클·수호 성배를 결합한 하나의 새 도구 · T4 단계의 성장 실루엣,제작 완료
+reuse_guard_t5,완성된 수호의 종,5,방어 + 재사용,Assets/_Project/Resources/Sprites/Parts/Evolutions/reuse_guard_t5.png,태엽·은빛 기어와 버클·수호 성배를 결합한 하나의 새 도구 · T5 단계의 성장 실루엣,제작 완료
+reuse_movement_t2,순환의 날개,2,이동 + 재사용,Assets/_Project/Resources/Sprites/Parts/Evolutions/reuse_movement_t2.png,태엽·은빛 기어와 깃털·바람 리본를 결합한 하나의 새 도구 · T2 단계의 성장 실루엣,제작 완료
+reuse_movement_t3,각성한 순환의 날개,3,이동 + 재사용,Assets/_Project/Resources/Sprites/Parts/Evolutions/reuse_movement_t3.png,태엽·은빛 기어와 깃털·바람 리본를 결합한 하나의 새 도구 · T3 단계의 성장 실루엣,제작 완료
+reuse_movement_t4,찬란한 순환의 날개,4,이동 + 재사용,Assets/_Project/Resources/Sprites/Parts/Evolutions/reuse_movement_t4.png,태엽·은빛 기어와 깃털·바람 리본를 결합한 하나의 새 도구 · T4 단계의 성장 실루엣,제작 완료
+reuse_movement_t5,완성된 순환의 날개,5,이동 + 재사용,Assets/_Project/Resources/Sprites/Parts/Evolutions/reuse_movement_t5.png,태엽·은빛 기어와 깃털·바람 리본를 결합한 하나의 새 도구 · T5 단계의 성장 실루엣,제작 완료
+projectile_projectile_t2,매의 척추,2,투사체 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/projectile_projectile_t2.png,깃털·나선 발사구 · T2 단계의 성장 실루엣,제작 완료
+projectile_projectile_t3,각성한 매의 척추,3,투사체 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/projectile_projectile_t3.png,깃털·나선 발사구 · T3 단계의 성장 실루엣,제작 완료
+projectile_projectile_t4,찬란한 매의 척추,4,투사체 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/projectile_projectile_t4.png,깃털·나선 발사구 · T4 단계의 성장 실루엣,제작 완료
+projectile_projectile_t5,완성된 매의 척추,5,투사체 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/projectile_projectile_t5.png,깃털·나선 발사구 · T5 단계의 성장 실루엣,제작 완료
+projectile_reach_t2,지평의 조준경,2,범위 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/projectile_reach_t2.png,깃털·나선 발사구와 나침반·호박 거울를 결합한 하나의 새 도구 · T2 단계의 성장 실루엣,제작 완료
+projectile_reach_t3,각성한 지평의 조준경,3,범위 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/projectile_reach_t3.png,깃털·나선 발사구와 나침반·호박 거울를 결합한 하나의 새 도구 · T3 단계의 성장 실루엣,제작 완료
+projectile_reach_t4,찬란한 지평의 조준경,4,범위 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/projectile_reach_t4.png,깃털·나선 발사구와 나침반·호박 거울를 결합한 하나의 새 도구 · T4 단계의 성장 실루엣,제작 완료
+projectile_reach_t5,완성된 지평의 조준경,5,범위 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/projectile_reach_t5.png,깃털·나선 발사구와 나침반·호박 거울를 결합한 하나의 새 도구 · T5 단계의 성장 실루엣,제작 완료
+projectile_control_t2,닻의 발사관,2,제어 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/projectile_control_t2.png,깃털·나선 발사구와 서리·닻·중력석를 결합한 하나의 새 도구 · T2 단계의 성장 실루엣,제작 완료
+projectile_control_t3,각성한 닻의 발사관,3,제어 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/projectile_control_t3.png,깃털·나선 발사구와 서리·닻·중력석를 결합한 하나의 새 도구 · T3 단계의 성장 실루엣,제작 완료
+projectile_control_t4,찬란한 닻의 발사관,4,제어 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/projectile_control_t4.png,깃털·나선 발사구와 서리·닻·중력석를 결합한 하나의 새 도구 · T4 단계의 성장 실루엣,제작 완료
+projectile_control_t5,완성된 닻의 발사관,5,제어 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/projectile_control_t5.png,깃털·나선 발사구와 서리·닻·중력석를 결합한 하나의 새 도구 · T5 단계의 성장 실루엣,제작 완료
+projectile_guard_t2,보루의 화살깃,2,방어 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/projectile_guard_t2.png,깃털·나선 발사구와 버클·수호 성배를 결합한 하나의 새 도구 · T2 단계의 성장 실루엣,제작 완료
+projectile_guard_t3,각성한 보루의 화살깃,3,방어 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/projectile_guard_t3.png,깃털·나선 발사구와 버클·수호 성배를 결합한 하나의 새 도구 · T3 단계의 성장 실루엣,제작 완료
+projectile_guard_t4,찬란한 보루의 화살깃,4,방어 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/projectile_guard_t4.png,깃털·나선 발사구와 버클·수호 성배를 결합한 하나의 새 도구 · T4 단계의 성장 실루엣,제작 완료
+projectile_guard_t5,완성된 보루의 화살깃,5,방어 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/projectile_guard_t5.png,깃털·나선 발사구와 버클·수호 성배를 결합한 하나의 새 도구 · T5 단계의 성장 실루엣,제작 완료
+projectile_movement_t2,유성의 깃,2,이동 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/projectile_movement_t2.png,깃털·나선 발사구와 깃털·바람 리본를 결합한 하나의 새 도구 · T2 단계의 성장 실루엣,제작 완료
+projectile_movement_t3,각성한 유성의 깃,3,이동 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/projectile_movement_t3.png,깃털·나선 발사구와 깃털·바람 리본를 결합한 하나의 새 도구 · T3 단계의 성장 실루엣,제작 완료
+projectile_movement_t4,찬란한 유성의 깃,4,이동 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/projectile_movement_t4.png,깃털·나선 발사구와 깃털·바람 리본를 결합한 하나의 새 도구 · T4 단계의 성장 실루엣,제작 완료
+projectile_movement_t5,완성된 유성의 깃,5,이동 + 투사체,Assets/_Project/Resources/Sprites/Parts/Evolutions/projectile_movement_t5.png,깃털·나선 발사구와 깃털·바람 리본를 결합한 하나의 새 도구 · T5 단계의 성장 실루엣,제작 완료
+reach_reach_t2,지평 나침반,2,범위 + 범위,Assets/_Project/Resources/Sprites/Parts/Evolutions/reach_reach_t2.png,나침반·호박 거울 · T2 단계의 성장 실루엣,제작 완료
+reach_reach_t3,각성한 지평 나침반,3,범위 + 범위,Assets/_Project/Resources/Sprites/Parts/Evolutions/reach_reach_t3.png,나침반·호박 거울 · T3 단계의 성장 실루엣,제작 완료
+reach_reach_t4,찬란한 지평 나침반,4,범위 + 범위,Assets/_Project/Resources/Sprites/Parts/Evolutions/reach_reach_t4.png,나침반·호박 거울 · T4 단계의 성장 실루엣,제작 완료
+reach_reach_t5,완성된 지평 나침반,5,범위 + 범위,Assets/_Project/Resources/Sprites/Parts/Evolutions/reach_reach_t5.png,나침반·호박 거울 · T5 단계의 성장 실루엣,제작 완료
+reach_control_t2,인력의 천구,2,범위 + 제어,Assets/_Project/Resources/Sprites/Parts/Evolutions/reach_control_t2.png,나침반·호박 거울와 서리·닻·중력석를 결합한 하나의 새 도구 · T2 단계의 성장 실루엣,제작 완료
+reach_control_t3,각성한 인력의 천구,3,범위 + 제어,Assets/_Project/Resources/Sprites/Parts/Evolutions/reach_control_t3.png,나침반·호박 거울와 서리·닻·중력석를 결합한 하나의 새 도구 · T3 단계의 성장 실루엣,제작 완료
+reach_control_t4,찬란한 인력의 천구,4,범위 + 제어,Assets/_Project/Resources/Sprites/Parts/Evolutions/reach_control_t4.png,나침반·호박 거울와 서리·닻·중력석를 결합한 하나의 새 도구 · T4 단계의 성장 실루엣,제작 완료
+reach_control_t5,완성된 인력의 천구,5,범위 + 제어,Assets/_Project/Resources/Sprites/Parts/Evolutions/reach_control_t5.png,나침반·호박 거울와 서리·닻·중력석를 결합한 하나의 새 도구 · T5 단계의 성장 실루엣,제작 완료
+reach_guard_t2,성역의 거울,2,방어 + 범위,Assets/_Project/Resources/Sprites/Parts/Evolutions/reach_guard_t2.png,나침반·호박 거울와 버클·수호 성배를 결합한 하나의 새 도구 · T2 단계의 성장 실루엣,제작 완료
+reach_guard_t3,각성한 성역의 거울,3,방어 + 범위,Assets/_Project/Resources/Sprites/Parts/Evolutions/reach_guard_t3.png,나침반·호박 거울와 버클·수호 성배를 결합한 하나의 새 도구 · T3 단계의 성장 실루엣,제작 완료
+reach_guard_t4,찬란한 성역의 거울,4,방어 + 범위,Assets/_Project/Resources/Sprites/Parts/Evolutions/reach_guard_t4.png,나침반·호박 거울와 버클·수호 성배를 결합한 하나의 새 도구 · T4 단계의 성장 실루엣,제작 완료
+reach_guard_t5,완성된 성역의 거울,5,방어 + 범위,Assets/_Project/Resources/Sprites/Parts/Evolutions/reach_guard_t5.png,나침반·호박 거울와 버클·수호 성배를 결합한 하나의 새 도구 · T5 단계의 성장 실루엣,제작 완료
+reach_movement_t2,바람길 지도,2,범위 + 이동,Assets/_Project/Resources/Sprites/Parts/Evolutions/reach_movement_t2.png,나침반·호박 거울와 깃털·바람 리본를 결합한 하나의 새 도구 · T2 단계의 성장 실루엣,제작 완료
+reach_movement_t3,각성한 바람길 지도,3,범위 + 이동,Assets/_Project/Resources/Sprites/Parts/Evolutions/reach_movement_t3.png,나침반·호박 거울와 깃털·바람 리본를 결합한 하나의 새 도구 · T3 단계의 성장 실루엣,제작 완료
+reach_movement_t4,찬란한 바람길 지도,4,범위 + 이동,Assets/_Project/Resources/Sprites/Parts/Evolutions/reach_movement_t4.png,나침반·호박 거울와 깃털·바람 리본를 결합한 하나의 새 도구 · T4 단계의 성장 실루엣,제작 완료
+reach_movement_t5,완성된 바람길 지도,5,범위 + 이동,Assets/_Project/Resources/Sprites/Parts/Evolutions/reach_movement_t5.png,나침반·호박 거울와 깃털·바람 리본를 결합한 하나의 새 도구 · T5 단계의 성장 실루엣,제작 완료
+control_control_t2,속박의 추,2,제어 + 제어,Assets/_Project/Resources/Sprites/Parts/Evolutions/control_control_t2.png,서리·닻·중력석 · T2 단계의 성장 실루엣,제작 완료
+control_control_t3,각성한 속박의 추,3,제어 + 제어,Assets/_Project/Resources/Sprites/Parts/Evolutions/control_control_t3.png,서리·닻·중력석 · T3 단계의 성장 실루엣,제작 완료
+control_control_t4,찬란한 속박의 추,4,제어 + 제어,Assets/_Project/Resources/Sprites/Parts/Evolutions/control_control_t4.png,서리·닻·중력석 · T4 단계의 성장 실루엣,제작 완료
+control_control_t5,완성된 속박의 추,5,제어 + 제어,Assets/_Project/Resources/Sprites/Parts/Evolutions/control_control_t5.png,서리·닻·중력석 · T5 단계의 성장 실루엣,제작 완료
+control_guard_t2,서리의 봉인,2,방어 + 제어,Assets/_Project/Resources/Sprites/Parts/Evolutions/control_guard_t2.png,서리·닻·중력석와 버클·수호 성배를 결합한 하나의 새 도구 · T2 단계의 성장 실루엣,제작 완료
+control_guard_t3,각성한 서리의 봉인,3,방어 + 제어,Assets/_Project/Resources/Sprites/Parts/Evolutions/control_guard_t3.png,서리·닻·중력석와 버클·수호 성배를 결합한 하나의 새 도구 · T3 단계의 성장 실루엣,제작 완료
+control_guard_t4,찬란한 서리의 봉인,4,방어 + 제어,Assets/_Project/Resources/Sprites/Parts/Evolutions/control_guard_t4.png,서리·닻·중력석와 버클·수호 성배를 결합한 하나의 새 도구 · T4 단계의 성장 실루엣,제작 완료
+control_guard_t5,완성된 서리의 봉인,5,방어 + 제어,Assets/_Project/Resources/Sprites/Parts/Evolutions/control_guard_t5.png,서리·닻·중력석와 버클·수호 성배를 결합한 하나의 새 도구 · T5 단계의 성장 실루엣,제작 완료
+control_movement_t2,폭풍의 갈고리,2,이동 + 제어,Assets/_Project/Resources/Sprites/Parts/Evolutions/control_movement_t2.png,서리·닻·중력석와 깃털·바람 리본를 결합한 하나의 새 도구 · T2 단계의 성장 실루엣,제작 완료
+control_movement_t3,각성한 폭풍의 갈고리,3,이동 + 제어,Assets/_Project/Resources/Sprites/Parts/Evolutions/control_movement_t3.png,서리·닻·중력석와 깃털·바람 리본를 결합한 하나의 새 도구 · T3 단계의 성장 실루엣,제작 완료
+control_movement_t4,찬란한 폭풍의 갈고리,4,이동 + 제어,Assets/_Project/Resources/Sprites/Parts/Evolutions/control_movement_t4.png,서리·닻·중력석와 깃털·바람 리본를 결합한 하나의 새 도구 · T4 단계의 성장 실루엣,제작 완료
+control_movement_t5,완성된 폭풍의 갈고리,5,이동 + 제어,Assets/_Project/Resources/Sprites/Parts/Evolutions/control_movement_t5.png,서리·닻·중력석와 깃털·바람 리본를 결합한 하나의 새 도구 · T5 단계의 성장 실루엣,제작 완료
+guard_guard_t2,수호의 성배,2,방어 + 방어,Assets/_Project/Resources/Sprites/Parts/Evolutions/guard_guard_t2.png,버클·수호 성배 · T2 단계의 성장 실루엣,제작 완료
+guard_guard_t3,각성한 수호의 성배,3,방어 + 방어,Assets/_Project/Resources/Sprites/Parts/Evolutions/guard_guard_t3.png,버클·수호 성배 · T3 단계의 성장 실루엣,제작 완료
+guard_guard_t4,찬란한 수호의 성배,4,방어 + 방어,Assets/_Project/Resources/Sprites/Parts/Evolutions/guard_guard_t4.png,버클·수호 성배 · T4 단계의 성장 실루엣,제작 완료
+guard_guard_t5,완성된 수호의 성배,5,방어 + 방어,Assets/_Project/Resources/Sprites/Parts/Evolutions/guard_guard_t5.png,버클·수호 성배 · T5 단계의 성장 실루엣,제작 완료
+guard_movement_t2,산들바람 방패,2,방어 + 이동,Assets/_Project/Resources/Sprites/Parts/Evolutions/guard_movement_t2.png,버클·수호 성배와 깃털·바람 리본를 결합한 하나의 새 도구 · T2 단계의 성장 실루엣,제작 완료
+guard_movement_t3,각성한 산들바람 방패,3,방어 + 이동,Assets/_Project/Resources/Sprites/Parts/Evolutions/guard_movement_t3.png,버클·수호 성배와 깃털·바람 리본를 결합한 하나의 새 도구 · T3 단계의 성장 실루엣,제작 완료
+guard_movement_t4,찬란한 산들바람 방패,4,방어 + 이동,Assets/_Project/Resources/Sprites/Parts/Evolutions/guard_movement_t4.png,버클·수호 성배와 깃털·바람 리본를 결합한 하나의 새 도구 · T4 단계의 성장 실루엣,제작 완료
+guard_movement_t5,완성된 산들바람 방패,5,방어 + 이동,Assets/_Project/Resources/Sprites/Parts/Evolutions/guard_movement_t5.png,버클·수호 성배와 깃털·바람 리본를 결합한 하나의 새 도구 · T5 단계의 성장 실루엣,제작 완료
+movement_movement_t2,질풍의 날개,2,이동 + 이동,Assets/_Project/Resources/Sprites/Parts/Evolutions/movement_movement_t2.png,깃털·바람 리본 · T2 단계의 성장 실루엣,제작 완료
+movement_movement_t3,각성한 질풍의 날개,3,이동 + 이동,Assets/_Project/Resources/Sprites/Parts/Evolutions/movement_movement_t3.png,깃털·바람 리본 · T3 단계의 성장 실루엣,제작 완료
+movement_movement_t4,찬란한 질풍의 날개,4,이동 + 이동,Assets/_Project/Resources/Sprites/Parts/Evolutions/movement_movement_t4.png,깃털·바람 리본 · T4 단계의 성장 실루엣,제작 완료
+movement_movement_t5,완성된 질풍의 날개,5,이동 + 이동,Assets/_Project/Resources/Sprites/Parts/Evolutions/movement_movement_t5.png,깃털·바람 리본 · T5 단계의 성장 실루엣,제작 완료

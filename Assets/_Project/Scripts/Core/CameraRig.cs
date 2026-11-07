@@ -102,7 +102,7 @@ namespace Diverse
         void HandleWheel()
         {
             var g = Game.I;
-            if (g == null || g.State != GameState.Playing || g.UiCapturingMouse) return;
+            if (g == null || !g.CombatRunning || g.UiCapturingMouse || g.Ui.InventoryCapturesPointer) return;
             float wheel = Controls.Scroll;
             if (Mathf.Abs(wheel) < 0.01f) return;
             zoomIn = Mathf.Clamp(zoomIn + (wheel > 0 ? 1 : -1), 0, Mathf.Max(0, maxZoomIn));

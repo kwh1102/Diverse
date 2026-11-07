@@ -19,6 +19,7 @@ namespace Diverse
             public Sprite[] frames;
             public float t, frameTime;
             public bool active;
+            public int ticket;
             public Transform follow;
             public Vector3 followOffset;
         }
@@ -62,6 +63,14 @@ namespace Diverse
         int partCursor;
         readonly List<Ghost> ghosts = new List<Ghost>();
         readonly List<Popup> pops = new List<Popup>();
+        class Ribbon
+        {
+            public TrailRenderer renderer;
+            public Projectile shot;
+            public float remaining;
+        }
+        readonly List<Ribbon> ribbons = new();
+        static readonly AnimationCurve ribbonWidth = new(new Keyframe(0, 1), new Keyframe(.46f, .55f), new Keyframe(1, .02f));
         [SerializeField] Font font;       // damage numbers (Galmuri11-Bold)
         [Header("Damage numbers")]
         [SerializeField, Tooltip("Size multiplier of every damage number.")] float numberSize = 2.6f;
@@ -89,7 +98,7 @@ namespace Diverse
 
         // ───────── 스프라이트 애니메이션 ─────────
 
-        public SpriteRenderer Play(Sprite[] frames, Vector2 pos, float angle = 0, float fps = 24, float scale = 1, Color? tint = null, bool additive = false, int order = 0, Transform follow = null, bool flipY = false)
+        public SpriteRenderer Play(Sprite[] frames, Vector2 pos, float angle = 0, float fps = 24, float scale = 1, Color? tint = null, bool additive = false, int order = 0, Transform follow = null, bool flipY = false, float delay = 0)
         {
             if (frames == null || frames.Length == 0) return null;
             Anim a = null;
@@ -103,8 +112,9 @@ namespace Diverse
                 anims.Add(a);
             }
             a.active = true;
+            a.ticket++;
             a.frames = frames;
-            a.t = 0;
+            a.t = -Mathf.Max(0, delay);
             a.frameTime = 1f / fps;
             a.follow = follow;
             a.followOffset = follow != null ? (Vector3)pos - follow.position : Vector3.zero;
@@ -113,10 +123,98 @@ namespace Diverse
             a.go.transform.rotation = Quaternion.Euler(0, 0, angle);
             a.go.transform.localScale = new Vector3(scale, flipY ? -scale : scale, 1);
             a.sr.sprite = frames[0];
+            a.sr.enabled = delay <= 0;
             a.sr.color = tint ?? Color.white;
             a.sr.sharedMaterial = additive ? Art.AddMat : Art.SpriteMat;
             a.sr.sortingOrder = order != 0 ? order : Art.SortY(pos.y) + 40;
             return a.sr;
+        }
+
+        public sealed class HeldAnimation : System.IDisposable
+        {
+            readonly System.Action release;
+            readonly SpriteRenderer sprite;
+            internal HeldAnimation(SpriteRenderer sprite, System.Action release) { this.sprite = sprite; this.release = release; }
+            public void Set(Vector2 position, float angle, Vector3 scale)
+            {
+                if (sprite == null) return;
+                sprite.transform.SetPositionAndRotation(position, Quaternion.Euler(0, 0, angle));
+                sprite.transform.localScale = scale;
+            }
+            public void Dispose() => release();
+        }
+
+        public HeldAnimation Hold(Sprite[] frames, Vector2 position, float angle, float scale, int order, float seconds = 0)
+        {
+            var sprite = Play(frames, position, angle, seconds > 0 ? frames.Length / seconds : 0, scale, order: order);
+            if (sprite == null) return null;
+            var animation = anims.Find(a => a.sr == sprite);
+            int ticket = animation.ticket;
+            return new HeldAnimation(sprite, () =>
+            {
+                if (animation.ticket != ticket || !animation.active) return;
+                animation.active = false;
+                if (animation.go != null) animation.go.SetActive(false);
+            });
+        }
+
+        public void TrackProjectile(Projectile shot, Color color, float pixels, float seconds)
+        {
+            var ribbon = ribbons.Find(r => !r.renderer.gameObject.activeSelf);
+            if (ribbon == null)
+            {
+                var go = new GameObject("projectile ribbon");
+                go.transform.SetParent(transform, false);
+                var renderer = go.AddComponent<TrailRenderer>();
+                renderer.sharedMaterial = Art.RibbonMat;
+                renderer.widthCurve = ribbonWidth;
+                renderer.minVertexDistance = 1f / Art.PPU;
+                ribbon = new Ribbon { renderer = renderer };
+                ribbons.Add(ribbon);
+            }
+            var trail = ribbon.renderer;
+            trail.gameObject.SetActive(true);
+            trail.transform.position = shot.transform.position;
+            trail.Clear();
+            trail.time = seconds;
+            trail.widthMultiplier = pixels / Art.PPU;
+            var core = Color.Lerp(color, Pal.White, .55f);
+            trail.colorGradient = new Gradient {
+                colorKeys = new[] { new GradientColorKey(core, 0), new GradientColorKey(color, .45f), new GradientColorKey(color, 1) },
+                alphaKeys = new[] { new GradientAlphaKey(.88f, 0), new GradientAlphaKey(.70f, .48f), new GradientAlphaKey(0, 1) }
+            };
+            trail.sortingOrder = shot.VisualOrder - 1;
+            trail.emitting = true;
+            ribbon.shot = shot;
+            ribbon.remaining = seconds;
+        }
+
+        public void ResetProjectileWake(Projectile shot)
+        {
+            foreach (var ribbon in ribbons)
+                if (ribbon.shot == shot)
+                {
+                    ribbon.renderer.transform.position = shot.transform.position;
+                    ribbon.renderer.Clear();
+                }
+        }
+
+        void LateUpdate()
+        {
+            foreach (var ribbon in ribbons)
+            {
+                var trail = ribbon.renderer;
+                if (!trail.gameObject.activeSelf) continue;
+                if (ribbon.shot != null)
+                {
+                    trail.transform.position = ribbon.shot.transform.position;
+                    trail.sortingOrder = ribbon.shot.VisualOrder - 1;
+                    continue;
+                }
+                trail.emitting = false;
+                ribbon.remaining -= Time.deltaTime;
+                if (ribbon.remaining <= 0) trail.gameObject.SetActive(false);
+            }
         }
 
         // ───────── 파티클 (도트 사각형) ─────────
@@ -286,6 +384,8 @@ namespace Diverse
             {
                 if (!a.active) continue;
                 a.t += dt;
+                if (a.t < 0) continue;
+                a.sr.enabled = true;
                 int f = (int)(a.t / a.frameTime);
                 if (f >= a.frames.Length) { a.active = false; a.go.SetActive(false); continue; }
                 a.sr.sprite = a.frames[f];
@@ -356,6 +456,7 @@ namespace Diverse
             foreach (var p in parts) { p.active = false; p.go.SetActive(false); }
             foreach (var g in ghosts) { g.active = false; g.go.SetActive(false); }
             foreach (var p in pops) { p.active = false; p.go.SetActive(false); }
+            foreach (var r in ribbons) { r.shot = null; r.renderer.Clear(); r.renderer.gameObject.SetActive(false); }
         }
 
         // ───────── 자주 쓰는 조합 ─────────
@@ -363,6 +464,7 @@ namespace Diverse
         /// <param name="heavy">0~1 how hard the blow was (knockback): heavier hits get a ring and shards.</param>
         public void HitSpark(Vector2 pos, Vector2 dir, Color32 col, bool crit, float scale = 1f, float heavy = 0f)
         {
+            if (CombatVisuals.Contact(pos,dir,col,crit,scale,heavy)) return;
             float ang = dir.Angle();
             Play(Art.HitSpark(col, crit ? 12 : 9), pos, Random.Range(0, 360f), Random.Range(24f, 32f), scale * Random.Range(0.9f, 1.1f), null, true);
             // A second layer that changes from hit to hit: a cut mark for crits, a ring + shards for heavy blows,

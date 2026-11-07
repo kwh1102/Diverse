@@ -31,10 +31,13 @@ namespace Diverse
         public List<WarpStone> warpStones = new List<WarpStone>();                // placed warp stones (shared by every life)
         public string lastCostume = "white";
         public int lastWeapon;
+        public int lastWeaponType = -1;
         public List<TravelType> unlockedTravelTypes = new List<TravelType>();
         public string designId;               // this world's look (designs/<id>.json); empty = the built-in art
         public int designCalls;               // AI design generations in this world (shown in the studio)
-        public float designCostUsd;           // their estimated API cost
+        public float designCostUsd;           // measured usage when available, otherwise estimated
+        public int designUnknownCosts;        // completed calls without known pricing
+        public InventoryItem legacyPart;
 
         public bool Flag(string key) => flags.Contains(key);
         public void SetFlag(string key) { if (!flags.Contains(key)) flags.Add(key); }
@@ -56,17 +59,23 @@ namespace Diverse
         public int life;
         public string heroName, costume;
         public int weapon;
+        public int weaponType = -1;
         public float weaponDamage;
         public int level = 1;
         public float xp, xpToNext = 60;
         public int gold, kills;
         public int[] attrs = new int[4];
         public int unspentAttr, pendingEvolutions;
+        public int rewardVersion, claimedSkillMask;
+        public List<int> pendingRewardLevels = new List<int>();
+        public SkillOfferSave skillOffer;
+        public SkillOfferSave skillPrefetch;
         public float hp;
         public int dashMax = 2;
         public float x, y;
         public int warpStones;                                // warp stones carried (not yet placed)
         public int skillsLearned = -1;                        // QWER slots learned, in order (-1 = old save: all 4)
+        public InventoryState inventory;
         public List<AbilityRecord> abilities = new List<AbilityRecord>();
         public List<string> intent = new List<string>();      // "TAG=count"
     }
@@ -78,6 +87,7 @@ namespace Diverse
         public string heroName;
         public string costume;
         public int weapon;
+        public int weaponType = -1;
         public int level;
         public float x, y;
         public string cause;
@@ -87,6 +97,7 @@ namespace Diverse
         public int kills;
         public string epitaph;        // written by the storyteller
         public string forgottenBy;    // whether the storyteller recorded or forgot them
+        public List<InventoryItem> parts = new List<InventoryItem>();
     }
 
     /// <summary>A warp stone set up in the world. Travel between any two from the map while standing near one.</summary>

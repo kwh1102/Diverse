@@ -157,6 +157,13 @@ namespace Diverse.EditorTools
             foreach (var card in root.GetComponentsInChildren<EvolveCard>(true))
             {
                 var so = new SerializedObject(card);
+                var complexity=so.FindProperty("complexityLabel");
+                if(complexity!=null && complexity.objectReferenceValue!=null)
+                {
+                    // Modern cards reserve separate name, text and tier lanes. Do not restore the old 48/84 rectangle.
+                    UIBuilder.RepairPartCardScroll(card);
+                    continue;
+                }
                 var desc = (Text)so.FindProperty("desc").objectReferenceValue;
                 var area = Rect(card.transform, "DetailsScroll"); Area(area, 6, 48, 6, 84);
                 Scroll(area, desc.rectTransform);

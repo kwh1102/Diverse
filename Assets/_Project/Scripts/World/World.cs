@@ -294,6 +294,9 @@ namespace Diverse
             bool read = Save.Flag("ruin:" + s.id);
             var alt = Interactable.Create(c.transform, "ruin_altar", "ruin:" + s.id, read ? "빈 제단" : "고대 제단", s.center, Art.Prop(read ? "altar_empty" : "altar"), c);
             alt.data = s;
+            string relicKey="relic:"+s.id;
+            if (s.center.magnitude >= InventoryState.Rules.relicMinDistance && !Save.Flag("weapon:"+relicKey))
+                Interactable.Create(c.transform,"weapon_relic",relicKey,"바닥에 꽂힌 검",s.center+Vector2.down*2,PartArt.Relic(),c);
             c.BlockArea(s.center + Vector2.up * 0.3f, 1.6f, 0.6f);
         }
 

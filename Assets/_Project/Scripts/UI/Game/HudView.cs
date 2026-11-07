@@ -131,11 +131,12 @@ namespace Diverse
             if (minimap != null) minimap.Tick(g);
 
             var levels = DB.Progression.skillLevels;
-            int learned = p.LearnedSkills;
             for (int i = 0; i < skills.Length; i++)
             {
-                // Only the next skill in line says when it comes; later ones just say they're locked
-                string hint = i == learned && i < levels.Length ? NextSkillHint(levels[i]) : i > learned ? "앞의 기술을 먼저 익혀야 한다." : null;
+                string hint = i < levels.Length && p.Level < levels[i] ? $"레벨 {levels[i]}에 {"QWER"[i]} 액티브 후보 3개 중 하나를 선택합니다."
+                    : p.Inventory.items.Any(item=>item.kind==ItemKind.Skill && item.skillSlot==i)
+                    ? $"인벤토리에서 같은 유형 무기의 {"QWER"[i]} 칸에 해당 스킬을 놓아 줘."
+                    : "대기 중인 레벨 보상을 선택하거나 대장간에서 해금된 슬롯의 스킬을 의뢰해 줘.";
                 skills[i]?.Tick(p, p.Skills[i], Controls.KeyName(SkillActs[i]), tooltip, hint);
             }
 

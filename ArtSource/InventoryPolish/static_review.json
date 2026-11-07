@@ -1,0 +1,62 @@
+{
+  "mode": "static asset/prefab inspection; no Unity/compile/tests",
+  "canvases": [
+    {
+      "name": "GameCanvas",
+      "object_ids_preserved": true
+    },
+    {
+      "name": "MenuCanvas",
+      "object_ids_preserved": true
+    }
+  ],
+  "icons": [
+    {
+      "file": "Assets\\_Project\\UI\\Frames\\satchel_body.png",
+      "size": [
+        128,
+        96
+      ],
+      "alpha": "binary transparent"
+    },
+    {
+      "file": "Assets\\_Project\\UI\\Frames\\satchel_handle.png",
+      "size": [
+        40,
+        18
+      ],
+      "alpha": "binary transparent"
+    },
+    {
+      "file": "Assets\\_Project\\UI\\Frames\\satchel_panel.png",
+      "size": [
+        32,
+        32
+      ],
+      "alpha": "binary transparent"
+    },
+    {
+      "file": "Assets\\_Project\\UI\\Frames\\satchel_selected.png",
+      "size": [
+        32,
+        32
+      ],
+      "alpha": "binary transparent"
+    },
+    {
+      "file": "Assets\\_Project\\UI\\Frames\\satchel_slot.png",
+      "size": [
+        32,
+        32
+      ],
+      "alpha": "binary transparent"
+    }
+  ],
+  "combat_prefab": {
+    "database_reference_resolves": true,
+    "script_reference_resolves": true,
+    "serialized_renderer_and_visual_settings_present": true,
+    "gameplay_data_assets_unchanged": true,
+    "initial_part_authoring_scripts_unchanged": true
+  }
+}

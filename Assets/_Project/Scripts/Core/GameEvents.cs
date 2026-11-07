@@ -23,7 +23,7 @@ namespace Diverse
         }
     }
 
-    /// <summary>전투 이벤트 종류. 능력 Rule IR의 Trigger 원자 중 전투에서 오는 것들 (RuleLanguage 참고).</summary>
+    /// <summary>전투·플레이 기록에 사용하는 이벤트 종류.</summary>
     public enum Trig
     {
         None,
@@ -50,6 +50,7 @@ namespace Diverse
 
     public struct CombatEvent
     {
+        public int skillSlot;
         public Trig type;
         public Actor source;
         public Actor target;

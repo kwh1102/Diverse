@@ -42,6 +42,14 @@ namespace Diverse
             DashCharges--;
             return true;
         }
+        public void RecoverTravel(float seconds)
+        {
+            if (seconds <= 0 || DashCharges >= DashChargesMax) return;
+            dashRecharge += seconds;
+            while (DashCharges < DashChargesMax && dashRecharge >= DashRechargeTime)
+            { dashRecharge -= DashRechargeTime; DashCharges++; }
+            if (DashCharges >= DashChargesMax) dashRecharge = 0;
+        }
 
         void ExtendFlight(Vector2 direction)
         {

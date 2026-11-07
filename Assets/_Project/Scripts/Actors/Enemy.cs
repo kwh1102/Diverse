@@ -24,6 +24,31 @@ namespace Diverse
         [SerializeField] SpriteRenderer warn;   // attack telegraph (prefab child, hidden until windup)
         bool aggro;
         public bool Aggro => aggro;
+        public bool Stunned => state == S.Stunned;
+        public bool Preparing => state == S.Windup;
+        public bool Recovering => state == S.Recover;
+        public bool Charging => state == S.Strike && (def.brain == EnemyBrain.Charger ||
+            def.attack is EnemyAttack.Gore or EnemyAttack.Lunge or EnemyAttack.Dive || def.boss && bossAttack == 1);
+        Vector2 exposedSide, heldFacing;
+        float exposedUntil, sideStrength, facingUntil;
+
+        public void OpenSide(Vector2 side, float seconds, float strength)
+        {
+            exposedSide = side;
+            exposedUntil = Time.time + seconds;
+            sideStrength = strength;
+            Facing = strikeDir = -side;
+            strikeTarget = Pos + strikeDir * def.attackRange;
+        }
+
+        public float ExploitOpenSide(Vector2 from)
+        {
+            if (Time.time >= exposedUntil || Vector2.Dot((from - Pos).normalized, exposedSide) <= ActiveSkillGenerator.Rules.openSideDot) return 1;
+            exposedUntil = 0;
+            return 1 + sideStrength;
+        }
+
+        public void LockFacing(float seconds) { heldFacing = Facing; facingUntil = Time.time + seconds; }
         int bossPhase;
         int bossAttack, lastBossAttack;
         float spawnT = 0.35f;
@@ -61,12 +86,18 @@ namespace Diverse
 
         Vector2 tauntAt; float tauntUntil;
         /// <summary>Decoy: for a moment the enemy chases this point instead of the player.</summary>
-        public void Taunt(Vector2 at, float time) { if (def.boss) return; tauntAt = at; tauntUntil = Time.time + time; }
+        public void Taunt(Vector2 at, float time)
+        {
+            if (def.boss) return;
+            tauntAt = at; tauntUntil = Time.time + time;
+            if (state == S.Idle) { state = S.Chase; stateT = 0; aggro = true; }
+        }
 
         public void Stun(float t)
         {
             if (def.boss) t *= 0.35f;
             if (!Alive) return;
+            if (state == S.Stunned) t = Mathf.Max(t, stunT);
             state = S.Stunned; stunT = t; warn.enabled = false;
             CancelSignature();   // a stun interrupts any pattern (and its telegraphs)
             Fx.I?.Number(Pos + Vector2.up * 1.1f, "기절", new Color(1f, 0.95f, 0.5f), 0.8f, 0.6f);
@@ -98,6 +129,7 @@ namespace Diverse
                 var startPos = Pos;
                 movedThisFrame = false;
                 Think(dt);
+                if (Time.time < facingUntil) Facing = heldFacing;
                 Coast(dt);
                 // Fast moves (lunges, charges, dives, being knocked flying) leave fading afterimages
                 float speed = (Pos - startPos).magnitude / dt;
@@ -166,11 +198,11 @@ namespace Diverse
                 case S.Strike:
                     if (def.attack != EnemyAttack.Default && !def.boss)
                     {
-                        if (UpdateSignature(p, dt)) { state = S.Recover; stateT = 0; }
+                        if (UpdateSignature(p, dt) && state == S.Strike) { state = S.Recover; stateT = 0; }
                     }
                     else if (def.boss && bossAttack >= 4)
                     {
-                        if (UpdateBossSignature(p, dt)) { state = S.Recover; stateT = 0; }
+                        if (UpdateBossSignature(p, dt) && state == S.Strike) { state = S.Recover; stateT = 0; }
                     }
                     else if (def.brain == EnemyBrain.Charger || (def.boss && bossAttack == 1))
                     {
@@ -179,6 +211,7 @@ namespace Diverse
                         Pos = WorldStreamer.I.Move(Pos, strikeDir * (def.boss ? 13f : 11f) * dt, radius);
                         if (Random.value < 0.5f) Fx.I?.Burst(Pos, Pal.Hex("cdbba5"), 1, 2, 0.3f, 0, 2, 40, (-strikeDir).Angle(), true);
                         if (p != null && Vector2.Distance(p.Pos, Pos) < radius + p.radius + 0.2f) HitPlayer(p, 1.2f, strikeDir, 7);
+                        if (state != S.Strike) break;
                         if (stateT > 0.45f || (Pos - before).sqrMagnitude < 0.0001f) { state = S.Recover; stateT = 0; CameraRig.I?.Shake(0.15f); }
                     }
                     else if (def.brain == EnemyBrain.Hopper)
@@ -246,8 +279,9 @@ namespace Diverse
         {
             state = S.Windup; stateT = 0;
             attackCd = def.attackCooldown * Random.Range(0.85f, 1.2f);
-            strikeDir = (p.Pos - Pos).SafeNormal(Facing);
-            strikeTarget = p.Pos;
+            bool held = Time.time < facingUntil;
+            strikeDir = held ? heldFacing : (p.Pos - Pos).SafeNormal(Facing);
+            strikeTarget = held ? Pos + strikeDir * Vector2.Distance(Pos, p.Pos) : p.Pos;
             Facing = strikeDir;
             if (def.boss) PickBossAttack(p);
             warn.enabled = true;
@@ -343,6 +377,7 @@ namespace Diverse
 
         void HitPlayer(Player p, float mult, Vector2 dir, float kb)
         {
+            if (ActiveSkillRuntime.InterruptCharge(p, this)) return;
             if (p.TakeDamage(new DamageInfo { amount = def.damage * mult, source = this, direction = dir, knockback = kb, hitstop = 0.05f, element = def.element }) > 0)
                 Fx.I?.HitSpark(p.Pos + Vector2.up * 0.5f, dir, Pal.Blood, false);
         }

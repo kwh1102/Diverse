@@ -18,7 +18,7 @@ namespace Diverse
         void Update()
         {
             var g = Game.I;
-            if (g == null || g.State != GameState.Playing || g.Player == null || !g.Player.Alive || WorldStreamer.I == null) return;
+            if (g == null || !g.CombatRunning || g.Player == null || !g.Player.Alive || WorldStreamer.I == null) return;
             var r = DB.WorldRules;
             var p = g.Player.Pos;
 

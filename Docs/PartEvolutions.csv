@@ -1,0 +1,145 @@
+﻿id,familyA,familyB,tier,name,conditionA,conditionB,conditionText,sprite,damage,range,control,shield,heal,cooldown,artBrief
+power_power_t2,위력,위력,2,응축의 심장,charge,charge,충전 입력 또는 R일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_power_t2,0.091,0.0,0.0,0.0,0.0,0.0,응축된 수정·작은 도가니
+power_power_t3,위력,위력,3,각성한 응축의 심장,charge,charge,충전 입력 또는 R일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_power_t3,0.1456,0.0,0.0,0.0,0.0,0.0,응축된 수정·작은 도가니
+power_power_t4,위력,위력,4,찬란한 응축의 심장,charge,charge,충전 입력 또는 R일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_power_t4,0.2093,0.0,0.0,0.0,0.0,0.0,응축된 수정·작은 도가니
+power_power_t5,위력,위력,5,완성된 응축의 심장,charge,charge,충전 입력 또는 R일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_power_t5,0.2912,0.0,0.0,0.0,0.0,0.0,응축된 수정·작은 도가니
+power_critical_t2,위력,치명타,2,결정타의 렌즈,always,precision,직선·관통·유도 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_critical_t2,0.08125,0.0,0.0,0.0,0.0,0.0,응축된 수정·작은 도가니와 초승달·날카로운 홍옥를 결합한 하나의 새 도구
+power_critical_t3,위력,치명타,3,각성한 결정타의 렌즈,always,precision,직선·관통·유도 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_critical_t3,0.13,0.0,0.0,0.0,0.0,0.0,응축된 수정·작은 도가니와 초승달·날카로운 홍옥를 결합한 하나의 새 도구
+power_critical_t4,위력,치명타,4,찬란한 결정타의 렌즈,always,precision,직선·관통·유도 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_critical_t4,0.186875,0.0,0.0,0.0,0.0,0.0,응축된 수정·작은 도가니와 초승달·날카로운 홍옥를 결합한 하나의 새 도구
+power_critical_t5,위력,치명타,5,완성된 결정타의 렌즈,always,precision,직선·관통·유도 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_critical_t5,0.26,0.0,0.0,0.0,0.0,0.0,응축된 수정·작은 도가니와 초승달·날카로운 홍옥를 결합한 하나의 새 도구
+power_reuse_t2,위력,재사용,2,점화 태엽,always,alternate,6초 안에 직전과 다른 슬롯 시전일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_reuse_t2,0.0455,0.0,0.0,0.0,0.0,0.02275,응축된 수정·작은 도가니와 태엽·은빛 기어를 결합한 하나의 새 도구
+power_reuse_t3,위력,재사용,3,각성한 점화 태엽,always,alternate,6초 안에 직전과 다른 슬롯 시전일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_reuse_t3,0.0728,0.0,0.0,0.0,0.0,0.0364,응축된 수정·작은 도가니와 태엽·은빛 기어를 결합한 하나의 새 도구
+power_reuse_t4,위력,재사용,4,찬란한 점화 태엽,always,alternate,6초 안에 직전과 다른 슬롯 시전일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_reuse_t4,0.10465,0.0,0.0,0.0,0.0,0.052325,응축된 수정·작은 도가니와 태엽·은빛 기어를 결합한 하나의 새 도구
+power_reuse_t5,위력,재사용,5,완성된 점화 태엽,always,alternate,6초 안에 직전과 다른 슬롯 시전일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_reuse_t5,0.1456,0.0,0.0,0.0,0.0,0.0728,응축된 수정·작은 도가니와 태엽·은빛 기어를 결합한 하나의 새 도구
+power_projectile_t2,위력,투사체,2,파열의 노즐,always,projectile,투사체 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_projectile_t2,0.07475,0.01625,0.0,0.0,0.0,0.0,응축된 수정·작은 도가니와 깃털·나선 발사구를 결합한 하나의 새 도구
+power_projectile_t3,위력,투사체,3,각성한 파열의 노즐,always,projectile,투사체 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_projectile_t3,0.1196,0.026,0.0,0.0,0.0,0.0,응축된 수정·작은 도가니와 깃털·나선 발사구를 결합한 하나의 새 도구
+power_projectile_t4,위력,투사체,4,찬란한 파열의 노즐,always,projectile,투사체 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_projectile_t4,0.171925,0.037375,0.0,0.0,0.0,0.0,응축된 수정·작은 도가니와 깃털·나선 발사구를 결합한 하나의 새 도구
+power_projectile_t5,위력,투사체,5,완성된 파열의 노즐,always,projectile,투사체 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_projectile_t5,0.2392,0.052,0.0,0.0,0.0,0.0,응축된 수정·작은 도가니와 깃털·나선 발사구를 결합한 하나의 새 도구
+power_reach_t2,범위,위력,2,지평의 수정,always,distance,2 이상 떨어진 위치 조준일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_reach_t2,0.0455,0.04225,0.0,0.0,0.0,0.0,응축된 수정·작은 도가니와 나침반·호박 거울를 결합한 하나의 새 도구
+power_reach_t3,범위,위력,3,각성한 지평의 수정,always,distance,2 이상 떨어진 위치 조준일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_reach_t3,0.0728,0.0676,0.0,0.0,0.0,0.0,응축된 수정·작은 도가니와 나침반·호박 거울를 결합한 하나의 새 도구
+power_reach_t4,범위,위력,4,찬란한 지평의 수정,always,distance,2 이상 떨어진 위치 조준일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_reach_t4,0.10465,0.097175,0.0,0.0,0.0,0.0,응축된 수정·작은 도가니와 나침반·호박 거울를 결합한 하나의 새 도구
+power_reach_t5,범위,위력,5,완성된 지평의 수정,always,distance,2 이상 떨어진 위치 조준일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_reach_t5,0.1456,0.1352,0.0,0.0,0.0,0.0,응축된 수정·작은 도가니와 나침반·호박 거울를 결합한 하나의 새 도구
+power_control_t2,위력,제어,2,결박 도가니,always,control,끌기·밀기·기절·표식 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_control_t2,0.0455,0.0,0.0585,0.0,0.0,0.0,응축된 수정·작은 도가니와 서리·닻·중력석를 결합한 하나의 새 도구
+power_control_t3,위력,제어,3,각성한 결박 도가니,always,control,끌기·밀기·기절·표식 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_control_t3,0.0728,0.0,0.0936,0.0,0.0,0.0,응축된 수정·작은 도가니와 서리·닻·중력석를 결합한 하나의 새 도구
+power_control_t4,위력,제어,4,찬란한 결박 도가니,always,control,끌기·밀기·기절·표식 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_control_t4,0.10465,0.0,0.13455,0.0,0.0,0.0,응축된 수정·작은 도가니와 서리·닻·중력석를 결합한 하나의 새 도구
+power_control_t5,위력,제어,5,완성된 결박 도가니,always,control,끌기·밀기·기절·표식 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_control_t5,0.1456,0.0,0.1872,0.0,0.0,0.0,응축된 수정·작은 도가니와 서리·닻·중력석를 결합한 하나의 새 도구
+power_guard_t2,방어,위력,2,가호의 렌즈,always,shield,보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_guard_t2,0.0455,0.0,0.0,0.065,0.0052,0.0,응축된 수정·작은 도가니와 버클·수호 성배를 결합한 하나의 새 도구
+power_guard_t3,방어,위력,3,각성한 가호의 렌즈,always,shield,보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_guard_t3,0.0728,0.0,0.0,0.104,0.00832,0.0,응축된 수정·작은 도가니와 버클·수호 성배를 결합한 하나의 새 도구
+power_guard_t4,방어,위력,4,찬란한 가호의 렌즈,always,shield,보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_guard_t4,0.10465,0.0,0.0,0.1495,0.01196,0.0,응축된 수정·작은 도가니와 버클·수호 성배를 결합한 하나의 새 도구
+power_guard_t5,방어,위력,5,완성된 가호의 렌즈,always,shield,보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_guard_t5,0.1456,0.0,0.0,0.208,0.01664,0.0,응축된 수정·작은 도가니와 버클·수호 성배를 결합한 하나의 새 도구
+power_movement_t2,위력,이동,2,질풍의 핵,always,movement,돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_movement_t2,0.06825,0.01625,0.0,0.0,0.0,0.0,응축된 수정·작은 도가니와 깃털·바람 리본를 결합한 하나의 새 도구
+power_movement_t3,위력,이동,3,각성한 질풍의 핵,always,movement,돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_movement_t3,0.1092,0.026,0.0,0.0,0.0,0.0,응축된 수정·작은 도가니와 깃털·바람 리본를 결합한 하나의 새 도구
+power_movement_t4,위력,이동,4,찬란한 질풍의 핵,always,movement,돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_movement_t4,0.156975,0.037375,0.0,0.0,0.0,0.0,응축된 수정·작은 도가니와 깃털·바람 리본를 결합한 하나의 새 도구
+power_movement_t5,위력,이동,5,완성된 질풍의 핵,always,movement,돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/power_movement_t5,0.2184,0.052,0.0,0.0,0.0,0.0,응축된 수정·작은 도가니와 깃털·바람 리본를 결합한 하나의 새 도구
+critical_critical_t2,치명타,치명타,2,운명의 월륜,precision,precision,직선·관통·유도 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/critical_critical_t2,0.0715,0.0,0.0,0.0,0.0,0.0,초승달·날카로운 홍옥
+critical_critical_t3,치명타,치명타,3,각성한 운명의 월륜,precision,precision,직선·관통·유도 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/critical_critical_t3,0.1144,0.0,0.0,0.0,0.0,0.0,초승달·날카로운 홍옥
+critical_critical_t4,치명타,치명타,4,찬란한 운명의 월륜,precision,precision,직선·관통·유도 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/critical_critical_t4,0.16445,0.0,0.0,0.0,0.0,0.0,초승달·날카로운 홍옥
+critical_critical_t5,치명타,치명타,5,완성된 운명의 월륜,precision,precision,직선·관통·유도 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/critical_critical_t5,0.2288,0.0,0.0,0.0,0.0,0.0,초승달·날카로운 홍옥
+critical_reuse_t2,재사용,치명타,2,기회의 톱니,precision,alternate,직선·관통·유도 단계 + 6초 안에 직전과 다른 슬롯 시전일 때 수동 시전 강화,Sprites/Parts/Evolutions/critical_reuse_t2,0.03575,0.0,0.0,0.0,0.0,0.02275,초승달·날카로운 홍옥와 태엽·은빛 기어를 결합한 하나의 새 도구
+critical_reuse_t3,재사용,치명타,3,각성한 기회의 톱니,precision,alternate,직선·관통·유도 단계 + 6초 안에 직전과 다른 슬롯 시전일 때 수동 시전 강화,Sprites/Parts/Evolutions/critical_reuse_t3,0.0572,0.0,0.0,0.0,0.0,0.0364,초승달·날카로운 홍옥와 태엽·은빛 기어를 결합한 하나의 새 도구
+critical_reuse_t4,재사용,치명타,4,찬란한 기회의 톱니,precision,alternate,직선·관통·유도 단계 + 6초 안에 직전과 다른 슬롯 시전일 때 수동 시전 강화,Sprites/Parts/Evolutions/critical_reuse_t4,0.082225,0.0,0.0,0.0,0.0,0.052325,초승달·날카로운 홍옥와 태엽·은빛 기어를 결합한 하나의 새 도구
+critical_reuse_t5,재사용,치명타,5,완성된 기회의 톱니,precision,alternate,직선·관통·유도 단계 + 6초 안에 직전과 다른 슬롯 시전일 때 수동 시전 강화,Sprites/Parts/Evolutions/critical_reuse_t5,0.1144,0.0,0.0,0.0,0.0,0.0728,초승달·날카로운 홍옥와 태엽·은빛 기어를 결합한 하나의 새 도구
+critical_projectile_t2,치명타,투사체,2,매의 송곳니,precision,projectile,직선·관통·유도 단계 + 투사체 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/critical_projectile_t2,0.065,0.01625,0.0,0.0,0.0,0.0,초승달·날카로운 홍옥와 깃털·나선 발사구를 결합한 하나의 새 도구
+critical_projectile_t3,치명타,투사체,3,각성한 매의 송곳니,precision,projectile,직선·관통·유도 단계 + 투사체 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/critical_projectile_t3,0.104,0.026,0.0,0.0,0.0,0.0,초승달·날카로운 홍옥와 깃털·나선 발사구를 결합한 하나의 새 도구
+critical_projectile_t4,치명타,투사체,4,찬란한 매의 송곳니,precision,projectile,직선·관통·유도 단계 + 투사체 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/critical_projectile_t4,0.1495,0.037375,0.0,0.0,0.0,0.0,초승달·날카로운 홍옥와 깃털·나선 발사구를 결합한 하나의 새 도구
+critical_projectile_t5,치명타,투사체,5,완성된 매의 송곳니,precision,projectile,직선·관통·유도 단계 + 투사체 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/critical_projectile_t5,0.208,0.052,0.0,0.0,0.0,0.0,초승달·날카로운 홍옥와 깃털·나선 발사구를 결합한 하나의 새 도구
+critical_reach_t2,범위,치명타,2,별을 꿰는 핀,precision,distance,직선·관통·유도 단계 + 2 이상 떨어진 위치 조준일 때 수동 시전 강화,Sprites/Parts/Evolutions/critical_reach_t2,0.03575,0.04225,0.0,0.0,0.0,0.0,초승달·날카로운 홍옥와 나침반·호박 거울를 결합한 하나의 새 도구
+critical_reach_t3,범위,치명타,3,각성한 별을 꿰는 핀,precision,distance,직선·관통·유도 단계 + 2 이상 떨어진 위치 조준일 때 수동 시전 강화,Sprites/Parts/Evolutions/critical_reach_t3,0.0572,0.0676,0.0,0.0,0.0,0.0,초승달·날카로운 홍옥와 나침반·호박 거울를 결합한 하나의 새 도구
+critical_reach_t4,범위,치명타,4,찬란한 별을 꿰는 핀,precision,distance,직선·관통·유도 단계 + 2 이상 떨어진 위치 조준일 때 수동 시전 강화,Sprites/Parts/Evolutions/critical_reach_t4,0.082225,0.097175,0.0,0.0,0.0,0.0,초승달·날카로운 홍옥와 나침반·호박 거울를 결합한 하나의 새 도구
+critical_reach_t5,범위,치명타,5,완성된 별을 꿰는 핀,precision,distance,직선·관통·유도 단계 + 2 이상 떨어진 위치 조준일 때 수동 시전 강화,Sprites/Parts/Evolutions/critical_reach_t5,0.1144,0.1352,0.0,0.0,0.0,0.0,초승달·날카로운 홍옥와 나침반·호박 거울를 결합한 하나의 새 도구
+critical_control_t2,제어,치명타,2,서리의 칼날,precision,control,직선·관통·유도 단계 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/critical_control_t2,0.03575,0.0,0.0585,0.0,0.0,0.0,초승달·날카로운 홍옥와 서리·닻·중력석를 결합한 하나의 새 도구
+critical_control_t3,제어,치명타,3,각성한 서리의 칼날,precision,control,직선·관통·유도 단계 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/critical_control_t3,0.0572,0.0,0.0936,0.0,0.0,0.0,초승달·날카로운 홍옥와 서리·닻·중력석를 결합한 하나의 새 도구
+critical_control_t4,제어,치명타,4,찬란한 서리의 칼날,precision,control,직선·관통·유도 단계 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/critical_control_t4,0.082225,0.0,0.13455,0.0,0.0,0.0,초승달·날카로운 홍옥와 서리·닻·중력석를 결합한 하나의 새 도구
+critical_control_t5,제어,치명타,5,완성된 서리의 칼날,precision,control,직선·관통·유도 단계 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/critical_control_t5,0.1144,0.0,0.1872,0.0,0.0,0.0,초승달·날카로운 홍옥와 서리·닻·중력석를 결합한 하나의 새 도구
+critical_guard_t2,방어,치명타,2,불굴의 홍옥,precision,shield,직선·관통·유도 단계 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/critical_guard_t2,0.03575,0.0,0.0,0.065,0.0052,0.0,초승달·날카로운 홍옥와 버클·수호 성배를 결합한 하나의 새 도구
+critical_guard_t3,방어,치명타,3,각성한 불굴의 홍옥,precision,shield,직선·관통·유도 단계 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/critical_guard_t3,0.0572,0.0,0.0,0.104,0.00832,0.0,초승달·날카로운 홍옥와 버클·수호 성배를 결합한 하나의 새 도구
+critical_guard_t4,방어,치명타,4,찬란한 불굴의 홍옥,precision,shield,직선·관통·유도 단계 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/critical_guard_t4,0.082225,0.0,0.0,0.1495,0.01196,0.0,초승달·날카로운 홍옥와 버클·수호 성배를 결합한 하나의 새 도구
+critical_guard_t5,방어,치명타,5,완성된 불굴의 홍옥,precision,shield,직선·관통·유도 단계 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/critical_guard_t5,0.1144,0.0,0.0,0.208,0.01664,0.0,초승달·날카로운 홍옥와 버클·수호 성배를 결합한 하나의 새 도구
+critical_movement_t2,이동,치명타,2,달그림자 고리,precision,movement,직선·관통·유도 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/critical_movement_t2,0.0585,0.01625,0.0,0.0,0.0,0.0,초승달·날카로운 홍옥와 깃털·바람 리본를 결합한 하나의 새 도구
+critical_movement_t3,이동,치명타,3,각성한 달그림자 고리,precision,movement,직선·관통·유도 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/critical_movement_t3,0.0936,0.026,0.0,0.0,0.0,0.0,초승달·날카로운 홍옥와 깃털·바람 리본를 결합한 하나의 새 도구
+critical_movement_t4,이동,치명타,4,찬란한 달그림자 고리,precision,movement,직선·관통·유도 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/critical_movement_t4,0.13455,0.037375,0.0,0.0,0.0,0.0,초승달·날카로운 홍옥와 깃털·바람 리본를 결합한 하나의 새 도구
+critical_movement_t5,이동,치명타,5,완성된 달그림자 고리,precision,movement,직선·관통·유도 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/critical_movement_t5,0.1872,0.052,0.0,0.0,0.0,0.0,초승달·날카로운 홍옥와 깃털·바람 리본를 결합한 하나의 새 도구
+reuse_reuse_t2,재사용,재사용,2,되울림 태엽,alternate,alternate,6초 안에 직전과 다른 슬롯 시전일 때 수동 시전 강화,Sprites/Parts/Evolutions/reuse_reuse_t2,0.0,0.0,0.0,0.0,0.0,0.0455,태엽·은빛 기어
+reuse_reuse_t3,재사용,재사용,3,각성한 되울림 태엽,alternate,alternate,6초 안에 직전과 다른 슬롯 시전일 때 수동 시전 강화,Sprites/Parts/Evolutions/reuse_reuse_t3,0.0,0.0,0.0,0.0,0.0,0.0728,태엽·은빛 기어
+reuse_reuse_t4,재사용,재사용,4,찬란한 되울림 태엽,alternate,alternate,6초 안에 직전과 다른 슬롯 시전일 때 수동 시전 강화,Sprites/Parts/Evolutions/reuse_reuse_t4,0.0,0.0,0.0,0.0,0.0,0.10465,태엽·은빛 기어
+reuse_reuse_t5,재사용,재사용,5,완성된 되울림 태엽,alternate,alternate,6초 안에 직전과 다른 슬롯 시전일 때 수동 시전 강화,Sprites/Parts/Evolutions/reuse_reuse_t5,0.0,0.0,0.0,0.0,0.0,0.1456,태엽·은빛 기어
+reuse_projectile_t2,재사용,투사체,2,연사의 기관,alternate,projectile,6초 안에 직전과 다른 슬롯 시전 + 투사체 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/reuse_projectile_t2,0.02925,0.01625,0.0,0.0,0.0,0.02275,태엽·은빛 기어와 깃털·나선 발사구를 결합한 하나의 새 도구
+reuse_projectile_t3,재사용,투사체,3,각성한 연사의 기관,alternate,projectile,6초 안에 직전과 다른 슬롯 시전 + 투사체 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/reuse_projectile_t3,0.0468,0.026,0.0,0.0,0.0,0.0364,태엽·은빛 기어와 깃털·나선 발사구를 결합한 하나의 새 도구
+reuse_projectile_t4,재사용,투사체,4,찬란한 연사의 기관,alternate,projectile,6초 안에 직전과 다른 슬롯 시전 + 투사체 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/reuse_projectile_t4,0.067275,0.037375,0.0,0.0,0.0,0.052325,태엽·은빛 기어와 깃털·나선 발사구를 결합한 하나의 새 도구
+reuse_projectile_t5,재사용,투사체,5,완성된 연사의 기관,alternate,projectile,6초 안에 직전과 다른 슬롯 시전 + 투사체 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/reuse_projectile_t5,0.0936,0.052,0.0,0.0,0.0,0.0728,태엽·은빛 기어와 깃털·나선 발사구를 결합한 하나의 새 도구
+reuse_reach_t2,범위,재사용,2,궤도의 시계,alternate,distance,6초 안에 직전과 다른 슬롯 시전 + 2 이상 떨어진 위치 조준일 때 수동 시전 강화,Sprites/Parts/Evolutions/reuse_reach_t2,0.0,0.04225,0.0,0.0,0.0,0.02275,태엽·은빛 기어와 나침반·호박 거울를 결합한 하나의 새 도구
+reuse_reach_t3,범위,재사용,3,각성한 궤도의 시계,alternate,distance,6초 안에 직전과 다른 슬롯 시전 + 2 이상 떨어진 위치 조준일 때 수동 시전 강화,Sprites/Parts/Evolutions/reuse_reach_t3,0.0,0.0676,0.0,0.0,0.0,0.0364,태엽·은빛 기어와 나침반·호박 거울를 결합한 하나의 새 도구
+reuse_reach_t4,범위,재사용,4,찬란한 궤도의 시계,alternate,distance,6초 안에 직전과 다른 슬롯 시전 + 2 이상 떨어진 위치 조준일 때 수동 시전 강화,Sprites/Parts/Evolutions/reuse_reach_t4,0.0,0.097175,0.0,0.0,0.0,0.052325,태엽·은빛 기어와 나침반·호박 거울를 결합한 하나의 새 도구
+reuse_reach_t5,범위,재사용,5,완성된 궤도의 시계,alternate,distance,6초 안에 직전과 다른 슬롯 시전 + 2 이상 떨어진 위치 조준일 때 수동 시전 강화,Sprites/Parts/Evolutions/reuse_reach_t5,0.0,0.1352,0.0,0.0,0.0,0.0728,태엽·은빛 기어와 나침반·호박 거울를 결합한 하나의 새 도구
+reuse_control_t2,재사용,제어,2,속박의 진자,alternate,control,6초 안에 직전과 다른 슬롯 시전 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/reuse_control_t2,0.0,0.0,0.0585,0.0,0.0,0.02275,태엽·은빛 기어와 서리·닻·중력석를 결합한 하나의 새 도구
+reuse_control_t3,재사용,제어,3,각성한 속박의 진자,alternate,control,6초 안에 직전과 다른 슬롯 시전 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/reuse_control_t3,0.0,0.0,0.0936,0.0,0.0,0.0364,태엽·은빛 기어와 서리·닻·중력석를 결합한 하나의 새 도구
+reuse_control_t4,재사용,제어,4,찬란한 속박의 진자,alternate,control,6초 안에 직전과 다른 슬롯 시전 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/reuse_control_t4,0.0,0.0,0.13455,0.0,0.0,0.052325,태엽·은빛 기어와 서리·닻·중력석를 결합한 하나의 새 도구
+reuse_control_t5,재사용,제어,5,완성된 속박의 진자,alternate,control,6초 안에 직전과 다른 슬롯 시전 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/reuse_control_t5,0.0,0.0,0.1872,0.0,0.0,0.0728,태엽·은빛 기어와 서리·닻·중력석를 결합한 하나의 새 도구
+reuse_guard_t2,방어,재사용,2,수호의 종,alternate,shield,6초 안에 직전과 다른 슬롯 시전 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/reuse_guard_t2,0.0,0.0,0.0,0.065,0.0052,0.02275,태엽·은빛 기어와 버클·수호 성배를 결합한 하나의 새 도구
+reuse_guard_t3,방어,재사용,3,각성한 수호의 종,alternate,shield,6초 안에 직전과 다른 슬롯 시전 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/reuse_guard_t3,0.0,0.0,0.0,0.104,0.00832,0.0364,태엽·은빛 기어와 버클·수호 성배를 결합한 하나의 새 도구
+reuse_guard_t4,방어,재사용,4,찬란한 수호의 종,alternate,shield,6초 안에 직전과 다른 슬롯 시전 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/reuse_guard_t4,0.0,0.0,0.0,0.1495,0.01196,0.052325,태엽·은빛 기어와 버클·수호 성배를 결합한 하나의 새 도구
+reuse_guard_t5,방어,재사용,5,완성된 수호의 종,alternate,shield,6초 안에 직전과 다른 슬롯 시전 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/reuse_guard_t5,0.0,0.0,0.0,0.208,0.01664,0.0728,태엽·은빛 기어와 버클·수호 성배를 결합한 하나의 새 도구
+reuse_movement_t2,이동,재사용,2,순환의 날개,alternate,movement,6초 안에 직전과 다른 슬롯 시전 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/reuse_movement_t2,0.02275,0.01625,0.0,0.0,0.0,0.02275,태엽·은빛 기어와 깃털·바람 리본를 결합한 하나의 새 도구
+reuse_movement_t3,이동,재사용,3,각성한 순환의 날개,alternate,movement,6초 안에 직전과 다른 슬롯 시전 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/reuse_movement_t3,0.0364,0.026,0.0,0.0,0.0,0.0364,태엽·은빛 기어와 깃털·바람 리본를 결합한 하나의 새 도구
+reuse_movement_t4,이동,재사용,4,찬란한 순환의 날개,alternate,movement,6초 안에 직전과 다른 슬롯 시전 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/reuse_movement_t4,0.052325,0.037375,0.0,0.0,0.0,0.052325,태엽·은빛 기어와 깃털·바람 리본를 결합한 하나의 새 도구
+reuse_movement_t5,이동,재사용,5,완성된 순환의 날개,alternate,movement,6초 안에 직전과 다른 슬롯 시전 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/reuse_movement_t5,0.0728,0.052,0.0,0.0,0.0,0.0728,태엽·은빛 기어와 깃털·바람 리본를 결합한 하나의 새 도구
+projectile_projectile_t2,투사체,투사체,2,매의 척추,projectile,projectile,투사체 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/projectile_projectile_t2,0.0585,0.0325,0.0,0.0,0.0,0.0,깃털·나선 발사구
+projectile_projectile_t3,투사체,투사체,3,각성한 매의 척추,projectile,projectile,투사체 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/projectile_projectile_t3,0.0936,0.052,0.0,0.0,0.0,0.0,깃털·나선 발사구
+projectile_projectile_t4,투사체,투사체,4,찬란한 매의 척추,projectile,projectile,투사체 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/projectile_projectile_t4,0.13455,0.07475,0.0,0.0,0.0,0.0,깃털·나선 발사구
+projectile_projectile_t5,투사체,투사체,5,완성된 매의 척추,projectile,projectile,투사체 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/projectile_projectile_t5,0.1872,0.104,0.0,0.0,0.0,0.0,깃털·나선 발사구
+projectile_reach_t2,범위,투사체,2,지평의 조준경,projectile,distance,투사체 단계 + 2 이상 떨어진 위치 조준일 때 수동 시전 강화,Sprites/Parts/Evolutions/projectile_reach_t2,0.02925,0.0585,0.0,0.0,0.0,0.0,깃털·나선 발사구와 나침반·호박 거울를 결합한 하나의 새 도구
+projectile_reach_t3,범위,투사체,3,각성한 지평의 조준경,projectile,distance,투사체 단계 + 2 이상 떨어진 위치 조준일 때 수동 시전 강화,Sprites/Parts/Evolutions/projectile_reach_t3,0.0468,0.0936,0.0,0.0,0.0,0.0,깃털·나선 발사구와 나침반·호박 거울를 결합한 하나의 새 도구
+projectile_reach_t4,범위,투사체,4,찬란한 지평의 조준경,projectile,distance,투사체 단계 + 2 이상 떨어진 위치 조준일 때 수동 시전 강화,Sprites/Parts/Evolutions/projectile_reach_t4,0.067275,0.13455,0.0,0.0,0.0,0.0,깃털·나선 발사구와 나침반·호박 거울를 결합한 하나의 새 도구
+projectile_reach_t5,범위,투사체,5,완성된 지평의 조준경,projectile,distance,투사체 단계 + 2 이상 떨어진 위치 조준일 때 수동 시전 강화,Sprites/Parts/Evolutions/projectile_reach_t5,0.0936,0.1872,0.0,0.0,0.0,0.0,깃털·나선 발사구와 나침반·호박 거울를 결합한 하나의 새 도구
+projectile_control_t2,제어,투사체,2,닻의 발사관,projectile,control,투사체 단계 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/projectile_control_t2,0.02925,0.01625,0.0585,0.0,0.0,0.0,깃털·나선 발사구와 서리·닻·중력석를 결합한 하나의 새 도구
+projectile_control_t3,제어,투사체,3,각성한 닻의 발사관,projectile,control,투사체 단계 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/projectile_control_t3,0.0468,0.026,0.0936,0.0,0.0,0.0,깃털·나선 발사구와 서리·닻·중력석를 결합한 하나의 새 도구
+projectile_control_t4,제어,투사체,4,찬란한 닻의 발사관,projectile,control,투사체 단계 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/projectile_control_t4,0.067275,0.037375,0.13455,0.0,0.0,0.0,깃털·나선 발사구와 서리·닻·중력석를 결합한 하나의 새 도구
+projectile_control_t5,제어,투사체,5,완성된 닻의 발사관,projectile,control,투사체 단계 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/projectile_control_t5,0.0936,0.052,0.1872,0.0,0.0,0.0,깃털·나선 발사구와 서리·닻·중력석를 결합한 하나의 새 도구
+projectile_guard_t2,방어,투사체,2,보루의 화살깃,projectile,shield,투사체 단계 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/projectile_guard_t2,0.02925,0.01625,0.0,0.065,0.0052,0.0,깃털·나선 발사구와 버클·수호 성배를 결합한 하나의 새 도구
+projectile_guard_t3,방어,투사체,3,각성한 보루의 화살깃,projectile,shield,투사체 단계 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/projectile_guard_t3,0.0468,0.026,0.0,0.104,0.00832,0.0,깃털·나선 발사구와 버클·수호 성배를 결합한 하나의 새 도구
+projectile_guard_t4,방어,투사체,4,찬란한 보루의 화살깃,projectile,shield,투사체 단계 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/projectile_guard_t4,0.067275,0.037375,0.0,0.1495,0.01196,0.0,깃털·나선 발사구와 버클·수호 성배를 결합한 하나의 새 도구
+projectile_guard_t5,방어,투사체,5,완성된 보루의 화살깃,projectile,shield,투사체 단계 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/projectile_guard_t5,0.0936,0.052,0.0,0.208,0.01664,0.0,깃털·나선 발사구와 버클·수호 성배를 결합한 하나의 새 도구
+projectile_movement_t2,이동,투사체,2,유성의 깃,projectile,movement,투사체 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/projectile_movement_t2,0.052,0.0325,0.0,0.0,0.0,0.0,깃털·나선 발사구와 깃털·바람 리본를 결합한 하나의 새 도구
+projectile_movement_t3,이동,투사체,3,각성한 유성의 깃,projectile,movement,투사체 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/projectile_movement_t3,0.0832,0.052,0.0,0.0,0.0,0.0,깃털·나선 발사구와 깃털·바람 리본를 결합한 하나의 새 도구
+projectile_movement_t4,이동,투사체,4,찬란한 유성의 깃,projectile,movement,투사체 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/projectile_movement_t4,0.1196,0.07475,0.0,0.0,0.0,0.0,깃털·나선 발사구와 깃털·바람 리본를 결합한 하나의 새 도구
+projectile_movement_t5,이동,투사체,5,완성된 유성의 깃,projectile,movement,투사체 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/projectile_movement_t5,0.1664,0.104,0.0,0.0,0.0,0.0,깃털·나선 발사구와 깃털·바람 리본를 결합한 하나의 새 도구
+reach_reach_t2,범위,범위,2,지평 나침반,distance,distance,2 이상 떨어진 위치 조준일 때 수동 시전 강화,Sprites/Parts/Evolutions/reach_reach_t2,0.0,0.0845,0.0,0.0,0.0,0.0,나침반·호박 거울
+reach_reach_t3,범위,범위,3,각성한 지평 나침반,distance,distance,2 이상 떨어진 위치 조준일 때 수동 시전 강화,Sprites/Parts/Evolutions/reach_reach_t3,0.0,0.1352,0.0,0.0,0.0,0.0,나침반·호박 거울
+reach_reach_t4,범위,범위,4,찬란한 지평 나침반,distance,distance,2 이상 떨어진 위치 조준일 때 수동 시전 강화,Sprites/Parts/Evolutions/reach_reach_t4,0.0,0.19435,0.0,0.0,0.0,0.0,나침반·호박 거울
+reach_reach_t5,범위,범위,5,완성된 지평 나침반,distance,distance,2 이상 떨어진 위치 조준일 때 수동 시전 강화,Sprites/Parts/Evolutions/reach_reach_t5,0.0,0.2704,0.0,0.0,0.0,0.0,나침반·호박 거울
+reach_control_t2,범위,제어,2,인력의 천구,distance,control,2 이상 떨어진 위치 조준 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/reach_control_t2,0.0,0.04225,0.0585,0.0,0.0,0.0,나침반·호박 거울와 서리·닻·중력석를 결합한 하나의 새 도구
+reach_control_t3,범위,제어,3,각성한 인력의 천구,distance,control,2 이상 떨어진 위치 조준 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/reach_control_t3,0.0,0.0676,0.0936,0.0,0.0,0.0,나침반·호박 거울와 서리·닻·중력석를 결합한 하나의 새 도구
+reach_control_t4,범위,제어,4,찬란한 인력의 천구,distance,control,2 이상 떨어진 위치 조준 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/reach_control_t4,0.0,0.097175,0.13455,0.0,0.0,0.0,나침반·호박 거울와 서리·닻·중력석를 결합한 하나의 새 도구
+reach_control_t5,범위,제어,5,완성된 인력의 천구,distance,control,2 이상 떨어진 위치 조준 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/reach_control_t5,0.0,0.1352,0.1872,0.0,0.0,0.0,나침반·호박 거울와 서리·닻·중력석를 결합한 하나의 새 도구
+reach_guard_t2,방어,범위,2,성역의 거울,distance,shield,2 이상 떨어진 위치 조준 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/reach_guard_t2,0.0,0.04225,0.0,0.065,0.0052,0.0,나침반·호박 거울와 버클·수호 성배를 결합한 하나의 새 도구
+reach_guard_t3,방어,범위,3,각성한 성역의 거울,distance,shield,2 이상 떨어진 위치 조준 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/reach_guard_t3,0.0,0.0676,0.0,0.104,0.00832,0.0,나침반·호박 거울와 버클·수호 성배를 결합한 하나의 새 도구
+reach_guard_t4,방어,범위,4,찬란한 성역의 거울,distance,shield,2 이상 떨어진 위치 조준 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/reach_guard_t4,0.0,0.097175,0.0,0.1495,0.01196,0.0,나침반·호박 거울와 버클·수호 성배를 결합한 하나의 새 도구
+reach_guard_t5,방어,범위,5,완성된 성역의 거울,distance,shield,2 이상 떨어진 위치 조준 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/reach_guard_t5,0.0,0.1352,0.0,0.208,0.01664,0.0,나침반·호박 거울와 버클·수호 성배를 결합한 하나의 새 도구
+reach_movement_t2,범위,이동,2,바람길 지도,distance,movement,2 이상 떨어진 위치 조준 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/reach_movement_t2,0.02275,0.0585,0.0,0.0,0.0,0.0,나침반·호박 거울와 깃털·바람 리본를 결합한 하나의 새 도구
+reach_movement_t3,범위,이동,3,각성한 바람길 지도,distance,movement,2 이상 떨어진 위치 조준 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/reach_movement_t3,0.0364,0.0936,0.0,0.0,0.0,0.0,나침반·호박 거울와 깃털·바람 리본를 결합한 하나의 새 도구
+reach_movement_t4,범위,이동,4,찬란한 바람길 지도,distance,movement,2 이상 떨어진 위치 조준 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/reach_movement_t4,0.052325,0.13455,0.0,0.0,0.0,0.0,나침반·호박 거울와 깃털·바람 리본를 결합한 하나의 새 도구
+reach_movement_t5,범위,이동,5,완성된 바람길 지도,distance,movement,2 이상 떨어진 위치 조준 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/reach_movement_t5,0.0728,0.1872,0.0,0.0,0.0,0.0,나침반·호박 거울와 깃털·바람 리본를 결합한 하나의 새 도구
+control_control_t2,제어,제어,2,속박의 추,control,control,끌기·밀기·기절·표식 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/control_control_t2,0.0,0.0,0.117,0.0,0.0,0.0,서리·닻·중력석
+control_control_t3,제어,제어,3,각성한 속박의 추,control,control,끌기·밀기·기절·표식 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/control_control_t3,0.0,0.0,0.1872,0.0,0.0,0.0,서리·닻·중력석
+control_control_t4,제어,제어,4,찬란한 속박의 추,control,control,끌기·밀기·기절·표식 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/control_control_t4,0.0,0.0,0.2691,0.0,0.0,0.0,서리·닻·중력석
+control_control_t5,제어,제어,5,완성된 속박의 추,control,control,끌기·밀기·기절·표식 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/control_control_t5,0.0,0.0,0.3744,0.0,0.0,0.0,서리·닻·중력석
+control_guard_t2,방어,제어,2,서리의 봉인,control,shield,끌기·밀기·기절·표식 단계 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/control_guard_t2,0.0,0.0,0.0585,0.065,0.0052,0.0,서리·닻·중력석와 버클·수호 성배를 결합한 하나의 새 도구
+control_guard_t3,방어,제어,3,각성한 서리의 봉인,control,shield,끌기·밀기·기절·표식 단계 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/control_guard_t3,0.0,0.0,0.0936,0.104,0.00832,0.0,서리·닻·중력석와 버클·수호 성배를 결합한 하나의 새 도구
+control_guard_t4,방어,제어,4,찬란한 서리의 봉인,control,shield,끌기·밀기·기절·표식 단계 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/control_guard_t4,0.0,0.0,0.13455,0.1495,0.01196,0.0,서리·닻·중력석와 버클·수호 성배를 결합한 하나의 새 도구
+control_guard_t5,방어,제어,5,완성된 서리의 봉인,control,shield,끌기·밀기·기절·표식 단계 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/control_guard_t5,0.0,0.0,0.1872,0.208,0.01664,0.0,서리·닻·중력석와 버클·수호 성배를 결합한 하나의 새 도구
+control_movement_t2,이동,제어,2,폭풍의 갈고리,control,movement,끌기·밀기·기절·표식 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/control_movement_t2,0.02275,0.01625,0.0585,0.0,0.0,0.0,서리·닻·중력석와 깃털·바람 리본를 결합한 하나의 새 도구
+control_movement_t3,이동,제어,3,각성한 폭풍의 갈고리,control,movement,끌기·밀기·기절·표식 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/control_movement_t3,0.0364,0.026,0.0936,0.0,0.0,0.0,서리·닻·중력석와 깃털·바람 리본를 결합한 하나의 새 도구
+control_movement_t4,이동,제어,4,찬란한 폭풍의 갈고리,control,movement,끌기·밀기·기절·표식 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/control_movement_t4,0.052325,0.037375,0.13455,0.0,0.0,0.0,서리·닻·중력석와 깃털·바람 리본를 결합한 하나의 새 도구
+control_movement_t5,이동,제어,5,완성된 폭풍의 갈고리,control,movement,끌기·밀기·기절·표식 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/control_movement_t5,0.0728,0.052,0.1872,0.0,0.0,0.0,서리·닻·중력석와 깃털·바람 리본를 결합한 하나의 새 도구
+guard_guard_t2,방어,방어,2,수호의 성배,shield,shield,보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/guard_guard_t2,0.0,0.0,0.0,0.13,0.0104,0.0,버클·수호 성배
+guard_guard_t3,방어,방어,3,각성한 수호의 성배,shield,shield,보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/guard_guard_t3,0.0,0.0,0.0,0.208,0.01664,0.0,버클·수호 성배
+guard_guard_t4,방어,방어,4,찬란한 수호의 성배,shield,shield,보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/guard_guard_t4,0.0,0.0,0.0,0.299,0.02392,0.0,버클·수호 성배
+guard_guard_t5,방어,방어,5,완성된 수호의 성배,shield,shield,보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/guard_guard_t5,0.0,0.0,0.0,0.416,0.03328,0.0,버클·수호 성배
+guard_movement_t2,방어,이동,2,산들바람 방패,shield,movement,보호막 보유 또는 보호막·장벽 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/guard_movement_t2,0.02275,0.01625,0.0,0.065,0.0052,0.0,버클·수호 성배와 깃털·바람 리본를 결합한 하나의 새 도구
+guard_movement_t3,방어,이동,3,각성한 산들바람 방패,shield,movement,보호막 보유 또는 보호막·장벽 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/guard_movement_t3,0.0364,0.026,0.0,0.104,0.00832,0.0,버클·수호 성배와 깃털·바람 리본를 결합한 하나의 새 도구
+guard_movement_t4,방어,이동,4,찬란한 산들바람 방패,shield,movement,보호막 보유 또는 보호막·장벽 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/guard_movement_t4,0.052325,0.037375,0.0,0.1495,0.01196,0.0,버클·수호 성배와 깃털·바람 리본를 결합한 하나의 새 도구
+guard_movement_t5,방어,이동,5,완성된 산들바람 방패,shield,movement,보호막 보유 또는 보호막·장벽 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/guard_movement_t5,0.0728,0.052,0.0,0.208,0.01664,0.0,버클·수호 성배와 깃털·바람 리본를 결합한 하나의 새 도구
+movement_movement_t2,이동,이동,2,질풍의 날개,movement,movement,돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/movement_movement_t2,0.0455,0.0325,0.0,0.0,0.0,0.0,깃털·바람 리본
+movement_movement_t3,이동,이동,3,각성한 질풍의 날개,movement,movement,돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/movement_movement_t3,0.0728,0.052,0.0,0.0,0.0,0.0,깃털·바람 리본
+movement_movement_t4,이동,이동,4,찬란한 질풍의 날개,movement,movement,돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/movement_movement_t4,0.10465,0.07475,0.0,0.0,0.0,0.0,깃털·바람 리본
+movement_movement_t5,이동,이동,5,완성된 질풍의 날개,movement,movement,돌진·후퇴·점멸 단계일 때 수동 시전 강화,Sprites/Parts/Evolutions/movement_movement_t5,0.1456,0.104,0.0,0.0,0.0,0.0,깃털·바람 리본

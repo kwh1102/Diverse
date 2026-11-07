@@ -64,19 +64,17 @@ namespace Diverse.EditorTools
         static GameDatabase BuildData()
         {
             var db = LoadOrCreate<GameDatabase>(ResDir + "/GameDatabase.asset");
-            db.weapons = DefaultData.Weapons.Values
-                .Select(w => DataAsset<WeaponData>($"{DataDir}/Weapons/{w.kind}.asset", a => a.def = w)).ToList();
+            db.weapons = System.Enum.GetValues(typeof(WeaponType)).Cast<WeaponType>().Select(type =>
+            {
+                string path = $"{DataDir}/WeaponProfiles/{type}.asset";
+                return AssetDatabase.LoadAssetAtPath<WeaponData>(path)
+                    ?? throw new FileNotFoundException("Missing weapon profile", path);
+            }).ToList();
             db.costumes = DefaultData.Costumes
                 .Select(c => DataAsset<CostumeData>($"{DataDir}/Costumes/{c.id}.asset", a => a.def = c)).ToList();
             db.enemies = DefaultData.Enemies.Values
                 .Select(e => DataAsset<EnemyData>($"{DataDir}/Enemies/{e.id}.asset", a => a.def = e)).ToList();
             if (db.abilityRules == null) db.abilityRules = DataAsset<AbilityRulesData>($"{DataDir}/AbilityRules.asset", a => a.def = new AbilityRulesDef());
-            // Seed the primitive tuning table once (later edits in the Inspector are kept)
-            if (db.abilityRules.def.prims == null || db.abilityRules.def.prims.Count == 0)
-            {
-                db.abilityRules.def.prims = RuleLanguage.DefaultTuning();
-                EditorUtility.SetDirty(db.abilityRules);
-            }
             EditorUtility.SetDirty(db);
             return db;
         }
@@ -171,8 +169,7 @@ namespace Diverse.EditorTools
         {
             LoadMaterials();
 
-            // Player: weapon on a pivot at the hand, shield (sword & shield only), raft (shown on water).
-            // Preview sprites (white rabbit + greatsword) so the prefab is visible in the editor.
+            // Player: weapon on a pivot at the hand and a raft shown on water.
             var pr = ActorRoot<Player>("Player", out var player, out var pv, out var pbody);
             player.team = Team.Player;
             player.radius = 0.35f;
@@ -184,15 +181,11 @@ namespace Diverse.EditorTools
             var weapon = Renderer(pivot, "weapon");
             weapon.sprite = Baked("weapon_Greatsword");
             weapon.sortingOrder = 1;
-            var shield = Renderer(pv, "shield", local: new Vector3(-0.15f, 0.42f, 0));
-            shield.sprite = Baked("shield");
-            shield.sortingOrder = -1;
             var raft = Renderer(pr.transform, "raft", local: new Vector3(0, 0.1f, 0));
             raft.sprite = Baked("prop_raft");
             raft.enabled = false;
             Set(player, "weaponPivot", pivot);
             Set(player, "weaponSr", weapon);
-            Set(player, "shieldSr", shield);
             Set(player, "raftSr", raft);
             SetShadow(pr, 14);
             db.playerPrefab = Save<Player>(pr, PrefabDir + "/Actors/Player.prefab");
@@ -323,8 +316,8 @@ namespace Diverse.EditorTools
                 foreach (Pose pose in System.Enum.GetValues(typeof(Pose))) { var p = pose; Add($"rabbit_{c.id}_{p}", () => Art.Rabbit(c, p)); }
                 Add($"elder_{c.id}", () => Art.ElderRabbit(c));
             }
-            foreach (WeaponKind k in System.Enum.GetValues(typeof(WeaponKind))) { var kk = k; Add($"weapon_{kk}", () => Art.Weapon(kk)); }
-            Add("shield", Art.Shield);
+            foreach (WeaponType type in System.Enum.GetValues(typeof(WeaponType)))
+                Add($"stock_{type.ToString().ToLowerInvariant()}", () => Art.StockWeapon(type));
             Add("bolt", Art.Bolt);
             Add("knife", Art.Knife);
             foreach (Biome b in System.Enum.GetValues(typeof(Biome)))

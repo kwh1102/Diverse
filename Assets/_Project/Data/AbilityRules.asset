@@ -13,445 +13,3233 @@ MonoBehaviour:
   m_Name: AbilityRules
   m_EditorClassIdentifier: 
   def:
-    maxRulesPerAbility: 4
-    maxStatesPerAbility: 3
-    maxOpsPerRule: 3
-    maxConditionsPerRule: 3
-    maxProcDepth: 3
-    maxTargetsPerProc: 6
-    maxSpawnPerOwner: 8
-    maxProcsPerFrame: 40
-    maxStateValue: 999
-    minInternalCooldown: 0.12
-    cycleRepairCooldown: 1
-    maxCycleGain: 0.8
-    maxExpectedLiveSpawns: 6
-    maxSpawnDuration: 8
-    maxTemporalTicks: 6
-    maxArmedSeconds: 8
-    maxCascade: 3
-    maxMetaTargets: 5
-    budgetBase: 32
-    budgetPerTier: 7
-    acceptMin: 0.45
-    acceptMax: 1.4
-    complexityBonus: 0.08
-    tierUnlockLevel: 0100000001000000030000000600000009000000
-    riskCap: 0.85
-    riskWarn: 0.55
-    simSeconds: 60
-    simMaxProcsPerSecond: 25
-    simMaxDivergence: 3
-    prims:
-    - id: Attack
-      def: 0
-      min: 0
-      max: 0
-      freq: 1.6
-    - id: Hit
-      def: 0
-      min: 0
-      max: 0
-      freq: 2
-    - id: FirstHit
-      def: 0
-      min: 0
-      max: 0
-      freq: 0.35
-    - id: Crit
-      def: 0
-      min: 0
-      max: 0
-      freq: 0.25
-    - id: Kill
-      def: 0
-      min: 0
-      max: 0
-      freq: 0.3
-    - id: Overkill
-      def: 0
-      min: 0
-      max: 0
-      freq: 0.08
-    - id: EliteKill
-      def: 0
-      min: 0
-      max: 0
-      freq: 0.02
-    - id: Dash
-      def: 0
-      min: 0
-      max: 0
-      freq: 0.35
-    - id: DashEnd
-      def: 0
-      min: 0
-      max: 0
-      freq: 0.35
-    - id: PerfectDodge
-      def: 0
-      min: 0
-      max: 0
-      freq: 0.06
-    - id: Moved
-      def: 0
-      min: 0
-      max: 0
-      freq: 0.4
-    - id: Damaged
-      def: 0
-      min: 0
-      max: 0
-      freq: 0.15
-    - id: Guard
-      def: 0
-      min: 0
-      max: 0
-      freq: 0.08
-    - id: ShieldBroken
-      def: 0
-      min: 0
-      max: 0
-      freq: 0.03
-    - id: Healed
-      def: 0
-      min: 0
-      max: 0
-      freq: 0.05
-    - id: LowHealth
-      def: 0
-      min: 0
-      max: 0
-      freq: 0.01
-    - id: SkillCast
-      def: 0
-      min: 0
-      max: 0
-      freq: 0.2
-    - id: ComboFinish
-      def: 0
-      min: 0
-      max: 0
-      freq: 0.4
-    - id: CloneSpawn
-      def: 0
-      min: 0
-      max: 0
-      freq: 0.02
-    - id: CloneExpire
-      def: 0
-      min: 0
-      max: 0
-      freq: 0.02
-    - id: EntityExpired
-      def: 0
-      min: 0
-      max: 0
-      freq: 0.02
-    - id: StatusApplied
-      def: 0
-      min: 0
-      max: 0
-      freq: 0.4
-    - id: StatusExpired
-      def: 0
-      min: 0
-      max: 0
-      freq: 0.3
-    - id: ProjectileEnd
-      def: 0
-      min: 0
-      max: 0
-      freq: 0.5
-    - id: Pickup
-      def: 0
-      min: 0
-      max: 0
-      freq: 0.5
-    - id: Every
-      def: 0
-      min: 0
-      max: 0
-      freq: 0
-    - id: StateFull
-      def: 0
-      min: 0
-      max: 0
-      freq: 0
-    - id: StateEmpty
-      def: 0
-      min: 0
-      max: 0
-      freq: 0
-    - id: CombatStart
-      def: 0
-      min: 0
-      max: 0
-      freq: 0.03
-    - id: CombatEnd
-      def: 0
-      min: 0
-      max: 0
-      freq: 0.03
-    - id: CampCleared
-      def: 0
-      min: 0
-      max: 0
-      freq: 0.004
-    - id: BossKilled
-      def: 0
-      min: 0
-      max: 0
-      freq: 0.001
-    - id: LevelUp
-      def: 0
-      min: 0
-      max: 0
-      freq: 0.005
-    - id: AbilityAcquired
-      def: 0
-      min: 0
-      max: 0
-      freq: 0.004
-    - id: Damage
-      def: 0.8
-      min: 0.2
-      max: 4
-      freq: 0
-    - id: Nova
-      def: 0.6
-      min: 0.15
-      max: 3
-      freq: 0
-    - id: Slash
-      def: 0.7
-      min: 0.2
-      max: 3
-      freq: 0
-    - id: Beam
-      def: 0.6
-      min: 0.15
-      max: 3
-      freq: 0
-    - id: Projectile
-      def: 0.4
-      min: 0.1
-      max: 2
-      freq: 0
-    - id: Chain
-      def: 0.5
-      min: 0.1
-      max: 2
-      freq: 0
-    - id: ApplyStatus
-      def: 0.3
-      min: 0.05
-      max: 1.5
-      freq: 0
-    - id: Detonate
-      def: 1
-      min: 0.2
-      max: 4
-      freq: 0
-    - id: Spread
-      def: 3
-      min: 1
-      max: 6
-      freq: 0
-    - id: Transfer
-      def: 2
-      min: 1
-      max: 5
-      freq: 0
-    - id: Execute
-      def: 0.12
-      min: 0.05
-      max: 0.3
-      freq: 0
-    - id: Drain
-      def: 0.5
-      min: 0.1
-      max: 2
-      freq: 0
-    - id: Stun
-      def: 0.6
-      min: 0.2
-      max: 2
-      freq: 0
-    - id: Slow
-      def: 2
-      min: 0.5
-      max: 5
-      freq: 0
-    - id: Taunt
-      def: 1.5
-      min: 0.5
-      max: 4
-      freq: 0
-    - id: Push
-      def: 7
-      min: 3
-      max: 14
-      freq: 0
-    - id: Pull
-      def: 7
-      min: 3
-      max: 14
-      freq: 0
-    - id: Cleanse
-      def: 0.4
-      min: 0.2
-      max: 1
-      freq: 0
-    - id: Heal
-      def: 0.04
-      min: 0.01
-      max: 0.2
-      freq: 0
-    - id: Shield
-      def: 0.12
-      min: 0.03
-      max: 0.5
-      freq: 0
-    - id: Buff
-      def: 0.2
-      min: 0.05
-      max: 0.8
-      freq: 0
-    - id: ResetCooldowns
-      def: 0.2
-      min: 0.05
-      max: 0.6
-      freq: 0
-    - id: GainDash
-      def: 1
-      min: 1
-      max: 2
-      freq: 0
-    - id: EmpowerNext
-      def: 0.6
-      min: 0.15
-      max: 3
-      freq: 0
-    - id: Spawn
-      def: 0.6
-      min: 0.2
-      max: 2
-      freq: 0
-    - id: DetonateEntities
-      def: 0.8
-      min: 0.2
-      max: 3
-      freq: 0
-    - id: ExtendEntities
-      def: 1.5
-      min: 0.5
-      max: 4
-      freq: 0
-    - id: GainGold
-      def: 3
-      min: 1
-      max: 30
-      freq: 0
-    - id: GainXp
-      def: 2
-      min: 1
-      max: 20
-      freq: 0
-    - id: DropPickup
-      def: 8
-      min: 2
-      max: 40
-      freq: 0
-    - id: ModifyStat
-      def: 0.1
-      min: 0
-      max: 0
-      freq: 0
-    - id: AmplifyDamage
-      def: 0.2
-      min: 0.05
-      max: 1
-      freq: 0
-    - id: Resist
-      def: 0.15
-      min: 0.05
-      max: 0.5
-      freq: 0
-    - id: Convert
-      def: 1
-      min: 0
-      max: 0
-      freq: 0
-    - id: Aura
-      def: 0.25
-      min: 0.05
-      max: 1
-      freq: 0
-    - id: StatusPotency
-      def: 0.3
-      min: 0.1
-      max: 1
-      freq: 0
-    - id: ReplaceWith
-      def: 0.5
-      min: 0.1
-      max: 2
-      freq: 0
-    - id: AmplifyTagged
-      def: 0.2
-      min: 0.05
-      max: 0.5
-      freq: 0
-    - id: RepeatTagged
-      def: 0.4
-      min: 0.2
-      max: 0.8
-      freq: 0
-    - id: HasteTagged
-      def: 0.25
-      min: 0.1
-      max: 0.5
-      freq: 0
-    - id: ExtendTagged
-      def: 0.3
-      min: 0.1
-      max: 1
-      freq: 0
-    - id: EnlargeTagged
-      def: 0.3
-      min: 0.1
-      max: 0.8
-      freq: 0
-    - id: MultiplyTagged
-      def: 1
-      min: 1
-      max: 2
-      freq: 0
-    - id: BudgetBias
-      def: 0.25
-      min: 0.1
-      max: 0.6
-      freq: 0
-    - id: RerollDiscount
-      def: 0.5
-      min: 0.2
-      max: 1
-      freq: 0
-    - id: TagBias
-      def: 1
-      min: 0.5
-      max: 3
-      freq: 0
-    - id: UpgradeRandom
-      def: 0.3
-      min: 0.15
-      max: 0.5
-      freq: 0
-    - id: DelayedReward
-      def: 100
-      min: 50
-      max: 300
-      freq: 0
+    partRankBonus: 0.12
+    partTierPower: [1, 1.8, 3, 4.5, 6.4]
+    maxRangeBonus: 0.5
+    maxControlBonus: 0.5
+    partShieldDuration: 2
+    partMaxShield: 0.75
+    partMaxHeal: 0.15
     telemetryFullTrust: 25
     telemetryMinSeconds: 30
+    active:
+      techniques:
+      - id: 1
+        reach: 0.95
+        radius: 1.15
+        seconds: 0.44
+        strength: 2.6
+      - id: 2
+        reach: 2.4
+        radius: 0.95
+        seconds: 0.23
+        strength: 3.4
+      - id: 3
+        reach: 1.8
+        radius: 1.25
+        seconds: 0.48
+        strength: 2.4
+      - id: 4
+        reach: 2.0
+        radius: 0.9
+        seconds: 3.2
+        strength: 1.6
+      - id: 5
+        reach: 6
+        radius: 0.24
+        seconds: 12
+        strength: 1.8
+      - id: 6
+        reach: 6
+        radius: 2.3
+        seconds: 6
+        strength: 2.0
+      - id: 7
+        reach: 6
+        radius: 3.0
+        seconds: 2.4
+        strength: 0.85
+      - id: 8
+        reach: 6
+        radius: 0.34
+        seconds: 4
+        strength: 2.5
+      - id: 9
+        reach: 7
+        radius: 0.65
+        seconds: 0.42
+        strength: 1.9
+      - id: 10
+        reach: 7
+        radius: 1.5
+        seconds: 0.32
+        strength: 2.8
+      - id: 11
+        reach: 5
+        radius: 2.5
+        seconds: 0.33
+        strength: 1.35
+      - id: 12
+        reach: 7
+        radius: 0.34
+        seconds: 2.3
+        strength: 2.8
+      - id: 13
+        reach: 6
+        radius: 2.2
+        seconds: 10
+        strength: 2.3
+      - id: 14
+        reach: 5
+        radius: 1.1
+        seconds: 4
+        strength: 1.8
+      - id: 15
+        reach: 6
+        radius: 0.62
+        seconds: 7
+        strength: 1
+      - id: 16
+        reach: 5
+        radius: 2.35
+        seconds: 4
+        strength: 2.5
+      - id: 17
+        reach: 6
+        radius: 1.25
+        seconds: 4
+        strength: 1
+      - id: 18
+        reach: 5
+        radius: 0.9
+        seconds: 15
+        strength: 2.8
+      - id: 19
+        reach: 3.6
+        radius: 4.5
+        seconds: 2.2
+        strength: 1
+      - id: 20
+        reach: 2
+        radius: 0.75
+        seconds: 2
+        strength: 2.2
+      techniqueRecastSeconds: 4
+      techniqueLinkScale: 1.2
+      techniqueControlSeconds: 0.85
+      casingLifetime: 12
+      captureBonusCap: 1.4
+      openSideDot: 0.25
+      casingLimit: 8
+      maxSteps: 4
+      chargeDuration: 1.1
+      chargeBonus: 0.5
+      channelDuration: 1.5
+      recastWindow: 3
+      curveStrength: 65
+      maxCastDuration: 8
+      anchorWidth: 0.6
+      maxTargets: 8
+      maxProjectiles: 5
+      maxPulses: 3
+      maxConcurrentCasts: 4
+      prefetchSkills: 1
+      skillPrefetchLeadLevels: 4
+      generationAttempts: 3
+      recentSignatures: 32
+      iconPixels: 32
+      projectilePixels: 16
+      effectPixels: 48
+      artParallel: 2
+      baseCooldown: 7
+      ultimateCooldown: 22
+      minCooldown: 4
+      maxCooldown: 35
+      basePower: 4.6
+      ultimatePower: 10
+      maxDamage: 12
+      range: 5
+      meleeRange: 2.5
+      radius: 2
+      projectileSpeed: 11
+      lockTime: 0.25
+      recoveryPenalty: 0.3
+      cooldownPenalty: 1.3
+      shortRangeFactor: 0.55
+      effectDuration: 2
+      trapDuration: 15
+      trapArmTime: 0.25
+      trapRecharge: 7
+      trapRadius: 0.85
+      trapRootTime: 0.75
+      trapCharges: 2
+      trapLimit: 3
+      linkWindow: 5
+      linkReach: 7
+      linkRadius: 1.4
+      linkDamage: 0.85
+      skillBuffer: 0.12
+      statusDuration: 3
+      stunDuration: 0.65
+      pulseInterval: 0.45
+      delay: 0.6
+      seekingBurstRadius: 1.15
+      seekingBurstDamage: 0.65
+      movementDistance: 3
+      movementDuration: 0.2
+      knockback: 4
+      shieldScale: 5
+      healScale: 2
+      utilityStepCost: 0.55
+      conditionalBonus: 0.35
+      patternCost: 0.45
+      controlCost: 0.65
+      movementCost: 0.45
+      areaCost: 0.35
+      rangeCost: 0.3
+      timingCost: 0.35
+      defenseCost: 0.65
+      markBonus: 0.25
+      passiveBonusCap: 0.65
+      projectileRadius: 0.2
+      guardInvulnerability: 0.25
+      imageModel: gpt-image-2.5-flare
+      iconQuality: low
+      effectQuality: medium
+      effectMinPixels: 8
+      effectFramesPerSecond: 20
+      castVisualDuration: 0.34
+      impactVisualDuration: 0.24
+      actionHeight: 0.45
+      movementTrailSpacing: 0.35
+      weaponSwingPixels: 32
+      impactPixels: 24
+      arcTrailDegrees: 105
+      arcThickness: 0.4
+      effectSolidLimit: 0.8
+      effectEdgeLimit: 0.08
+      effectMatteTolerance: 48
+      effectMaxNativeCoverage: 0.48
+      effectAnchorTolerance: 0.26
+      visualFrames: 6
+      maxVisualPixels: 128
+      visualCacheLimit: 192
+      iconPaletteColors: 12
+      minChoiceDistance: 0.38
+      inputDistanceWeight: 0.15
+      roleDistanceWeight: 0.25
+      iconBorderLimit: 0.08
+      iconSolidLimit: 0.92
+      iconMatteTolerance: 70
+      iconMatteBorderShare: 0.12
+      controlCooldown: 1.1
+      guardCooldown: 1.3
+      mobilityCooldown: 0.85
+      trapCooldown: 1.15
+    partTraits:
+      maxStrength: 2
+      damageCap: 0.65
+      critChanceCap: 0.5
+      critDamageCap: 0.5
+      reductionCap: 0.5
+      speedCap: 0.35
+      refundCap: 0.3
+      rangeCap: 0.5
+      healCap: 0.08
+      shieldCap: 0.75
+      stationaryTolerance: 0.03
+      slowCap: 0.6
+      homingCap: 3
+      spiralFrequency: 8
+      procDamageCap: 0.3
+    parts:
+    - id: "focus_lens"
+      name: "집중 렌즈"
+      family: "위력"
+      description: "조준선을 한 점에 모으는 수정 렌즈."
+      sprite: "Sprites/Parts/focus_lens"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 1
+      requiresActive: 1
+      traitText: "제자리에서 {d}초 기다린 뒤 사용한 액티브의 첫 적중 피해 +{p}%."
+      artBrief: "조준선을 한 점에 모으는 수정 렌즈"
+      amount: 0.3
+      secondary: 0
+      threshold: 0
+      duration: 0.8
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "sword_knot"
+      name: "검사의 매듭"
+      family: "위력"
+      description: "검 손잡이를 묶고 칼끝을 당기는 단단한 매듭."
+      sprite: "Sprites/Parts/sword_knot"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 2
+      requiresActive: 0
+      traitText: "평타 연계의 마지막 공격 피해 +{p}%."
+      artBrief: "검 손잡이를 묶고 칼끝을 당기는 단단한 매듭"
+      amount: 0.25
+      secondary: 0
+      threshold: 0
+      duration: 0
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "ember_crucible"
+      name: "불씨 도가니"
+      family: "위력"
+      description: "불씨 하나를 담은 작은 도가니."
+      sprite: "Sprites/Parts/ember_crucible"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 3
+      requiresActive: 1
+      traitText: "원소 액티브의 첫 적중에 불씨를 붙여 {d}초 동안 매초 공격력의 {p}% 화상 피해."
+      artBrief: "불씨 하나를 담은 작은 도가니"
+      amount: 0.12
+      secondary: 0
+      threshold: 0
+      duration: 2
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "prism_core"
+      name: "분광 핵"
+      family: "위력"
+      description: "서로 다른 두 빛을 교차시키는 분광 수정."
+      sprite: "Sprites/Parts/prism_core"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 4
+      requiresActive: 1
+      traitText: "{d}초 안에 직전과 다른 원소의 액티브를 사용하면 그 스킬 피해 +{p}%. 무속성 스킬은 연결을 끊습니다."
+      artBrief: "서로 다른 두 빛을 교차시키는 분광 수정"
+      amount: 0.22
+      secondary: 0
+      threshold: 0
+      duration: 6
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "moon_charm"
+      name: "초승달 부적"
+      family: "치명타"
+      description: "등 뒤를 비추는 초승달 은 부적."
+      sprite: "Sprites/Parts/moon_charm"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 5
+      requiresActive: 0
+      traitText: "적의 등 뒤에서 맞히는 평타의 치명타 확률 +{p}%p."
+      artBrief: "등 뒤를 비추는 초승달 은 부적"
+      amount: 0.3
+      secondary: 0
+      threshold: -0.25
+      duration: 0
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "lucky_die"
+      name: "흑요석 주사위"
+      family: "치명타"
+      description: "다섯 번째 눈이 빛나는 흑요석 주사위."
+      sprite: "Sprites/Parts/lucky_die"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 6
+      requiresActive: 0
+      traitText: "명중한 평타를 세어 {n}번째마다 확정 치명타. 그 타격의 치명타 피해 +{p}%."
+      artBrief: "다섯 번째 눈이 빛나는 흑요석 주사위"
+      amount: 0.1
+      secondary: 0
+      threshold: 0
+      duration: 0
+      cooldown: 0
+      distance: 0
+      count: 5
+    - id: "razor_gem"
+      name: "칼날 수정"
+      family: "치명타"
+      description: "금이 간 적을 마무리하는 얇은 칼날 수정."
+      sprite: "Sprites/Parts/razor_gem"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 7
+      requiresActive: 0
+      traitText: "체력이 {t}% 이하인 적에게 평타 피해 +{p}%."
+      artBrief: "금이 간 적을 마무리하는 얇은 칼날 수정"
+      amount: 0.35
+      secondary: 0
+      threshold: 0.3
+      duration: 0
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "ruby_pin"
+      name: "홍옥 핀"
+      family: "치명타"
+      description: "치명타 에너지를 저장하는 홍옥 핀."
+      sprite: "Sprites/Parts/ruby_pin"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 8
+      requiresActive: 1
+      traitText: "치명타를 내면 홍옥이 충전됩니다. {d}초 안에 다음 액티브를 쓰면 그 스킬의 치명타 확률 +{p}%p."
+      artBrief: "치명타 에너지를 저장하는 홍옥 핀"
+      amount: 0.25
+      secondary: 0
+      threshold: 0
+      duration: 5
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "clock_spring"
+      name: "태엽 시계"
+      family: "재사용"
+      description: "멈췄다가 다시 감기는 태엽 시계."
+      sprite: "Sprites/Parts/clock_spring"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 9
+      requiresActive: 1
+      traitText: "액티브를 {d}초 쉬었다가 사용하면 그 스킬의 남은 대기시간 {p}% 감소. 첫 사용에도 적용."
+      artBrief: "멈췄다가 다시 감기는 태엽 시계"
+      amount: 0.15
+      secondary: 0
+      threshold: 0
+      duration: 4
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "silver_gear"
+      name: "은빛 톱니"
+      family: "재사용"
+      description: "평타와 스킬을 잇는 세 개 이빨의 은빛 톱니."
+      sprite: "Sprites/Parts/silver_gear"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 10
+      requiresActive: 1
+      traitText: "평타를 {n}회 맞히면 톱니가 맞물립니다. 다음 액티브의 남은 대기시간 {p}% 감소 후 횟수 초기화."
+      artBrief: "평타와 스킬을 잇는 세 개 이빨의 은빛 톱니"
+      amount: 0.18
+      secondary: 0
+      threshold: 0
+      duration: 0
+      cooldown: 0
+      distance: 0
+      count: 3
+    - id: "echo_bell"
+      name: "메아리 방울"
+      family: "재사용"
+      description: "앞선 동작으로 소리를 되돌리는 메아리 방울."
+      sprite: "Sprites/Parts/echo_bell"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 11
+      requiresActive: 1
+      traitText: "{d}초 안에 다른 QWER을 이어 쓰면 직전에 쓴 슬롯의 남은 대기시간 {p}% 감소. 재발동 대기 {c}초."
+      artBrief: "앞선 동작으로 소리를 되돌리는 메아리 방울"
+      amount: 0.18
+      secondary: 0
+      threshold: 0
+      duration: 6
+      cooldown: 2
+      distance: 0
+      count: 1
+    - id: "hourglass_bead"
+      name: "모래시계 구슬"
+      family: "재사용"
+      description: "빗나간 시간을 되돌리는 모래시계 구슬."
+      sprite: "Sprites/Parts/hourglass_bead"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 12
+      requiresActive: 1
+      traitText: "공격 액티브가 끝날 때 아무 적도 맞히지 못했다면 그 슬롯의 남은 대기시간 {p}% 회수. 중단·무기 교체에는 미적용."
+      artBrief: "빗나간 시간을 되돌리는 모래시계 구슬"
+      amount: 0.25
+      secondary: 0
+      threshold: 0
+      duration: 0
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "arrow_fletching"
+      name: "매깃 화살깃"
+      family: "투사체"
+      description: "한 줄로 꿰뚫는 날카로운 화살깃."
+      sprite: "Sprites/Parts/arrow_fletching"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 13
+      requiresActive: 1
+      traitText: "각 액티브에서 처음 발사한 투사체가 적 {n}명을 추가 관통합니다."
+      artBrief: "한 줄로 꿰뚫는 날카로운 화살깃"
+      amount: 0
+      secondary: 0
+      threshold: 0
+      duration: 0
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "falcon_sight"
+      name: "매눈 조준경"
+      family: "투사체"
+      description: "적을 쫓는 매의 눈 모양 조준경."
+      sprite: "Sprites/Parts/falcon_sight"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 14
+      requiresActive: 1
+      traitText: "액티브 투사체가 가까운 적을 향해 완만하게 방향을 보정합니다."
+      artBrief: "적을 쫓는 매의 눈 모양 조준경"
+      amount: 1.5
+      secondary: 0
+      threshold: 0
+      duration: 0
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "rune_scope"
+      name: "룬 조준경"
+      family: "투사체"
+      description: "같은 표적 위에 겹쳐지는 두 개의 룬 조준선."
+      sprite: "Sprites/Parts/rune_scope"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 15
+      requiresActive: 1
+      traitText: "한 번 사용한 액티브의 투사체로 같은 적을 다시 맞히면 후속 탄의 피해 +{p}%."
+      artBrief: "같은 표적 위에 겹쳐지는 두 개의 룬 조준선"
+      amount: 0.25
+      secondary: 0
+      threshold: 0
+      duration: 0
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "spiral_nozzle"
+      name: "나선 노즐"
+      family: "투사체"
+      description: "나선 홈이 파인 작은 발사 노즐."
+      sprite: "Sprites/Parts/spiral_nozzle"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 16
+      requiresActive: 1
+      traitText: "액티브 투사체가 작은 나선 궤적으로 휘어 날아가며 명중 폭이 넓어집니다."
+      artBrief: "나선 홈이 파인 작은 발사 노즐"
+      amount: 12
+      secondary: 0.04
+      threshold: 0
+      duration: 0
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "trail_compass"
+      name: "길잡이 나침반"
+      family: "범위"
+      description: "먼 조준점을 가리키는 길잡이 나침반."
+      sprite: "Sprites/Parts/trail_compass"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 17
+      requiresActive: 1
+      traitText: "자신에게서 {r}칸 이상 떨어진 곳을 조준해 사용한 액티브의 사거리 +{p}%."
+      artBrief: "먼 조준점을 가리키는 길잡이 나침반"
+      amount: 0.2
+      secondary: 0
+      threshold: 0
+      duration: 0
+      cooldown: 0
+      distance: 3
+      count: 1
+    - id: "star_map"
+      name: "별자리 지도"
+      family: "범위"
+      description: "두 적중 지점을 별자리로 잇는 작은 지도."
+      sprite: "Sprites/Parts/star_map"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 18
+      requiresActive: 1
+      traitText: "스킬로 첫 피해를 준 위치를 {d}초 기억합니다. 그 지점 {r}칸 안을 다시 조준하면 다음 액티브 사거리 +{p}%, 첫 적중 피해 +{s}%."
+      artBrief: "두 적중 지점을 별자리로 잇는 작은 지도"
+      amount: 0.15
+      secondary: 0.2
+      threshold: 0
+      duration: 5
+      cooldown: 0
+      distance: 0.8
+      count: 1
+    - id: "long_reed"
+      name: "갈대 관"
+      family: "범위"
+      description: "긴 비행 거리를 만드는 속 빈 갈대 관."
+      sprite: "Sprites/Parts/long_reed"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 19
+      requiresActive: 1
+      traitText: "{r}칸 이상 날아간 액티브 투사체의 피해 +{p}%. 가까운 적에게는 보너스가 없습니다."
+      artBrief: "긴 비행 거리를 만드는 속 빈 갈대 관"
+      amount: 0.3
+      secondary: 0
+      threshold: 0
+      duration: 0
+      cooldown: 0
+      distance: 2
+      count: 1
+    - id: "amber_mirror"
+      name: "호박 거울"
+      family: "범위"
+      description: "공격 흔적을 품었다 돌려주는 호박 거울."
+      sprite: "Sprites/Parts/amber_mirror"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 20
+      requiresActive: 1
+      traitText: "받은 체력 피해의 {p}%를 저장합니다(최대 공격력의 {limit}%). {d}초 안에 다음 액티브를 쓰면 첫 적중에 저장한 피해를 추가."
+      artBrief: "공격 흔적을 품었다 돌려주는 호박 거울"
+      amount: 0.35
+      secondary: 0
+      threshold: 0
+      duration: 4
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "frost_shard"
+      name: "서리 결정"
+      family: "제어"
+      description: "제어의 순간 대상을 얼리는 서리 결정."
+      sprite: "Sprites/Parts/frost_shard"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 21
+      requiresActive: 1
+      traitText: "액티브로 끌기·밀기·기절·표식을 주는 첫 대상을 {v}초 얼려 멈춥니다. 재발동 대기 {c}초."
+      artBrief: "제어의 순간 대상을 얼리는 서리 결정"
+      amount: 0.3
+      secondary: 0
+      threshold: 0
+      duration: 0
+      cooldown: 3
+      distance: 0
+      count: 1
+    - id: "anchor_hook"
+      name: "닻 갈고리"
+      family: "제어"
+      description: "움직인 적의 발을 붙잡는 닻 갈고리."
+      sprite: "Sprites/Parts/anchor_hook"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 22
+      requiresActive: 1
+      traitText: "액티브로 적을 밀거나 당긴 뒤 {d}초 동안 이동 속도 {p}% 감소."
+      artBrief: "움직인 적의 발을 붙잡는 닻 갈고리"
+      amount: 0.45
+      secondary: 0
+      threshold: 0
+      duration: 1
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "thunder_pin"
+      name: "뇌전 침"
+      family: "제어"
+      description: "표식을 찌르면 번쩍이는 뇌전 침."
+      sprite: "Sprites/Parts/thunder_pin"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 23
+      requiresActive: 1
+      traitText: "이미 표식이 있는 적에게 액티브의 첫 피해를 주면 {v}초 기절. 재발동 대기 {c}초."
+      artBrief: "표식을 찌르면 번쩍이는 뇌전 침"
+      amount: 0.25
+      secondary: 0
+      threshold: 0
+      duration: 0
+      cooldown: 3
+      distance: 0
+      count: 1
+    - id: "gravity_stone"
+      name: "중력석"
+      family: "제어"
+      description: "안쪽으로 파편을 끌어모으는 중력석."
+      sprite: "Sprites/Parts/gravity_stone"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 24
+      requiresActive: 1
+      traitText: "액티브의 끌어당기는 힘 +{p}%. 밀쳐내기에는 적용되지 않습니다."
+      artBrief: "안쪽으로 파편을 끌어모으는 중력석"
+      amount: 0.45
+      secondary: 0
+      threshold: 0
+      duration: 0
+      cooldown: 0
+      distance: 0
+      count: 1
+    - id: "ward_buckle"
+      name: "수호 버클"
+      family: "방어"
+      description: "공격을 흘려 방패를 여는 수호 버클."
+      sprite: "Sprites/Parts/ward_buckle"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 25
+      requiresActive: 0
+      traitText: "완벽한 회피에 성공하면 공격력의 {p}% 보호막을 {d}초 획득. 재발동 대기 {c}초."
+      artBrief: "공격을 흘려 방패를 여는 수호 버클"
+      amount: 0.35
+      secondary: 0
+      threshold: 0
+      duration: 3
+      cooldown: 6
+      distance: 0
+      count: 1
+    - id: "vital_vial"
+      name: "생명의 약병"
+      family: "방어"
+      description: "빠진 체력을 채우는 작은 생명의 약병."
+      sprite: "Sprites/Parts/vital_vial"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 26
+      requiresActive: 0
+      traitText: "평타를 맞히면 잃은 체력의 {p}% 회복. 재발동 대기 {c}초."
+      artBrief: "빠진 체력을 채우는 작은 생명의 약병"
+      amount: 0.04
+      secondary: 0
+      threshold: 0
+      duration: 0
+      cooldown: 2
+      distance: 0
+      count: 1
+    - id: "iron_plate"
+      name: "철갑 조각"
+      family: "방어"
+      description: "가만히 버틸 때 겹쳐지는 철갑 조각."
+      sprite: "Sprites/Parts/iron_plate"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 27
+      requiresActive: 0
+      traitText: "제자리에서 {d}초 버티면 다음에 받는 공격 피해 {p}% 감소. 재발동 대기 {c}초."
+      artBrief: "가만히 버틸 때 겹쳐지는 철갑 조각"
+      amount: 0.2
+      secondary: 0
+      threshold: 0
+      duration: 0.8
+      cooldown: 6
+      distance: 0
+      count: 1
+    - id: "heart_lock"
+      name: "심장 자물쇠"
+      family: "방어"
+      description: "위험할 때 심장을 감싸 잠기는 자물쇠."
+      sprite: "Sprites/Parts/heart_lock"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 28
+      requiresActive: 0
+      traitText: "체력이 {t}% 이하가 될 공격을 받으면 공격력의 {p}% 보호막을 {d}초 획득. 재발동 대기 {c}초."
+      artBrief: "위험할 때 심장을 감싸 잠기는 자물쇠"
+      amount: 0.45
+      secondary: 0
+      threshold: 0.35
+      duration: 3
+      cooldown: 12
+      distance: 0
+      count: 1
+    - id: "wind_boot"
+      name: "바람 장화"
+      family: "이동"
+      description: "걸음을 모아 다음 일격으로 보내는 바람 장화."
+      sprite: "Sprites/Parts/wind_boot"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 29
+      requiresActive: 0
+      traitText: "{r}칸 이동하면 바람을 충전합니다. {d}초 안에 다음 평타를 맞히면 첫 적중 피해 +{p}%."
+      artBrief: "걸음을 모아 다음 일격으로 보내는 바람 장화"
+      amount: 0.3
+      secondary: 0
+      threshold: 0
+      duration: 4
+      cooldown: 0
+      distance: 3
+      count: 1
+    - id: "silk_grip"
+      name: "비단 손잡이"
+      family: "이동"
+      description: "손에 감을수록 단단해지는 비단 손잡이."
+      sprite: "Sprites/Parts/silk_grip"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 30
+      requiresActive: 0
+      traitText: "제자리에서 {d}초 멈춘 뒤 평타를 맞힐 때마다 공격 속도 +{p}%, 최대 {n}중첩. 움직이면 초기화."
+      artBrief: "손에 감을수록 단단해지는 비단 손잡이"
+      amount: 0.06
+      secondary: 0
+      threshold: 0
+      duration: 0.4
+      cooldown: 0
+      distance: 0
+      count: 3
+    - id: "feather_ring"
+      name: "깃털 고리"
+      family: "이동"
+      description: "회피의 순간 가벼워지는 깃털 고리."
+      sprite: "Sprites/Parts/feather_ring"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 31
+      requiresActive: 0
+      traitText: "완벽한 회피에 성공하면 Space 이동 충전 시간을 {v}초 회복. 재발동 대기 {c}초."
+      artBrief: "회피의 순간 가벼워지는 깃털 고리"
+      amount: 1.2
+      secondary: 0
+      threshold: 0
+      duration: 0
+      cooldown: 4
+      distance: 0
+      count: 1
+    - id: "breeze_ribbon"
+      name: "산들바람 리본"
+      family: "이동"
+      description: "이동이 끝나도 바람이 이어지는 리본."
+      sprite: "Sprites/Parts/breeze_ribbon"
+      mods: []
+      skillDamage: 0
+      projectileDamage: 0
+      meleeDamage: 0
+      shieldOnCast: 0
+      healOnHit: 0
+      rangeBonus: 0
+      controlBonus: 0
+      mechanic: 32
+      requiresActive: 0
+      traitText: "Space 이동이 끝난 뒤 {d}초 동안 이동 속도 +{p}%. 재발동 대기 {c}초."
+      artBrief: "이동이 끝나도 바람이 이어지는 리본"
+      amount: 0.25
+      secondary: 0
+      threshold: 0
+      duration: 2
+      cooldown: 3
+      distance: 0
+      count: 1
+    evolutions:
+    - id: "power_power_t2"
+      familyA: "위력"
+      familyB: "위력"
+      tier: 2
+      name: "응축의 심장"
+      conditionA: "charge"
+      conditionB: "charge"
+      conditionText: "충전 입력 또는 R일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_power_t2"
+      damage: 0.091
+      range: 0.0
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "power_power_t3"
+      familyA: "위력"
+      familyB: "위력"
+      tier: 3
+      name: "각성한 응축의 심장"
+      conditionA: "charge"
+      conditionB: "charge"
+      conditionText: "충전 입력 또는 R일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_power_t3"
+      damage: 0.1456
+      range: 0.0
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "power_power_t4"
+      familyA: "위력"
+      familyB: "위력"
+      tier: 4
+      name: "찬란한 응축의 심장"
+      conditionA: "charge"
+      conditionB: "charge"
+      conditionText: "충전 입력 또는 R일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_power_t4"
+      damage: 0.2093
+      range: 0.0
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "power_power_t5"
+      familyA: "위력"
+      familyB: "위력"
+      tier: 5
+      name: "완성된 응축의 심장"
+      conditionA: "charge"
+      conditionB: "charge"
+      conditionText: "충전 입력 또는 R일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_power_t5"
+      damage: 0.2912
+      range: 0.0
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "power_critical_t2"
+      familyA: "위력"
+      familyB: "치명타"
+      tier: 2
+      name: "결정타의 렌즈"
+      conditionA: "always"
+      conditionB: "precision"
+      conditionText: "직선·관통·유도 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_critical_t2"
+      damage: 0.08125
+      range: 0.0
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "power_critical_t3"
+      familyA: "위력"
+      familyB: "치명타"
+      tier: 3
+      name: "각성한 결정타의 렌즈"
+      conditionA: "always"
+      conditionB: "precision"
+      conditionText: "직선·관통·유도 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_critical_t3"
+      damage: 0.13
+      range: 0.0
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "power_critical_t4"
+      familyA: "위력"
+      familyB: "치명타"
+      tier: 4
+      name: "찬란한 결정타의 렌즈"
+      conditionA: "always"
+      conditionB: "precision"
+      conditionText: "직선·관통·유도 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_critical_t4"
+      damage: 0.186875
+      range: 0.0
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "power_critical_t5"
+      familyA: "위력"
+      familyB: "치명타"
+      tier: 5
+      name: "완성된 결정타의 렌즈"
+      conditionA: "always"
+      conditionB: "precision"
+      conditionText: "직선·관통·유도 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_critical_t5"
+      damage: 0.26
+      range: 0.0
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "power_reuse_t2"
+      familyA: "위력"
+      familyB: "재사용"
+      tier: 2
+      name: "점화 태엽"
+      conditionA: "always"
+      conditionB: "alternate"
+      conditionText: "6초 안에 직전과 다른 슬롯 시전일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_reuse_t2"
+      damage: 0.0455
+      range: 0.0
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.02275
+    - id: "power_reuse_t3"
+      familyA: "위력"
+      familyB: "재사용"
+      tier: 3
+      name: "각성한 점화 태엽"
+      conditionA: "always"
+      conditionB: "alternate"
+      conditionText: "6초 안에 직전과 다른 슬롯 시전일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_reuse_t3"
+      damage: 0.0728
+      range: 0.0
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0364
+    - id: "power_reuse_t4"
+      familyA: "위력"
+      familyB: "재사용"
+      tier: 4
+      name: "찬란한 점화 태엽"
+      conditionA: "always"
+      conditionB: "alternate"
+      conditionText: "6초 안에 직전과 다른 슬롯 시전일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_reuse_t4"
+      damage: 0.10465
+      range: 0.0
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.052325
+    - id: "power_reuse_t5"
+      familyA: "위력"
+      familyB: "재사용"
+      tier: 5
+      name: "완성된 점화 태엽"
+      conditionA: "always"
+      conditionB: "alternate"
+      conditionText: "6초 안에 직전과 다른 슬롯 시전일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_reuse_t5"
+      damage: 0.1456
+      range: 0.0
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0728
+    - id: "power_projectile_t2"
+      familyA: "위력"
+      familyB: "투사체"
+      tier: 2
+      name: "파열의 노즐"
+      conditionA: "always"
+      conditionB: "projectile"
+      conditionText: "투사체 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_projectile_t2"
+      damage: 0.07475
+      range: 0.01625
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "power_projectile_t3"
+      familyA: "위력"
+      familyB: "투사체"
+      tier: 3
+      name: "각성한 파열의 노즐"
+      conditionA: "always"
+      conditionB: "projectile"
+      conditionText: "투사체 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_projectile_t3"
+      damage: 0.1196
+      range: 0.026
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "power_projectile_t4"
+      familyA: "위력"
+      familyB: "투사체"
+      tier: 4
+      name: "찬란한 파열의 노즐"
+      conditionA: "always"
+      conditionB: "projectile"
+      conditionText: "투사체 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_projectile_t4"
+      damage: 0.171925
+      range: 0.037375
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "power_projectile_t5"
+      familyA: "위력"
+      familyB: "투사체"
+      tier: 5
+      name: "완성된 파열의 노즐"
+      conditionA: "always"
+      conditionB: "projectile"
+      conditionText: "투사체 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_projectile_t5"
+      damage: 0.2392
+      range: 0.052
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "power_reach_t2"
+      familyA: "범위"
+      familyB: "위력"
+      tier: 2
+      name: "지평의 수정"
+      conditionA: "always"
+      conditionB: "distance"
+      conditionText: "2 이상 떨어진 위치 조준일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_reach_t2"
+      damage: 0.0455
+      range: 0.04225
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "power_reach_t3"
+      familyA: "범위"
+      familyB: "위력"
+      tier: 3
+      name: "각성한 지평의 수정"
+      conditionA: "always"
+      conditionB: "distance"
+      conditionText: "2 이상 떨어진 위치 조준일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_reach_t3"
+      damage: 0.0728
+      range: 0.0676
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "power_reach_t4"
+      familyA: "범위"
+      familyB: "위력"
+      tier: 4
+      name: "찬란한 지평의 수정"
+      conditionA: "always"
+      conditionB: "distance"
+      conditionText: "2 이상 떨어진 위치 조준일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_reach_t4"
+      damage: 0.10465
+      range: 0.097175
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "power_reach_t5"
+      familyA: "범위"
+      familyB: "위력"
+      tier: 5
+      name: "완성된 지평의 수정"
+      conditionA: "always"
+      conditionB: "distance"
+      conditionText: "2 이상 떨어진 위치 조준일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_reach_t5"
+      damage: 0.1456
+      range: 0.1352
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "power_control_t2"
+      familyA: "위력"
+      familyB: "제어"
+      tier: 2
+      name: "결박 도가니"
+      conditionA: "always"
+      conditionB: "control"
+      conditionText: "끌기·밀기·기절·표식 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_control_t2"
+      damage: 0.0455
+      range: 0.0
+      control: 0.0585
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "power_control_t3"
+      familyA: "위력"
+      familyB: "제어"
+      tier: 3
+      name: "각성한 결박 도가니"
+      conditionA: "always"
+      conditionB: "control"
+      conditionText: "끌기·밀기·기절·표식 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_control_t3"
+      damage: 0.0728
+      range: 0.0
+      control: 0.0936
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "power_control_t4"
+      familyA: "위력"
+      familyB: "제어"
+      tier: 4
+      name: "찬란한 결박 도가니"
+      conditionA: "always"
+      conditionB: "control"
+      conditionText: "끌기·밀기·기절·표식 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_control_t4"
+      damage: 0.10465
+      range: 0.0
+      control: 0.13455
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "power_control_t5"
+      familyA: "위력"
+      familyB: "제어"
+      tier: 5
+      name: "완성된 결박 도가니"
+      conditionA: "always"
+      conditionB: "control"
+      conditionText: "끌기·밀기·기절·표식 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_control_t5"
+      damage: 0.1456
+      range: 0.0
+      control: 0.1872
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "power_guard_t2"
+      familyA: "방어"
+      familyB: "위력"
+      tier: 2
+      name: "가호의 렌즈"
+      conditionA: "always"
+      conditionB: "shield"
+      conditionText: "보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_guard_t2"
+      damage: 0.0455
+      range: 0.0
+      control: 0.0
+      shield: 0.065
+      heal: 0.0052
+      cooldown: 0.0
+    - id: "power_guard_t3"
+      familyA: "방어"
+      familyB: "위력"
+      tier: 3
+      name: "각성한 가호의 렌즈"
+      conditionA: "always"
+      conditionB: "shield"
+      conditionText: "보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_guard_t3"
+      damage: 0.0728
+      range: 0.0
+      control: 0.0
+      shield: 0.104
+      heal: 0.00832
+      cooldown: 0.0
+    - id: "power_guard_t4"
+      familyA: "방어"
+      familyB: "위력"
+      tier: 4
+      name: "찬란한 가호의 렌즈"
+      conditionA: "always"
+      conditionB: "shield"
+      conditionText: "보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_guard_t4"
+      damage: 0.10465
+      range: 0.0
+      control: 0.0
+      shield: 0.1495
+      heal: 0.01196
+      cooldown: 0.0
+    - id: "power_guard_t5"
+      familyA: "방어"
+      familyB: "위력"
+      tier: 5
+      name: "완성된 가호의 렌즈"
+      conditionA: "always"
+      conditionB: "shield"
+      conditionText: "보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_guard_t5"
+      damage: 0.1456
+      range: 0.0
+      control: 0.0
+      shield: 0.208
+      heal: 0.01664
+      cooldown: 0.0
+    - id: "power_movement_t2"
+      familyA: "위력"
+      familyB: "이동"
+      tier: 2
+      name: "질풍의 핵"
+      conditionA: "always"
+      conditionB: "movement"
+      conditionText: "돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_movement_t2"
+      damage: 0.06825
+      range: 0.01625
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "power_movement_t3"
+      familyA: "위력"
+      familyB: "이동"
+      tier: 3
+      name: "각성한 질풍의 핵"
+      conditionA: "always"
+      conditionB: "movement"
+      conditionText: "돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_movement_t3"
+      damage: 0.1092
+      range: 0.026
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "power_movement_t4"
+      familyA: "위력"
+      familyB: "이동"
+      tier: 4
+      name: "찬란한 질풍의 핵"
+      conditionA: "always"
+      conditionB: "movement"
+      conditionText: "돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_movement_t4"
+      damage: 0.156975
+      range: 0.037375
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "power_movement_t5"
+      familyA: "위력"
+      familyB: "이동"
+      tier: 5
+      name: "완성된 질풍의 핵"
+      conditionA: "always"
+      conditionB: "movement"
+      conditionText: "돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/power_movement_t5"
+      damage: 0.2184
+      range: 0.052
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "critical_critical_t2"
+      familyA: "치명타"
+      familyB: "치명타"
+      tier: 2
+      name: "운명의 월륜"
+      conditionA: "precision"
+      conditionB: "precision"
+      conditionText: "직선·관통·유도 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/critical_critical_t2"
+      damage: 0.0715
+      range: 0.0
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "critical_critical_t3"
+      familyA: "치명타"
+      familyB: "치명타"
+      tier: 3
+      name: "각성한 운명의 월륜"
+      conditionA: "precision"
+      conditionB: "precision"
+      conditionText: "직선·관통·유도 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/critical_critical_t3"
+      damage: 0.1144
+      range: 0.0
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "critical_critical_t4"
+      familyA: "치명타"
+      familyB: "치명타"
+      tier: 4
+      name: "찬란한 운명의 월륜"
+      conditionA: "precision"
+      conditionB: "precision"
+      conditionText: "직선·관통·유도 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/critical_critical_t4"
+      damage: 0.16445
+      range: 0.0
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "critical_critical_t5"
+      familyA: "치명타"
+      familyB: "치명타"
+      tier: 5
+      name: "완성된 운명의 월륜"
+      conditionA: "precision"
+      conditionB: "precision"
+      conditionText: "직선·관통·유도 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/critical_critical_t5"
+      damage: 0.2288
+      range: 0.0
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "critical_reuse_t2"
+      familyA: "재사용"
+      familyB: "치명타"
+      tier: 2
+      name: "기회의 톱니"
+      conditionA: "precision"
+      conditionB: "alternate"
+      conditionText: "직선·관통·유도 단계 + 6초 안에 직전과 다른 슬롯 시전일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/critical_reuse_t2"
+      damage: 0.03575
+      range: 0.0
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.02275
+    - id: "critical_reuse_t3"
+      familyA: "재사용"
+      familyB: "치명타"
+      tier: 3
+      name: "각성한 기회의 톱니"
+      conditionA: "precision"
+      conditionB: "alternate"
+      conditionText: "직선·관통·유도 단계 + 6초 안에 직전과 다른 슬롯 시전일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/critical_reuse_t3"
+      damage: 0.0572
+      range: 0.0
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0364
+    - id: "critical_reuse_t4"
+      familyA: "재사용"
+      familyB: "치명타"
+      tier: 4
+      name: "찬란한 기회의 톱니"
+      conditionA: "precision"
+      conditionB: "alternate"
+      conditionText: "직선·관통·유도 단계 + 6초 안에 직전과 다른 슬롯 시전일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/critical_reuse_t4"
+      damage: 0.082225
+      range: 0.0
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.052325
+    - id: "critical_reuse_t5"
+      familyA: "재사용"
+      familyB: "치명타"
+      tier: 5
+      name: "완성된 기회의 톱니"
+      conditionA: "precision"
+      conditionB: "alternate"
+      conditionText: "직선·관통·유도 단계 + 6초 안에 직전과 다른 슬롯 시전일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/critical_reuse_t5"
+      damage: 0.1144
+      range: 0.0
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0728
+    - id: "critical_projectile_t2"
+      familyA: "치명타"
+      familyB: "투사체"
+      tier: 2
+      name: "매의 송곳니"
+      conditionA: "precision"
+      conditionB: "projectile"
+      conditionText: "직선·관통·유도 단계 + 투사체 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/critical_projectile_t2"
+      damage: 0.065
+      range: 0.01625
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "critical_projectile_t3"
+      familyA: "치명타"
+      familyB: "투사체"
+      tier: 3
+      name: "각성한 매의 송곳니"
+      conditionA: "precision"
+      conditionB: "projectile"
+      conditionText: "직선·관통·유도 단계 + 투사체 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/critical_projectile_t3"
+      damage: 0.104
+      range: 0.026
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "critical_projectile_t4"
+      familyA: "치명타"
+      familyB: "투사체"
+      tier: 4
+      name: "찬란한 매의 송곳니"
+      conditionA: "precision"
+      conditionB: "projectile"
+      conditionText: "직선·관통·유도 단계 + 투사체 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/critical_projectile_t4"
+      damage: 0.1495
+      range: 0.037375
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "critical_projectile_t5"
+      familyA: "치명타"
+      familyB: "투사체"
+      tier: 5
+      name: "완성된 매의 송곳니"
+      conditionA: "precision"
+      conditionB: "projectile"
+      conditionText: "직선·관통·유도 단계 + 투사체 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/critical_projectile_t5"
+      damage: 0.208
+      range: 0.052
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "critical_reach_t2"
+      familyA: "범위"
+      familyB: "치명타"
+      tier: 2
+      name: "별을 꿰는 핀"
+      conditionA: "precision"
+      conditionB: "distance"
+      conditionText: "직선·관통·유도 단계 + 2 이상 떨어진 위치 조준일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/critical_reach_t2"
+      damage: 0.03575
+      range: 0.04225
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "critical_reach_t3"
+      familyA: "범위"
+      familyB: "치명타"
+      tier: 3
+      name: "각성한 별을 꿰는 핀"
+      conditionA: "precision"
+      conditionB: "distance"
+      conditionText: "직선·관통·유도 단계 + 2 이상 떨어진 위치 조준일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/critical_reach_t3"
+      damage: 0.0572
+      range: 0.0676
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "critical_reach_t4"
+      familyA: "범위"
+      familyB: "치명타"
+      tier: 4
+      name: "찬란한 별을 꿰는 핀"
+      conditionA: "precision"
+      conditionB: "distance"
+      conditionText: "직선·관통·유도 단계 + 2 이상 떨어진 위치 조준일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/critical_reach_t4"
+      damage: 0.082225
+      range: 0.097175
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "critical_reach_t5"
+      familyA: "범위"
+      familyB: "치명타"
+      tier: 5
+      name: "완성된 별을 꿰는 핀"
+      conditionA: "precision"
+      conditionB: "distance"
+      conditionText: "직선·관통·유도 단계 + 2 이상 떨어진 위치 조준일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/critical_reach_t5"
+      damage: 0.1144
+      range: 0.1352
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "critical_control_t2"
+      familyA: "제어"
+      familyB: "치명타"
+      tier: 2
+      name: "서리의 칼날"
+      conditionA: "precision"
+      conditionB: "control"
+      conditionText: "직선·관통·유도 단계 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/critical_control_t2"
+      damage: 0.03575
+      range: 0.0
+      control: 0.0585
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "critical_control_t3"
+      familyA: "제어"
+      familyB: "치명타"
+      tier: 3
+      name: "각성한 서리의 칼날"
+      conditionA: "precision"
+      conditionB: "control"
+      conditionText: "직선·관통·유도 단계 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/critical_control_t3"
+      damage: 0.0572
+      range: 0.0
+      control: 0.0936
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "critical_control_t4"
+      familyA: "제어"
+      familyB: "치명타"
+      tier: 4
+      name: "찬란한 서리의 칼날"
+      conditionA: "precision"
+      conditionB: "control"
+      conditionText: "직선·관통·유도 단계 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/critical_control_t4"
+      damage: 0.082225
+      range: 0.0
+      control: 0.13455
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "critical_control_t5"
+      familyA: "제어"
+      familyB: "치명타"
+      tier: 5
+      name: "완성된 서리의 칼날"
+      conditionA: "precision"
+      conditionB: "control"
+      conditionText: "직선·관통·유도 단계 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/critical_control_t5"
+      damage: 0.1144
+      range: 0.0
+      control: 0.1872
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "critical_guard_t2"
+      familyA: "방어"
+      familyB: "치명타"
+      tier: 2
+      name: "불굴의 홍옥"
+      conditionA: "precision"
+      conditionB: "shield"
+      conditionText: "직선·관통·유도 단계 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/critical_guard_t2"
+      damage: 0.03575
+      range: 0.0
+      control: 0.0
+      shield: 0.065
+      heal: 0.0052
+      cooldown: 0.0
+    - id: "critical_guard_t3"
+      familyA: "방어"
+      familyB: "치명타"
+      tier: 3
+      name: "각성한 불굴의 홍옥"
+      conditionA: "precision"
+      conditionB: "shield"
+      conditionText: "직선·관통·유도 단계 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/critical_guard_t3"
+      damage: 0.0572
+      range: 0.0
+      control: 0.0
+      shield: 0.104
+      heal: 0.00832
+      cooldown: 0.0
+    - id: "critical_guard_t4"
+      familyA: "방어"
+      familyB: "치명타"
+      tier: 4
+      name: "찬란한 불굴의 홍옥"
+      conditionA: "precision"
+      conditionB: "shield"
+      conditionText: "직선·관통·유도 단계 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/critical_guard_t4"
+      damage: 0.082225
+      range: 0.0
+      control: 0.0
+      shield: 0.1495
+      heal: 0.01196
+      cooldown: 0.0
+    - id: "critical_guard_t5"
+      familyA: "방어"
+      familyB: "치명타"
+      tier: 5
+      name: "완성된 불굴의 홍옥"
+      conditionA: "precision"
+      conditionB: "shield"
+      conditionText: "직선·관통·유도 단계 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/critical_guard_t5"
+      damage: 0.1144
+      range: 0.0
+      control: 0.0
+      shield: 0.208
+      heal: 0.01664
+      cooldown: 0.0
+    - id: "critical_movement_t2"
+      familyA: "이동"
+      familyB: "치명타"
+      tier: 2
+      name: "달그림자 고리"
+      conditionA: "precision"
+      conditionB: "movement"
+      conditionText: "직선·관통·유도 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/critical_movement_t2"
+      damage: 0.0585
+      range: 0.01625
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "critical_movement_t3"
+      familyA: "이동"
+      familyB: "치명타"
+      tier: 3
+      name: "각성한 달그림자 고리"
+      conditionA: "precision"
+      conditionB: "movement"
+      conditionText: "직선·관통·유도 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/critical_movement_t3"
+      damage: 0.0936
+      range: 0.026
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "critical_movement_t4"
+      familyA: "이동"
+      familyB: "치명타"
+      tier: 4
+      name: "찬란한 달그림자 고리"
+      conditionA: "precision"
+      conditionB: "movement"
+      conditionText: "직선·관통·유도 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/critical_movement_t4"
+      damage: 0.13455
+      range: 0.037375
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "critical_movement_t5"
+      familyA: "이동"
+      familyB: "치명타"
+      tier: 5
+      name: "완성된 달그림자 고리"
+      conditionA: "precision"
+      conditionB: "movement"
+      conditionText: "직선·관통·유도 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/critical_movement_t5"
+      damage: 0.1872
+      range: 0.052
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "reuse_reuse_t2"
+      familyA: "재사용"
+      familyB: "재사용"
+      tier: 2
+      name: "되울림 태엽"
+      conditionA: "alternate"
+      conditionB: "alternate"
+      conditionText: "6초 안에 직전과 다른 슬롯 시전일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reuse_reuse_t2"
+      damage: 0.0
+      range: 0.0
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0455
+    - id: "reuse_reuse_t3"
+      familyA: "재사용"
+      familyB: "재사용"
+      tier: 3
+      name: "각성한 되울림 태엽"
+      conditionA: "alternate"
+      conditionB: "alternate"
+      conditionText: "6초 안에 직전과 다른 슬롯 시전일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reuse_reuse_t3"
+      damage: 0.0
+      range: 0.0
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0728
+    - id: "reuse_reuse_t4"
+      familyA: "재사용"
+      familyB: "재사용"
+      tier: 4
+      name: "찬란한 되울림 태엽"
+      conditionA: "alternate"
+      conditionB: "alternate"
+      conditionText: "6초 안에 직전과 다른 슬롯 시전일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reuse_reuse_t4"
+      damage: 0.0
+      range: 0.0
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.10465
+    - id: "reuse_reuse_t5"
+      familyA: "재사용"
+      familyB: "재사용"
+      tier: 5
+      name: "완성된 되울림 태엽"
+      conditionA: "alternate"
+      conditionB: "alternate"
+      conditionText: "6초 안에 직전과 다른 슬롯 시전일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reuse_reuse_t5"
+      damage: 0.0
+      range: 0.0
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.1456
+    - id: "reuse_projectile_t2"
+      familyA: "재사용"
+      familyB: "투사체"
+      tier: 2
+      name: "연사의 기관"
+      conditionA: "alternate"
+      conditionB: "projectile"
+      conditionText: "6초 안에 직전과 다른 슬롯 시전 + 투사체 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reuse_projectile_t2"
+      damage: 0.02925
+      range: 0.01625
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.02275
+    - id: "reuse_projectile_t3"
+      familyA: "재사용"
+      familyB: "투사체"
+      tier: 3
+      name: "각성한 연사의 기관"
+      conditionA: "alternate"
+      conditionB: "projectile"
+      conditionText: "6초 안에 직전과 다른 슬롯 시전 + 투사체 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reuse_projectile_t3"
+      damage: 0.0468
+      range: 0.026
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0364
+    - id: "reuse_projectile_t4"
+      familyA: "재사용"
+      familyB: "투사체"
+      tier: 4
+      name: "찬란한 연사의 기관"
+      conditionA: "alternate"
+      conditionB: "projectile"
+      conditionText: "6초 안에 직전과 다른 슬롯 시전 + 투사체 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reuse_projectile_t4"
+      damage: 0.067275
+      range: 0.037375
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.052325
+    - id: "reuse_projectile_t5"
+      familyA: "재사용"
+      familyB: "투사체"
+      tier: 5
+      name: "완성된 연사의 기관"
+      conditionA: "alternate"
+      conditionB: "projectile"
+      conditionText: "6초 안에 직전과 다른 슬롯 시전 + 투사체 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reuse_projectile_t5"
+      damage: 0.0936
+      range: 0.052
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0728
+    - id: "reuse_reach_t2"
+      familyA: "범위"
+      familyB: "재사용"
+      tier: 2
+      name: "궤도의 시계"
+      conditionA: "alternate"
+      conditionB: "distance"
+      conditionText: "6초 안에 직전과 다른 슬롯 시전 + 2 이상 떨어진 위치 조준일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reuse_reach_t2"
+      damage: 0.0
+      range: 0.04225
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.02275
+    - id: "reuse_reach_t3"
+      familyA: "범위"
+      familyB: "재사용"
+      tier: 3
+      name: "각성한 궤도의 시계"
+      conditionA: "alternate"
+      conditionB: "distance"
+      conditionText: "6초 안에 직전과 다른 슬롯 시전 + 2 이상 떨어진 위치 조준일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reuse_reach_t3"
+      damage: 0.0
+      range: 0.0676
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0364
+    - id: "reuse_reach_t4"
+      familyA: "범위"
+      familyB: "재사용"
+      tier: 4
+      name: "찬란한 궤도의 시계"
+      conditionA: "alternate"
+      conditionB: "distance"
+      conditionText: "6초 안에 직전과 다른 슬롯 시전 + 2 이상 떨어진 위치 조준일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reuse_reach_t4"
+      damage: 0.0
+      range: 0.097175
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.052325
+    - id: "reuse_reach_t5"
+      familyA: "범위"
+      familyB: "재사용"
+      tier: 5
+      name: "완성된 궤도의 시계"
+      conditionA: "alternate"
+      conditionB: "distance"
+      conditionText: "6초 안에 직전과 다른 슬롯 시전 + 2 이상 떨어진 위치 조준일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reuse_reach_t5"
+      damage: 0.0
+      range: 0.1352
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0728
+    - id: "reuse_control_t2"
+      familyA: "재사용"
+      familyB: "제어"
+      tier: 2
+      name: "속박의 진자"
+      conditionA: "alternate"
+      conditionB: "control"
+      conditionText: "6초 안에 직전과 다른 슬롯 시전 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reuse_control_t2"
+      damage: 0.0
+      range: 0.0
+      control: 0.0585
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.02275
+    - id: "reuse_control_t3"
+      familyA: "재사용"
+      familyB: "제어"
+      tier: 3
+      name: "각성한 속박의 진자"
+      conditionA: "alternate"
+      conditionB: "control"
+      conditionText: "6초 안에 직전과 다른 슬롯 시전 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reuse_control_t3"
+      damage: 0.0
+      range: 0.0
+      control: 0.0936
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0364
+    - id: "reuse_control_t4"
+      familyA: "재사용"
+      familyB: "제어"
+      tier: 4
+      name: "찬란한 속박의 진자"
+      conditionA: "alternate"
+      conditionB: "control"
+      conditionText: "6초 안에 직전과 다른 슬롯 시전 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reuse_control_t4"
+      damage: 0.0
+      range: 0.0
+      control: 0.13455
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.052325
+    - id: "reuse_control_t5"
+      familyA: "재사용"
+      familyB: "제어"
+      tier: 5
+      name: "완성된 속박의 진자"
+      conditionA: "alternate"
+      conditionB: "control"
+      conditionText: "6초 안에 직전과 다른 슬롯 시전 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reuse_control_t5"
+      damage: 0.0
+      range: 0.0
+      control: 0.1872
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0728
+    - id: "reuse_guard_t2"
+      familyA: "방어"
+      familyB: "재사용"
+      tier: 2
+      name: "수호의 종"
+      conditionA: "alternate"
+      conditionB: "shield"
+      conditionText: "6초 안에 직전과 다른 슬롯 시전 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reuse_guard_t2"
+      damage: 0.0
+      range: 0.0
+      control: 0.0
+      shield: 0.065
+      heal: 0.0052
+      cooldown: 0.02275
+    - id: "reuse_guard_t3"
+      familyA: "방어"
+      familyB: "재사용"
+      tier: 3
+      name: "각성한 수호의 종"
+      conditionA: "alternate"
+      conditionB: "shield"
+      conditionText: "6초 안에 직전과 다른 슬롯 시전 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reuse_guard_t3"
+      damage: 0.0
+      range: 0.0
+      control: 0.0
+      shield: 0.104
+      heal: 0.00832
+      cooldown: 0.0364
+    - id: "reuse_guard_t4"
+      familyA: "방어"
+      familyB: "재사용"
+      tier: 4
+      name: "찬란한 수호의 종"
+      conditionA: "alternate"
+      conditionB: "shield"
+      conditionText: "6초 안에 직전과 다른 슬롯 시전 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reuse_guard_t4"
+      damage: 0.0
+      range: 0.0
+      control: 0.0
+      shield: 0.1495
+      heal: 0.01196
+      cooldown: 0.052325
+    - id: "reuse_guard_t5"
+      familyA: "방어"
+      familyB: "재사용"
+      tier: 5
+      name: "완성된 수호의 종"
+      conditionA: "alternate"
+      conditionB: "shield"
+      conditionText: "6초 안에 직전과 다른 슬롯 시전 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reuse_guard_t5"
+      damage: 0.0
+      range: 0.0
+      control: 0.0
+      shield: 0.208
+      heal: 0.01664
+      cooldown: 0.0728
+    - id: "reuse_movement_t2"
+      familyA: "이동"
+      familyB: "재사용"
+      tier: 2
+      name: "순환의 날개"
+      conditionA: "alternate"
+      conditionB: "movement"
+      conditionText: "6초 안에 직전과 다른 슬롯 시전 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reuse_movement_t2"
+      damage: 0.02275
+      range: 0.01625
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.02275
+    - id: "reuse_movement_t3"
+      familyA: "이동"
+      familyB: "재사용"
+      tier: 3
+      name: "각성한 순환의 날개"
+      conditionA: "alternate"
+      conditionB: "movement"
+      conditionText: "6초 안에 직전과 다른 슬롯 시전 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reuse_movement_t3"
+      damage: 0.0364
+      range: 0.026
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0364
+    - id: "reuse_movement_t4"
+      familyA: "이동"
+      familyB: "재사용"
+      tier: 4
+      name: "찬란한 순환의 날개"
+      conditionA: "alternate"
+      conditionB: "movement"
+      conditionText: "6초 안에 직전과 다른 슬롯 시전 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reuse_movement_t4"
+      damage: 0.052325
+      range: 0.037375
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.052325
+    - id: "reuse_movement_t5"
+      familyA: "이동"
+      familyB: "재사용"
+      tier: 5
+      name: "완성된 순환의 날개"
+      conditionA: "alternate"
+      conditionB: "movement"
+      conditionText: "6초 안에 직전과 다른 슬롯 시전 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reuse_movement_t5"
+      damage: 0.0728
+      range: 0.052
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0728
+    - id: "projectile_projectile_t2"
+      familyA: "투사체"
+      familyB: "투사체"
+      tier: 2
+      name: "매의 척추"
+      conditionA: "projectile"
+      conditionB: "projectile"
+      conditionText: "투사체 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/projectile_projectile_t2"
+      damage: 0.0585
+      range: 0.0325
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "projectile_projectile_t3"
+      familyA: "투사체"
+      familyB: "투사체"
+      tier: 3
+      name: "각성한 매의 척추"
+      conditionA: "projectile"
+      conditionB: "projectile"
+      conditionText: "투사체 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/projectile_projectile_t3"
+      damage: 0.0936
+      range: 0.052
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "projectile_projectile_t4"
+      familyA: "투사체"
+      familyB: "투사체"
+      tier: 4
+      name: "찬란한 매의 척추"
+      conditionA: "projectile"
+      conditionB: "projectile"
+      conditionText: "투사체 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/projectile_projectile_t4"
+      damage: 0.13455
+      range: 0.07475
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "projectile_projectile_t5"
+      familyA: "투사체"
+      familyB: "투사체"
+      tier: 5
+      name: "완성된 매의 척추"
+      conditionA: "projectile"
+      conditionB: "projectile"
+      conditionText: "투사체 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/projectile_projectile_t5"
+      damage: 0.1872
+      range: 0.104
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "projectile_reach_t2"
+      familyA: "범위"
+      familyB: "투사체"
+      tier: 2
+      name: "지평의 조준경"
+      conditionA: "projectile"
+      conditionB: "distance"
+      conditionText: "투사체 단계 + 2 이상 떨어진 위치 조준일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/projectile_reach_t2"
+      damage: 0.02925
+      range: 0.0585
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "projectile_reach_t3"
+      familyA: "범위"
+      familyB: "투사체"
+      tier: 3
+      name: "각성한 지평의 조준경"
+      conditionA: "projectile"
+      conditionB: "distance"
+      conditionText: "투사체 단계 + 2 이상 떨어진 위치 조준일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/projectile_reach_t3"
+      damage: 0.0468
+      range: 0.0936
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "projectile_reach_t4"
+      familyA: "범위"
+      familyB: "투사체"
+      tier: 4
+      name: "찬란한 지평의 조준경"
+      conditionA: "projectile"
+      conditionB: "distance"
+      conditionText: "투사체 단계 + 2 이상 떨어진 위치 조준일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/projectile_reach_t4"
+      damage: 0.067275
+      range: 0.13455
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "projectile_reach_t5"
+      familyA: "범위"
+      familyB: "투사체"
+      tier: 5
+      name: "완성된 지평의 조준경"
+      conditionA: "projectile"
+      conditionB: "distance"
+      conditionText: "투사체 단계 + 2 이상 떨어진 위치 조준일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/projectile_reach_t5"
+      damage: 0.0936
+      range: 0.1872
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "projectile_control_t2"
+      familyA: "제어"
+      familyB: "투사체"
+      tier: 2
+      name: "닻의 발사관"
+      conditionA: "projectile"
+      conditionB: "control"
+      conditionText: "투사체 단계 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/projectile_control_t2"
+      damage: 0.02925
+      range: 0.01625
+      control: 0.0585
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "projectile_control_t3"
+      familyA: "제어"
+      familyB: "투사체"
+      tier: 3
+      name: "각성한 닻의 발사관"
+      conditionA: "projectile"
+      conditionB: "control"
+      conditionText: "투사체 단계 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/projectile_control_t3"
+      damage: 0.0468
+      range: 0.026
+      control: 0.0936
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "projectile_control_t4"
+      familyA: "제어"
+      familyB: "투사체"
+      tier: 4
+      name: "찬란한 닻의 발사관"
+      conditionA: "projectile"
+      conditionB: "control"
+      conditionText: "투사체 단계 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/projectile_control_t4"
+      damage: 0.067275
+      range: 0.037375
+      control: 0.13455
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "projectile_control_t5"
+      familyA: "제어"
+      familyB: "투사체"
+      tier: 5
+      name: "완성된 닻의 발사관"
+      conditionA: "projectile"
+      conditionB: "control"
+      conditionText: "투사체 단계 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/projectile_control_t5"
+      damage: 0.0936
+      range: 0.052
+      control: 0.1872
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "projectile_guard_t2"
+      familyA: "방어"
+      familyB: "투사체"
+      tier: 2
+      name: "보루의 화살깃"
+      conditionA: "projectile"
+      conditionB: "shield"
+      conditionText: "투사체 단계 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/projectile_guard_t2"
+      damage: 0.02925
+      range: 0.01625
+      control: 0.0
+      shield: 0.065
+      heal: 0.0052
+      cooldown: 0.0
+    - id: "projectile_guard_t3"
+      familyA: "방어"
+      familyB: "투사체"
+      tier: 3
+      name: "각성한 보루의 화살깃"
+      conditionA: "projectile"
+      conditionB: "shield"
+      conditionText: "투사체 단계 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/projectile_guard_t3"
+      damage: 0.0468
+      range: 0.026
+      control: 0.0
+      shield: 0.104
+      heal: 0.00832
+      cooldown: 0.0
+    - id: "projectile_guard_t4"
+      familyA: "방어"
+      familyB: "투사체"
+      tier: 4
+      name: "찬란한 보루의 화살깃"
+      conditionA: "projectile"
+      conditionB: "shield"
+      conditionText: "투사체 단계 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/projectile_guard_t4"
+      damage: 0.067275
+      range: 0.037375
+      control: 0.0
+      shield: 0.1495
+      heal: 0.01196
+      cooldown: 0.0
+    - id: "projectile_guard_t5"
+      familyA: "방어"
+      familyB: "투사체"
+      tier: 5
+      name: "완성된 보루의 화살깃"
+      conditionA: "projectile"
+      conditionB: "shield"
+      conditionText: "투사체 단계 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/projectile_guard_t5"
+      damage: 0.0936
+      range: 0.052
+      control: 0.0
+      shield: 0.208
+      heal: 0.01664
+      cooldown: 0.0
+    - id: "projectile_movement_t2"
+      familyA: "이동"
+      familyB: "투사체"
+      tier: 2
+      name: "유성의 깃"
+      conditionA: "projectile"
+      conditionB: "movement"
+      conditionText: "투사체 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/projectile_movement_t2"
+      damage: 0.052
+      range: 0.0325
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "projectile_movement_t3"
+      familyA: "이동"
+      familyB: "투사체"
+      tier: 3
+      name: "각성한 유성의 깃"
+      conditionA: "projectile"
+      conditionB: "movement"
+      conditionText: "투사체 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/projectile_movement_t3"
+      damage: 0.0832
+      range: 0.052
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "projectile_movement_t4"
+      familyA: "이동"
+      familyB: "투사체"
+      tier: 4
+      name: "찬란한 유성의 깃"
+      conditionA: "projectile"
+      conditionB: "movement"
+      conditionText: "투사체 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/projectile_movement_t4"
+      damage: 0.1196
+      range: 0.07475
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "projectile_movement_t5"
+      familyA: "이동"
+      familyB: "투사체"
+      tier: 5
+      name: "완성된 유성의 깃"
+      conditionA: "projectile"
+      conditionB: "movement"
+      conditionText: "투사체 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/projectile_movement_t5"
+      damage: 0.1664
+      range: 0.104
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "reach_reach_t2"
+      familyA: "범위"
+      familyB: "범위"
+      tier: 2
+      name: "지평 나침반"
+      conditionA: "distance"
+      conditionB: "distance"
+      conditionText: "2 이상 떨어진 위치 조준일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reach_reach_t2"
+      damage: 0.0
+      range: 0.0845
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "reach_reach_t3"
+      familyA: "범위"
+      familyB: "범위"
+      tier: 3
+      name: "각성한 지평 나침반"
+      conditionA: "distance"
+      conditionB: "distance"
+      conditionText: "2 이상 떨어진 위치 조준일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reach_reach_t3"
+      damage: 0.0
+      range: 0.1352
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "reach_reach_t4"
+      familyA: "범위"
+      familyB: "범위"
+      tier: 4
+      name: "찬란한 지평 나침반"
+      conditionA: "distance"
+      conditionB: "distance"
+      conditionText: "2 이상 떨어진 위치 조준일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reach_reach_t4"
+      damage: 0.0
+      range: 0.19435
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "reach_reach_t5"
+      familyA: "범위"
+      familyB: "범위"
+      tier: 5
+      name: "완성된 지평 나침반"
+      conditionA: "distance"
+      conditionB: "distance"
+      conditionText: "2 이상 떨어진 위치 조준일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reach_reach_t5"
+      damage: 0.0
+      range: 0.2704
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "reach_control_t2"
+      familyA: "범위"
+      familyB: "제어"
+      tier: 2
+      name: "인력의 천구"
+      conditionA: "distance"
+      conditionB: "control"
+      conditionText: "2 이상 떨어진 위치 조준 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reach_control_t2"
+      damage: 0.0
+      range: 0.04225
+      control: 0.0585
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "reach_control_t3"
+      familyA: "범위"
+      familyB: "제어"
+      tier: 3
+      name: "각성한 인력의 천구"
+      conditionA: "distance"
+      conditionB: "control"
+      conditionText: "2 이상 떨어진 위치 조준 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reach_control_t3"
+      damage: 0.0
+      range: 0.0676
+      control: 0.0936
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "reach_control_t4"
+      familyA: "범위"
+      familyB: "제어"
+      tier: 4
+      name: "찬란한 인력의 천구"
+      conditionA: "distance"
+      conditionB: "control"
+      conditionText: "2 이상 떨어진 위치 조준 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reach_control_t4"
+      damage: 0.0
+      range: 0.097175
+      control: 0.13455
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "reach_control_t5"
+      familyA: "범위"
+      familyB: "제어"
+      tier: 5
+      name: "완성된 인력의 천구"
+      conditionA: "distance"
+      conditionB: "control"
+      conditionText: "2 이상 떨어진 위치 조준 + 끌기·밀기·기절·표식 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reach_control_t5"
+      damage: 0.0
+      range: 0.1352
+      control: 0.1872
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "reach_guard_t2"
+      familyA: "방어"
+      familyB: "범위"
+      tier: 2
+      name: "성역의 거울"
+      conditionA: "distance"
+      conditionB: "shield"
+      conditionText: "2 이상 떨어진 위치 조준 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reach_guard_t2"
+      damage: 0.0
+      range: 0.04225
+      control: 0.0
+      shield: 0.065
+      heal: 0.0052
+      cooldown: 0.0
+    - id: "reach_guard_t3"
+      familyA: "방어"
+      familyB: "범위"
+      tier: 3
+      name: "각성한 성역의 거울"
+      conditionA: "distance"
+      conditionB: "shield"
+      conditionText: "2 이상 떨어진 위치 조준 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reach_guard_t3"
+      damage: 0.0
+      range: 0.0676
+      control: 0.0
+      shield: 0.104
+      heal: 0.00832
+      cooldown: 0.0
+    - id: "reach_guard_t4"
+      familyA: "방어"
+      familyB: "범위"
+      tier: 4
+      name: "찬란한 성역의 거울"
+      conditionA: "distance"
+      conditionB: "shield"
+      conditionText: "2 이상 떨어진 위치 조준 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reach_guard_t4"
+      damage: 0.0
+      range: 0.097175
+      control: 0.0
+      shield: 0.1495
+      heal: 0.01196
+      cooldown: 0.0
+    - id: "reach_guard_t5"
+      familyA: "방어"
+      familyB: "범위"
+      tier: 5
+      name: "완성된 성역의 거울"
+      conditionA: "distance"
+      conditionB: "shield"
+      conditionText: "2 이상 떨어진 위치 조준 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reach_guard_t5"
+      damage: 0.0
+      range: 0.1352
+      control: 0.0
+      shield: 0.208
+      heal: 0.01664
+      cooldown: 0.0
+    - id: "reach_movement_t2"
+      familyA: "범위"
+      familyB: "이동"
+      tier: 2
+      name: "바람길 지도"
+      conditionA: "distance"
+      conditionB: "movement"
+      conditionText: "2 이상 떨어진 위치 조준 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reach_movement_t2"
+      damage: 0.02275
+      range: 0.0585
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "reach_movement_t3"
+      familyA: "범위"
+      familyB: "이동"
+      tier: 3
+      name: "각성한 바람길 지도"
+      conditionA: "distance"
+      conditionB: "movement"
+      conditionText: "2 이상 떨어진 위치 조준 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reach_movement_t3"
+      damage: 0.0364
+      range: 0.0936
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "reach_movement_t4"
+      familyA: "범위"
+      familyB: "이동"
+      tier: 4
+      name: "찬란한 바람길 지도"
+      conditionA: "distance"
+      conditionB: "movement"
+      conditionText: "2 이상 떨어진 위치 조준 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reach_movement_t4"
+      damage: 0.052325
+      range: 0.13455
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "reach_movement_t5"
+      familyA: "범위"
+      familyB: "이동"
+      tier: 5
+      name: "완성된 바람길 지도"
+      conditionA: "distance"
+      conditionB: "movement"
+      conditionText: "2 이상 떨어진 위치 조준 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/reach_movement_t5"
+      damage: 0.0728
+      range: 0.1872
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "control_control_t2"
+      familyA: "제어"
+      familyB: "제어"
+      tier: 2
+      name: "속박의 추"
+      conditionA: "control"
+      conditionB: "control"
+      conditionText: "끌기·밀기·기절·표식 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/control_control_t2"
+      damage: 0.0
+      range: 0.0
+      control: 0.117
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "control_control_t3"
+      familyA: "제어"
+      familyB: "제어"
+      tier: 3
+      name: "각성한 속박의 추"
+      conditionA: "control"
+      conditionB: "control"
+      conditionText: "끌기·밀기·기절·표식 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/control_control_t3"
+      damage: 0.0
+      range: 0.0
+      control: 0.1872
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "control_control_t4"
+      familyA: "제어"
+      familyB: "제어"
+      tier: 4
+      name: "찬란한 속박의 추"
+      conditionA: "control"
+      conditionB: "control"
+      conditionText: "끌기·밀기·기절·표식 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/control_control_t4"
+      damage: 0.0
+      range: 0.0
+      control: 0.2691
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "control_control_t5"
+      familyA: "제어"
+      familyB: "제어"
+      tier: 5
+      name: "완성된 속박의 추"
+      conditionA: "control"
+      conditionB: "control"
+      conditionText: "끌기·밀기·기절·표식 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/control_control_t5"
+      damage: 0.0
+      range: 0.0
+      control: 0.3744
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "control_guard_t2"
+      familyA: "방어"
+      familyB: "제어"
+      tier: 2
+      name: "서리의 봉인"
+      conditionA: "control"
+      conditionB: "shield"
+      conditionText: "끌기·밀기·기절·표식 단계 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/control_guard_t2"
+      damage: 0.0
+      range: 0.0
+      control: 0.0585
+      shield: 0.065
+      heal: 0.0052
+      cooldown: 0.0
+    - id: "control_guard_t3"
+      familyA: "방어"
+      familyB: "제어"
+      tier: 3
+      name: "각성한 서리의 봉인"
+      conditionA: "control"
+      conditionB: "shield"
+      conditionText: "끌기·밀기·기절·표식 단계 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/control_guard_t3"
+      damage: 0.0
+      range: 0.0
+      control: 0.0936
+      shield: 0.104
+      heal: 0.00832
+      cooldown: 0.0
+    - id: "control_guard_t4"
+      familyA: "방어"
+      familyB: "제어"
+      tier: 4
+      name: "찬란한 서리의 봉인"
+      conditionA: "control"
+      conditionB: "shield"
+      conditionText: "끌기·밀기·기절·표식 단계 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/control_guard_t4"
+      damage: 0.0
+      range: 0.0
+      control: 0.13455
+      shield: 0.1495
+      heal: 0.01196
+      cooldown: 0.0
+    - id: "control_guard_t5"
+      familyA: "방어"
+      familyB: "제어"
+      tier: 5
+      name: "완성된 서리의 봉인"
+      conditionA: "control"
+      conditionB: "shield"
+      conditionText: "끌기·밀기·기절·표식 단계 + 보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/control_guard_t5"
+      damage: 0.0
+      range: 0.0
+      control: 0.1872
+      shield: 0.208
+      heal: 0.01664
+      cooldown: 0.0
+    - id: "control_movement_t2"
+      familyA: "이동"
+      familyB: "제어"
+      tier: 2
+      name: "폭풍의 갈고리"
+      conditionA: "control"
+      conditionB: "movement"
+      conditionText: "끌기·밀기·기절·표식 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/control_movement_t2"
+      damage: 0.02275
+      range: 0.01625
+      control: 0.0585
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "control_movement_t3"
+      familyA: "이동"
+      familyB: "제어"
+      tier: 3
+      name: "각성한 폭풍의 갈고리"
+      conditionA: "control"
+      conditionB: "movement"
+      conditionText: "끌기·밀기·기절·표식 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/control_movement_t3"
+      damage: 0.0364
+      range: 0.026
+      control: 0.0936
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "control_movement_t4"
+      familyA: "이동"
+      familyB: "제어"
+      tier: 4
+      name: "찬란한 폭풍의 갈고리"
+      conditionA: "control"
+      conditionB: "movement"
+      conditionText: "끌기·밀기·기절·표식 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/control_movement_t4"
+      damage: 0.052325
+      range: 0.037375
+      control: 0.13455
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "control_movement_t5"
+      familyA: "이동"
+      familyB: "제어"
+      tier: 5
+      name: "완성된 폭풍의 갈고리"
+      conditionA: "control"
+      conditionB: "movement"
+      conditionText: "끌기·밀기·기절·표식 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/control_movement_t5"
+      damage: 0.0728
+      range: 0.052
+      control: 0.1872
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "guard_guard_t2"
+      familyA: "방어"
+      familyB: "방어"
+      tier: 2
+      name: "수호의 성배"
+      conditionA: "shield"
+      conditionB: "shield"
+      conditionText: "보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/guard_guard_t2"
+      damage: 0.0
+      range: 0.0
+      control: 0.0
+      shield: 0.13
+      heal: 0.0104
+      cooldown: 0.0
+    - id: "guard_guard_t3"
+      familyA: "방어"
+      familyB: "방어"
+      tier: 3
+      name: "각성한 수호의 성배"
+      conditionA: "shield"
+      conditionB: "shield"
+      conditionText: "보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/guard_guard_t3"
+      damage: 0.0
+      range: 0.0
+      control: 0.0
+      shield: 0.208
+      heal: 0.01664
+      cooldown: 0.0
+    - id: "guard_guard_t4"
+      familyA: "방어"
+      familyB: "방어"
+      tier: 4
+      name: "찬란한 수호의 성배"
+      conditionA: "shield"
+      conditionB: "shield"
+      conditionText: "보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/guard_guard_t4"
+      damage: 0.0
+      range: 0.0
+      control: 0.0
+      shield: 0.299
+      heal: 0.02392
+      cooldown: 0.0
+    - id: "guard_guard_t5"
+      familyA: "방어"
+      familyB: "방어"
+      tier: 5
+      name: "완성된 수호의 성배"
+      conditionA: "shield"
+      conditionB: "shield"
+      conditionText: "보호막 보유 또는 보호막·장벽 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/guard_guard_t5"
+      damage: 0.0
+      range: 0.0
+      control: 0.0
+      shield: 0.416
+      heal: 0.03328
+      cooldown: 0.0
+    - id: "guard_movement_t2"
+      familyA: "방어"
+      familyB: "이동"
+      tier: 2
+      name: "산들바람 방패"
+      conditionA: "shield"
+      conditionB: "movement"
+      conditionText: "보호막 보유 또는 보호막·장벽 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/guard_movement_t2"
+      damage: 0.02275
+      range: 0.01625
+      control: 0.0
+      shield: 0.065
+      heal: 0.0052
+      cooldown: 0.0
+    - id: "guard_movement_t3"
+      familyA: "방어"
+      familyB: "이동"
+      tier: 3
+      name: "각성한 산들바람 방패"
+      conditionA: "shield"
+      conditionB: "movement"
+      conditionText: "보호막 보유 또는 보호막·장벽 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/guard_movement_t3"
+      damage: 0.0364
+      range: 0.026
+      control: 0.0
+      shield: 0.104
+      heal: 0.00832
+      cooldown: 0.0
+    - id: "guard_movement_t4"
+      familyA: "방어"
+      familyB: "이동"
+      tier: 4
+      name: "찬란한 산들바람 방패"
+      conditionA: "shield"
+      conditionB: "movement"
+      conditionText: "보호막 보유 또는 보호막·장벽 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/guard_movement_t4"
+      damage: 0.052325
+      range: 0.037375
+      control: 0.0
+      shield: 0.1495
+      heal: 0.01196
+      cooldown: 0.0
+    - id: "guard_movement_t5"
+      familyA: "방어"
+      familyB: "이동"
+      tier: 5
+      name: "완성된 산들바람 방패"
+      conditionA: "shield"
+      conditionB: "movement"
+      conditionText: "보호막 보유 또는 보호막·장벽 단계 + 돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/guard_movement_t5"
+      damage: 0.0728
+      range: 0.052
+      control: 0.0
+      shield: 0.208
+      heal: 0.01664
+      cooldown: 0.0
+    - id: "movement_movement_t2"
+      familyA: "이동"
+      familyB: "이동"
+      tier: 2
+      name: "질풍의 날개"
+      conditionA: "movement"
+      conditionB: "movement"
+      conditionText: "돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/movement_movement_t2"
+      damage: 0.0455
+      range: 0.0325
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "movement_movement_t3"
+      familyA: "이동"
+      familyB: "이동"
+      tier: 3
+      name: "각성한 질풍의 날개"
+      conditionA: "movement"
+      conditionB: "movement"
+      conditionText: "돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/movement_movement_t3"
+      damage: 0.0728
+      range: 0.052
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "movement_movement_t4"
+      familyA: "이동"
+      familyB: "이동"
+      tier: 4
+      name: "찬란한 질풍의 날개"
+      conditionA: "movement"
+      conditionB: "movement"
+      conditionText: "돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/movement_movement_t4"
+      damage: 0.10465
+      range: 0.07475
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    - id: "movement_movement_t5"
+      familyA: "이동"
+      familyB: "이동"
+      tier: 5
+      name: "완성된 질풍의 날개"
+      conditionA: "movement"
+      conditionB: "movement"
+      conditionText: "돌진·후퇴·점멸 단계일 때 수동 시전 강화"
+      sprite: "Sprites/Parts/Evolutions/movement_movement_t5"
+      damage: 0.1456
+      range: 0.104
+      control: 0.0
+      shield: 0.0
+      heal: 0.0
+      cooldown: 0.0
+    weaponShapes:
+    - type: 0
+      outlineColor: {r: 0.95, g: 0.55, b: 0.25, a: 1}
+      skills:
+      - {x: 0, y: -1}
+      - {x: -1, y: 0}
+      - {x: 1, y: 0}
+      - {x: 0, y: 1}
+      parts:
+      - {x: -1, y: -1}
+      - {x: 1, y: -1}
+      - {x: 0, y: -2}
+      - {x: 0, y: 2}
+    - type: 1
+      outlineColor: {r: 0.4, g: 0.8, b: 0.4, a: 1}
+      skills:
+      - {x: -1, y: -1}
+      - {x: -2, y: 0}
+      - {x: 2, y: 0}
+      - {x: 1, y: 1}
+      parts:
+      - {x: -1, y: 0}
+      - {x: 1, y: 0}
+      - {x: -1, y: 1}
+      - {x: 1, y: -1}
+    - type: 2
+      outlineColor: {r: 0.25, g: 0.8, b: 0.85, a: 1}
+      skills:
+      - {x: 0, y: -1}
+      - {x: -1, y: 0}
+      - {x: 2, y: 0}
+      - {x: 0, y: 1}
+      parts:
+      - {x: 1, y: 0}
+      - {x: 1, y: -1}
+      - {x: 1, y: 1}
+      - {x: -1, y: 1}
+    - type: 3
+      outlineColor: {r: 0.7, g: 0.5, b: 0.95, a: 1}
+      skills:
+      - {x: 0, y: -2}
+      - {x: -1, y: 0}
+      - {x: 1, y: 0}
+      - {x: 0, y: 2}
+      parts:
+      - {x: 0, y: -1}
+      - {x: 0, y: 1}
+      - {x: -1, y: -1}
+      - {x: 1, y: 1}
+    - type: 4
+      outlineColor: {r: 0.95, g: 0.5, b: 0.72, a: 1}
+      skills:
+      - {x: 0, y: -1}
+      - {x: -1, y: 0}
+      - {x: 1, y: 0}
+      - {x: 0, y: 1}
+      parts:
+      - {x: -1, y: -1}
+      - {x: 1, y: -1}
+      - {x: -1, y: 1}
+      - {x: 1, y: 1}

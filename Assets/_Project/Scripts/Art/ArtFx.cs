@@ -13,7 +13,10 @@ namespace Diverse
         // Slash / Thrust / HitSpark: a designed weapon's colour gets its generated effect pictures instead (DesignRuntime).
         /// <summary>베기 궤적. arc(도)·반경(px)·방향(1/-1)에 따라 프레임마다 쓸고 지나가며 사라진다.</summary>
         public static Sprite[] Slash(Color32 col, Color32 core, int radiusPx, float arc, float swingDir) =>
-            DesignRuntime.SwingFx(col, radiusPx) ?? GetAnim($"slash_{col}_{core}_{radiusPx}_{(int)arc}_{swingDir}", () =>
+            DesignRuntime.SwingFx(col, radiusPx) ?? WeaponSweep(col, core, radiusPx, arc, swingDir, WeaponType.Sword);
+
+        public static Sprite[] WeaponSweep(Color32 col, Color32 core, int radiusPx, float arc, float swingDir, WeaponType type, float weight = 1, bool weaponPose = false) =>
+            GetAnim($"sweep_{type}_{col}_{core}_{radiusPx}_{(int)arc}_{swingDir}_{weight}_{weaponPose}", () =>
             {
                 col = Pa(col); core = Pa(core);     // effects take their colours from the palette too
                 var frames = new Sprite[SlashFrames];
@@ -24,12 +27,13 @@ namespace Diverse
                 {
                     var cv = new PixelCanvas(S, S);
                     // 앞 끝(head)이 빠르게 진행하고, 꼬리(tail)가 따라오며 사라진다
-                    float headT = Mathf.Clamp01((f + 1) / 2.5f);
-                    float tailT = Mathf.Clamp01((f - 0.5f) / 3.5f);
+                    float headT = weaponPose ? MathX.EaseOutCubic((f + 1f) / SlashFrames) : Mathf.Clamp01((f + 1) / 2.5f);
+                    float tailT = weaponPose ? MathX.EaseOutCubic(Mathf.Clamp01((f - 1f) / SlashFrames)) : Mathf.Clamp01((f - 0.5f) / 3.5f);
                     float a0 = swingDir > 0 ? half - arc * tailT : -half + arc * tailT;
                     float a1 = swingDir > 0 ? half - arc * headT : -half + arc * headT;
                     float lo = Mathf.Min(a0, a1), hi = Mathf.Max(a0, a1);
-                    float thickBase = Mathf.Max(3, radiusPx * 0.34f) * (1f - f * 0.17f);
+                    float proportion = type == WeaponType.Staff ? .24f : type == WeaponType.Dagger ? .16f : .21f;
+                    float thickBase = Mathf.Max(2, radiusPx * proportion) * weight * (1f - f * 0.13f);
                     for (int y = 0; y < S; y++)
                         for (int x = 0; x < S; x++)
                         {
@@ -39,25 +43,31 @@ namespace Diverse
                             if (ang < lo || ang > hi) continue;
                             // 진행 방향 끝에 가까울수록 두껍게 (초승달)
                             float along = swingDir > 0 ? (hi - ang) / Mathf.Max(1, hi - lo) : (ang - lo) / Mathf.Max(1, hi - lo);
-                            float th = thickBase * Mathf.Lerp(0.25f, 1f, Mathf.Sqrt(1 - along));
+                            float th = thickBase * Mathf.Lerp(0.2f, 1f, Mathf.Sqrt(weaponPose ? along : 1 - along));
+                            if (type == WeaponType.Staff)
+                                th *= Mathf.Lerp(.65f, 1, Mathf.Sin(Mathf.Clamp01(along * 2) * Mathf.PI * .5f));
                             float inner = radiusPx - th;
                             if (d > radiusPx || d < inner) continue;
                             float rel = (d - inner) / Mathf.Max(1, th);
-                            Color32 px = rel > 0.55f ? core : col;
+                            Color32 px = rel > (type == WeaponType.Staff ? .72f : .5f) ? core : col;
                             if (rel < 0.18f) px = col;
                             // The tail contracts as one clean pixel shape; stochastic transparency was visual noise.
-                            if (f >= 3 && along > (f == 3 ? .68f : .35f)) continue;
+                            if (f >= 3 && (weaponPose ? along < (f == 3 ? .22f : .45f) : along > (f == 3 ? .68f : .35f))) continue;
                             cv.Set(x, y, px);
                         }
-                    // 끝단 부스러기
-                    if (f >= 1)
+                    if ((weaponPose || type == WeaponType.Staff) && f < 4)
                     {
-                        var rng = new Rng((uint)(f * 97 + radiusPx));
-                        for (int i = 0; i < 4 + f; i++)
+                        // The heavy end leads. A brief inner arc follows the shaft and closes with it.
+                        float head = a1 * Mathf.Deg2Rad;
+                        var tip = new Vector2(c + Mathf.Cos(head) * radiusPx, c + Mathf.Sin(head) * radiusPx);
+                        var shaft = new Vector2(c + Mathf.Cos(head) * radiusPx * .42f, c + Mathf.Sin(head) * radiusPx * .42f);
+                        if (weaponPose) cv.ThickLine(shaft, tip, f < 2 ? 4 : 2, Pal.A(col, (byte)(230 - f * 35)));
+                        cv.ThickLine(shaft, tip, f < 2 ? 1.8f : .75f, Pal.A(core, (byte)(245 - f * 35)));
+                        if (f < 2)
                         {
-                            float ang = Mathf.Lerp(lo, hi, rng.Value) * Mathf.Deg2Rad;
-                            float r = radiusPx + rng.Range(0f, 3f) + f;
-                            cv.Set((int)(c + Mathf.Cos(ang) * r), (int)(c + Mathf.Sin(ang) * r), f < 3 ? core : col);
+                            int x = Mathf.FloorToInt(tip.x), y = Mathf.FloorToInt(tip.y);
+                            cv.Line(x - 1, y, x + 1, y, core);
+                            cv.Line(x, y - 1, x, y + 1, core);
                         }
                     }
                     frames[f] = cv.ToSprite(new Vector2(c, c));
@@ -65,9 +75,58 @@ namespace Diverse
                 return frames;
             });
 
+        public static Sprite[] BowRelease(Color32 color) => GetAnim($"bow_release_{color}", () =>
+        {
+            var frames = new Sprite[4];
+            var core = Pal.Lerp(color, Pal.White, .7f);
+            for (int f = 0; f < frames.Length; f++)
+            {
+                var c = new PixelCanvas(28, 22);
+                int tail = 6 + f * 2, head = 14 + f * 2;
+                c.ThickLine(new Vector2(tail, 11), new Vector2(head, 11), f < 2 ? 2 : 1, color);
+                c.Line(tail, 11, head, 11, core);
+                c.Line(tail - 4, 6, tail, 11, core);
+                c.Line(tail, 11, tail - 4, 16, core);
+                if (f < 2) c.Rect(tail - 2, 9, 4, 5, core);
+                frames[f] = c.ToSprite(new Vector2(8, 11));
+            }
+            return frames;
+        });
+
+        public static Sprite[] DirectStroke(Color32 color) => GetAnim($"direct_{color}", () =>
+        {
+            const int width = 64;
+            var frames = new Sprite[4];
+            var core = Pal.Lerp(color, Pal.White, .7f);
+            var shade = Pal.Hex("43354a");
+            for (int f = 0; f < frames.Length; f++)
+            {
+                var canvas = new PixelCanvas(width, 16);
+                int start = f <= 1 ? 0 : (f - 1) * width / 6;
+                byte opacity = f < 2 ? (byte)255 : f == 2 ? (byte)155 : (byte)60;
+                for (int x = start; x < width; x++)
+                {
+                    float along = x / (width - 1f);
+                    float taper = Mathf.Clamp01((1 - along) * 6) * Mathf.Lerp(.5f, 1, Mathf.Clamp01(along * 8));
+                    int edge = Mathf.RoundToInt((5 - f) * taper);
+                    if (edge == 0 && f > 1) continue;
+                    int y = 8 + Mathf.RoundToInt(2 * along * (1 - along) * (f < 2 ? 2 : 0));
+                    canvas.Rect(x, y - edge - 1, 1, 2 * edge + 3, Pal.A(shade, opacity));
+                    canvas.Rect(x, y - edge, 1, 2 * edge + 1, Pal.A(color, opacity));
+                    int hot = Mathf.Max(0, edge - 2);
+                    canvas.Rect(x, y - hot, 1, 2 * hot + 1, Pal.A(core, opacity));
+                }
+                frames[f] = canvas.ToSprite(new Vector2(0, 8));
+            }
+            return frames;
+        });
+
         /// <summary>찌르기 궤적 (가로로 길게 뻗는 창 모양).</summary>
         public static Sprite[] Thrust(Color32 col, Color32 core, int lengthPx) =>
-            DesignRuntime.ThrustFx(col, lengthPx) ?? GetAnim($"thrust_{col}_{core}_{lengthPx}", () =>
+            DesignRuntime.ThrustFx(col, lengthPx) ?? WeaponThrust(col, core, lengthPx, WeaponType.Sword);
+
+        public static Sprite[] WeaponThrust(Color32 col, Color32 core, int lengthPx, WeaponType type, float weight = 1) =>
+            GetAnim($"thrust_{type}_{col}_{core}_{lengthPx}_{weight}", () =>
             {
                 col = Pa(col); core = Pa(core);     // effects take their colours from the palette too
                 var frames = new Sprite[SlashFrames];
@@ -82,7 +141,9 @@ namespace Diverse
                     for (int x = x0; x < x1; x++)
                     {
                         float t = x / (float)lengthPx;
-                        int half = Mathf.RoundToInt(Mathf.Lerp(1, 4, Mathf.Sin(t * Mathf.PI)) * (1 - fade * 0.6f));
+                        float profile = type == WeaponType.Staff ? Mathf.Pow(t, 1.8f) :
+                            type == WeaponType.Dagger ? .5f * Mathf.Sin(t * Mathf.PI) : Mathf.Sin(t * Mathf.PI);
+                        int half = Mathf.RoundToInt(Mathf.Lerp(1, 4, profile) * weight * (1 - fade * 0.6f));
                         cv.Rect(x, 7 - half, 1, half * 2, col);
                         if (half > 1) cv.Rect(x, 7 - half / 2, 1, Mathf.Max(1, half), core);
                     }

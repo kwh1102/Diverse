@@ -15,11 +15,13 @@ namespace Diverse
         public List<EnemyData> enemies = new List<EnemyData>();
         [Tooltip("XP curve, evolution frequency, skill unlock levels, warp stones.")]
         public ProgressionDef progression = new ProgressionDef();
+        [Header("Inventory, fusion, inheritance and weapon discoveries")]
+        public InventoryRules inventory = new InventoryRules();
 
         [Tooltip("Hit-stop limits: how hits feel (a short slow-down, never a hard freeze).")]
         public FeelDef feel = new FeelDef();
 
-        [Header("Ability rules (Rule IR limits, power budget, tier unlocks)")]
+        [Header("AI active skills, fixed parts and weapon footprints")]
         public AbilityRulesData abilityRules;
 
         [Header("Art rules: the palette and tile looks every picture follows")]
@@ -38,6 +40,9 @@ namespace Diverse
         public Clone clonePrefab;
         public Summon summonPrefab;
         public Projectile projectilePrefab;
+        public ActiveBarrier activeBarrierPrefab;
+        public ActiveGroundAnchor activeGroundAnchorPrefab;
+        public CombatVisualLibrary combatVisuals;
         public Pickup pickupPrefab;
         public Interactable interactablePrefab;
 

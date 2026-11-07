@@ -17,6 +17,15 @@ namespace Diverse
         [SerializeField] SpriteRenderer sr;
         readonly Dictionary<Actor, float> zoneHits = new Dictionary<Actor, float>();
         public static readonly List<Summon> Active = new List<Summon>();
+        public static void Revoke(Player player,string abilityTag)
+        {
+            for(int i=Active.Count-1;i>=0;i--)
+            {
+                var summon=Active[i];
+                if(summon==null || summon.owner!=player || !(summon.tags??"").Contains(abilityTag)) continue;
+                summon.gameObject.SetActive(false); Destroy(summon.gameObject);
+            }
+        }
 
         Actor attachTo;            // Attach relation: rides on an enemy
         bool follow;               // Follow relation: stays near the owner

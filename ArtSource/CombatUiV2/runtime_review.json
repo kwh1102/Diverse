@@ -1,0 +1,14 @@
+{
+  "full_review": "Logs\\CombatUiV2\\20261107-024134",
+  "full_result": "PASS: actual Game scene, 4 inventory shapes, long text, action footer, fusion and 8-direction basic/active/projectile/barrier motion captured. Offline scratch save; live saves unchanged.",
+  "focus_review": "Logs\\CombatUiV2\\20261107-024651",
+  "focus_result": "PASS: final projectile spawn height, forward origin and delayed trail captured in 8 directions; live manual Q interrupts pending basic windup. Offline scratch save.",
+  "focus_checks": "OK Actual Game scene; AI disabled\nOK Final projectile fixture attached 0\nOK Final projectile fixture attached 1\nOK Final projectile fixture attached 2\nOK Final projectile fixture attached 3\nOK Final projectile fixture attached 4\nOK Final projectile fixture attached 5\nOK Final projectile fixture attached 6\nOK Final projectile fixture attached 7\nOK Basic windup is pending before manual cast\nOK Manual Q cast cancels pending basic windup\nOK Focused review API calls = 0\n",
+  "actual_runtime": true,
+  "scratch_save_only": true,
+  "game_generation_api_calls": 0,
+  "existing_prefab_ids_preserved": 2694,
+  "final_compile": "PASS: Unity batchmode exit 0, no C# compiler errors",
+  "native_combat_sprite_count": 76,
+  "data_and_recipe_assets_unchanged": true
+}

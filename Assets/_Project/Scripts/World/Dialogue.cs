@@ -54,6 +54,11 @@ namespace Diverse
                 case "npc_villager": Villager(g, it); break;
                 case "chest": Chest(g, it); break;
                 case "grave": Grave(g, it); break;
+                case "weapon_relic":
+                    Show(new DialoguePage { speaker = "봉인된 검", portrait = it.sr.sprite,
+                        text = g.CanDiscoverWeapon ? "검이 반응한다. 뽑아 새로운 무기의 모습을 정할 수 있다." : "봉인이 아직 닫혀 있다. " + g.WeaponUnlockHint,
+                        options = { new DialogueOption("검을 뽑고 무기 만들기", () => g.OpenWeaponReward(it.id), g.CanDiscoverWeapon && !g.World.Flag("weapon:"+it.id)), Bye() } });
+                    break;
                 case "statue": Statue(g, it); break;
                 case "shrine": Shrine(g, it); break;
                 case "ruin_altar": RuinAltar(g, it); break;
@@ -77,7 +82,7 @@ namespace Diverse
             if (w.lifeCount <= 1)
                 text = "오, 처음 보는 얼굴이구나. 난 이 세계의 기록을 지키는 올리란다.\n나가서 살아 보렴. 네가 한 일은 내가 적어 두마.";
             else if (lastGrave != null)
-                text = $"...돌아왔구나. 예전의 그 토끼는 아니지만.\n지난번엔 {Ko.I(lastGrave.heroName)} {Ko.Ro(lastGrave.cause)} 인해 쓰러졌지. 그 자리에 무덤이 있단다.\n찾아가면 남겨진 기술을 되찾을 수 있을지도 몰라.";
+                text = $"...돌아왔구나.\n지난번엔 {Ko.I(lastGrave.heroName)} {Ko.Ro(lastGrave.cause)} 인해 쓰러졌지.\n전해 받은 파츠는 가방에서 장착해 보렴. 아직 회수하지 않은 옛 무덤에도 파츠가 남아 있을 수 있단다.";
             else text = "어서 오렴. 세계가 너의 다음 이야기를 기다리고 있어.";
 
             var page = new DialoguePage { speaker = "이야기꾼 올리", portrait = Art.Npc("owl", 0), text = text };
@@ -95,7 +100,7 @@ namespace Diverse
             foreach (var gr in w.graves.Where(x => string.IsNullOrEmpty(x.forgottenBy)).Take(4))
             {
                 var grave = gr;
-                page.options.Add(new DialogueOption($"{grave.life}번째 삶 {grave.heroName} (Lv.{grave.level}, {DesignStore.WeaponName(grave.costume, grave.weapon)})", () =>
+                page.options.Add(new DialogueOption($"{grave.life}번째 삶 {grave.heroName} (Lv.{grave.level}, {DesignStore.WeaponName(grave.costume, grave.weapon, grave.weaponType)})", () =>
                 {
                     Show(new DialoguePage
                     {
@@ -177,6 +182,17 @@ namespace Diverse
                 }
                 Merchant(g);
             }, p.Gold >= warpCost));
+            foreach (string kind in new[] { "heal", "xp", "cleanse" })
+            {
+                string itemKind=kind;
+                var item=PartArt.Potion(kind);
+                int price=kind=="heal"?InventoryState.Rules.potionPrice:kind=="xp"?InventoryState.Rules.xpPotionPrice:InventoryState.Rules.antidotePrice;
+                page.options.Add(new DialogueOption($"{item.name} ({price} 골드)", () =>
+                {
+                    if (p.Gold < price) return;
+                    p.Gold-=price; p.Inventory.Receive(PartArt.Potion(itemKind)); g.SaveRun(); Merchant(g);
+                },p.Gold>=price));
+            }
             page.options.Add(Bye());
             Show(page);
         }
@@ -227,14 +243,7 @@ namespace Diverse
             var p = g.Player;
             int lvl = p.Weapon.baseDamage > p.Weapon.Origin.baseDamage ? Mathf.RoundToInt((p.Weapon.baseDamage / p.Weapon.Origin.baseDamage - 1) / 0.12f) : 0;
             int cost = 50 + lvl * 40;
-            // Weapon upgrades also unlock its QWER skills (in order) once the weapon reaches the level in ProgressionDef
-            var smithLevels = DB.Progression.smithSkillLevels;
-            int known = p.LearnedSkills;
-            int nextAt = known < smithLevels.Length && known < p.Skills.Length ? smithLevels[known] : -1;
-            var nextSkill = known < p.Skills.Length ? SkillDB.Get(p.Skills[known].id) : null;
-            string skillLine = nextSkill == null ? "이 무기의 기술은 모두 익혔구먼."
-                : nextAt >= 0 && lvl + 1 >= nextAt ? $"한 번 더 벼리면 [{nextSkill.name}] 쓰는 법도 알려 주지."
-                : nextAt >= 0 ? $"+{nextAt}까지 벼리면 [{nextSkill.name}] 쓰는 법을 알려 주지." : "";
+            string skillLine = "Q/W/E/R은 레벨 5/10/15/20에 해금한다네. 열린 슬롯의 새 기술은 따로 의뢰할 수 있지.";
             var page = new DialoguePage { speaker = "대장장이 브루노", portrait = Art.Npc("bear", 0), text = $"흠. 쓸 만한 {p.Weapon.name}. 좀 더 벼려 줄까? (현재 강화 +{lvl})\n{skillLine}" };
             page.options.Add(new DialogueOption($"무기 강화 ({cost} 골드) — 공격력 +12%", () =>
             {
@@ -242,11 +251,20 @@ namespace Diverse
                 {
                     p.Gold -= cost; p.Weapon.baseDamage *= 1.12f; p.RecalcStats(); Sfx.Play("hit_metal"); CameraRig.I.Shake(0.2f);
                     int newLvl = lvl + 1;
-                    var learned = nextAt >= 0 && newLvl >= nextAt ? p.LearnNextSkill() : null;
-                    Game.I.Ui.Toast(learned != null ? $"{p.Weapon.name} +{newLvl} — 새 기술 [{learned.def.name}] ({Controls.KeyName(p.SkillAct(learned))})" : $"{p.Weapon.name} +{newLvl}");
+                    Game.I.Ui.Toast($"{p.Weapon.name} +{newLvl}");
                 }
                 Close();
             }, p.Gold >= cost));
+            for (int slot = 0; slot < 4; slot++)
+            {
+                int selectedSlot = slot; int price = InventoryState.Rules.skillCommissionCost;
+                page.options.Add(new DialogueOption($"{ActiveSkillGenerator.SlotName(slot)} 기술 후보 의뢰 ({price} 골드) · Lv.{DB.Progression.skillLevels[slot]}",
+                    () => g.OpenSkillCommission(selectedSlot), p.SkillUnlocked(slot) && p.Gold >= price && g.SkillOffer == null));
+            }
+            int commission=InventoryState.Rules.smithWeaponCost;
+            string commissionKey="smith:life:"+g.World.lifeCount;
+            page.options.Add(new DialogueOption($"새 무기 제작 의뢰 ({commission} 골드) · {g.WeaponUnlockHint}",
+                () => g.OpenWeaponReward(commissionKey,commission),g.CanDiscoverWeapon && p.Gold>=commission && !g.World.Flag("weapon:"+commissionKey)));
             page.options.Add(Bye());
             Show(page);
         }
@@ -300,7 +318,11 @@ namespace Diverse
         static void Chest(Game g, Interactable it)
         {
             var s = it.data as StructureSpec;
-            if (g.World.Flag("chest:" + s.id)) { Show(new DialoguePage { speaker = "빈 상자", portrait = Art.Prop("chest_open"), text = "안에 아무것도 남아 있지 않다.", options = { Bye() } }); return; }
+            if (g.World.Flag("chest:" + s.id))
+            {
+                if (!WeaponChest(g,s)) Show(new DialoguePage { speaker = "빈 상자", portrait = Art.Prop("chest_open"), text = "안에 아무것도 남아 있지 않다.", options = { Bye() } });
+                return;
+            }
             g.World.SetFlag("chest:" + s.id);
             it.sr.sprite = Art.Prop("chest_open");
             it.label = "빈 상자";
@@ -310,6 +332,17 @@ namespace Diverse
             Fx.I?.Burst(it.Pos + Vector2.up * 0.4f, Pal.Gold, 16, 4, 0.6f, -3);
             GameEvents.World("explore", "chest");
             Game.I.Ui.Toast("상자를 열었다!");
+            if (s.tier >= 2) WeaponChest(g,s);
+        }
+
+        static bool WeaponChest(Game g, StructureSpec site)
+        {
+            string key="treasure:"+site.id;
+            if (site.tier<2 || g.World.Flag("weapon:"+key)) return false;
+            Show(new DialoguePage { speaker="잠든 무기의 보물함",portrait=Art.Prop("chest_open"),
+                text="깊은 곳에서 무기의 씨앗을 발견했다. " + g.WeaponUnlockHint,
+                options={new DialogueOption("원하는 무기로 깨우기",()=>g.OpenWeaponReward(key),g.CanDiscoverWeapon),Bye("나중에 돌아오기")} });
+            return true;
         }
 
         static void ExplorationRecord(Game g, Interactable it)
@@ -341,43 +374,47 @@ namespace Diverse
             var page = new DialoguePage
             {
                 speaker = $"{gr.life}번째 삶 — {gr.heroName}의 무덤", portrait = Art.Prop("grave"),
-                text = $"\"{gr.epitaph}\"\n레벨 {gr.level} · {DesignStore.WeaponName(gr.costume, gr.weapon)} · 몬스터 {gr.kills}마리 처치",
+                text = $"\"{gr.epitaph}\"\n레벨 {gr.level} · {DesignStore.WeaponName(gr.costume, gr.weapon, gr.weaponType)} · 몬스터 {gr.kills}마리 처치",
             };
-            if (!gr.recovered && gr.abilities.Count > 0)
+            gr.parts ??= new System.Collections.Generic.List<InventoryItem>();
+            if (gr.parts.Count == 0)
+                foreach (var rec in gr.abilities)
+                {
+                    var a=rec.ToAbility(); if (a==null) continue;
+                    var item=InventoryItem.Part(a,gr.heroName); item.acquisitionApplied=true; gr.parts.Add(item);
+                }
+            if (!gr.recovered && gr.parts.Count > 0)
             {
                 page.text += "\n\n무덤에 아직 무언가가 남아 있다...";
-                foreach (var rec in gr.abilities)
+                foreach (var rec in gr.parts)
                 {
                     var r = rec;
                     page.options.Add(new DialogueOption($"[{r.name}] 설명 보기 / 계승", () =>
                     {
-                        var preview = r.ToAbility();
+                        var preview = r.Ability;
                         if (preview == null) return;
-                        var probe = preview.Clone();
-                        if (RuleValidator.Validate(probe, BuildContext.Of(g.Player)).ok) preview = probe;
                         Show(new DialoguePage
                         {
                             speaker = $"기억 전승 — {r.name}", portrait = Art.Prop("grave"),
-                            text = preview.Explain(),
+                            text = $"등급 T{r.complexity} · 계승 한도 T{InventoryState.Rules.LegacyTier(g.World)}\n" + preview.Explain(),
                             options =
                             {
-                                new DialogueOption("이 능력 계승하기", () =>
+                                new DialogueOption("이 파츠 계승하기", () =>
                                 {
                                     if (gr.recovered) return;
-                                    var graph = preview.Clone();
-                                    graph.id = System.Guid.NewGuid().ToString("N").Substring(0, 8);
-                                    graph.name = r.name;
-                                    graph.desc = graph.Explain();
-                                    g.Player.Abilities.Add(graph);
+                                    var item=r.Copy(); item.x=item.y=-1;
+                                    if (string.IsNullOrEmpty(item.ancestor)) item.ancestor=gr.heroName;
+                                    g.Player.Inventory.Receive(item);
                                     gr.recovered = true;
-                                    g.World.Log($"{Ko.I(g.HeroName)} {gr.heroName}의 무덤에서 [{graph.name}] 능력을 계승했다.", "legacy");
+                                    g.World.Log($"{Ko.I(g.HeroName)} {gr.heroName}의 무덤에서 [{item.name}] 파츠를 계승했다.", "legacy");
                                     Fx.I?.Play(Art.Shockwave(Pal.ShadowEl, 30), it.Pos, 0, 16, 1, null, true);
                                     Fx.I?.Burst(it.Pos + Vector2.up * 0.5f, Pal.ShadowEl, 30, 5, 1f, -3);
                                     Sfx.Play("evolve");
-                                    Game.I.Ui.Toast($"{gr.heroName}의 능력 [{graph.name}] 계승");
+                                    Game.I.Ui.Toast($"{gr.heroName}의 파츠 [{item.name}] 계승 — I에서 장착해 줘.");
+                                    g.SaveRun(); SaveSystem.SaveWorld(g.World);
                                     GameEvents.World("investigate", "grave");
                                     Close();
-                                }),
+                                },r.complexity <= InventoryState.Rules.LegacyTier(g.World)),
                                 new DialogueOption("다른 기억 보기", () => Grave(g, it)),
                                 Bye(),
                             },
@@ -396,7 +433,7 @@ namespace Diverse
             Show(new DialoguePage
             {
                 speaker = $"영웅 {gr.heroName}의 석상", portrait = Art.Prop("statue"),
-                text = $"\"{gr.epitaph}\"\n받침대에 능력 {gr.abilities.Count}개의 이름이 새겨져 있다.\n(석상 하나마다 다음 삶들의 공격력이 영구히 +3%)",
+                text = $"\"{gr.epitaph}\"\n받침대에 파츠 {gr.parts?.Count ?? gr.abilities.Count}개의 기록이 새겨져 있다.\n(석상 하나마다 다음 삶들의 공격력이 영구히 +3%)",
                 options = { Bye() },
             });
         }

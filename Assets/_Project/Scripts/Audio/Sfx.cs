@@ -148,6 +148,24 @@ namespace Diverse
                         return (Square(ph) * 0.25f + Noise(ref s) * Mathf.Exp(-t * 40) * 0.6f) * Env(t, d);
                     });
                 }
+                case "bow_release":
+                {
+                    return Make(name, .12f, (float t, float d, ref uint seed) =>
+                    {
+                        float snap = Noise(ref seed) * .54f * Mathf.Exp(-t * 110);
+                        float stringTone = Mathf.Sin(2 * Mathf.PI * (510 * t - 1450 * t * t)) * .42f * Mathf.Exp(-t * 28);
+                        return (snap + stringTone) * Mathf.Clamp01(t / .0015f);
+                    });
+                }
+                case "gun_shot":
+                {
+                    return Make(name, .19f, (float t, float d, ref uint seed) =>
+                    {
+                        float crack = Noise(ref seed) * .78f * Mathf.Exp(-t * 50);
+                        float punch = Mathf.Sin(2 * Mathf.PI * (180 * t - 325 * t * t)) * .48f * Mathf.Exp(-t * 22);
+                        return (crack + punch) * Mathf.Clamp01(t / .001f);
+                    });
+                }
                 case "shoot":
                 {
                     float ph = 0;
@@ -247,6 +265,32 @@ namespace Diverse
                 {
                     return Make(name, 0.25f, (float t, float d, ref uint s) =>
                         (Mathf.Sin(t * 2 * Mathf.PI * 1200) * 0.4f + Mathf.Sin(t * 2 * Mathf.PI * 1810) * 0.3f + Noise(ref s) * Mathf.Exp(-t * 60) * 0.6f) * Env(t, d));
+                }
+                case "trap_place":
+                case "trap_trigger":
+                case "wall_place":
+                {
+                    bool snap = name == "trap_trigger", stone = name == "wall_place";
+                    float duration = stone ? .19f : snap ? .11f : .09f;
+                    float phase = 0, grit = 0;
+                    return Make(name, duration, (float t, float d, ref uint s) =>
+                    {
+                        phase += Mathf.Lerp(stone ? 160 : snap ? 510 : 290, stone ? 65 : 130, t / d) / Rate;
+                        grit += (Noise(ref s) - grit) * (stone ? .18f : .44f);
+                        return (Mathf.Sin(phase * 2 * Mathf.PI) * .48f + grit * Mathf.Exp(-t * 40) * .68f) * Env(t, d, .001f);
+                    });
+                }
+                case "skill_cast":
+                case "skill_control":
+                case "skill_heal":
+                {
+                    bool heal = name == "skill_heal", control = name == "skill_control";
+                    float phase = 0;
+                    return Make(name, heal ? .24f : .13f, (float t, float d, ref uint s) =>
+                    {
+                        phase += Mathf.Lerp(heal ? 520 : control ? 480 : 270, heal ? 900 : control ? 210 : 450, t / d) / Rate;
+                        return (Mathf.Sin(phase * 2 * Mathf.PI) * .42f + Tri(phase * 1.49f) * .18f) * Env(t, d, heal ? .025f : .004f);
+                    });
                 }
                 case "charge":
                 {

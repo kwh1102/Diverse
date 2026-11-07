@@ -4,7 +4,6 @@ using UnityEngine;
 
 namespace Diverse
 {
-    public enum WeaponKind { Greatsword, SwordShield, Crossbow, Staff, Dagger, Katana }
     public enum Element { None, Fire, Frost, Lightning, Shadow, Holy, Poison, Wind, Blood, Void, Arcane }
 
     /// <summary>
@@ -36,7 +35,9 @@ namespace Diverse
     [Serializable]
     public class WeaponDef
     {
-        public WeaponKind kind;
+        [SerializeField, HideInInspector] int kind = -1; // Version-one inventory migration only.
+        internal void RestoreWeaponType() { type = origin?.type ?? DB.ReadWeaponType(-1, kind); kind = -1; }
+        public WeaponType type;
         public string name;
         [TextArea] public string desc;
         public string tags;              // ability language tags ("SWORD HEAVY MELEE")
@@ -47,7 +48,7 @@ namespace Diverse
         public float moveSpeedMul = 1f;
         public float attackRange = 1.6f; // range at which right-click auto-attack starts
         public ComboStep[] combo;
-        public string[] skills = new string[4];  // QWER skill ids
+        public string[] skills = new string[4];  // Legacy save field; active skills live on inventory items.
         public Element element;
         public string sfxSwing = "swing";
         public string sfxHit = "hit";
@@ -58,7 +59,7 @@ namespace Diverse
         /// <summary>Designed weapons (DesignCombat): the built template. Asset weapons: null.</summary>
         [NonSerialized] public WeaponDef origin;
         /// <summary>What the smith compares upgrades against.</summary>
-        public WeaponDef Origin => origin ?? DB.W(kind);
+        public WeaponDef Origin => origin ?? DB.W(type);
     }
 
     /// <summary>One costume perk line: stat += value (Add) or stat *= 1 + value (Mul).</summary>
@@ -150,9 +151,9 @@ namespace Diverse
         [Tooltip("Each level needs this much more than the last (×).")]
         public float xpGrowth = 1.32f;
         [Tooltip("An ability evolution is offered every N levels (1 = every level).")]
-        public int evolveEvery = 2;
+        public int evolveEvery = 1;
         [Tooltip("Levels at which the next QWER skill is learned (in order). Skills can also be learned from the smith.")]
-        public int[] skillLevels = { 3, 6, 10, 15 };
+        public int[] skillLevels = { 5, 10, 15, 20 };
         [Tooltip("Smith: weapon level at which each QWER skill can be learned (in order).")]
         public int[] smithSkillLevels = { 1, 2, 4, 6 };
         [Tooltip("Warp stone price at the merchant.")]
@@ -161,7 +162,8 @@ namespace Diverse
         public float warpRange = 6f;
 
         public float XpFor(int level) => Mathf.Round(xpBase * Mathf.Pow(xpGrowth, level - 1));
-        public bool EvolvesAt(int level) => evolveEvery <= 1 || level % evolveEvery == 0;
+        public int SkillSlotAt(int level) => Array.IndexOf(skillLevels, level);
+        public bool EvolvesAt(int level) => level > 1 && SkillSlotAt(level) < 0;
     }
 
     /// <summary>Global hit feel (Resources/GameDatabase.asset → feel). Weapons and skills ask for hit-stop; these cap it.</summary>
@@ -198,7 +200,7 @@ namespace Diverse
     /// </summary>
     public static class DB
     {
-        public static readonly Dictionary<WeaponKind, WeaponDef> Weapons = new Dictionary<WeaponKind, WeaponDef>();
+        public static readonly Dictionary<WeaponType, WeaponDef> Weapons = new Dictionary<WeaponType, WeaponDef>();
         public static readonly List<CostumeDef> Costumes = new List<CostumeDef>();
         public static readonly Dictionary<string, EnemyDef> Enemies = new Dictionary<string, EnemyDef>();
         public static GameDatabase Asset { get; private set; }
@@ -206,7 +208,7 @@ namespace Diverse
         static DB()
         {
             Asset = GameDatabase.Load();
-            foreach (var w in Asset.weapons) if (w != null) Weapons[w.def.kind] = w.def;
+            foreach (var w in Asset.weapons) if (w != null) Weapons[w.def.type] = w.def;
             foreach (var c in Asset.costumes) if (c != null) Costumes.Add(c.def);
             foreach (var e in Asset.enemies) if (e != null) Enemies[e.def.id] = e.def;
             foreach (var t in Asset.themes) if (t != null) { t.def.index = Themes.Count; Themes.Add(t.def); }
@@ -230,7 +232,18 @@ namespace Diverse
         public static ThemeDef ThemeOf(CombatType c) => CombatTypes.TryGetValue(c, out var d) && d.theme != null ? d.theme.def : SpawnTheme;
         /// <summary>The theme drawn with a biome's art (custom-mode worlds pick biomes by noise).</summary>
         public static ThemeDef ThemeForBiome(Biome b) => Themes.Find(t => t.biome == b) ?? SpawnTheme;
-        public static WeaponDef W(WeaponKind k) => Weapons[k];
+        public static WeaponDef W(WeaponType type) => Weapons[type];
+        public static WeaponType ReadWeaponType(int type, int legacy)
+        {
+            if (type >= (int)WeaponType.Sword && type <= (int)WeaponType.Dagger) return (WeaponType)type;
+            return legacy switch
+            {
+                2 => WeaponType.Bow,
+                3 => WeaponType.Staff,
+                4 => WeaponType.Dagger,
+                _ => WeaponType.Sword,
+            };
+        }
         public static CostumeDef Costume(string id) => DesignStore.Costume(id) ?? Costumes.Find(c => c.id == id) ?? Costumes[0];
         public static EnemyDef Enemy(string id) => Enemies.TryGetValue(id, out var e) ? e : Enemies["shroom"];
 

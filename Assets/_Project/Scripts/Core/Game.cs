@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Diverse
 {
-    public enum GameState { Playing, Evolving, Dialogue, Map, Paused, Dead }
+    public enum GameState { Playing, Evolving, Dialogue, Map, Paused, Dead, Inventory, PartFusion, WeaponDesign }
 
     /// <summary>
     /// Game scene entry point. Game.unity holds the camera, Fx, Sfx, UI and world objects; Game wires them up with save data
@@ -19,6 +19,7 @@ namespace Diverse
         public static Settings Settings => Session.Settings;
 
         [System.NonSerialized] public GameState State = GameState.Playing;
+        public bool CombatRunning => State == GameState.Playing || State == GameState.Inventory;
         public WorldSave World => Session.World;
         [System.NonSerialized] public Player Player;
         [System.NonSerialized] public string HeroName;
@@ -65,7 +66,7 @@ namespace Diverse
             else
             {
                 var costume = Session.StartCostume ?? DB.Costume(World.lastCostume);
-                var weapon = Session.StartCostume != null ? Session.StartWeapon : (WeaponKind)World.lastWeapon;
+                var weapon = Session.StartCostume != null ? Session.StartWeapon : DB.ReadWeaponType(World.lastWeaponType, World.lastWeapon);
                 StartRun(costume, weapon);
             }
         }
@@ -85,12 +86,14 @@ namespace Diverse
 
             if (Player != null) WorldStreamer.I.Tick(Player.Pos);
 
-            if (State == GameState.Playing && Player != null && Player.Alive)
+            if (CombatRunning && Player != null && Player.Alive)
             {
-                HandleGlobalKeys();
+                if (State == GameState.Playing) HandleGlobalKeys();
+                else if ((Controls.Down(Act.Pause) && !Ui.ConsumesEscape) || (Controls.Down(Act.Inventory) && !Controls.Typing)) CloseOverlay();
+                if (!CombatRunning) return;
                 discoverT -= dt;
                 if (discoverT <= 0) { discoverT = 0.5f; Diverse.World.I.UpdateDiscovery(Player.Pos); UpdateQuests(); }
-                if (Controls.Down(Act.Interact))
+                if (State == GameState.Playing && Controls.Down(Act.Interact))
                 {
                     var it = Interactable.Nearest(Player.Pos);
                     if (it != null) Interact(it);
@@ -99,10 +102,11 @@ namespace Diverse
                 saveT -= Time.unscaledDeltaTime;
                 if (saveT <= 0) { saveT = 20; SaveSystem.SaveWorld(World); SaveRun(); }
                 UpdateFrontier(dt);
-                if (Player.PendingEvolutions > 0 && !Generating && Offer == null && Actor.Nearest(Player.Pos, 7, Team.Enemy) == null)
+                RequestPrefetch();
+                if (State == GameState.Playing && (Player.PendingEvolutions > 0 || SkillOffer != null) && !Generating && Offer == null && Actor.Nearest(Player.Pos, 7, Team.Enemy) == null)
                     BeginEvolution();
             }
-            else if (State == GameState.Map || State == GameState.Paused || State == GameState.Dialogue || State == GameState.Evolving)
+            else if (State == GameState.Map || State == GameState.Paused || State == GameState.Dialogue || State == GameState.Evolving || State == GameState.Inventory || State == GameState.PartFusion || State == GameState.WeaponDesign)
             {
                 if (State == GameState.Map && Player != null && Player.Alive)
                 {
@@ -114,17 +118,19 @@ namespace Diverse
                 }
                 if (Controls.Down(Act.Pause) && State != GameState.Evolving && !Ui.ConsumesEscape) CloseOverlay();
                 if (State == GameState.Map && Controls.Down(Act.Map)) CloseOverlay();
+                if (State == GameState.Inventory && Controls.Down(Act.Inventory) && !Controls.Typing) CloseOverlay();
             }
         }
 
         void HandleGlobalKeys()
         {
             if (DeveloperMode.CapturingInput) return;
-            if (Controls.Down(Act.Map)) OpenOverlay(GameState.Map);
+            if (Controls.Down(Act.Inventory)) OpenOverlay(GameState.Inventory);
+            else if (Controls.Down(Act.Map)) OpenOverlay(GameState.Map);
             else if (Controls.Down(Act.Pause)) OpenOverlay(GameState.Paused);
             else if (Controls.Down(Act.Abilities))
             {
-                if (Player.PendingEvolutions > 0 && !Generating && Offer == null) BeginEvolution();
+                if ((Player.PendingEvolutions > 0 || SkillOffer != null) && !Generating && Offer == null) BeginEvolution();
                 else OpenOverlay(GameState.Paused, "abilities");
             }
             else if (Controls.Down(Act.Chronicle)) OpenOverlay(GameState.Paused, "chronicle");
@@ -133,15 +139,21 @@ namespace Diverse
         public void OpenOverlay(GameState s, string tab = null)
         {
             State = s;
-            if (s == GameState.Map) GameTime.Resume("overlay");
+            if (s == GameState.Map || s == GameState.Inventory) GameTime.Resume("overlay");
             else GameTime.Pause("overlay");
+            InputConsumedFrame = Time.frameCount;
             Ui.OnOverlayOpened(s, tab);
             Sfx.Play("ui", 0.5f);
         }
 
         public void CloseOverlay()
         {
+            if (State == GameState.Evolving && (ChatBusy || Generating)) return;
+            if ((State == GameState.Inventory || State == GameState.PartFusion || State == GameState.WeaponDesign) && InventoryBusy) return;
+            if(State==GameState.PartFusion) { CancelFusion();OpenOverlay(GameState.Inventory);return; }
+            if(State==GameState.WeaponDesign) CancelWeaponReward();
             if (State == GameState.Dialogue) Ui.CloseDialogue();
+            InputConsumedFrame = Time.frameCount;
             State = GameState.Playing;
             GameTime.Resume("overlay");
             Sfx.Play("ui", 0.4f, 0.8f);
@@ -149,11 +161,10 @@ namespace Diverse
 
         // ───────────────────────── Starting a run ─────────────────────────
 
-        public void StartRun(CostumeDef costume, WeaponKind weapon)
+        public void StartRun(CostumeDef costume, WeaponType weapon)
         {
             World.lifeCount++;
             World.lastCostume = costume.id;
-            World.lastWeapon = (int)weapon;
             HeroName = MakeHeroName(costume);
             Diverse.World.I.ResetForRun();
             Fx.I.ClearAll();
@@ -162,20 +173,26 @@ namespace Diverse
             // A designed hero fights with its own weapon (DesignCombat: parts from the assets, power-normalized)
             var w = DesignCombat.For(DesignStore.PackOfCostume(costume.id)) ?? DB.W(weapon);
             var weaponCopy = w.Clone();
+            World.lastWeaponType = (int)w.type;
             if (DesignRuntime.BeginRun(costume, weaponCopy)) WorldStreamer.I.UnloadAll();
             if (Player != null) Destroy(Player.gameObject);
             WorldStreamer.I.Warm(new Vector2(0, -1.5f));
             Player = Player.Spawn(costume, weaponCopy, new Vector2(0, -1.5f));
             Player.HeroName = HeroName;
+            if (World.legacyPart != null)
+            {
+                Player.Inventory.Receive(World.legacyPart);
+                Ui.Toast($"유산 [{World.legacyPart.name}]을 받았어. 인벤토리에서 장착해 줘.");
+                World.legacyPart = null;
+            }
+            Player.Inventory.Receive(PartArt.Potion("heal"));
             Player.Gold = Mathf.Min(World.gold, 40 + World.lifeCount * 10);   // withdraw part of the shared vault's gold
             World.gold -= Player.Gold;
             CameraRig.I.target = Player.transform;
             CameraRig.I.Snap(Player.Pos);
             PrewarmRun();
-            Offer = null; Generating = false; Boss = null; ChatBusy = false;
+            Offer = null; SkillOffer = null; Generating = false; Boss = null; ChatBusy = false;
             ResetPrefetch();
-            var heroPack = DesignStore.PackOfCostume(costume.id);
-            if (heroPack != null) StartCoroutine(StartingPerkRoutine(heroPack));
             State = GameState.Playing;
             GameTime.ClearPauses();
             World.Log($"{World.lifeCount}번째 삶: {HeroName}({costume.name}, {w.name}) — 기억의 광장에서 눈을 떴다.", "life");
@@ -196,13 +213,32 @@ namespace Diverse
         /// Design studio (pause menu) committed a new look for this life: redraw the hero, weapon and world.
         /// The chassis is locked by the studio, so only names, colors and sprites change — never the numbers.
         /// </summary>
-        public void ApplyDesign(DesignPack committed)
+        public void ApplyDesign(DesignPack committed, string activeWeaponImage = null)
         {
             var p = Player;
             if (p == null) return;
             p.Costume = DesignStore.CostumeOf(committed);
             DesignRuntime.Activate(committed);
-            DesignRuntime.Skin(p.Weapon);
+            var starting = p.Inventory.items.FirstOrDefault(i => i.kind == ItemKind.Weapon && i.startingWeapon);
+            if (starting != null)
+            {
+                starting.design = committed.Clone();
+                starting.design.weapon.type = starting.weapon.type;
+                DesignRuntime.EquipWeapon(starting.design, starting.weapon);
+                DesignRuntime.Skin(starting.weapon);
+                starting.name = starting.weapon.name;
+                PartArt.InvalidateWeapon(starting.id);
+            }
+            var active = p.Inventory.Active;
+            if (active?.design != null && activeWeaponImage != null && active.design.weapon.image != activeWeaponImage)
+            {
+                var appearance = active.design.Clone();
+                appearance.weapon.image = activeWeaponImage;
+                active.design = DesignStore.Commit(appearance);
+                PartArt.InvalidateWeapon(active.id);
+                p.Inventory.Notify();
+            }
+            DesignRuntime.EquipWeapon(p.Inventory.Active.design,p.Weapon);
             p.RefreshLook();
             WorldStreamer.I.UnloadAll();
             WorldStreamer.I.Warm(p.Pos);
@@ -252,13 +288,18 @@ namespace Diverse
             var position = p.SavePosition;
             var r = new RunSave
             {
-                life = World.lifeCount, heroName = HeroName, costume = p.Costume.id, weapon = (int)p.Weapon.kind, weaponDamage = p.Weapon.baseDamage,
+                life = World.lifeCount, heroName = HeroName, costume = p.Costume.id, weaponType = (int)p.Weapon.type, weaponDamage = p.Weapon.baseDamage,
                 level = p.Level, xp = p.Xp, xpToNext = p.XpToNext, gold = p.Gold, kills = p.Kills,
                 attrs = (int[])p.Attrs.Clone(), unspentAttr = p.UnspentAttr, pendingEvolutions = p.PendingEvolutions,
                 hp = p.hp, dashMax = p.DashChargesMax, x = position.x, y = position.y,
                 warpStones = p.WarpStones, skillsLearned = p.LearnedSkills,
+                inventory = p.InventorySnapshot(),
+                rewardVersion = 1, claimedSkillMask = p.claimedSkillMask,
+                pendingRewardLevels = new List<int>(p.pendingRewardLevels),
+                skillOffer = SkillOffer == null ? null : JsonUtility.FromJson<SkillOfferSave>(JsonUtility.ToJson(SkillOffer)),
+                skillPrefetch = SkillPrefetch == null ? null : JsonUtility.FromJson<SkillOfferSave>(JsonUtility.ToJson(SkillPrefetch)),
             };
-            foreach (var a in p.Abilities.Owned) r.abilities.Add(AbilityRecord.From(a));
+            foreach (var a in p.Abilities.Owned.Where(a => !p.Inventory.items.Any(i => i.Ability == a))) r.abilities.Add(AbilityRecord.From(a));
             foreach (var kv in p.Telemetry.intent) r.intent.Add(kv.Key + "=" + kv.Value);
             Session.PendingRun = r;
             SaveSystem.SaveRun(r);
@@ -270,7 +311,7 @@ namespace Diverse
             var r = Session.PendingRun;
             if (r == null) return;
             var costume = DB.Costume(r.costume);
-            var weapon = (WeaponKind)r.weapon;
+            var weapon = DB.ReadWeaponType(r.weaponType, r.weapon);
             HeroName = r.heroName;
             Diverse.World.I.ResetForRun();
             Fx.I.ClearAll();
@@ -291,17 +332,31 @@ namespace Diverse
             p.UnspentAttr = r.unspentAttr; p.PendingEvolutions = r.pendingEvolutions;
             p.DashChargesMax = p.DashCharges = Mathf.Max(2, r.dashMax);
             p.WarpStones = r.warpStones;
-            p.RestoreSkills(r.skillsLearned < 0 ? p.Skills.Length : r.skillsLearned);   // saves from before skill learning keep all 4
-            foreach (var rec in r.abilities) { var g = rec.ToAbility(); if (g != null) p.Abilities.Restore(g); }
+            if (r.inventory != null)
+            {
+                p.RestoreInventory(r.inventory);
+                p.MigrateAbilities(r.abilities);
+            }
+            else
+            {
+                p.RestoreSkills(r.skillsLearned < 0 ? p.Skills.Length : r.skillsLearned);
+                foreach (var rec in r.abilities)
+                {
+                    var a = rec.ToAbility(); if (a == null) continue;
+                    { var item = InventoryItem.Part(a); item.acquisitionApplied = true; p.Inventory.Receive(item, equip: true); }
+                }
+            }
             foreach (var s in r.intent) { var kv = s.Split('='); if (kv.Length == 2 && int.TryParse(kv[1], out var n)) p.Telemetry.intent[kv[0]] = n; }
             p.RecalcStats();
             p.hp = Mathf.Clamp(r.hp, 1, p.maxHp);
             p.Pos = WorldStreamer.I.NearestWalkable(pos, p.radius, 8);
+            RestoreLevelRewards(r);
             CameraRig.I.target = p.transform;
             CameraRig.I.Snap(p.Pos);
             PrewarmRun();
             Offer = null; Generating = false; Boss = null; ChatBusy = false;
             ResetPrefetch();
+            RestoreSkillPrefetch(r.skillPrefetch);
             State = GameState.Playing;
             GameTime.ClearPauses();
             Ui.Toast($"{Ko.I(HeroName)} 다시 길을 나선다. (Lv.{p.Level})");
@@ -381,11 +436,14 @@ namespace Diverse
             var p = Player;
             var grave = new GraveRecord
             {
-                life = World.lifeCount, heroName = HeroName, costume = p.Costume.id, weapon = (int)p.Weapon.kind, level = p.Level, kills = p.Kills,
+                life = World.lifeCount, heroName = HeroName, costume = p.Costume.id, weaponType = (int)p.Weapon.type, level = p.Level, kills = p.Kills,
                 x = p.Pos.x, y = p.Pos.y, cause = cause,
             };
-            // Abilities carved on the grave (the 2 strongest) → the next life can visit the grave and recover them
-            foreach (var g in p.Abilities.Owned.Where(a => a.tier >= 1).OrderByDescending(a => a.power).Take(2)) grave.abilities.Add(AbilityRecord.From(g));
+            // Preserve fixed parts on the grave, ordered by upgrade rank for legacy selection.
+            foreach (var item in p.Inventory.items.Where(i => i.kind == ItemKind.Part).OrderByDescending(i => i.complexity))
+                grave.parts.Add(item.Copy());
+            var legacy = grave.parts.FirstOrDefault(i => i.complexity <= InventoryState.Rules.LegacyTier(World));
+            if (legacy != null) SelectLegacy(grave, legacy.id);
             // Heroes who achieved great deeds get a statue
             grave.statue = p.Level >= 12;
             grave.epitaph = $"{HeroName} — {Ko.Ro(cause)} 인해 잠들다. 레벨 {p.Level}, 처치한 몬스터 {p.Kills}마리.";

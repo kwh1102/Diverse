@@ -1,0 +1,12 @@
+[
+  {
+    "prefab": "Assets\\_Project\\Prefabs\\UI\\GameCanvas.prefab",
+    "scroll_regions": 19,
+    "new_objects": 0
+  },
+  {
+    "prefab": "Assets\\_Project\\Prefabs\\UI\\MenuCanvas.prefab",
+    "scroll_regions": 0,
+    "new_objects": 0
+  }
+]

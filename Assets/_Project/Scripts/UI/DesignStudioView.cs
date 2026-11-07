@@ -20,7 +20,9 @@ namespace Diverse
         [SerializeField] Text info, status;
         [Header("Preview")]
         [SerializeField] Image hero, heroWeapon, projectile, slash;
+        [SerializeField] InventoryShapePreview inventoryPreview;
         [SerializeField] Button flipWeapon;            // mirror the weapon picture when the image model drew it backwards
+        [SerializeField] Button flipHero;
         [SerializeField] Button flipEffects;           // turn the swing / muzzle effect around when it still plays backwards
         [Header("Chassis (new life only)")]
         [SerializeField] GameObject chassisRow;
@@ -36,6 +38,9 @@ namespace Diverse
 
         DesignPack working;
         readonly Stack<DesignPack> history = new Stack<DesignPack>();
+        readonly Stack<string> weaponImageHistory = new Stack<string>();
+        string inGameWeaponImage;
+        Sprite inGameWeaponPreview;
         GameObject typeWindow;
         Text typeBalance, typeDescription;
         Image modalMotion;
@@ -84,12 +89,19 @@ namespace Diverse
             });
             UIKit.Bind(flipWeapon, () =>
             {
-                if (InGame || busy || working.weapon.image == null) return;
+                string image = InGame ? inGameWeaponImage : working?.weapon?.image;
+                if (busy || image == null) return;
                 Push();
-                working.weapon.image = DesignStore.Mirrored(working.weapon.image);
+                if (InGame) inGameWeaponImage = DesignStore.Mirrored(image);
+                else working.weapon.image = DesignStore.Mirrored(image);
                 Preview();
             });
-            UIKit.Bind(undo, () => { if (history.Count > 0 && !busy) { working = history.Pop(); Preview(); } });
+            UIKit.Bind(flipHero,()=>
+            {
+                if(busy || working?.hero?.image==null) return;
+                Push();DesignStore.MirrorHero(working.hero);Preview();
+            });
+            UIKit.Bind(undo, () => { if (history.Count > 0 && !busy) { working = history.Pop(); inGameWeaponImage = weaponImageHistory.Pop(); Preview(); } });
             prompt.characterLimit = DesignGuard.MaxPrompt;
             // Designs are made from scratch: no preset character / weapon / perk pickers
             UIKit.Show(classicButton, false);
@@ -115,6 +127,7 @@ namespace Diverse
 
         void OnDisable()
         {
+            if (inGameWeaponPreview != null) { Destroy(inGameWeaponPreview); inGameWeaponPreview = null; }
             UIKit.Show(typeWindow, false);
             if (Controls.TypingField == prompt) Controls.TypingField = prevTyping;
         }
@@ -125,7 +138,8 @@ namespace Diverse
             var p = game.Player;
             if (p == null) return;
             var pack = (DesignStore.PackOfCostume(p.Costume.id) ?? DesignPack.Default()).Clone();
-            pack.weapon.baseWeapon = p.Weapon.kind.ToString();
+            inGameWeaponImage = p.Inventory?.Active?.design?.weapon?.image;
+            pack.weapon.type = p.Weapon.type;
             if (!p.Costume.id.StartsWith(DesignStore.CostumePrefix)) pack.hero.basePerk = p.Costume.id;
             UIKit.Show(gameObject, true);
             Begin(pack);
@@ -137,13 +151,14 @@ namespace Diverse
             working = pack;
             if (InGame || !string.IsNullOrEmpty(pack.id)) working.travelSelected = true;
             history.Clear();
+            weaponImageHistory.Clear();
             prompt.SetTextWithoutNotify("");
             UIKit.Show(typeWindow, false);
             statusText = DesignAi.Available ? $"AI 디자인: {AiClient.ModelLabel(Game.Settings.aiModel)}" : "AI 꺼짐 — 무료 로컬 해석으로 만들어요";
             busy = false;
             UIKit.Label(startButton, InGame ? "적용하고 닫기" : "삶을 시작하기");
             UIKit.Label(backButton, InGame ? "취소" : "뒤로");
-            UIKit.Set(tabHint, InGame ? "이번 삶에서는 캐릭터 외형만 수정할 수 있어요." : "유형을 고르고 캐릭터 외형과 공격을 한 번에 설명해 주세요.");
+            UIKit.Set(tabHint, InGame ? "캐릭터 외형 수정 · 캐릭터와 장착 무기의 좌우 반전이 가능해요." : "유형을 고르고 캐릭터 외형과 공격을 한 번에 설명해 주세요.");
             if (prompt.placeholder is Text ph)
                 ph.text = InGame ? "예) 망토를 보라색으로 바꿔줘" : "예) 마법사 모자를 쓴 보라색 문어. 다리로 적을 공격한다.";
             Preview();
@@ -157,6 +172,7 @@ namespace Diverse
             if (InGame && game.Player != null)
             {
                 DesignRuntime.Activate(DesignStore.PackOfCostume(game.Player.Costume.id) ?? DesignPack.Default());
+                DesignRuntime.EquipWeapon(game.Player.Inventory?.Active?.design, game.Player.Weapon);
                 DesignRuntime.Skin(game.Player.Weapon);
                 game.Player.RefreshLook();
             }
@@ -285,7 +301,7 @@ namespace Diverse
             RefreshTypes();
         }
 
-        void Push() => history.Push(working.Clone());
+        void Push() { history.Push(working.Clone()); weaponImageHistory.Push(inGameWeaponImage); }
 
         void Generate()
         {
@@ -313,6 +329,7 @@ namespace Diverse
                 {
                     Session.World.designCalls++;
                     Session.World.designCostUsd += DesignAi.LastCostUsd;
+                    Session.World.designUnknownCosts += DesignAi.LastUnknownCosts;
                 }
                 Done(result, power, why);
             }));
@@ -344,15 +361,17 @@ namespace Diverse
             var committed = DesignStore.Commit(working);
             Session.World.designId = committed.id;
             SaveSystem.SaveWorld(Session.World);
-            Session.NewLife(DesignStore.CostumeOf(committed), DesignRuntime.Chassis(committed));
+            Session.NewLife(DesignStore.CostumeOf(committed), DesignRuntime.TypeOf(committed));
         }
 
         void ApplyInGame()
         {
             if (busy) return;
+            if (game.Player.Inventory?.Active?.startingWeapon == true && inGameWeaponImage != null)
+                working.weapon.image = inGameWeaponImage;
             var committed = DesignStore.Commit(working);
             Session.World.designId = committed.id;
-            game.ApplyDesign(committed);
+            game.ApplyDesign(committed, inGameWeaponImage);
             UIKit.Show(gameObject, false);
         }
 
@@ -363,12 +382,17 @@ namespace Diverse
         void Preview()
         {
             DesignRuntime.Activate(working);
+            if (InGame && game.Player != null)
+                DesignRuntime.EquipWeapon(game.Player.Inventory?.Active?.design, game.Player.Weapon);
+            if (inGameWeaponPreview != null) Destroy(inGameWeaponPreview);
+            inGameWeaponPreview = InGame ? DesignStore.Sprite(inGameWeaponImage, new Vector2(.5f, .5f)) : null;
             previewCostume = DesignStore.PreviewCostume(working);
         }
 
         void Update()
         {
             if (working == null) return;
+            inventoryPreview?.Show(working.travelType,working.travelSelected);
             // Esc / any state change closes the pause menu → the studio cancels with it
             if (InGame && (game.State != GameState.Paused || game.Player == null)) { Close(); return; }
 
@@ -381,7 +405,8 @@ namespace Diverse
                 float motionTime = Mathf.Clamp01((demoPhase - 0.45f) / TravelAbilityPreview.Duration(working.travelType)) * 1.79f;
                 var motion = working.travelSelected ? TravelMotionPreview(working.travelType, motionTime) : null;
                 abilityPreview?.Draw(working.travelType, motion, elapsed);
-                UIKit.Set(typeDescription, working.travelSelected ? TravelTypes.Description(working.travelType) : "미리 볼 유형을 골라 주세요.");
+                var shape=InventoryState.Rules.Shape(working.travelType);
+                UIKit.Set(typeDescription, working.travelSelected ? TravelTypes.Description(working.travelType)+$"\n가방 {shape.width}×{shape.height}" : "미리 볼 유형을 골라 주세요.");
             }
             // The hero loops through what it does in play: walk, breathe, wind up and strike
             float phase = t % 4f;
@@ -389,14 +414,18 @@ namespace Diverse
                      : phase < 3f ? ((int)(t * 2.2f) % 2 == 0 ? Pose.Idle0 : Pose.Idle1)
                      : phase < 3.3f ? Pose.AttackWind : phase < 3.7f ? Pose.AttackHit : Pose.Idle0;
             UIKit.Sprite(hero, Art.Rabbit(previewCostume, pose));
-            var kind = DesignRuntime.Chassis(working);
-            UIKit.Sprite(heroWeapon, DesignRuntime.WeaponHidden ? null : Art.Weapon(kind));
-            UIKit.Show(flipWeapon, !InGame && working.weapon.image != null && !DesignRuntime.WeaponHidden);
+            var kind = InGame ? game.Player.Weapon.type : DesignRuntime.TypeOf(working);
+            UIKit.Sprite(heroWeapon, DesignRuntime.WeaponHidden ? null : inGameWeaponPreview != null ? inGameWeaponPreview : Art.Weapon(kind));
+            UIKit.Show(flipWeapon, (InGame ? inGameWeaponImage : working.weapon.image) != null && !DesignRuntime.WeaponHidden);
+            if(flipWeapon!=null) flipWeapon.interactable=!busy;
+            UIKit.Show(flipHero,working.hero.image!=null);
+            if(flipHero!=null) flipHero.interactable=!busy;
             UIKit.Show(flipEffects, !InGame && working.attack.effectImages != null);
-            var shot = working.attack.projectile;
-            var b = DesignCombat.For(working) ?? DB.W(kind);
-            bool shoots = shot.image != null || shot.shape != "builtin" || shot.pixels != null || b.combo.Any(s => s.projectile) || kind == WeaponKind.Dagger;
-            UIKit.Sprite(projectile, shoots ? (kind == WeaponKind.Dagger && shot.image == null && shot.shape == "builtin" && shot.pixels == null ? Art.Knife() : Art.Bolt()) : null);
+            var combat = InGame ? game.Player.Inventory?.Active?.design ?? working : working;
+            var shot = combat.attack.projectile;
+            var b = InGame ? game.Player.Weapon : DesignCombat.For(working) ?? DB.W(kind);
+            bool shoots = shot.image != null || shot.shape != "builtin" || shot.pixels != null || b.combo.Any(s => s.projectile) || kind == WeaponType.Dagger;
+            UIKit.Sprite(projectile, shoots ? (kind == WeaponType.Dagger && shot.image == null && shot.shape == "builtin" && shot.pixels == null ? Art.Knife() : Art.Bolt()) : null);
             // Only the fully drawn frames of the swing (the first ones are still sweeping in and look cut off)
             var swing = Art.Slash(b.slashColor, b.slashCore, 14, 160, 1);
             UIKit.Sprite(slash, swing[Mathf.Min(swing.Length - 1, swing.Length / 2 + (int)(t * 5) % Mathf.Max(1, swing.Length - swing.Length / 2))]);
@@ -409,15 +438,12 @@ namespace Diverse
 
             UIKit.Set(info, Describe());
             var w = Session.World;
-            UIKit.Set(status, statusText + (w != null && w.designCalls > 0 ? $"\n<color=#6b5c8a>이 세계의 AI 디자인 {w.designCalls}회 · 누적 약 ${w.designCostUsd:0.0000}</color>" : ""));
+            UIKit.Set(status, statusText + (w != null && w.designCalls > 0 ? $"\n<color=#6b5c8a>이 세계의 AI 디자인 {w.designCalls}회 · 누적 약 ${w.designCostUsd:0.0000}" + (w.designUnknownCosts > 0 ? $" · 비용 미상 {w.designUnknownCosts}건 별도" : "") + "</color>" : ""));
 
-            // Combat and starting passive are generated, never picked from presets; numbers are the engine's
-            var qwer = string.Join(" ", b.skills.Take(4).Select((id, i) => "QWER"[i] + " " + SkillDB.Get(id)?.name));
+            // Basic attacks are designed here; actives are generated when acquired.
+            var qwer = ActiveSkillGenerator.TypeName(working.weapon.type) + " · QWER 습득 시 AI 생성 · 같은 유형·같은 슬롯끼리 교환";
             UIKit.Set(weaponBase, $"공격 <color=#fff2b3>{DesignCombat.Describe(working.weapon)}</color>  <color=#8c7aa8>{qwer}</color>");
-            var perk = working.hero.perk;
-            UIKit.Set(perkBase, perk != null && !string.IsNullOrEmpty(perk.name)
-                ? $"시작 능력 <color=#fff2b3>{perk.name}</color>"
-                : "시작 능력 <color=#8c7aa8>삶을 시작하면 캐릭터 설명으로 만들어져요 (밸런스 검증)</color>");
+            UIKit.Set(perkBase, "<color=#8c7aa8>고정 파츠로 액티브를 보조하고, QWER 능력은 습득할 때 새로 생성합니다.</color>");
         }
 
         Sprite TravelMotionPreview(TravelType type, float elapsed)
@@ -449,7 +475,7 @@ namespace Diverse
         {
             var p = working;
             string body = $"<b>{p.hero.name ?? "이름 없는 영웅"}</b> · {(p.travelSelected ? TravelTypes.Name(p.travelType) : "유형 미선택")}";
-            string combat = $"{(DesignCombat.For(p) ?? DB.W(DesignRuntime.Chassis(p))).name} · {Ko(p.attack.origin)}에서 발사";
+            string combat = $"{(DesignCombat.For(p) ?? DB.W(DesignRuntime.TypeOf(p))).name} · {Ko(p.attack.origin)}에서 발사";
             var lines = new List<string> { body, combat };
             if (!string.IsNullOrEmpty(p.summary)) lines.Add($"<color=#c9bcd8>{p.summary}</color>");
             foreach (var s in p.ignored) lines.Add($"<color=#ffb36b>✕ {s}</color>");

@@ -11,6 +11,25 @@ namespace Diverse
     /// </summary>
     public static class Pixelizer
     {
+        /// <summary>Single weapon/shot cell: retain every part and reject a clipped source before cropping.</summary>
+        public static PixelCanvas Isolated(Texture2D src, RectInt r, int target, out string why)
+        {
+            var all=src.GetPixels32();var px=new Color32[r.width*r.height];
+            for(int y=0;y<r.height;y++) System.Array.Copy(all,(r.y+y)*src.width+r.x,px,y*r.width,r.width);
+            RemoveBackground(px,r.width,r.height);
+            var box=Bounds(px,r.width,r.height);
+            if(box.width==0){why="빈 셀";return null;}
+            if(box.xMin<=1 || box.yMin<=1 || box.xMax>=r.width-1 || box.yMax>=r.height-1)
+            {why="셀 경계에 닿는 원본: 끝부분 잘림 의심, 원본 저장 후 기본 그림 사용";return null;}
+            // Do not KeepSubject/Despeckle: a slender blade, guard, string or detached detail can be legitimate.
+            var palette=PaletteOf(new[]{(px,r.width,box)},14);
+            var body=MajorityDownsample(px,r.width,box,target/(float)Mathf.Max(box.width,box.height),palette,.18f);
+            body.Outline(Pal.Outline);
+            var padded=new PixelCanvas(body.W+4,body.H+4);
+            for(int y=0;y<body.H;y++) for(int x=0;x<body.W;x++) padded.Px[(y+2)*padded.W+x+2]=body.Px[y*body.W+x];
+            why="전체 실루엣·투명 여백 유지";return padded;
+        }
+
         public static PixelCanvas Convert(Texture2D src, RectInt region, int target, bool byHeight, int colors = 14) =>
             ConvertSet(src, new[] { region }, target, byHeight, colors)[0];
 
@@ -199,7 +218,7 @@ namespace Diverse
             return centers;
         }
 
-        static PixelCanvas MajorityDownsample(Color32[] px, int w, RectInt box, float scale, Vector3[] pal)
+        static PixelCanvas MajorityDownsample(Color32[] px, int w, RectInt box, float scale, Vector3[] pal, float coverage = .42f)
         {
             int ow = Mathf.Clamp(Mathf.RoundToInt(box.width * scale), 1, 256), oh = Mathf.Clamp(Mathf.RoundToInt(box.height * scale), 1, 256);   // up to landmark size
             var cv = new PixelCanvas(ow + 2, oh + 2);
@@ -220,7 +239,7 @@ namespace Diverse
                             if (c.a <= 128) continue;
                             votes[Nearest(pal, c)]++; n++;
                         }
-                    if (n == 0 || n < total * 0.42f) continue;
+                    if (n == 0 || n < total * coverage) continue;
                     int win = 0;
                     for (int i = 1; i < votes.Length; i++) if (votes[i] > votes[win]) win = i;
                     var p = pal[win];

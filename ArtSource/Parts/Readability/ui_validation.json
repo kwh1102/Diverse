@@ -1,0 +1,49 @@
+{
+  "preserved_existing_objects": 2535,
+  "new_objects": 159,
+  "scroll_regions": 19,
+  "scroll_paths": [
+    "GameCanvas/Evolve/Panel/Card 1/DescriptionScroll",
+    "GameCanvas/WeaponReward/Panel/Info",
+    "GameCanvas/Inventory/Panel/PendingBox/Pending",
+    "GameCanvas/Inventory/Panel/ItemBox/DetailsScroll",
+    "GameCanvas/Evolve/Panel/Pipeline/GenerationLog",
+    "GameCanvas/Pause/Panel/ChroniclePage/List",
+    "GameCanvas/Evolve/Panel/Pipeline/GenerationLog",
+    "GameCanvas/Dialogue/OptionsScroll",
+    "GameCanvas/Dialogue/BodyScroll",
+    "GameCanvas/PartFusion/Panel/Parts",
+    "GameCanvas/Evolve/Panel/Card 3/DescriptionScroll",
+    "GameCanvas/Evolve/Panel/Pipeline/Log",
+    "GameCanvas/Evolve/Panel/Card 2/DescriptionScroll",
+    "GameCanvas/PartFusion/Panel/Result/ResultDescription",
+    "GameCanvas/Evolve/Panel/Chat/Log",
+    "GameCanvas/Pause/Panel/AbilitiesPage/List",
+    "GameCanvas/PartFusion/Panel/MaterialA/TraitsScroll",
+    "GameCanvas/PartFusion/Panel/MaterialB/TraitsScroll",
+    "GameCanvas/Inventory/Panel/EquipmentBox/SummaryScroll"
+  ],
+  "inventory_cell": 30,
+  "inventory_shapes": [
+    [
+      10,
+      5
+    ],
+    [
+      7,
+      7
+    ],
+    [
+      6,
+      8
+    ],
+    [
+      8,
+      6
+    ]
+  ],
+  "material_trait_references": "connected",
+  "unity_started": false,
+  "compiled": false,
+  "tests_run": false
+}

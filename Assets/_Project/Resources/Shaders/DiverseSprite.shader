@@ -55,6 +55,7 @@ Shader "Diverse/Sprite"
             #pragma vertex vert
             #pragma fragment frag
             #pragma multi_compile_instancing
+            #pragma multi_compile_local _ DIVERSE_MESH
             #include_with_pragmas "Packages/com.unity.render-pipelines.universal/Shaders/2D/Include/ShapeLightShared.hlsl"
 
             struct Attributes { float3 positionOS : POSITION; float4 color : COLOR; float2 uv : TEXCOORD0; UNITY_VERTEX_INPUT_INSTANCE_ID };
@@ -80,14 +81,19 @@ Shader "Diverse/Sprite"
                 Varyings o = (Varyings)0;
                 UNITY_SETUP_INSTANCE_ID(v);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+                #if !defined(DIVERSE_MESH)
                 SetUpSpriteInstanceProperties();
                 v.positionOS = UnityFlipSprite(v.positionOS, unity_SpriteProps.xy);
+                #endif
                 o.positionCS = TransformObjectToHClip(v.positionOS);
                 o.uv = v.uv;
                 o.root = TransformObjectToWorld(float3(0,0,0)).xy;
                 o.world = TransformObjectToWorld(v.positionOS).xy;
                 o.lightingUV = half2(ComputeScreenPos(o.positionCS / o.positionCS.w).xy);
-                o.color = v.color * _Color * unity_SpriteColor;
+                o.color = v.color * _Color;
+                #if !defined(DIVERSE_MESH)
+                o.color *= unity_SpriteColor;
+                #endif
                 return o;
             }
 
@@ -113,6 +119,7 @@ Shader "Diverse/Sprite"
             #pragma vertex vert
             #pragma fragment frag
             #pragma multi_compile_instancing
+            #pragma multi_compile_local _ DIVERSE_MESH
 
             struct Attributes { float3 positionOS : POSITION; float4 color : COLOR; float2 uv : TEXCOORD0; UNITY_VERTEX_INPUT_INSTANCE_ID };
             struct Varyings { float4 positionCS : SV_POSITION; half4 color : COLOR; float2 uv : TEXCOORD0; float2 root : TEXCOORD2; float2 world : TEXCOORD3; UNITY_VERTEX_OUTPUT_STEREO };
@@ -122,13 +129,18 @@ Shader "Diverse/Sprite"
                 Varyings o = (Varyings)0;
                 UNITY_SETUP_INSTANCE_ID(v);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+                #if !defined(DIVERSE_MESH)
                 SetUpSpriteInstanceProperties();
                 v.positionOS = UnityFlipSprite(v.positionOS, unity_SpriteProps.xy);
+                #endif
                 o.positionCS = TransformObjectToHClip(v.positionOS);
                 o.uv = v.uv;
                 o.root = TransformObjectToWorld(float3(0,0,0)).xy;
                 o.world = TransformObjectToWorld(v.positionOS).xy;
-                o.color = v.color * _Color * unity_SpriteColor;
+                o.color = v.color * _Color;
+                #if !defined(DIVERSE_MESH)
+                o.color *= unity_SpriteColor;
+                #endif
                 return o;
             }
 

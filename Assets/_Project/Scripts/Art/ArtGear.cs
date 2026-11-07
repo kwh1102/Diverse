@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Diverse
 {
     /// <summary>
-    /// Weapons, the shield, thrown things and pickups as dot templates (same keys and outline as Art/ArtHero.cs):
+    /// Weapons, thrown things and pickups as dot templates (same keys and outline as Art/ArtHero.cs):
     /// sized for the 22-dot hero, flat palette tones. Weapons point right (+x) with the pivot on the grip.
     /// Keys: k grip · d grip wrap · g guard/gold · m steel · l steel light · n steel shade · c gem · w white · r red.
     /// </summary>
@@ -21,22 +21,7 @@ namespace Diverse
                 ".....gnnnnnnnnnnnnnn..",
                 ".....g................",
             };
-            public static readonly string[] Sword =
-            {
-                "...g..........",
-                "kdkgmmmmmmmmm.",
-                "kdkglllllllllm",
-                "...gnnnnnnnn..",
-                "...g..........",
-            };
             public static readonly string[] Dagger = { ".g......", "kgmmmmm.", "kglllllm", ".gnnnn.." };
-            public static readonly string[] Katana =
-            {
-                ".....g.............",
-                "kdkdkgmmmmmmmmmmmm.",
-                "kdkdkgllllllllllllm",
-                ".....gnnnnnnnnnnn..",
-            };
             public static readonly string[] Staff =
             {
                 "...............cc...",
@@ -45,30 +30,6 @@ namespace Diverse
                 "kkkkkgkkkkkkgkcccccn",
                 "..............ccccn.",
                 "...............cnn..",
-            };
-            public static readonly string[] Crossbow =
-            {
-                "........n....",
-                "........nw...",
-                "........n.w..",
-                "kkkkkkkkkmmmm",
-                "kkkkkkkkkd...",
-                "...kk...n.w..",
-                "...kk...nw...",
-                "........n....",
-            };
-            public static readonly string[] Shield =
-            {
-                ".gggggggg.",
-                "gmmmmmmmng",
-                "gmmrrrrmng",
-                "gmmrwwrmng",
-                "gmmrrrrmng",
-                "gmmmmmmmng",
-                ".gmmmmmng.",
-                "..gmmmng..",
-                "...gmng...",
-                "....gg....",
             };
             public static readonly string[] Bolt = { "......l.", "kkkkkmmm", "......n." };
             public static readonly string[] Knife = { "kkmmmm.", "kklllll", "...nn.." };
@@ -93,25 +54,23 @@ namespace Diverse
             ('k', "7a6457"), ('d', "544440"), ('g', "e1c549"), ('m', "c9c6cc"), ('l', "f2efe6"), ('n', "8a8a94"),
             ('c', gem), ('w', "f2efe6"), ('r', "cb3416"));
 
-        public static Sprite Weapon(WeaponKind k) => Get($"weapon_{k}", () =>
-        {
-            switch (k)
-            {
-                case WeaponKind.Greatsword: return Plate(Gear.Greatsword, GearKeys(), new Vector2(2, 2.5f));
-                case WeaponKind.SwordShield: return Plate(Gear.Sword, GearKeys(), new Vector2(1.5f, 2.5f));
-                case WeaponKind.Dagger: return Plate(Gear.Dagger, GearKeys(), new Vector2(0.5f, 2));
-                case WeaponKind.Katana: return Plate(Gear.Katana, GearKeys(), new Vector2(2, 2));
-                case WeaponKind.Staff:
-                {
-                    var keys = GearKeys();
-                    keys['n'] = Hx("8a5fa8");
-                    return Plate(Gear.Staff, keys, new Vector2(6, 3));
-                }
-                default: return Plate(Gear.Crossbow, GearKeys(), new Vector2(4, 4));
-            }
-        });
+        public static Sprite Weapon(WeaponType type) => overrides.TryGetValue($"weapon_type_{type}", out var sprite) ? sprite : StockWeapon(type);
 
-        public static Sprite Shield() => Get("shield", () => Plate(Gear.Shield, GearKeys(), new Vector2(5, 5)));
+        public static Sprite StockWeapon(WeaponType type) => type switch
+        {
+            WeaponType.Sword => Get("weapon_Greatsword", () => Plate(Gear.Greatsword, GearKeys(), new Vector2(2, 2.5f))),
+            WeaponType.Bow => Get("stock_bow", () => DesignArt.Weapon(new WeaponLook { shape = "bow" })),
+            WeaponType.Gun => Get("stock_gun", () => Plate(new[] {
+                "......gg......", "....nnllnn....", "...nlllllln.gg", ".knmmmmmmmmnnn", ".knddd........", ".kd...........", "kd............"
+            }, GearKeys(), new Vector2(2, 2))),
+            WeaponType.Staff => Get("weapon_Staff", () =>
+            {
+                var keys = GearKeys();
+                keys['n'] = Hx("8a5fa8");
+                return Plate(Gear.Staff, keys, new Vector2(6, 3));
+            }),
+            _ => Get("weapon_Dagger", () => Plate(Gear.Dagger, GearKeys(), new Vector2(.5f, 2))),
+        };
 
         // ───────────── Thrown things ─────────────
 

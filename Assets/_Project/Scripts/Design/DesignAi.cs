@@ -18,12 +18,13 @@ namespace Diverse
     /// </summary>
     public static class DesignAi
     {
+        public static string LastFacingStatus { get; private set; }
 
 
         /// <summary>Added to every sprite prompt so all pictures share one look.</summary>
         const string Style = "Cute pixel art video game sprite, 16-bit style, chunky readable silhouette, crisp dark purple one-pixel contour, clustered upper-left highlights, deep contact shadows, distinctive face and joints, " +
                              "limited soft colour palette, no text, no ground, no cast shadow, isolated on a fully transparent background. ";
-        const string EffectStyle = "Pixel art video game visual effects, 16-bit style, bright glowing colours, no characters, no text, " +
+        const string EffectStyle = "Pixel art video game visual effects, 16-bit style, chunky coherent square pixel clusters, thin tapered strokes, dark purple edges, 3-4 flat tones per material, no bloom, blur, gradients, light fog, white flood fill, noisy particles, characters or text, " +
                                    "isolated on a fully transparent background. ";
 
         const string SystemPrompt =
@@ -39,19 +40,20 @@ HARD RULES
   For EDIT, preserve current design details unless the player asks to change them.
 - Picture prompts: English, a concrete description of ONE subject (shape, colours, material, details), 8-35 words.
   No art-style words (the engine adds them), no text or letters, no real brands, no real people.
-- For INITIAL output hero, weapon and attack. For EDIT infer the requested changes from the single prompt and omit unchanged sections. Return weapon and attack together if combat changes. For APPEARANCE ONLY output hero only if its appearance was requested, otherwise just a Korean summary explaining combat is locked. Korean for name/species/summary/ignored/skillNames (max 10 characters).
+- For INITIAL output hero, weapon and attack. For EDIT infer the requested changes from the single prompt and omit unchanged sections. Return weapon and attack together if combat changes. For APPEARANCE ONLY output hero only if its appearance was requested, otherwise just a Korean summary explaining combat is locked. Korean for name/species/summary/ignored (max 10 characters).
 
 SECTIONS
-hero: {name, species, imagePrompt, perkConcept}
-  perkConcept: one English sentence, the passive trait this character would naturally have (flavour; the engine balances it).
-weapon: {name, imagePrompt, hold(Hand|Mouth|Hidden), length(8-34 px), attackPose, moves, weight(light|medium|heavy), skills, skillNames}
+hero: {name, species, imagePrompt}
+  No starting passive generation. Fixed costume modifiers are applied by the engine.
+weapon: {name, type(0 Sword|1 Bow|2 Gun|3 Staff|4 Dagger), imagePrompt, hold(Hand|Mouth|Hidden), length(8-34 px), attackPose, moves, weight(light|medium|heavy)}
+  type is a finite weapon category, independent of appearance. Use a JSON integer 0..4.
+  Generate ONLY the basic-attack appearance and projectile/effects here. NEVER generate QWER skills or skill art; those are generated individually when learned.
   hold Hidden + imagePrompt """" when the player fights with nothing in hand (fists, kicks, tentacles, breath, magic from the body).
   attackPose = English, how the hero's BODY moves when attacking (""throwing a straight punch"", ""kicking forward"", ""lashing a tentacle"", ""swinging both arms down"").
   moves = the basic attack combo in order, 1-4 of: slash | wide | thrust | spin | smash | shot | spread (fists: [""thrust"",""thrust"",""smash""]).
-  skills = 4 ids: Q, W, E from BASIC SKILLS and R from ULTIMATE SKILLS (lists below). skillNames = Korean names in the weapon's theme.
 attack (always with weapon): {origin(Hand|Mouth|Eyes|Above), projectile:{imagePrompt, spin}, slash, slashCore, trail, effectPrompts}
-  effectPrompts = 4 English prompts for NEW visual effects that match how this weapon attacks:
-  [swing (a melee attack sweep, e.g. rings of sound waves for a bell), impact (what bursts on a hit), trail (behind a flying shot), muzzle (when shooting/casting)].
+  effectPrompts = 4 English prompts for BASIC ATTACK ONLY visual effects:
+  [swing (a melee attack sweep, e.g. rings of sound waves for a bell), impact (what bursts on a hit), flight-wake colour/material guidance (the engine draws it from the actual path), muzzle (when shooting/casting)].
   projectile.imagePrompt = what flies when it shoots or throws. slash/slashCore/trail = hex colours matching the effects.
 
 OUTPUT JSON ONLY: {""summary"":""one Korean line"",""ignored"":[],""hero"":{},""weapon"":{},""attack"":{}}
@@ -61,9 +63,8 @@ MODE: INITIAL
 PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
 일렉 기타로 음파를 쏘고 싶어. 쿨타임 없게!
 {""summary"":""기타로 음파를 쏘는 로봇 고양이"",""ignored"":[""쿨타임 없음 — 능력치는 바꿀 수 없음""],
- ""hero"":{""name"":""비트 냥"",""species"":""로봇 고양이"",""imagePrompt"":""a small round white robot cat with glowing cyan eyes, pink headphones and a little antenna, standing on two legs"",""perkConcept"":""a rhythm robot whose every third hit releases a sound wave""},
- ""weapon"":{""name"":""일렉 기타"",""imagePrompt"":""a red electric guitar with a white pickguard and silver strings"",""hold"":""Hand"",""length"":20,""moves"":[""wide"",""wide"",""shot""],""weight"":""medium"",
-  ""skills"":[""st_cyclone"",""kt_crescent"",""gs_rush"",""st_thunder""],""skillNames"":[""하울링"",""파워 코드"",""무대 돌진"",""앙코르""]},
+ ""hero"":{""name"":""비트 냥"",""species"":""로봇 고양이"",""imagePrompt"":""a small round white robot cat with glowing cyan eyes, pink headphones and a little antenna, standing on two legs""},
+ ""weapon"":{""name"":""일렉 기타"",""imagePrompt"":""a red electric guitar with a white pickguard and silver strings"",""hold"":""Hand"",""length"":20,""moves"":[""wide"",""wide"",""shot""],""weight"":""medium"",""type"":3},
  ""attack"":{""origin"":""Hand"",""projectile"":{""imagePrompt"":""a glowing cyan musical note"",""spin"":true},""slash"":""#ff6b8a"",""slashCore"":""#fff0f4"",""trail"":""#7ff3ff"",
   ""effectPrompts"":[""three curved neon pink sound wave arcs spreading outward"",""a starburst of cyan musical notes and sparks"",""a short fading cyan ripple ring"",""a bright pink speaker blast ring""]}}";
 
@@ -71,21 +72,20 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
 
         /// <summary>Estimated USD of the last Generate (text + pictures).</summary>
         public static float LastCostUsd;
-
-        static string SkillList(IEnumerable<string> ids) =>
-            string.Join("\n", ids.Select(id => { var d = SkillDB.Get(id); return $"  {id}: {d.name} — {d.desc}"; }));
+        public static int LastUnknownCosts;
 
         static string Previous(DesignPack p, int section) => section == 0
-            ? JsonUtility.ToJson(new HeroLook { name = p.hero.name, species = p.hero.species, imagePrompt = p.hero.imagePrompt, perkConcept = p.hero.perkConcept })
-            : JsonUtility.ToJson(new WeaponLook { name = p.weapon.name, imagePrompt = p.weapon.imagePrompt, hold = p.weapon.hold, length = p.weapon.length, moves = p.weapon.moves, weight = p.weapon.weight, skills = p.weapon.skills, skillNames = p.weapon.skillNames })
+            ? JsonUtility.ToJson(new HeroLook { name = p.hero.name, species = p.hero.species, imagePrompt = p.hero.imagePrompt })
+            : JsonUtility.ToJson(new WeaponLook { name = p.weapon.name, imagePrompt = p.weapon.imagePrompt, hold = p.weapon.hold, length = p.weapon.length, moves = p.weapon.moves, weight = p.weapon.weight, type = p.weapon.type })
                  + " attack: " + JsonUtility.ToJson(new AttackLook { origin = p.attack.origin, projectile = new ProjectileLook { imagePrompt = p.attack.projectile.imagePrompt }, effectPrompts = p.attack.effectPrompts });
 
         /// <summary>
         /// Generate the sections that have prompts. progress(text) reports picture progress; done(pack, status): pack = the merged
         /// result (null when even the spec failed). lockChassis: in-game edits keep the attack parts, skills and perk.
         /// </summary>
-        public static IEnumerator Generate(MonoBehaviour host, DesignPack current, string request, bool initial, bool lockChassis, Action<string> progress, Action<DesignPack, string> done)
+        public static IEnumerator Generate(MonoBehaviour host, DesignPack current, string request, bool initial, bool lockChassis, Action<string> progress, Action<DesignPack, string> done, bool weaponOnly=false)
         {
+            LastCostUsd = 0; LastUnknownCosts = 0;
             if (!current.travelSelected) { done(null, "먼저 이동 유형을 골라 주세요."); yield break; }
             var user = new StringBuilder();
             user.AppendLine("MODE: " + (lockChassis ? "APPEARANCE ONLY" : initial ? "INITIAL" : "EDIT"));
@@ -95,11 +95,8 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
             user.AppendLine("CURRENT HERO: " + Previous(current, 0));
             user.AppendLine("CURRENT COMBAT: " + Previous(current, 1));
             user.AppendLine("PLAYER REQUEST: " + request);
-            if (!lockChassis)
-            {
-                user.AppendLine("BASIC SKILLS:\n" + SkillList(DesignCombat.Basics));
-                user.AppendLine("ULTIMATE SKILLS:\n" + SkillList(DesignCombat.Ultimates));
-            }
+            if(weaponOnly) user.AppendLine("WEAPON ONLY. Preserve the existing hero and travel type. Return weapon and attack sections only. Design a new weapon matching the request.");
+
 
             progress("AI가 디자인을 구상하는 중…");
             string json = null;
@@ -115,7 +112,9 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
             try { answer = JsonUtility.FromJson<DesignPack>(json); }
             catch (Exception e) { done(null, "AI 응답 해석 실패 (" + e.Message + ")"); yield break; }
             if (answer == null) { done(null, "AI 응답 형식 오류"); yield break; }
+            answer.version = DesignPack.Version;
             bool[] sections = { answer.hero != null && Has(json, "hero"), !lockChassis && Has(json, "weapon") && Has(json, "attack") };
+            if(weaponOnly) sections[0]=false;
             if (initial && (!sections[0] || !sections[1])) { done(null, "AI가 초기 디자인을 모두 만들지 못했어요"); yield break; }
             DesignGuard.Sanitize(answer);
 
@@ -144,18 +143,26 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
 
             // Pictures: every sheet runs at once; a failed sheet leaves those sprites on the local fallback drawing
             var jobs = new List<IEnumerator>();
+            float imageCost = 0; int unknownImages = 0, measuredImages = 0, estimatedImages = 0;
+            Action<ImageClient.ImageUsage> Meter(float sizeFactor) => usage =>
+            {
+                float? cost = usage != null && usage.output_tokens > 0 ? usage.CostUsd(ImageClient.Model) : null;
+                if (cost.HasValue) measuredImages++;
+                else { cost = ImageClient.PriceUsd(ImageClient.Model) * sizeFactor; if (cost.HasValue) estimatedImages++; }
+                if (cost.HasValue) imageCost += cost.Value; else unknownImages++;
+            };
             // The hero sheet holds the attack poses too: a new way of attacking (bare fists, a different weapon) redraws it
             bool newAttack = sections[1] && result.weapon.attackPose != current.weapon.attackPose;
-            bool redrawHero = NeedsHeroSheet(current, sections[0], newAttack);
-            if (redrawHero && result.hero.imagePrompt != null) jobs.Add(HeroJob(result));
+            bool redrawHero = !weaponOnly && NeedsHeroSheet(current, sections[0], newAttack);
+            if (redrawHero && result.hero.imagePrompt != null) jobs.Add(HeroJob(result, Meter(1.5f)));
             if (sections[1])
             {
-                if (result.weapon.imagePrompt != null || result.attack.projectile.imagePrompt != null) jobs.Add(WeaponJob(result));
+                if (result.weapon.imagePrompt != null || result.attack.projectile.imagePrompt != null) jobs.Add(WeaponJob(result, Meter(1)));
                 else { result.weapon.image = null; result.attack.projectile.image = null; }
-                if (result.attack.effectPrompts != null) jobs.Add(EffectsJob(result));
+                if (result.attack.effectPrompts != null) jobs.Add(EffectsJob(result, Meter(1)));
             }
-            if (result.travelType != TravelType.Dash && (sections[0] || string.IsNullOrEmpty(result.travelEffect)))
-                jobs.Add(TravelJob(result));
+            if (!weaponOnly && result.travelType != TravelType.Dash && (sections[0] || string.IsNullOrEmpty(result.travelEffect)))
+                jobs.Add(TravelJob(result, Meter(1)));
             int finished = 0, failed = 0;
             foreach (var job in jobs)
                 host.StartCoroutine(Run(job, ok => { finished++; if (!ok) failed++; progress($"그림 그리는 중… {finished}/{jobs.Count}"); }));
@@ -169,11 +176,11 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
             yield return FixFacing(result, new[] { redrawHero, sections[1] }, c => visionCost = c);
 
             var textCost = (AiClient.CostUsd(Game.Settings.aiModel, textIn, textOut) ?? 0) + visionCost;
-            // The hero sheet is drawn on a wide canvas: about 1.5x a square picture
-            int wide = jobs.Count(j => j.GetType().Name.Contains("HeroJob"));
-            var imageCost = (ImageClient.PriceUsd(ImageClient.Model) ?? 0) * (jobs.Count - failed + wide * 0.5f);
+            LastUnknownCosts = unknownImages;
             LastCostUsd = textCost + imageCost;
             string status = $"새 디자인 완성 (글 {textIn}+{textOut}토큰, 그림 {jobs.Count - failed}장 · 약 ${LastCostUsd:0.000})";
+            status += $"\n이미지 비용: usage {measuredImages}건 / 추정 {estimatedImages}건" + (unknownImages > 0 ? $" / 비용 미상 {unknownImages}건 별도" : "");
+            if(!string.IsNullOrEmpty(LastFacingStatus)) status+="\n"+LastFacingStatus;
             if (failed > 0) status += $"\n<color=#ffb36b>그림 {failed}장 실패: {ImageClient.LastStatus} — 그 부분은 기본 도트로 표시</color>";
             done(result, status);
         }
@@ -248,6 +255,7 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
             return Style + "A sprite sheet in an exact grid of 4 columns and 3 rows: the SAME character drawn twelve times with identical " +
                 "design, colours and size, full body, side view facing right, each pose centered in its own cell with empty space around it. " +
                 "Keep identical face, eye shape and spacing, body proportions, markings and outfit in ALL cells. Do not introduce a new costume for the movement. " +
+                "The character's nose, face and gaze must point toward SCREEN RIGHT in EVERY cell, including attack wind-up, flinching and travel. Never mirror individual poses or turn the character around when moving backward. " +
                 "Animate the actual limbs, joints and existing fabric; do not substitute rotated or scaled copies of the idle pose. " +
                 "Top row, a smooth walk cycle: front foot touching down; passing (legs together, body slightly raised); back foot touching down; passing again. " +
                 $"Middle row: standing idle; winding up to attack ({attack}, pulled back); the attack striking forward ({attack}, fully extended); flinching backward after being hit." +
@@ -256,15 +264,16 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
                 hands + " Character: " + p.hero.imagePrompt;
         }
 
-        static IEnumerator HeroJob(DesignPack p)
+        static IEnumerator HeroJob(DesignPack p, Action<ImageClient.ImageUsage> usage)
         {
             Texture2D tex = null;
-            yield return ImageClient.Generate(HeroSheetPrompt(p), t => tex = t, size: ImageClient.WideSize);
+            yield return ImageClient.Generate(HeroSheetPrompt(p), t => tex = t, size: ImageClient.WideSize, usage: usage);
             // Keep the prior appearance if regeneration fails; the UI reports this as a failed sheet.
             if (tex == null) { yield return false; yield break; }
             // The idle pose (cell 4) goes first: it sets the scale every other pose keeps
             int[] order = { 4, 0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11 };
-            var converted = Pixelizer.ConvertSet(tex, order.Select(i => Cell(tex, i % 4, i / 4, 4, 3)).ToArray(), 28, byHeight: true, alignFacing: true);
+            // Limb motion changes the silhouette; silhouette overlap must not decide whether a pose gets mirrored.
+            var converted = Pixelizer.ConvertSet(tex, order.Select(i => Cell(tex, i % 4, i / 4, 4, 3)).ToArray(), 28, byHeight: true, alignFacing: false);
             var cells = new PixelCanvas[order.Length];
             for (int k = 0; k < order.Length; k++) cells[order[k]] = converted[k];
             UnityEngine.Object.Destroy(tex);
@@ -275,12 +284,12 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
             yield return p.hero.image != null && p.hero.frames?.Length == 12;
         }
 
-        static IEnumerator TravelJob(DesignPack p)
+        static IEnumerator TravelJob(DesignPack p, Action<ImageClient.ImageUsage> usage)
         {
             Texture2D tex = null;
             yield return ImageClient.Generate(EffectStyle +
                 "One compact sprite matching Diverse's muted midtones, clustered highlights, crisp stepped edges and dark purple shadows. " +
-                TravelTypes.EffectSubject(p.travelType) + ". Match the accent colors of this hero: " + p.hero.imagePrompt, t => tex = t);
+                TravelTypes.EffectSubject(p.travelType) + ". Match the accent colors of this hero: " + p.hero.imagePrompt, t => tex = t, usage: usage);
             if (tex == null) { yield return false; yield break; }
             var canvas = Pixelizer.ConvertSet(tex, new[] { new RectInt(0, 0, tex.width, tex.height) },
                 32, byHeight: false, colors: 10, outline: false)[0];
@@ -290,7 +299,7 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
             yield return id != null;
         }
 
-        static IEnumerator WeaponJob(DesignPack p)
+        static IEnumerator WeaponJob(DesignPack p, Action<ImageClient.ImageUsage> usage)
         {
             var w = p.weapon;
             var shot = p.attack.projectile;
@@ -298,27 +307,44 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
             string weaponPart = held ? w.imagePrompt + ", lying horizontally, pointing to the right, handle on the left" : "nothing (leave empty)";
             string shotPart = shot.imagePrompt != null ? shot.imagePrompt + ", small, flying to the right" : "nothing (leave empty)";
             Texture2D tex = null;
-            yield return ImageClient.Generate(Style + "Two separate items side by side with a wide empty gap between them. LEFT HALF: " + weaponPart + ". RIGHT HALF: " + shotPart + ".", t => tex = t);
+            yield return ImageClient.Generate(Style + "Exactly TWO equal-width cells, one row, no grid lines. A COMPLETE isolated object in each cell, centered, occupying at most 60 percent of its cell width and height, 20 percent TRANSPARENT gutters on ALL four sides. The entire blade tip, pommel, crossguard, grip, barrel and stock must be visible. Do not crop, zoom, truncate, hide the handle, add a hand or merge the two cells. 3-4 flat tones per material. LEFT CELL: " + weaponPart + ". RIGHT CELL: " + shotPart + ".", t => tex = t, usage: usage);
             if (tex == null) { w.image = null; shot.image = null; yield return false; yield break; }
-            w.image = held ? Save(Pixelizer.Convert(tex, Cell(tex, 0, 0, 2, 1), w.length > 0 ? w.length : 20, byHeight: false)) : null;
-            shot.image = shot.imagePrompt != null ? Save(Pixelizer.Convert(tex, Cell(tex, 1, 0, 2, 1), 11, byHeight: false)) : null;
+            w.sourceImage = DesignStore.SaveSourceImage(tex);w.sourcePrompt=w.imagePrompt;w.artRevision=1;
+            string weaponWhy="숨긴 무기",shotWhy="투사체 없음";
+            w.image = held ? Save(Pixelizer.Isolated(tex, Cell(tex,0,0,2,1), w.length>0?w.length:20, out weaponWhy)) : null;
+            shot.image = shot.imagePrompt != null ? Save(Pixelizer.Isolated(tex,Cell(tex,1,0,2,1),11,out shotWhy)) : null;
+            w.artStatus=weaponWhy+" / "+shotWhy;
+            Debug.Log("[Weapon art] "+w.artStatus);
             UnityEngine.Object.Destroy(tex);
-            yield return true;
+            yield return (!held || w.image!=null) && (shot.imagePrompt==null || shot.image!=null);
         }
 
-        static IEnumerator EffectsJob(DesignPack p)
+        static IEnumerator EffectsJob(DesignPack p, Action<ImageClient.ImageUsage> usage)
         {
             var e = p.attack.effectPrompts;
+            string swing = p.weapon.type switch
+            {
+                WeaponType.Staff => "A blunt weighted leading edge with an offset short shaft wake and compact dust at the end.",
+                WeaponType.Dagger => "A narrow, interrupted nick with a fast off-axis second edge.",
+                _ => "A material-specific thin sweep with a strong split contour and a quickly broken tail."
+            };
             Texture2D tex = null;
-            yield return ImageClient.Generate(EffectStyle + "A 2x2 grid of four separate effects, each centered in its own quarter with empty space around it. " +
-                $"Top-left, a melee attack sweep shaped like a crescent on the right side: {e[0]}. Top-right, a hit impact burst: {e[1]}. " +
-                $"Bottom-left, a small trail puff behind a flying shot: {e[2]}. Bottom-right, a muzzle flash / casting burst: {e[3]}.", t => tex = t);
+            yield return ImageClient.Generate(EffectStyle +
+                "Exactly FOUR columns and THREE equal rows. No grid, labels or scenery. Each row is one four-frame animation left to right, fixed pivot and scale. All content stays inside the middle 70 percent of its cell. " +
+                $"Weapon identity: {p.weapon.type}, {p.weapon.imagePrompt}. Use its material and accent colours. Use crisp connected clusters at 48 logical pixels and leave space for the authored swing and contact edge. " +
+                $"Row 1: motion on the RIGHT of a fixed empty hand pivot. {swing} {e[0]}. " +
+                $"Row 2: contact at the fixed target pivot. Compression, a compact material break, two directional chips, short release. {e[1]}. " +
+                $"Row 3: tight right-facing flash at the weapon tip. Immediate ignition, recoil, flecks, fade. {e[3]}. The engine draws the flight wake separately.", t => tex = t, usage: usage);
             if (tex == null) { p.attack.effectImages = null; yield return false; yield break; }
-            var ids = new string[4];
-            for (int i = 0; i < 4; i++) ids[i] = e[i] == null ? null : Save(Pixelizer.ConvertSet(tex, new[] { Quarter(tex, i) }, 48, byHeight: false, colors: 10, outline: false)[0]);
+            p.attack.effectSourceImage = DesignStore.SaveSourceImage(tex);
+            // The saved layout still has room for four roles. The previous wake slot is left empty.
+            var motion = new ActiveSkillData { steps = { new ActiveStep { delivery = "arc" }, new ActiveStep { delivery = "projectile" } } };
+            var rows = ActiveEffectProcessor.Read(tex, new[] { 0, 1, 3 }, 2, ActiveSkillGenerator.Rules, null, out string why, motion);
             UnityEngine.Object.Destroy(tex);
-            p.attack.effectImages = ids.All(s => s != null) ? ids : null;
-            yield return p.attack.effectImages != null;
+            p.attack.effectImages = rows?.Take(16).Select(Save).ToArray();
+            p.attack.effectFrames = rows != null ? 4 : 0;
+            Debug.Log("[Basic effects] " + why);
+            yield return p.attack.effectImages?.Any(id => !string.IsNullOrEmpty(id)) == true;
         }
 
         // ───────────────────────── Facing check ─────────────────────────
@@ -326,15 +352,23 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
         [Serializable] class Dirs { public List<string> dirs; }
 
         /// <summary>
-        /// Every sprite in the game faces / points / flies to the right (Unity flips it for the left). Put the new hero, weapon,
-        /// shot and swing effect on one contact sheet, ask the text model (low-detail vision, ~$0.0005) which way each
-        /// one faces, and mirror the ones that face left (all poses of a subject together).
+        /// Assess each character pose independently from its face, then normalize definite left-facing poses.
+        /// Symmetric/front-facing/unclear pictures are kept as drawn instead of forcing a binary guess.
         /// </summary>
         static IEnumerator FixFacing(DesignPack p, bool[] sections, Action<float> cost)
         {
+            LastFacingStatus=null;
             var subjects = new List<(string what, string id, Action<Func<string, string>> flip)>();
             if (sections[0] && p.hero.frames != null)
-                subjects.Add(("a character: which way it faces", p.hero.image, f => { p.hero.frames = p.hero.frames.Select(f).ToArray(); p.hero.image = p.hero.frames[p.hero.frames.Length >= 8 ? 4 : 0]; }));
+            {
+                for(int i=0;i<p.hero.frames.Length;i++)
+                {
+                    int pose=i;if(string.IsNullOrEmpty(p.hero.frames[pose])) continue;
+                    subjects.Add(($"character pose {pose}: anatomical facing from eyes, nose, beak or muzzle; ignore the direction of limbs, clothing, tail and movement",p.hero.frames[pose],f=>p.hero.frames[pose]=f(p.hero.frames[pose])));
+                }
+            }
+            else if(sections[0] && p.hero.image!=null)
+                subjects.Add(("character: facing from face/gaze",p.hero.image,f=>p.hero.image=f(p.hero.image)));
             if (sections[1])
             {
                 var w = p.weapon; var a = p.attack;
@@ -344,7 +378,7 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
             if (subjects.Count == 0) { cost(0); yield break; }
 
             const int cell = 96;   // big enough that a gun's barrel and grip are clearly different
-            int cols = Mathf.Min(8, subjects.Count), rows = Mathf.CeilToInt(subjects.Count / (float)cols);
+            int cols = Mathf.Min(4, subjects.Count), rows = Mathf.CeilToInt(subjects.Count / (float)cols);
             var sheet = new PixelCanvas(cols * cell, rows * cell);
             sheet.Rect(0, 0, sheet.W, sheet.H, new Color32(205, 205, 205, 255));
             for (int i = 0; i < subjects.Count; i++)
@@ -365,18 +399,29 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
             var png = sheetTex.EncodeToPNG();
             UnityEngine.Object.Destroy(sheetTex);
             var question = $"This image is a grid of {subjects.Count} cells ({cols} per row), read left to right, then top to bottom. " +
-                           "For each cell answer \"left\" or \"right\":\n" + string.Join("\n", subjects.Select((s, i) => $"cell {i}: {s.what}")) +
+                           "For each cell answer \"left\", \"right\", \"front\" or \"unclear\". Only use left/right when the face or working end is unambiguous. A backward-leaning body or extended arm does not change the direction of the face. Do not infer a cell's facing from a neighboring cell:\n" + string.Join("\n", subjects.Select((s, i) => $"cell {i}: {s.what}")) +
                            $"\nReturn JSON {{\"dirs\":[...]}} with exactly {subjects.Count} entries.";
             string json = null;
             yield return AiClient.CompleteVision("You look at pixel-art game sprites and say which way they face or point. Look carefully at each cell. Output JSON only.", question, png, 400, r => json = r, "high");
             cost(AiClient.CostUsd(Game.Settings.aiModel, AiClient.LastPromptTokens, AiClient.LastCompletionTokens) ?? 0);
-            if (json == null) yield break;
             List<string> dirs = null;
-            try { dirs = JsonUtility.FromJson<Dirs>(json)?.dirs; } catch { }
-            if (dirs == null) yield break;
-            for (int i = 0; i < subjects.Count && i < dirs.Count; i++)
+            try { if(json!=null) dirs = JsonUtility.FromJson<Dirs>(json)?.dirs; } catch { }
+            if (dirs == null || dirs.Count!=subjects.Count)
+            {
+                LastFacingStatus=sections[0]?"자동 방향 판정을 완료하지 못했어요. 필요하면 미리보기의 캐릭터 좌우 반전을 사용해 주세요.":"자동 방향 판정을 완료하지 못했어요.";
+                yield break;
+            }
+            var mirrored=new Dictionary<string,string>();
+            string Mirror(string id)
+            {
+                if(!mirrored.TryGetValue(id,out string value)) mirrored[id]=value=DesignStore.Mirrored(id);
+                return value;
+            }
+            for (int i = 0; i < subjects.Count; i++)
                 if (string.Equals(dirs[i]?.Trim(), "left", StringComparison.OrdinalIgnoreCase))
-                    subjects[i].flip(DesignStore.Mirrored);
+                    subjects[i].flip(Mirror);
+            if(sections[0] && p.hero.frames!=null)
+                p.hero.image=p.hero.frames[p.hero.frames.Length>=8?4:0];
             Debug.Log("[AI design] facing: " + string.Join(",", dirs));
         }
 

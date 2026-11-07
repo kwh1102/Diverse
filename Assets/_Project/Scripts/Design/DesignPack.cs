@@ -7,13 +7,13 @@ namespace Diverse
     /// <summary>
     /// A custom hero and weapon look, written by the player's prompts (AI or the local keyword parser) and drawn locally by DesignArt.
     /// It holds ONLY appearance: colors, closed-set shapes, optional tiny pixel grids and names.
-    /// Gameplay comes from an existing chassis (baseWeapon / basePerk), so a prompt can never change balance.
+    /// Gameplay comes from the selected weapon type and costume, so a prompt can never change balance.
     /// Self-contained JSON (designs/&lt;id&gt;.json) so it can later be uploaded to a server as-is.
     /// </summary>
     [Serializable]
     public class DesignPack
     {
-        public const int Version = 1;
+        public const int Version = 2;
         public int version = Version;
         public string id;                 // file name; a committed pack is never edited, a change makes a new id
         public string parent;             // the pack this one was edited from
@@ -50,8 +50,7 @@ namespace Diverse
 
     /// <summary>
     /// The hero. With an API key it is a fresh picture (image) of anything the player described — not necessarily a rabbit.
-    /// Without one, the rabbit is recolored from the fields below (local fallback). The starting passive (perk) is generated
-    /// once from perkConcept by the Rule IR pipeline (validated + power budget), then kept with the pack.
+    /// Without one, the rabbit is recolored from the fields below (local fallback). Legacy perk fields are read only for old saves; current characters use finite costume modifiers.
     /// </summary>
     [Serializable]
     public class HeroLook
@@ -71,21 +70,29 @@ namespace Diverse
     }
 
     /// <summary>
-    /// The held object and how it fights. Attack parts (moves + weight) and QWER skill ids are turned into a WeaponDef by
+    /// The held object and how it fights. Basic attack parts (moves + weight) are turned into a WeaponDef by
     /// DesignCombat with numbers from the existing weapon assets, normalized to the built-in power budget.
     /// image = a fresh picture; shape/pixels = the local fallback drawing.
     /// </summary>
     [Serializable]
     public class WeaponLook
     {
+        public WeaponType type = WeaponType.Sword;
         public string name;
         public string imagePrompt;                 // English (image model)
         public string image;                       // DesignStore image id
+        public string sourceImage, sourcePrompt, artStatus; // paid raw sheet retained for free reprocessing
+        public int artRevision;
         public List<string> moves = new List<string>();   // DesignCombat.Moves, 1..4 = the basic attack combo
         public string weight = "medium";           // light | medium | heavy
-        public string[] skills;                    // QWER ids from DesignCombat.AllSkills (R = an ultimate)
+        public string[] skills;                    // legacy serialized field; current skills live on InventoryItem.active
         public string[] skillNames;                // Korean display names for them
-        public string baseWeapon = "Greatsword";   // WeaponKind (local fallback without attack parts)
+        [SerializeField, HideInInspector] string baseWeapon;
+        internal void RestoreWeaponType()
+        {
+            type = baseWeapon == "Crossbow" || moves?.Exists(m => m is "shot" or "spread") == true ? WeaponType.Bow
+                : baseWeapon == "Staff" ? WeaponType.Staff : baseWeapon == "Dagger" ? WeaponType.Dagger : WeaponType.Sword;
+        }
         public string shape = "builtin";           // DesignArt.WeaponShapes
         public int length;                         // px (0 = shape default)
         public int thickness;                      // px (0 = shape default)
@@ -117,8 +124,10 @@ namespace Diverse
         public string origin = "Hand";             // Hand | Mouth | Eyes | Above
         public ProjectileLook projectile = new ProjectileLook();
         public string slash, slashCore, trail;     // hex; empty = the chassis' colors
-        public string[] effectPrompts;             // English: swing, impact, trail, muzzle (one 2x2 effect sheet)
+        public string[] effectPrompts;             // English: swing, impact, trail, muzzle (four animation rows)
         public string[] effectImages;              // DesignStore image ids in the same order
+        public string effectSourceImage;
+        public int effectFrames;                    // 0 = legacy single pictures; 4 = real animation rows
         public bool flipEffects;                   // player's manual left/right flip of the swing and muzzle effects
     }
 }

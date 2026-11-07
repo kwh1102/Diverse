@@ -13,12 +13,11 @@ MonoBehaviour:
   m_Name: GameDatabase
   m_EditorClassIdentifier: 
   weapons:
-  - {fileID: 11400000, guid: c78800fc6144e63468f6d3fe0e8d36f3, type: 2}
-  - {fileID: 11400000, guid: 13681b03c3d1bf547a7e2904719b1f45, type: 2}
-  - {fileID: 11400000, guid: 4d3d20ecc95f93347bc8f4e6b237e0c2, type: 2}
-  - {fileID: 11400000, guid: dd78c6b5f952b2740b74c7cb9daa5606, type: 2}
-  - {fileID: 11400000, guid: aca8223ee7b26a14289641c934811709, type: 2}
-  - {fileID: 11400000, guid: 7475a5899ff2e754db32706726afced2, type: 2}
+  - {fileID: 11400000, guid: 6e3c25231cbe5dfb812bf1c2f367cbb9, type: 2}
+  - {fileID: 11400000, guid: 13129911c064596e920a5329e00997b8, type: 2}
+  - {fileID: 11400000, guid: fc3935d2c8125533bc46b740d3d1915f, type: 2}
+  - {fileID: 11400000, guid: 0a938d0c60ae5348b9058f697cc1f61d, type: 2}
+  - {fileID: 11400000, guid: 5668fb2f085d573c9ef1f4c77de13b51, type: 2}
   costumes:
   - {fileID: 11400000, guid: 01eff062610fdbd4c88b6eb71912efe4, type: 2}
   - {fileID: 11400000, guid: 10944ba7c1d9e8543932ae2e1c6e8e1c, type: 2}
@@ -42,11 +41,51 @@ MonoBehaviour:
   progression:
     xpBase: 60
     xpGrowth: 1.32
-    evolveEvery: 2
-    skillLevels: 03000000060000000a0000000f000000
+    evolveEvery: 1
+    skillLevels: 050000000a0000000f00000014000000
     smithSkillLevels: 01000000020000000400000006000000
     warpStoneCost: 120
     warpRange: 6
+  inventory:
+    shapes:
+    - type: 0
+      width: 7
+      height: 7
+    - type: 1
+      width: 10
+      height: 5
+    - type: 2
+      width: 6
+      height: 8
+    - type: 3
+      width: 8
+      height: 6
+    - type: 4
+      width: 7
+      height: 7
+    - type: 5
+      width: 6
+      height: 8
+    maxWeapons: 4
+    fusionBaseCost: 30
+    fusionCostPerTier: 25
+    maxPartTier: 5
+    skillCommissionCost: 75
+    legacyBaseTier: 1
+    legacyBossesPerTier: 2
+    weaponUnlockLevel: 5
+    weaponUnlockBosses: 1
+    relicMinDistance: 80
+    smithWeaponCost: 180
+    potionPrice: 18
+    xpPotionPrice: 35
+    antidotePrice: 12
+    potionHealFraction: 0.4
+    xpPotionAmount: 50
+    consumableStack: 9
+    partIconPixels: 32
+    partIconColors: 16
+    partImageParallel: 3
   feel:
     maxHitstop: 0.05
     minHitstopScale: 0.25
@@ -85,5 +124,8 @@ MonoBehaviour:
   clonePrefab: {fileID: 327556377014560540, guid: d3de4f8d0c87c6643b0ab0ff9238523d, type: 3}
   summonPrefab: {fileID: 3772199649996619314, guid: ffd3ebac58fecc44baafd74e74669b16, type: 3}
   projectilePrefab: {fileID: 4761425230516893180, guid: 9390f122216e46c46a72cbd4fa82ec7e, type: 3}
+  activeBarrierPrefab: {fileID: 4761425230516893180, guid: 20d4f0ae4bdca7c4cbaa35f0466d2c16, type: 3}
+  activeGroundAnchorPrefab: {fileID: 4761425230516893180, guid: 7fe4dc64a8704bb1ad801acbcb3b3f22, type: 3}
   pickupPrefab: {fileID: 8539102407990997866, guid: 5a91ebff912f4c54cb5e0a3079f46152, type: 3}
   interactablePrefab: {fileID: 6921281593326623387, guid: 85d62e0dd48e8094ead42d3d39176c31, type: 3}
+  combatVisuals: {fileID: 11400000, guid: ccc99d0bee85742e27f726b015ba1241, type: 2}

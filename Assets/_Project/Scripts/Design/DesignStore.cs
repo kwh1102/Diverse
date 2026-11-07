@@ -88,13 +88,27 @@ namespace Diverse
         }
 
         /// <summary>Weapon name for graves / epitaphs (a designed hero's weapon, or the classic one).</summary>
-        public static string WeaponName(string costumeId, int weapon) =>
-            DesignCombat.For(PackOfCostume(costumeId))?.name ?? DB.W((WeaponKind)weapon).name;
+        public static string WeaponName(string costumeId, int weapon, int type = -1) =>
+            DesignCombat.For(PackOfCostume(costumeId))?.name ?? DB.W(DB.ReadWeaponType(type, weapon)).name;
 
         // ───────────────────────── Pictures (pixelized PNGs, designs/img/<id>.png) ─────────────────────────
 
         static readonly Dictionary<string, Texture2D> images = new Dictionary<string, Texture2D>();
         static string ImageDir => Path.Combine(SaveSystem.DesignDir, "img");
+        public static bool ImagePersisted(string id) => !string.IsNullOrEmpty(id) && File.Exists(Path.Combine(ImageDir, id + ".png"));
+
+        // The caller retains texture ownership. Keep paid source pixels even when frame validation fails.
+        public static string SaveSourceImage(Texture2D source)
+        {
+            string id = Guid.NewGuid().ToString("N").Substring(0, 12);
+            try
+            {
+                Directory.CreateDirectory(ImageDir);
+                File.WriteAllBytes(Path.Combine(ImageDir, id + ".png"), source.EncodeToPNG());
+                return id;
+            }
+            catch (Exception e) { Debug.LogWarning("Design source save failed: " + e.Message); return null; }
+        }
 
         public static string SaveImage(PixelCanvas cv)
         {
@@ -134,6 +148,20 @@ namespace Diverse
             return SaveImage(cv);
         }
 
+        public static void MirrorHero(HeroLook hero)
+        {
+            if(hero==null) return;
+            var changed=new Dictionary<string,string>();
+            string Flip(string id)
+            {
+                if(string.IsNullOrEmpty(id)) return id;
+                if(!changed.TryGetValue(id,out string result)) changed[id]=result=Mirrored(id);
+                return result;
+            }
+            if(hero.frames!=null) hero.frames=hero.frames.Select(Flip).ToArray();
+            hero.image=Flip(hero.image);
+        }
+
         /// <summary>Sprite from a stored picture. pivot is normalized (0..1).</summary>
         public static Sprite Sprite(string id, Vector2 pivot)
         {
@@ -168,9 +196,9 @@ namespace Diverse
             {
                 id = id,
                 name = h.name ?? b.name,
-                // No stat perk: the hero starts with a generated passive instead (Game.StartingPerk)
-                perk = h.perk != null && !string.IsNullOrEmpty(h.perk.name) ? "시작 능력: " + h.perk.name : "시작 능력: 첫 삶에서 생겨남",
-                mods = null,
+                // Finite costume modifiers replace generated character passives.
+                perk = b.perk,
+                mods = b.mods,
                 tags = b.tags,
                 fur = fur,
                 furShade = Col(h.furShade, string.IsNullOrEmpty(h.fur) ? b.furShade : Pal.Mul(fur, 0.82f)),

@@ -48,7 +48,7 @@ namespace Diverse
                 else
                 {
                     Session.OpenSlot(1);
-                    Session.NewLife(DB.Costumes[0], (WeaponKind)0);
+                    Session.NewLife(DB.Costumes[0], WeaponType.Sword);
                 }
             }
             while (Game.I == null || Game.I.Player == null) yield return null;

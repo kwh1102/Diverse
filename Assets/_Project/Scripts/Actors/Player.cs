@@ -26,6 +26,8 @@ namespace Diverse
         public int[] Attrs = new int[4];
         public int UnspentAttr;
         public int PendingEvolutions;
+        public List<int> pendingRewardLevels = new List<int>();
+        public int claimedSkillMask;
         public string HeroName;
         public int WarpStones;                     // carried warp stones, placed with the interact key away from town
         public bool Ferrying;                      // riding the ferryman's raft right now
@@ -48,12 +50,14 @@ namespace Diverse
         // Attack
         int comboIndex;
         float comboTimer;           // combo resets when this runs out
-        float actionLock;           // can't act until this expires (attack recovery)
+        float actionLock;           // active-skill commitment; a basic attack never owns this lock
+        float basicActionLock;      // cancellable basic windup/recovery
         float lungeT; Vector2 lungeVel;
         float weaponSwingT, weaponSwingDur; float weaponFrom, weaponTo;
         bool queuedAttack; Vector2 queuedDir;
         Coroutine basicAttackRoutine;
         bool attackStrikePending;
+        public bool BasicLunging => lungeT > 0;
 
         // Dash
         float dashT, dashCd;
@@ -72,8 +76,10 @@ namespace Diverse
         readonly List<(StatId stat, float value, float until)> buffs = new List<(StatId, float, float)>();
 
         // Prefab children (Prefabs/Actors/Player.prefab): visual/weaponPivot/weapon, visual/shield, raft
-        [SerializeField] SpriteRenderer weaponSr, shieldSr, raftSr;
+        [SerializeField] SpriteRenderer weaponSr, raftSr;
         [SerializeField] Transform weaponPivot;
+        Sprite muzzleSprite;
+        Vector2 muzzleLocal;
         float animT;
         float moveRamp, walkStride;   // eased walking (start-up ramp, stride pulse)
         bool wasMoving;
@@ -99,7 +105,8 @@ namespace Diverse
             p.AimPoint = pos + Vector2.right;
             p.SetupVisual();
             // A new hero starts with only the weapon's basic attack; QWER skills are learned by leveling or at the smith
-            for (int i = 0; i < 4; i++) p.Skills[i] = new SkillState { id = weapon.skills[i] };
+            for (int i = 0; i < p.Skills.Length; i++) p.Skills[i] = new SkillState();
+            p.InitializeInventory();
             p.XpToNext = DB.Progression.XpFor(1);
             p.RecalcStats();
             p.hp = p.maxHp;
@@ -120,17 +127,13 @@ namespace Diverse
             SetShadowSize(14);
             weaponPivot.localPosition = Art.HandAnchor;
             RefreshLook();
-            // The shield child is always in the prefab; only sword & shield shows it
-            if (Weapon.kind == WeaponKind.SwordShield) shieldSr.sprite = Art.Shield();
-            else { shieldSr.gameObject.SetActive(false); shieldSr = null; }
         }
 
         /// <summary>Re-read the sprites after a design pack change (the body re-reads its sprite every frame).</summary>
         public void RefreshLook()
         {
-            weaponSr.sprite = Art.Weapon(Weapon.kind);
+            weaponSr.sprite = Art.Weapon(Weapon.type);
             weaponSr.enabled = !DesignRuntime.WeaponHidden;
-            if (shieldSr != null) shieldSr.sprite = Art.Shield();
         }
 
         // ───────────────────────── Stats ─────────────────────────
@@ -225,8 +228,7 @@ namespace Diverse
             Level++;
             XpToNext = prog.XpFor(Level);
             UnspentAttr += 1;
-            bool evolve = prog.EvolvesAt(Level);
-            if (evolve) PendingEvolutions++;
+            pendingRewardLevels.Add(Level); PendingEvolutions = pendingRewardLevels.Count;
             RecalcStats();
             hp = Mathf.Min(maxHp, hp + maxHp * 0.25f);
             Fx.I?.Play(Art.Shockwave(Pal.Gold, 24), Pos, 0, 18, 1, null, true);
@@ -234,11 +236,9 @@ namespace Diverse
             Fx.I?.Number(Pos + Vector2.up * 1.2f, "레벨 업!", new Color(1f, 0.9f, 0.4f), 1.3f, 1.2f);
             Sfx.Play("levelup");
             Abilities?.Raise("LevelUp");
-            var learned = LearnSkillsForLevel();
-            if (learned != null) GameEvents.Notify($"레벨 {Level}! 새 기술 [{learned.def.name}]{(Ko.HasBatchim(learned.def.name) ? "을" : "를")} 익혔다 ({Controls.KeyName(SkillAct(learned))})");
-            else if (evolve) GameEvents.Notify($"레벨 {Level}! 진화가 준비되었다 ({Controls.KeyName(Act.Abilities)} 또는 자동)");
-            else GameEvents.Notify($"레벨 {Level}! 능력치 포인트 +1 (다음 진화: 레벨 {NextEvolveLevel})");
-            if (evolve) Game.I?.RequestPrefetch();
+            int slot = prog.SkillSlotAt(Level);
+            GameEvents.Notify(slot >= 0 ? $"레벨 {Level}! {"QWER"[slot]} 액티브 후보를 선택할 수 있어." : $"레벨 {Level}! T1 파츠 선택이 준비되었어.");
+            Game.I?.RequestPrefetch();
         }
 
         /// <summary>Next level that offers an ability evolution.</summary>
@@ -257,6 +257,7 @@ namespace Diverse
         /// <summary>Learn the next QWER skill of this weapon (in slot order). Returns it, or null when all are known.</summary>
         public SkillState LearnNextSkill()
         {
+            if (Inventory != null) return AcquireNextSkill();
             foreach (var s in Skills)
             {
                 if (s == null || s.def != null || string.IsNullOrEmpty(s.id)) continue;
@@ -276,7 +277,7 @@ namespace Diverse
         {
             var levels = DB.Progression.skillLevels;
             SkillState last = null;
-            while (LearnedSkills < Skills.Length && LearnedSkills < levels.Length && Level >= levels[LearnedSkills])
+            while (AcquiredSkills < Skills.Length && AcquiredSkills < levels.Length && Level >= levels[AcquiredSkills])
             {
                 var s = LearnNextSkill();
                 if (s == null) break;
@@ -288,6 +289,12 @@ namespace Diverse
         /// <summary>Restore learned skills from a save (count of slots learned, in order).</summary>
         public void RestoreSkills(int learned)
         {
+            if (Inventory != null)
+            {
+                for (int i = 0; i < Mathf.Min(learned, Skills.Length); i++)
+                    if (SkillUnlocked(i) && (claimedSkillMask & (1 << i)) == 0) GrantSkill(ActiveSkillGenerator.Local(ActiveSkillGenerator.TypeOf(Inventory.Active), i));
+                return;
+            }
             for (int i = 0; i < Skills.Length; i++)
             {
                 var s = Skills[i];
@@ -305,15 +312,22 @@ namespace Diverse
         // ───────────────────────── Update ─────────────────────────
 
         static readonly ProfilerMarker PlayerMarker = new ProfilerMarker("Diverse.Player");   // read by PerfProbe
+        bool updatingInput;
+        System.Action castAfterPose;
 
         protected override void Update()
         {
             using var _perf = PlayerMarker.Auto();
             float dt = Time.deltaTime;
             if (Alive && dt > 0 && !GameTime.Paused && Game.I != null &&
-                (Game.I.State == GameState.Playing || Game.I.State == GameState.Map) && !Ferrying)
+                (Game.I.CombatRunning || Game.I.State == GameState.Map) && !Ferrying)
             {
-                if (Game.I.State == GameState.Playing) HandleInput();
+                if (Game.I.CombatRunning)
+                {
+                    updatingInput = true;
+                    try { HandleInput(); }
+                    finally { updatingInput = false; }
+                }
                 UpdateTravel(dt);
                 UpdateMovement(dt);
                 UpdateTimers(dt);
@@ -323,6 +337,9 @@ namespace Diverse
             }
             base.Update();
             Animate(dt);
+            var cast = castAfterPose;
+            castAfterPose = null;
+            if (Alive) cast?.Invoke();
         }
 
         void UpdateTimers(float dt)
@@ -330,6 +347,7 @@ namespace Diverse
             comboTimer -= dt;
             if (comboTimer <= 0) comboIndex = 0;
             actionLock -= dt;
+            basicActionLock -= dt;
             dashCd -= dt;
             if (DashCharges >= DashChargesMax) dashRecharge = 0;
             else if (!TravelTypes.UsesGauge(activeTravel) && activeTravel != TravelType.Flight)
@@ -342,7 +360,8 @@ namespace Diverse
                 }
                 if (DashCharges >= DashChargesMax) dashRecharge = 0;
             }
-            foreach (var s in Skills) if (s.cd > 0) s.cd -= dt;
+            foreach (var s in Skills)
+                if (s.def != null) s.Tick(dt, s.def.cooldown * (1 - Stats[StatId.CooldownReduction]));
             if (Shield > 0 && Time.time > shieldUntil) Shield = 0;
             if (Abilities == null || !Abilities.Forbids("Regen")) hp = Mathf.Min(maxHp, hp + Stats[StatId.Regen] * dt);
             // Buff expiry
@@ -360,10 +379,13 @@ namespace Diverse
 
         void HandleInput()
         {
-            if (DeveloperMode.CapturingInput || Game.I.UiCapturingMouse || Game.I.InputConsumedFrame >= Time.frameCount - 1) return;
+            if (DeveloperMode.CapturingInput || Game.I.UiCapturingMouse || Game.I.Ui.InventoryCapturesPointer || Game.I.InputConsumedFrame >= Time.frameCount - 1) return;
             AimPoint = CameraRig.I.MouseWorld();
             if (CameraRig.I != null)
                 CameraRig.I.lookAhead = Vector2.ClampMagnitude((AimPoint - Pos) * 0.12f, 1.2f);
+
+            // A successful manual cast wins over a held or buffered basic attack this frame.
+            if (HandleSkillInput()) return;
 
             if (activeTravel != TravelType.Dash)
             {
@@ -404,11 +426,6 @@ namespace Diverse
 
             if (Controls.Down(Act.Dash)) TryDash((AimPoint - Pos).SafeNormal(Facing));
             if (activeTravel != TravelType.Dash) return;
-            if (Controls.Down(Act.SkillQ)) CastSkill(0);
-            if (Controls.Down(Act.SkillW)) CastSkill(1);
-            if (Controls.Down(Act.SkillE)) CastSkill(2);
-            if (Controls.Down(Act.SkillR)) CastSkill(3);
-
             TryQueuedAttack();
         }
 
@@ -416,12 +433,12 @@ namespace Diverse
         {
             // Only a fresh press may buffer an attack. Holding repeats when ready,
             // without leaving an extra attack behind after the button is released.
-            if (pressed && (actionLock > 0 || dashT > 0))
+            if (pressed && (actionLock > 0 || basicActionLock > 0 || dashT > 0))
             {
                 queuedAttack = true;
                 queuedDir = dir;
             }
-            else if ((pressed || held) && actionLock <= 0 && dashT <= 0)
+            else if ((pressed || held) && actionLock <= 0 && basicActionLock <= 0 && dashT <= 0)
             {
                 queuedAttack = false;
                 BasicAttack(dir);
@@ -430,7 +447,7 @@ namespace Diverse
 
         void TryQueuedAttack()
         {
-            if (queuedAttack && actionLock <= 0 && dashT <= 0)
+            if (queuedAttack && actionLock <= 0 && basicActionLock <= 0 && dashT <= 0)
             {
                 queuedAttack = false;
                 BasicAttack(queuedDir);
@@ -529,7 +546,7 @@ namespace Diverse
                 Pos = WorldStreamer.I.Move(Pos, lungeVel * dt, radius, false, Bound);
                 lungeVel *= Mathf.Exp(-14 * dt);
             }
-            if (actionLock > 0) return;
+            if (actionLock > 0 || basicActionLock > 0) return;
 
             // Chase target
             if (attackTarget != null)
@@ -594,7 +611,7 @@ namespace Diverse
 
         void BasicAttack(Vector2 dir)
         {
-            if (actionLock > 0 || dashT > 0) return;
+            if (actionLock > 0 || basicActionLock > 0 || dashT > 0) return;
             travelExitUntil = 0; exitingTravel = TravelType.Dash; enteredWater = false;
             var steps = Weapon.combo;
             var step = steps[comboIndex % steps.Length];
@@ -602,8 +619,8 @@ namespace Diverse
             bool finisher = stepIndex == steps.Length - 1;
             comboIndex++;
             float aspd = Stats[StatId.AttackSpeed];
-            actionLock = (step.windup + step.recovery) / aspd;
-            comboTimer = actionLock + Weapon.comboReset;
+            basicActionLock = (step.windup + step.recovery) / aspd;
+            comboTimer = basicActionLock + Weapon.comboReset;
             Facing = dir;
             Telemetry.Record("Attack");
             if (step.projectile) Telemetry.Record("RangedAttack");
@@ -612,13 +629,11 @@ namespace Diverse
             // Weapon swing animation
             float baseAngle = dir.Angle();
             if (step.thrust || step.projectile) { weaponFrom = baseAngle; weaponTo = baseAngle; }
-            else if (step.spin) { weaponFrom = baseAngle; weaponTo = baseAngle + 360; }
-            else { weaponFrom = baseAngle + step.arc * 0.5f * step.swingDir; weaponTo = baseAngle - step.arc * 0.5f * step.swingDir; }
-            weaponSwingT = 0; weaponSwingDur = Mathf.Max(0.08f, step.windup / aspd + 0.08f);
+            else { weaponFrom = baseAngle + step.arc * 0.5f * step.swingDir; weaponTo = weaponFrom; }
+            weaponSwingT = 0; weaponSwingDur = Mathf.Max(0.08f, step.windup / aspd);
 
             attackStrikePending = true;
             basicAttackRoutine = StartCoroutine(AttackRoutine(step, dir, finisher, aspd, stepIndex));
-            foreach (var c in Clone.Active.ToArray()) if (c != null) c.Mimic(dir, step);
         }
 
         System.Collections.IEnumerator AttackRoutine(ComboStep step, Vector2 dir, bool finisher, float aspd, int stepIndex)
@@ -629,6 +644,12 @@ namespace Diverse
             yield return new WaitForSeconds(step.windup / aspd);
             attackStrikePending = false;
             if (!Alive) yield break;
+            if (!step.thrust && !step.projectile)
+            {
+                float facingAngle = dir.Angle(), half = Mathf.Min(step.arc, 359) * .5f * step.swingDir;
+                SetSwing(facingAngle + half, facingAngle - half, CombatVisuals.Library?.basicSweepSeconds ?? step.recovery);
+            }
+            foreach (var c in Clone.Active.ToArray()) if (c != null) c.Mimic(dir, step);
 
             // Lunge forward
             lungeT = 0.12f;
@@ -641,7 +662,6 @@ namespace Diverse
             if (finisher && !step.projectile)
             {
                 Motion(-facing * feel.attackTwist * 1.6f * vary, feel.finisherHop * vary, -0.45f);
-                Fx.I?.Afterimage(body, new Color(1f, 0.95f, 0.8f, 0.6f), 0.22f);
             }
             else switch (stepIndex % 3)
             {
@@ -651,10 +671,12 @@ namespace Diverse
             }
 
             Vector2 origin = Pos + Vector2.up * 0.45f;
+            if (Game.I != null && Game.I.TryStrikeRelic(origin,dir,step.range,step.arc)) yield break;
             Vector2 fxOrigin = Combat.MeleeFxOrigin(origin, dir);   // the swing picture sits a little in front of the body
             Color32 col = Weapon.slashColor;
             var w = Weapon;
             float dmg = AttackPower * step.damage;
+            var partAttack = Abilities.BeginBasic(finisher);
             Sfx.Play(w.sfxSwing, 0.7f);
 
             if (step.projectile)
@@ -664,71 +686,60 @@ namespace Diverse
                 CameraRig.I?.Kick(-dir, step.kick);
                 CameraRig.I?.Shake(step.shake * 0.6f * Game.Settings.shakeScale);
                 // The design pack decides where shots come out (hand, mouth, eyes…) and their trail color — never their numbers
-                Vector2 muzzle = Pos + DesignRuntime.AttackOrigin(dir);
+                Vector2 muzzle = ProjectileOrigin(dir);
+                ActiveSkillRuntime.RecordCasing(this, SwingOrigin(dir) - dir * radius);
+                float capturedRound = ActiveSkillRuntime.UseCapturedRound(this);
                 Color32 trail = DesignRuntime.Trail ?? Pal.Hex("fff1b0");
-                if (DesignRuntime.MuzzleFx is { } flash) Fx.I?.Play(flash, muzzle + dir * 0.6f, dir.Angle(), 20, 1, null, true);
-                else Fx.I?.Burst(muzzle + dir * 0.6f, trail, 6, 6, 0.2f, 0, 1, 50, dir.Angle());
+                CombatVisuals.BasicMuzzle(w.type, muzzle, dir, trail);
+                var impact = DesignRuntime.ImpactFx(col, 9);
                 for (int i = 0; i < step.projectileCount; i++)
                 {
                     var d = dir.Rotate((i - (step.projectileCount - 1) / 2f) * step.projectileSpread);
-                    var info = new DamageInfo { amount = dmg, source = this, direction = d, knockback = step.knockback, hitstop = step.hitstop, canCrit = true, tags = w.tags, element = w.element };
-                    var pr = Projectile.Spawn(Art.Bolt(), muzzle + d * 0.5f, d * 19f, Team.Enemy, this, info);
+                    var info = new DamageInfo { amount = dmg + capturedRound / step.projectileCount, source = this, direction = d, knockback = step.knockback, hitstop = step.hitstop, canCrit = true, tags = w.tags + " BASIC", element = w.element, partAttack = partAttack, impactFx = impact, normalImpactBlend = true,
+                        hitVisual = CombatVisuals.HitFor(w.type, true) };
+                    var pr = Projectile.Spawn(Art.Bolt(), muzzle, d * 19f, Team.Enemy, this, info);
                     pr.color = trail; pr.life = step.range / 19f; pr.shake = step.shake; pr.kick = step.kick; pr.sfx = w.sfxHit;
                     pr.spin = DesignRuntime.ShotSpins;
-                    pr.trailFx = DesignRuntime.TrailFx;
+                    CombatVisuals.BasicFlight(pr, w.type);
+                    CombatVisuals.Wake(pr, w.type, step.projectileCount > 1 ? "fan" : "single", trail);
                 }
             }
             else
             {
-                // Slash effect. Each swing is turned / sized a little differently, and layers change along the combo
-                // (an echo trail, sparks off the blade tip, speed lines, a ground ring on the finisher). Looks only:
-                // the hit area below still uses the exact direction and range.
+                // A single readable stroke; hit reach/damage below are unchanged.
                 int radiusPx = Mathf.RoundToInt(step.range * Art.PPU * 0.85f);
                 float fxAng = dir.Angle() + Random.Range(-feel.swingAngleJitter, feel.swingAngleJitter);
                 float fxScale = step.fxScale * (1f + Random.Range(-feel.swingScaleJitter, feel.swingScaleJitter));
-                if (step.thrust)
-                {
-                    Fx.I?.Play(Art.Thrust(col, w.slashCore, Mathf.RoundToInt(step.range * Art.PPU)), fxOrigin, fxAng, 32, fxScale, null, true, 0, transform);
-                    if (GraphicsQuality.KeepOptional())
-                        Fx.I?.Play(Art.SpeedLines(col, Mathf.RoundToInt(step.range * Art.PPU * 0.9f)), origin - dir * 0.3f, dir.Angle(), 30, 1f, new Color(1, 1, 1, 0.7f), true);
-                }
+                Vector2 strokeOrigin = step.spin || step.thrust ? origin : SwingOrigin(dir);
+                float strokeReach = Mathf.Max(0, step.range - Vector2.Distance(strokeOrigin, origin));
+                if (CombatVisuals.Basic(w.type, strokeOrigin, dir, strokeReach, step, fxScale, finisher, col, transform)) { }
+                else if (step.thrust)
+                    Fx.I?.Play(Art.Thrust(col, w.slashCore, Mathf.RoundToInt(step.range * Art.PPU)), fxOrigin, fxAng, 32, fxScale, null, false, 0, transform);
                 else
                 {
-                    var frames = Art.Slash(col, w.slashCore, radiusPx, Mathf.Min(step.arc, 359), step.spin ? 1 : step.swingDir);
-                    bool flipY = step.swingDir < 0 && !step.spin;
-                    Fx.I?.Play(frames, step.spin ? origin : fxOrigin, fxAng, step.spin ? 28 : 32, fxScale, null, true, 0, transform, flipY);
-                    if (!step.spin && GraphicsQuality.KeepOptional())
-                    {
-                        // Odd steps and finishers: a fainter, wider echo trailing behind the swing
-                        if (stepIndex % 2 == 1 || finisher)
-                            Fx.I?.Play(frames, fxOrigin, fxAng + step.swingDir * 16f, 22, fxScale * 1.15f, new Color(1, 1, 1, 0.45f), true, 0, transform, flipY);
-                        // Sparks thrown off where the blade finishes its arc
-                        var tip = dir.Rotate(-step.arc * 0.5f * step.swingDir);
-                        Fx.I?.Burst(fxOrigin + tip * step.range * 0.85f, w.slashCore, 3, 5f, 0.25f, 0, 1, 40, tip.Rotate(-90 * step.swingDir).Angle());
-                    }
-                }
-                if (step.spin) Fx.I?.Play(Art.Slash(col, w.slashCore, radiusPx, 359, -1), origin, fxAng + 180, 28, fxScale, null, true, 0, transform);
-                if (finisher)
-                {
-                    Fx.I?.Play(Art.Shockwave(col, Mathf.RoundToInt(step.range * Art.PPU * 0.7f)), Pos + dir * 0.4f, 0, 22, 1f, null, true);
-                    Fx.I?.Burst(Pos + dir * 0.5f, Pal.Hex("e8dcc8"), 8, 4f, 0.4f, 0, 2, 140, dir.Angle(), true);
-                    if (!step.thrust && GraphicsQuality.KeepOptional())
-                        Fx.I?.Play(Art.SpeedLines(col, Mathf.RoundToInt(step.range * Art.PPU)), Pos - dir * 0.6f + Vector2.up * 0.4f, dir.Angle(), 28, 1f, new Color(1, 1, 1, 0.55f), true);
+                    var frames = Art.Slash(col, w.slashCore, radiusPx, Mathf.Min(step.arc, 359), 1);
+                    Fx.I?.Play(frames, step.spin ? origin : fxOrigin, fxAng, step.spin ? 28 : 32, fxScale, null, false, 0, transform, step.swingDir < 0 && !step.spin);
                 }
 
                 List<Actor> targets = step.thrust
                     ? new List<Actor>(Combat.Line(origin, origin + dir * step.range, 0.55f, Team.Enemy))
                     : new List<Actor>(Combat.Arc(origin, dir, step.range, step.arc, Team.Enemy));
                 bool any = false;
+                var impact = DesignRuntime.ImpactFx(col, 9);
                 foreach (var a in targets)
                 {
                     var el = AttackElement;
-                    var info = new DamageInfo { amount = dmg, source = this, direction = (a.Pos - Pos).SafeNormal(dir), knockback = step.knockback, hitstop = step.hitstop, canCrit = true, tags = w.tags, element = el };
-                    Combat.Hit(a, info, col, w.sfxHit, step.shake, step.kick);
+                    var hitDirection = (a.Pos - Pos).SafeNormal(dir);
+                    var info = new DamageInfo { amount = dmg, source = this, direction = hitDirection, knockback = step.knockback, hitstop = step.hitstop,
+                        canCrit = true, tags = w.tags + " BASIC", element = el, partAttack = partAttack,
+                        impactFx = impact, normalImpactBlend = true, impactCutAngle = step.thrust || w.type != WeaponType.Sword ? 0 : step.swingDir < 0 ? -52 : 52,
+                        hitVisual = CombatVisuals.HitFor(w.type, false, step.thrust),
+                        impactDirection = step.spin ? hitDirection : dir };
+                    Combat.Hit(a, info, col, w.type == WeaponType.Staff && finisher ? "hit_heavy" : w.sfxHit, step.shake, step.kick);
                     if (el != Element.None && (el != w.element || Random.value < 0.2f)) Combat.ApplyElement(a, el, dmg * 0.5f, this, 0);
                     any = true;
                 }
-                if (any && w.kind == WeaponKind.Greatsword) Fx.I?.Burst(Pos + dir * 0.8f, Pal.Hex("cdbba5"), 8, 4, 0.4f, 0, 2, 120, dir.Angle(), true);
+                if (any && w.type == WeaponType.Sword && step.spin) Fx.I?.Burst(Pos + dir * 0.8f, Pal.Hex("cdbba5"), 8, 4, 0.4f, 0, 2, 120, dir.Angle(), true);
             }
             if (finisher)
             {
@@ -771,7 +782,7 @@ namespace Diverse
                 attackStrikePending = false;
                 comboIndex = Mathf.Max(0, comboIndex - 1);
                 queuedAttack = true; queuedDir = Facing;
-                actionLock = 0;
+                basicActionLock = 0;
             }
             lungeT = 0; lungeVel = Vector2.zero;
             weaponSwingT = weaponSwingDur;
@@ -831,22 +842,151 @@ namespace Diverse
 
         // ───────────────────────── Skills ─────────────────────────
 
-        void CastSkill(int i)
+        public void HoldSkillAction() => actionLock = Mathf.Max(actionLock, Time.deltaTime * 2);
+        public Vector2 SwingOrigin(Vector2 dir)
+        {
+            if (weaponSr == null || !weaponSr.enabled || DesignRuntime.WeaponHidden)
+                return Combat.MeleeFxOrigin(Pos + Vector2.up * ActiveSkillGenerator.Rules.actionHeight, dir);
+            return visual.TransformPoint(GripPosition());
+        }
+
+        /// <summary>Read the visible weapon tip in world space, including grip, mirroring and travel height.</summary>
+        public Vector2 ProjectileOrigin(Vector2 dir)
+        {
+            if (DesignRuntime.CombatPack.attack.origin != "Hand" || weaponPivot == null ||
+                weaponSr == null || weaponSr.sprite == null || !weaponSr.enabled || DesignRuntime.WeaponHidden)
+                return visual.TransformPoint(DesignRuntime.AttackOrigin(dir));
+            // Cast coroutines can run before Animate this frame. Do not sample the previous idle/aim pose.
+            ApplyWeaponPose(dir.SafeNormal(Facing).Angle());
+            var sprite = weaponSr.sprite;
+            if (muzzleSprite != sprite)
+            {
+                muzzleSprite = sprite;
+                muzzleLocal = new Vector2(sprite.bounds.max.x, sprite.bounds.center.y);
+                if (sprite.texture.isReadable)
+                {
+                    var pixels = sprite.texture.GetPixels32(); var rect = sprite.rect;
+                    int front = -1, rows = 0; float middle = 0;
+                    for (int x = (int)rect.width - 1; x >= 0; x--)
+                    {
+                        for (int y = 0; y < (int)rect.height; y++)
+                            if (pixels[((int)rect.y+y)*sprite.texture.width+(int)rect.x+x].a >= 128)
+                            { middle += y + .5f; rows++; }
+                        if (rows > 0) { front = x; break; }
+                    }
+                    if (front >= 0)
+                        muzzleLocal = new Vector2((front+.5f-sprite.pivot.x)/sprite.pixelsPerUnit,
+                            (middle/rows-sprite.pivot.y)/sprite.pixelsPerUnit);
+                }
+            }
+            var local = new Vector3(weaponSr.flipX ? -muzzleLocal.x : muzzleLocal.x,
+                weaponSr.flipY ? -muzzleLocal.y : muzzleLocal.y, 0);
+            return weaponSr.transform.TransformPoint(local);
+        }
+        public void PresentSkill(ActiveSkillData skill, ActiveStep step, Vector2 dir) => PresentSkill(skill, dir, step.delivery == "arc");
+
+        internal void PresentSkill(ActiveSkillData skill, Vector2 dir, bool sweep)
+        {
+            placementUntil = 0;
+            Facing = dir.SafeNormal(Facing);
+            var feel = DB.Asset.feel ?? new FeelDef();
+            float duration = ActiveSkillGenerator.Rules.castVisualDuration, angle = Facing.Angle();
+            float half = sweep ? 70 : 0;
+            SetSwing(angle + half, angle - half, duration);
+            Motion((Facing.x >= 0 ? -1 : 1) * feel.attackTwist, 0, -.15f);
+            skillSwingColor = Pal.Hex(skill.color); skillSwingUntil = Time.time + duration;
+        }
+        float placementUntil;
+        bool groundPlacement;
+        public float PresentPlacement(Vector2 point, Vector2 dir)
+        {
+            var visuals = CombatVisuals.Library;
+            if (visuals == null) return 0;
+            Facing = (point - Pos).SafeNormal(dir);
+            groundPlacement = TravelDepth <= 0 && dashT <= 0 &&
+                Vector2.Distance(point, Pos) <= radius + ActiveSkillGenerator.Rules.anchorWidth;
+            float windup = visuals.placementWindup;
+            placementUntil = Time.time + windup * 2;
+            actionLock = Mathf.Max(actionLock, windup);
+            float angle = Facing.Angle();
+            SetSwing(angle, groundPlacement ? (Facing + Vector2.down).SafeNormal(Facing).Angle() : angle, windup);
+            if (groundPlacement) Motion(0, 0, visuals.placementSquash);
+            return windup;
+        }
+        Color skillSwingColor;
+        float skillSwingUntil;
+        public void SkillAfterimage(Color color) => Fx.I?.Afterimage(body, color, ActiveSkillGenerator.Rules.castVisualDuration);
+
+        int bufferedSkill = -1;
+        float bufferedSkillUntil;
+        string bufferedSkillId;
+        bool HandleSkillInput()
+        {
+            if (activeTravel != TravelType.Dash && activeTravel != TravelType.Flight)
+            { bufferedSkill = -1; return false; }
+            for (int i = 0; i < skillActs.Length; i++)
+                if (Controls.Down(skillActs[i]))
+                {
+                    bufferedSkill = -1;
+                    if (CastSkill(i)) return true;
+                    var skill = Skills[i];
+                    float window = ActiveSkillGenerator.Rules.skillBuffer;
+                    if (skill.def?.active?.input == "tap" && skill.Ready && actionLock > 0 && actionLock <= window)
+                    {
+                        bufferedSkill = i;
+                        bufferedSkillId = skill.def.active.id;
+                        bufferedSkillUntil = Time.unscaledTime + window;
+                    }
+                    return false;
+                }
+            if (bufferedSkill >= 0)
+            {
+                if (Time.unscaledTime > bufferedSkillUntil || Skills[bufferedSkill].def?.active?.id != bufferedSkillId)
+                    bufferedSkill = -1;
+                else if (CastSkill(bufferedSkill)) { bufferedSkill = -1; return true; }
+            }
+            return false;
+        }
+
+        void CancelBasicForSkill()
+        {
+            if (attackStrikePending)
+            {
+                if (basicAttackRoutine != null) StopCoroutine(basicAttackRoutine);
+                comboIndex = Mathf.Max(0, comboIndex - 1);
+            }
+            // An already resolved hit/projectile is retained. A cancelled windup cannot hit later.
+            basicAttackRoutine = null; attackStrikePending = false; queuedAttack = false;
+            basicActionLock = 0; lungeT = 0; lungeVel = Vector2.zero;
+            weaponSwingT = weaponSwingDur;
+        }
+
+        bool CastSkill(int i)
         {
             var s = Skills[i];
             if (s.def == null)
             {
                 if (Controls.Down(skillActs[i])) Fx.I?.Number(Pos + Vector2.up * 1.1f, "아직 익히지 않은 기술", new Color(0.7f, 0.65f, 0.8f), 0.7f, 0.6f);
-                return;
+                return false;
             }
-            if (s.cd > 0) return;
-            s.cd = s.def.cooldown * (1 - Stats[StatId.CooldownReduction]);
+            if (ActiveSkillRuntime.TryRecast(this, s.def.active)) { CancelBasicForSkill(); return true; }
+            if (!s.Ready || actionLock > 0) return false;
+            if (s.def.active != null && !ActiveSkillRuntime.CanCast(this, s.def.active)) return false;
+            CancelBasicForSkill();
+            s.Spend(s.def.cooldown * (1 - Stats[StatId.CooldownReduction]));
             Vector2 dir = (AimPoint - (Pos + Vector2.up * 0.4f)).SafeNormal(Facing);
             Facing = dir;
             actionLock = Mathf.Max(actionLock, s.def.lockTime);
             Telemetry.Record("SkillCast");
-            SkillDB.Cast(this, s.def, dir, AimPoint);
-            GameEvents.Raise(new CombatEvent { type = Trig.SkillCast, source = this, position = Pos, direction = dir, tags = Weapon.tags + " SKILL" });
+            Vector2 aim = AimPoint;
+            void Commit()
+            {
+                SkillDB.Cast(this, s.def, dir, aim);
+                GameEvents.Raise(new CombatEvent { type = Trig.SkillCast, skillSlot = i, source = this, position = Pos, direction = dir, tags = Weapon.tags + " SKILL" });
+            }
+            if (updatingInput) castAfterPose = Commit;
+            else Commit();
+            return true;
         }
 
         Element imbue; float imbueUntil;
@@ -945,6 +1085,7 @@ namespace Diverse
             if (!Alive) pose = Pose.Hurt;
             else if (flash > 0.5f) pose = Pose.Hurt;
             // A drawn hero has wind-up / strike poses (a punch or kick when bare-handed)
+            else if (dashT <= 0 && Time.time < placementUntil) pose = Pose.Cast;
             else if (dashT <= 0 && weaponSwingT < weaponSwingDur) pose = weaponSwingT < weaponSwingDur * 0.45f ? Pose.AttackWind : Pose.AttackHit;
             else if (dashT > 0) pose = Pose.Run1;
             else if (Moving) pose = (Pose)((int)Pose.Run0 + (int)(walkStride / (Mathf.PI * 0.5f)) % 4);   // 4 frames per two steps, in step with the stride
@@ -971,31 +1112,23 @@ namespace Diverse
                     ang = Mathf.Lerp(weaponFrom, weaponTo, k);
                     // Smear: fading copies of the weapon along the swing, tinted with the swing colour
                     swingGhostT -= dt;
-                    if (swingGhostT <= 0 && weaponSr.enabled && Mathf.Abs(weaponTo - weaponFrom) > 1f)
+                    if (CombatVisuals.Library==null && swingGhostT <= 0 && weaponSr.enabled && Mathf.Abs(weaponTo - weaponFrom) > 1f)
                     {
                         swingGhostT = 0.016f;
-                        Color c = Weapon.slashColor; c.a = 0.55f;
+                        Color c = Time.time < skillSwingUntil ? skillSwingColor : Weapon.slashColor; c.a = 0.55f;
                         Fx.I?.Afterimage(weaponSr, c, 0.12f);
                     }
                 }
                 else
                 {
-                    float idle = Weapon.kind == WeaponKind.Crossbow ? Facing.Angle() : (body.flipX ? 120 : 60) + Mathf.Sin(animT * 3) * 3;
-                    if (Weapon.kind == WeaponKind.Crossbow && actionLock <= 0) idle = (AimPoint - Pos).Angle();
+                    float idle = Weapon.type is WeaponType.Bow or WeaponType.Gun ? Facing.Angle() : (body.flipX ? 120 : 60) + Mathf.Sin(animT * 3) * 3;
+                    if ((Weapon.type is WeaponType.Bow or WeaponType.Gun) && actionLock <= 0) idle = (AimPoint - Pos).Angle();
                     if (mouth) idle = (body.flipX ? 180 : 0) + Mathf.Sin(animT * 2) * 4;   // held between the teeth
                     ang = idle;
                 }
-                weaponPivot.localRotation = Quaternion.Euler(0, 0, ang);
-                bool behind = !mouth && ang > 20 && ang < 160 && weaponSwingT >= weaponSwingDur;
-                weaponSr.sortingOrder = body.sortingOrder + (behind ? -1 : 1);
-                weaponSr.flipY = Mathf.Abs(Mathf.DeltaAngle(ang, 0)) > 90;
-                var anchor = mouth ? DesignRuntime.MouthAnchor(Costume) : Art.HandAnchor;
-                weaponPivot.localPosition = new Vector3(body.flipX ? -anchor.x : anchor.x, anchor.y, 0);
-            }
-            if (shieldSr != null)
-            {
-                shieldSr.sortingOrder = body.sortingOrder + (guarding ? 2 : -1);
-                shieldSr.transform.localPosition = guarding ? (Vector3)(Facing * 0.35f + Vector2.up * 0.4f) : new Vector3(body.flipX ? 0.15f : -0.15f, 0.42f, 0);
+                ApplyWeaponPose(ang);
+                if (groundPlacement && Time.time < placementUntil)
+                    weaponPivot.localPosition += Vector3.down * CombatVisuals.Library.placementHandDrop;
             }
             if (Shield > 0) body.color = Color.Lerp(body.color, new Color(0.7f, 0.95f, 1f), 0.3f + Mathf.Sin(Time.time * 10) * 0.1f);
             float opacity = BuriedInTerrain ? 0f : Mathf.Lerp(1f, activeTravel == TravelType.Burrow || exitingTravel == TravelType.Burrow ? 0.20f : 0.55f, TravelDepth);
@@ -1003,9 +1136,24 @@ namespace Diverse
             tint.a *= opacity;
             body.color = tint;
             if (weaponSr != null) SetTravelOpacity(weaponSr, opacity * (1f - TravelDepth));
-            if (shieldSr != null) SetTravelOpacity(shieldSr, opacity * (1f - TravelDepth));
             if (Time.time < invulnUntil && dashT <= 0 && TravelDepth <= 0 && Alive) body.enabled = (int)(Time.time * 20) % 2 == 0;
             else body.enabled = true;
+        }
+        void ApplyWeaponPose(float angle)
+        {
+            bool mouth = DesignRuntime.HoldInMouth;
+            weaponPivot.localRotation = Quaternion.Euler(0, 0, angle);
+            bool behind = !mouth && angle > 20 && angle < 160 && weaponSwingT >= weaponSwingDur;
+            weaponSr.sortingOrder = body.sortingOrder + (behind ? -1 : 1);
+            weaponSr.flipY = Mathf.Abs(Mathf.DeltaAngle(angle, 0)) > 90;
+            weaponPivot.localPosition = GripPosition();
+        }
+
+        Vector2 GripPosition()
+        {
+            bool left = Mathf.Abs(Facing.x) > .05f ? Facing.x < 0 : body.flipX;
+            var anchor = DesignRuntime.HoldInMouth ? DesignRuntime.MouthAnchor(Costume) : Art.HandAnchor;
+            return new Vector2(left ? -anchor.x : anchor.x, anchor.y);
         }
 
         static void SetTravelOpacity(SpriteRenderer renderer, float opacity)
@@ -1084,7 +1232,7 @@ namespace Diverse
             activeTravel = TravelType.Dash;
             bounceAgainUntil = travelExitUntil = 0;
             showTravelPose = false;
-            dashT = lungeT = actionLock = 0; queuedAttack = false;
+            dashT = lungeT = actionLock = basicActionLock = 0; queuedAttack = false;
             Pos = WorldStreamer.I.NearestWalkable(target, radius, 12);
         }
     }
