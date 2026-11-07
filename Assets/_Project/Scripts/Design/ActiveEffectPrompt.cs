@@ -12,36 +12,49 @@ namespace Diverse
                 "Frost"=>"cut-glass facets, angular growing crystalline spikes and separating ice splinters",
                 "Lightning"=>"a sharp forked lightning spine, staggered branching strokes and broken electrical arcs",
                 "Wind"=>"interleaving tapered wind ribbons and an opening spiral with empty space between bands",
-                "Poison" or "Blood"=>"a dense lobed splash with separated substantial droplets and a broken ground ripple",
+                "Poison"=>"viscous broken lobes, short low bubbles and a few heavy droplets",
+                "Blood"=>"a narrow torn ribbon with two heavy droplets and a sharp edge",
                 "Holy"=>"bevelled ray tips, a brief four-point contact star and short curved halos",
-                "Arcane" or "Void" or "Shadow"=>"twisting jagged ribbons, faceted shards and a broken low shock ellipse",
+                "Arcane"=>"interlocking faceted shards with offset bevel glints",
+                "Void"=>"inward-folding broken edges around an open centre",
+                "Shadow"=>"two interrupted knife-like ribbons with a small negative-space notch",
                 _=>"sharp bevelled strokes, impact wedges and a few large fragments" };
+            string profile = skill.weaponType switch {
+                WeaponType.Sword => "Broad cut with a clean bevel and an open inner edge; contact separates into a short diagonal shear.",
+                WeaponType.Dagger => "Narrow nick with an off-axis fork, a tight second cut and quick, close follow-through.",
+                WeaponType.Bow => "Long directional tension and a slim, visible leading head; contact bursts across the direction of flight.",
+                WeaponType.Gun => "Compact angular pressure front and dense leading body; hard-edged recoil and sudden fragments.",
+                _ => "Asymmetric arcane material, layered facets or two broad interleaving ribbons, no generic crescent."
+            };
             return $"Production transparent PNG combat-animation atlas, exactly FOUR columns and {rows.Length} equal rows. Canvas {size}. " +
                 "Every row is one FOUR-frame animation with a fixed cell centre/pivot and common framing. Entire effect remains inside its cell with 15 percent clear gutters. No text, grid, scenery, backgrounds, painted checkerboard or UI. " +
-                "Match moderately detailed existing top-down pixel RPG sprites: crisp stepped contours, readable connected pixel clusters, dark plum shadow edges, 3-4 distinct flat tones per material, bevel highlights and shaped interior shadows. Richer than flat glyphs, simpler than painted HD art. No fine-grain texture, dither, smooth gradients, blur or large soft glow. " +
+                "Art direction: compact, hand-pixelled overhead action RPG, viewed at actual game zoom on muted grass, soil and stone. Render for a 48-pixel logical cell. Use crisp stepped contours, connected pixel clusters, muted plum shadows, distinct flat tones and a small bright leading edge. Preserve open space. No fine-grain texture, dithering, gradients, painterly shading, bloom, clouds of motes or opaque disks. " +
                 ActiveSkillStyle.Prompt(skill) +
+                $"Weapon motion vocabulary: {profile} Ground, defensive and control rows keep their own silhouette and pivot. " +
+                (skill.slot == 3 ? "Reserve the widest silhouette and one strong asymmetric secondary burst for the signature action. Keep screen space around the character clear. " : "") +
                 "COLOUR CONTRACT: use ONLY the supplied icon palette/material colours. Element describes MOTION and SHAPE, never a compulsory colour. For example a purple icon's flame stays purple; do not force orange fire or blue ice. " +
                 $"Specific projectile/body motif: {skill.projectilePrompt}. Specific action/impact motif: {skill.effectPrompt}. " +
-                "These are actual in-world animations, never pictures of the skill icon, equipment badges or emblems. Build strong anticipation -> active leading edge -> separated follow-through -> short resolving tail. Multiple purposeful layers are welcome: shaped core, sharp secondary stroke and a few substantial fragments. Keep empty spaces and the character readable. Flight rows instead LOOP with a stable substantial body. " +
+                "The engine separately draws weapon swings, white hit strokes, player poses and persistent placed objects. Supply only the skill's own moving material: one distinct silhouette, one compact secondary action and a few larger fragments. The main silhouette must differ from an icon, badge or magic circle. " +
+                "Non-flight timing: frame 1 a small ignition at the anchor, frame 2 a clearly expanded active silhouette, frame 3 a broken follow-through, frame 4 a much smaller release. Vary silhouette and occupied area, not hue alone. The engine controls direction, aim, spawn position, travel, and hit timing. " +
                 string.Join(" ",rows.Select((key,row)=> {
                     var step=skill.steps[key/3];int kind=key%3;
                     string motion=kind==2 && step.delivery=="projectile"?
-                        "FLYING BODY LOOP, not a trail: a solid opaque projectile matching the body motif, centred at the collision pivot, pointing RIGHT. Keep the same clearly visible head and body in ALL FOUR frames. Vary fins/ridges and short backward wake only. Core must be several logical pixels thick; no empty, dissolving, launch-only or line-only frame. Keep head at same coordinates; no forward movement across cells.":
-                        kind==2?"Movement wake directed RIGHT, parallel sharp swept lines and curled short tails; no projectile body or inventory object.":
-                        kind==1?"Contact animation centred on the target: compact ignition, forceful asymmetric star or splash, separated wedges/fragments, short disappearing tail. No whole travelling projectile or copied launch effect.":
+                        "FLYING BODY LOOP, not a trail: a solid opaque projectile matching the body motif, centred at the collision pivot, pointing RIGHT. Keep the same clearly visible head and body in ALL FOUR frames. Vary fins/ridges and short backward wake only. Core must be several logical pixels thick; no empty, dissolving, launch-only or line-only frame. Keep head at same coordinates; no forward movement across cells. No repeating speed-line marks; the engine supplies the continuous wake.":
+                        kind==2?"MOVEMENT WAKE, right-facing. Keep its dense edge at the pivot and taper backwards into two broken ribbons; the engine moves the character.":
+                        kind==1?"CONTACT at the fixed target-body pivot. Small compressed contact point, then a clear material-specific break or splash, then fragments close to the target. Leave room for the engine's diagonal hit stroke. Do not redraw the launch or moving projectile.":
                         step.delivery switch {
-                            "arc"=>"Sharp crescent swings from upper RIGHT to lower RIGHT about the transparent hand anchor at cell centre, with a bevelled leading edge, inner curved wake and separated tapered ends. Keep the LEFT half empty.",
+                            "arc"=>"SWEEP from upper RIGHT to lower RIGHT around the empty central pivot. Let the specified material decide the contour: staggered crystal teeth, curled flame tongues, a split ribbon or offset metal facets. Use the right half, leaving the caster side open.",
                             "line"=>"Piercing stroke grows LEFT to RIGHT across the cell, from a left endpoint to a sharp right tip. The cell centre is the MIDPOINT of the line hit area, not the caster. Keep a pointed tip, inner spine and separated parallel wake within the endpoint gutters.",
-                            "projectile"=>"A forceful directional LAUNCH flash at the centre, flaring toward RIGHT with short curved discharge fins. No flying body and no inventory arrow icon.",
+                            "projectile"=>"LAUNCH at the fixed muzzle pivot. A compact rightward discharge with one material signature, then tight recoil flecks. Only one flash, even for spread or ring patterns.",
                             "nova"=>"A ground-centred eruption grows outward with an expanding low elliptical shock, asymmetric core and separated shards.",
-                            "field"=>"A low elliptical floor boundary with four distinct corner/node accents, then moving bands and rising short internal strokes. Keep the floor centre transparent.",
-                            "trap"=>"A low compact floor seal builds in angular segments, charges its corner nodes then breaks outward in short fragments; no upright sphere.",
+                            "field"=>"A low ground PULSE at the field centre: short interior bands or angular rising material. Leave open gaps and the outer edge clear for the persistent range marker.",
+                            "trap"=>"TRIGGER burst at the fixed ground pivot. A compact snap with short sharp material fragments from the middle outward. The real trap and its range marker are drawn separately.",
                             "guard"=>"A curved protective shell builds around an empty central body space, with bevelled side segments and moving contact glints; no shield badge.",
                             "wall"=>"Deployment ripple only at the feet of the separately placed wall: short low shock ellipse and dust/chip wedges; no giant stripe or copied wall icon.",
-                            _=>"A directional RIGHT-facing departure streak, sharp forked ribbons and a clean opening arrival ripple; no whole actor/weapon copies." };
+                            _=>"ARRIVAL at the ground-level destination, facing RIGHT. Tight split wake opens and releases near the feet. The departure already has a separate wake." };
                     string control=step.effect=="pull"?"All hooks and fragments converge INWARD toward the centre.":step.effect=="push"?"Wedges and rings expand OUTWARD from the centre.":
                         step.effect=="heal"?"Uplifting gentle curved wisps and distinct glint clusters around an empty central body; do not depict injury or an explosion.":"";
-                    return $"Row {row+1}, step {key/3+1}, {step.delivery}/{step.pattern}/{step.effect}/{step.element}: {motion} Surface/motion detail: {Element(step.element)}. {control}";
+                    return $"Row {row+1}, step {key/3+1}, {step.delivery}/{step.pattern}/{step.effect}/{step.element}: {motion} Use this material vocabulary: {Element(step.element)}. {control}";
                 })) + $" Executable action description (do not invent mechanics): {ActiveSkillGenerator.VisualSummary(skill)}.";
         }
     }

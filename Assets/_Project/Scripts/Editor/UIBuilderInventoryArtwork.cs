@@ -51,7 +51,7 @@ namespace Diverse.EditorTools
                 }
                 var panel=inv.transform.Find("Panel");
                 ((RectTransform)panel).sizeDelta=new Vector2(680,376);
-                panel.localScale=new Vector3(.8f,.8f,1);
+                panel.localScale=new Vector3(.85f,.85f,1);
                 Wire(inv,"panel",panel);
                 var ghost=data.FindProperty("dragGhost").objectReferenceValue as RectTransform;
                 ghost.sizeDelta=new Vector2(26,26);

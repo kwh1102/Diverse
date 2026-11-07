@@ -100,7 +100,7 @@ namespace Diverse
             foreach (var gr in w.graves.Where(x => string.IsNullOrEmpty(x.forgottenBy)).Take(4))
             {
                 var grave = gr;
-                page.options.Add(new DialogueOption($"{grave.life}번째 삶 {grave.heroName} (Lv.{grave.level}, {DesignStore.WeaponName(grave.costume, grave.weapon)})", () =>
+                page.options.Add(new DialogueOption($"{grave.life}번째 삶 {grave.heroName} (Lv.{grave.level}, {DesignStore.WeaponName(grave.costume, grave.weapon, grave.weaponType)})", () =>
                 {
                     Show(new DialoguePage
                     {
@@ -374,7 +374,7 @@ namespace Diverse
             var page = new DialoguePage
             {
                 speaker = $"{gr.life}번째 삶 — {gr.heroName}의 무덤", portrait = Art.Prop("grave"),
-                text = $"\"{gr.epitaph}\"\n레벨 {gr.level} · {DesignStore.WeaponName(gr.costume, gr.weapon)} · 몬스터 {gr.kills}마리 처치",
+                text = $"\"{gr.epitaph}\"\n레벨 {gr.level} · {DesignStore.WeaponName(gr.costume, gr.weapon, gr.weaponType)} · 몬스터 {gr.kills}마리 처치",
             };
             gr.parts ??= new System.Collections.Generic.List<InventoryItem>();
             if (gr.parts.Count == 0)

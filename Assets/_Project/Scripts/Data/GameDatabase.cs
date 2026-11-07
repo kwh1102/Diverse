@@ -41,6 +41,7 @@ namespace Diverse
         public Summon summonPrefab;
         public Projectile projectilePrefab;
         public ActiveBarrier activeBarrierPrefab;
+        public ActiveGroundAnchor activeGroundAnchorPrefab;
         public CombatVisualLibrary combatVisuals;
         public Pickup pickupPrefab;
         public Interactable interactablePrefab;

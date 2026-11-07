@@ -34,6 +34,9 @@ namespace Diverse
             float reference=library!=null?library.barrierReferenceLengths[orientation]:64;
             barrier.body.transform.localScale=Vector3.one*(axis.magnitude*Art.PPU/Mathf.Max(1,reference));
             Art.Setup(barrier.body,sprite,Art.SortY(Mathf.Min(from.y,to.y)),false);
+            float authoredAngle = orientation switch { 1 => 90, 2 => 45, 3 => -45, _ => 0 };
+            float correction = Mathf.Repeat(axis.Angle() - authoredAngle + 90, 180) - 90;
+            barrier.body.transform.localRotation = Quaternion.Euler(0, 0, correction);
             return barrier;
         }
         void Update() { if (!Active) Dismiss(); }
@@ -49,6 +52,7 @@ namespace Diverse
                 Vector2 ab = barrier.to - barrier.from;
                 Vector2 contact = barrier.from + ab * Mathf.Clamp01(Vector2.Dot(start - barrier.from, ab) / Mathf.Max(.0001f, ab.sqrMagnitude));
                 Fx.I?.Play(Art.HitSpark(ActiveSkillStyle.Tone(barrier.skill,.7f), 6), contact, shot.vel.Angle(), 24, 1, null, false);
+                Sfx.Play("guard", .43f);
                 shot.Block(false); return true;
             }
             return false;

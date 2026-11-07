@@ -68,7 +68,7 @@ namespace Diverse
             var key = SaveSystem.LoadApiKey();
             if (string.IsNullOrEmpty(key)) { done(null); yield break; }
             var abil = string.Join(", ", g.abilities.ConvertAll(a => a.name));
-            string prompt = $"Write a one-sentence Korean epitaph (max 40 characters) for a hero ({DB.Costume(g.costume).name}). Name: {g.heroName}. Weapon: {DesignStore.WeaponName(g.costume, g.weapon)}. Level {g.level}. Kills {g.kills}. Cause of death: {g.cause}. Abilities: {abil}. Return JSON {{\"text\":\"...\"}}";
+            string prompt = $"Write a one-sentence Korean epitaph (max 40 characters) for a hero ({DB.Costume(g.costume).name}). Name: {g.heroName}. Weapon: {DesignStore.WeaponName(g.costume, g.weapon, g.weaponType)}. Level {g.level}. Kills {g.kills}. Cause of death: {g.cause}. Abilities: {abil}. Return JSON {{\"text\":\"...\"}}";
             string json = null;
             yield return Post(key, "You are the Storyteller. Output JSON only.", prompt, 0.9f, 120, r => json = r);
             if (json == null) { done(null); yield break; }

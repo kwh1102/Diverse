@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b38983f8cd9ca7147af9441aa9423c25, type: 3}
-  m_Name: Staff
+  m_Name: StaffProfile
   m_EditorClassIdentifier: 
   def:
     kind: 3

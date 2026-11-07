@@ -66,7 +66,7 @@ namespace Diverse
             else
             {
                 var costume = Session.StartCostume ?? DB.Costume(World.lastCostume);
-                var weapon = Session.StartCostume != null ? Session.StartWeapon : (WeaponKind)World.lastWeapon;
+                var weapon = Session.StartCostume != null ? Session.StartWeapon : DB.ReadWeaponType(World.lastWeaponType, World.lastWeapon);
                 StartRun(costume, weapon);
             }
         }
@@ -161,11 +161,12 @@ namespace Diverse
 
         // ───────────────────────── Starting a run ─────────────────────────
 
-        public void StartRun(CostumeDef costume, WeaponKind weapon)
+        public void StartRun(CostumeDef costume, WeaponKind weapon) => StartRun(costume, DB.ReadWeaponType(-1, (int)weapon));
+
+        public void StartRun(CostumeDef costume, WeaponType weapon)
         {
             World.lifeCount++;
             World.lastCostume = costume.id;
-            World.lastWeapon = (int)weapon;
             HeroName = MakeHeroName(costume);
             Diverse.World.I.ResetForRun();
             Fx.I.ClearAll();
@@ -174,6 +175,8 @@ namespace Diverse
             // A designed hero fights with its own weapon (DesignCombat: parts from the assets, power-normalized)
             var w = DesignCombat.For(DesignStore.PackOfCostume(costume.id)) ?? DB.W(weapon);
             var weaponCopy = w.Clone();
+            World.lastWeapon = (int)w.kind;
+            World.lastWeaponType = (int)w.type;
             if (DesignRuntime.BeginRun(costume, weaponCopy)) WorldStreamer.I.UnloadAll();
             if (Player != null) Destroy(Player.gameObject);
             WorldStreamer.I.Warm(new Vector2(0, -1.5f));
@@ -222,8 +225,12 @@ namespace Diverse
             var starting = p.Inventory.items.FirstOrDefault(i => i.kind == ItemKind.Weapon && i.startingWeapon);
             if (starting != null)
             {
-                starting.design = committed.Clone(); DesignRuntime.EquipWeapon(committed,starting.weapon);
-                DesignRuntime.Skin(starting.weapon); starting.name=starting.weapon.name;
+                starting.design = committed.Clone();
+                starting.design.weapon.type = starting.weapon.type;
+                starting.design.weapon.baseWeapon = starting.weapon.kind.ToString();
+                DesignRuntime.EquipWeapon(starting.design, starting.weapon);
+                DesignRuntime.Skin(starting.weapon);
+                starting.name = starting.weapon.name;
                 PartArt.InvalidateWeapon(starting.id);
             }
             var active = p.Inventory.Active;
@@ -285,7 +292,7 @@ namespace Diverse
             var position = p.SavePosition;
             var r = new RunSave
             {
-                life = World.lifeCount, heroName = HeroName, costume = p.Costume.id, weapon = (int)p.Weapon.kind, weaponDamage = p.Weapon.baseDamage,
+                life = World.lifeCount, heroName = HeroName, costume = p.Costume.id, weapon = (int)p.Weapon.kind, weaponType = (int)p.Weapon.type, weaponDamage = p.Weapon.baseDamage,
                 level = p.Level, xp = p.Xp, xpToNext = p.XpToNext, gold = p.Gold, kills = p.Kills,
                 attrs = (int[])p.Attrs.Clone(), unspentAttr = p.UnspentAttr, pendingEvolutions = p.PendingEvolutions,
                 hp = p.hp, dashMax = p.DashChargesMax, x = position.x, y = position.y,
@@ -308,7 +315,7 @@ namespace Diverse
             var r = Session.PendingRun;
             if (r == null) return;
             var costume = DB.Costume(r.costume);
-            var weapon = (WeaponKind)r.weapon;
+            var weapon = DB.ReadWeaponType(r.weaponType, r.weapon);
             HeroName = r.heroName;
             Diverse.World.I.ResetForRun();
             Fx.I.ClearAll();
@@ -433,7 +440,7 @@ namespace Diverse
             var p = Player;
             var grave = new GraveRecord
             {
-                life = World.lifeCount, heroName = HeroName, costume = p.Costume.id, weapon = (int)p.Weapon.kind, level = p.Level, kills = p.Kills,
+                life = World.lifeCount, heroName = HeroName, costume = p.Costume.id, weapon = (int)p.Weapon.kind, weaponType = (int)p.Weapon.type, level = p.Level, kills = p.Kills,
                 x = p.Pos.x, y = p.Pos.y, cause = cause,
             };
             // Preserve fixed parts on the grave, ordered by upgrade rank for legacy selection.

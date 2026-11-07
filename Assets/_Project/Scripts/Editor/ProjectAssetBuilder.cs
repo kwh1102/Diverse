@@ -64,8 +64,12 @@ namespace Diverse.EditorTools
         static GameDatabase BuildData()
         {
             var db = LoadOrCreate<GameDatabase>(ResDir + "/GameDatabase.asset");
-            db.weapons = DefaultData.Weapons.Values
-                .Select(w => DataAsset<WeaponData>($"{DataDir}/Weapons/{w.kind}.asset", a => a.def = w)).ToList();
+            db.weapons = System.Enum.GetValues(typeof(WeaponType)).Cast<WeaponType>().Select(type =>
+            {
+                string path = $"{DataDir}/WeaponProfiles/{type}.asset";
+                return AssetDatabase.LoadAssetAtPath<WeaponData>(path)
+                    ?? throw new FileNotFoundException("Missing weapon profile", path);
+            }).ToList();
             db.costumes = DefaultData.Costumes
                 .Select(c => DataAsset<CostumeData>($"{DataDir}/Costumes/{c.id}.asset", a => a.def = c)).ToList();
             db.enemies = DefaultData.Enemies.Values
@@ -317,7 +321,8 @@ namespace Diverse.EditorTools
                 foreach (Pose pose in System.Enum.GetValues(typeof(Pose))) { var p = pose; Add($"rabbit_{c.id}_{p}", () => Art.Rabbit(c, p)); }
                 Add($"elder_{c.id}", () => Art.ElderRabbit(c));
             }
-            foreach (WeaponKind k in System.Enum.GetValues(typeof(WeaponKind))) { var kk = k; Add($"weapon_{kk}", () => Art.Weapon(kk)); }
+            foreach (WeaponType type in System.Enum.GetValues(typeof(WeaponType)))
+                Add($"stock_{type.ToString().ToLowerInvariant()}", () => Art.StockWeapon(type));
             Add("shield", Art.Shield);
             Add("bolt", Art.Bolt);
             Add("knife", Art.Knife);

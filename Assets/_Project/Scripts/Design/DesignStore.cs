@@ -88,8 +88,8 @@ namespace Diverse
         }
 
         /// <summary>Weapon name for graves / epitaphs (a designed hero's weapon, or the classic one).</summary>
-        public static string WeaponName(string costumeId, int weapon) =>
-            DesignCombat.For(PackOfCostume(costumeId))?.name ?? DB.W((WeaponKind)weapon).name;
+        public static string WeaponName(string costumeId, int weapon, int type = -1) =>
+            DesignCombat.For(PackOfCostume(costumeId))?.name ?? DB.W(DB.ReadWeaponType(type, weapon)).name;
 
         // ───────────────────────── Pictures (pixelized PNGs, designs/img/<id>.png) ─────────────────────────
 

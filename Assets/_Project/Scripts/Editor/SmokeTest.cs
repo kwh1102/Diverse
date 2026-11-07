@@ -234,7 +234,7 @@ namespace Diverse.EditorTools
                     Fail($"toothpick prompt not understood ({pack.weapon.shape}/{pack.weapon.hold}/{pack.attack.origin}/{pack.weapon.baseWeapon})");
                 if (pack.ignored.Count == 0) Fail("power request was not reported as ignored");
                 if (pack.hero.hat != "wizard") Fail("hero prompt not applied");
-                if (Art.Bolt() == null || Art.Weapon(WeaponKind.Crossbow) == null) Fail("designed sprites missing");
+                if (Art.Bolt() == null || Art.Weapon(WeaponType.Bow) == null) Fail("designed sprites missing");
                 Click(studio, "Undo");
                 yield return Frames(1);
                 if (DesignRuntime.Active.weapon.shape == "needle") Fail("undo did not restore the previous look");
@@ -247,7 +247,7 @@ namespace Diverse.EditorTools
                 Click(studio, "StartLife");
                 yield return Frames(10);
                 if (Game.I == null) { Fail("Game scene did not load"); yield break; }
-                if (Game.I.Player == null || Game.I.Player.Weapon.kind != WeaponKind.Crossbow) Fail("player not spawned with the designed chassis");
+                if (Game.I.Player == null || Game.I.Player.Weapon.type != WeaponType.Bow) Fail("player not spawned with the designed chassis");
                 if (Game.I.Player != null && !Game.I.Player.Costume.id.StartsWith(DesignStore.CostumePrefix)) Fail("player not drawn from the design pack");
                 if (Game.I.Player != null && Game.I.Player.Weapon.name != "이쑤시개") Fail("weapon skin (name) not applied");
                 if (Game.I.Player != null && Mathf.Abs(DesignCombat.Power(Game.I.Player.Weapon) - DesignCombat.Budget) > DesignCombat.Budget * 0.01f)
@@ -258,7 +258,7 @@ namespace Diverse.EditorTools
                 if (!Visible<HudView>()) Fail("HUD not visible");
 
                 // 3) Every weapon + every runtime prefab
-                foreach (WeaponKind wk in System.Enum.GetValues(typeof(WeaponKind)))
+                foreach (WeaponType wk in System.Enum.GetValues(typeof(WeaponType)))
                 {
                     step = "weapon " + wk;
                     Game.I.StartRun(DB.Costumes[(int)wk % DB.Costumes.Count], wk);
@@ -295,16 +295,21 @@ namespace Diverse.EditorTools
                 foreach (var x in expected) if (!Enemy.SignaturesFired.Contains(x)) Fail($"signature attack {x} never fired");
                 g.Player.invulnUntil = 0;
 
-                // 3c) New hero: no QWER skills yet; leveling learns them; evolutions only every N levels
+                // 3c) A Q reward unlocks at its level and the acquired skill attaches to the current weapon.
                 step = "progression";
                 if (g.Player.LearnedSkills != 0) Fail($"a new hero should start with no skills (has {g.Player.LearnedSkills})");
                 var prog = DB.Progression;
+                g.Player.pendingRewardLevels.Clear();
                 g.Player.PendingEvolutions = 0;
+                int startLevel = g.Player.Level;
                 while (g.Player.Level < prog.skillLevels[0]) g.Player.GainXp(g.Player.XpToNext - g.Player.Xp + 0.01f);
-                if (g.Player.LearnedSkills != 1) Fail($"level {prog.skillLevels[0]} should teach the first skill (learned {g.Player.LearnedSkills})");
-                int expectEvolves = 0;
-                for (int l = 2; l <= g.Player.Level; l++) if (prog.EvolvesAt(l)) expectEvolves++;
-                if (g.Player.PendingEvolutions != expectEvolves) Fail($"evolutions {g.Player.PendingEvolutions} != {expectEvolves} expected for level {g.Player.Level}");
+                if (g.Player.LearnedSkills != 0 || !g.Player.SkillUnlocked(0) || !g.Player.pendingRewardLevels.Contains(prog.skillLevels[0]))
+                    Fail($"level {prog.skillLevels[0]} should queue the Q reward");
+                int expectedRewards = g.Player.Level - startLevel;
+                if (g.Player.PendingEvolutions != expectedRewards) Fail($"rewards {g.Player.PendingEvolutions} != {expectedRewards}");
+                g.Player.GrantSkill(ActiveSkillGenerator.Local(g.Player.Weapon.type, 0, "precision"));
+                if (g.Player.LearnedSkills != 1) Fail("claimed Q did not equip on the current weapon");
+                g.Player.pendingRewardLevels.Clear();
                 g.Player.PendingEvolutions = 0;
                 yield return Frames(2);
 
@@ -467,14 +472,18 @@ namespace Diverse.EditorTools
                     it.kind = "grave"; it.data = grave;
                     Dialogue.Open(g, it); yield return Frames(2);
                     int owned = g.Player.Abilities.Owned.Count;
+                    int items = g.Player.Inventory.items.Count;
                     Dialogue.Current.options[0].act(); yield return Frames(2);
-                    if (grave.recovered || g.Player.Abilities.Owned.Count != owned || string.IsNullOrWhiteSpace(Dialogue.Current.text)) Fail("preview consumed ability or omitted description");
+                    if (grave.recovered || g.Player.Abilities.Owned.Count != owned || g.Player.Inventory.items.Count != items || string.IsNullOrWhiteSpace(Dialogue.Current.text)) Fail("preview consumed ability or omitted description");
                     Dialogue.Current.options[1].act(); yield return Frames(2);
                     if (grave.recovered) Fail("back from preview consumed grave");
                     Dialogue.Current.options[0].act(); yield return Frames(2);
                     Dialogue.Current.options[0].act(); yield return Frames(2);
-                    if (!grave.recovered || g.Player.Abilities.Owned.Count != owned + 1) Fail("inheritance confirmation failed");
-                    g.Player.Abilities.Owned.RemoveAll(a => a.name == ability.name);
+                    var inherited = g.Player.Inventory.Find(grave.parts[0].id);
+                    if (!grave.recovered || inherited?.ancestor != grave.heroName || g.Player.Abilities.Owned.Count != owned)
+                        Fail("inheritance did not place the part in inventory without equipping it");
+                    g.Player.Inventory.items.Remove(inherited);
+                    g.Player.Inventory.Notify();
                     Object.Destroy(it.gameObject);
                 }
 
@@ -533,8 +542,8 @@ namespace Diverse.EditorTools
                     var p = g.Player;
                     int oldLevel = p.Level, oldPending = p.PendingEvolutions, oldPoints = p.UnspentAttr;
                     int learned = p.LearnedSkills;
-                    int target = p.NextEvolveLevel + 5, expectedEvolutions = 0;
-                    for (int lv = oldLevel + 1; lv <= target; lv++) if (DB.Progression.EvolvesAt(lv)) expectedEvolutions++;
+                    var pending = p.pendingRewardLevels.ToArray();
+                    int target = p.NextEvolveLevel + 5, expectedEvolutions = target - oldLevel;
                     p.DebugSetLevel(target);
                     if (p.Level != target || p.PendingEvolutions != oldPending + expectedEvolutions)
                         Fail("developer levels omitted evolution rewards");
@@ -543,6 +552,7 @@ namespace Diverse.EditorTools
                     if (p.PendingEvolutions != awarded) Fail("same developer level awarded duplicate evolutions");
                     p.DebugSetLevel(oldLevel);
                     if (p.Level != oldLevel || p.PendingEvolutions != awarded) Fail("level decrease corrupted earned evolutions");
+                    p.pendingRewardLevels.Clear(); p.pendingRewardLevels.AddRange(pending);
                     p.PendingEvolutions = oldPending; p.UnspentAttr = oldPoints; p.RestoreSkills(learned);
                 }
 
@@ -617,10 +627,12 @@ namespace Diverse.EditorTools
                 string designedCostume = Game.I.Player.Costume.id;
                 Game.I.Player.Gold = 77;
                 Game.I.Player.WarpStones = 3;
-                Game.I.Player.LearnNextSkill();
-                var savedAbility = PartCatalog.Create("focus_lens");
-                Game.I.Player.Abilities.Add(savedAbility);
-                string savedSignature = savedAbility.Signature();
+                var savedPlayer = Game.I.Player;
+                var savedType = savedPlayer.Weapon.type;
+                savedPlayer.DebugSetLevel(DB.Progression.skillLevels[0]);
+                var savedSkill = savedPlayer.GrantSkill(ActiveSkillGenerator.Local(savedType, 0, "precision"));
+                var savedPart = InventoryItem.Part(PartCatalog.Create("focus_lens"));
+                savedPlayer.Inventory.Receive(savedPart);
                 Game.I.OpenOverlay(GameState.Paused);
                 yield return Frames(2);
                 Click(Find<PauseView>(), "ToTitle");
@@ -636,8 +648,10 @@ namespace Diverse.EditorTools
                 if (Game.I.Player.Gold != 77) Fail($"continued life lost its state (gold {Game.I.Player.Gold})");
                 if (Game.I.Player.Costume.id != designedCostume) Fail("continued life lost its designed hero");
                 if (Game.I.Player.WarpStones != 3) Fail("continued life lost carried warp stones");
-                if (Game.I.Player.LearnedSkills != 1) Fail("continued life lost learned skills");
-                if (!Game.I.Player.Abilities.Owned.Any(a => a.Signature() == savedSignature)) Fail("continued life lost fixed part");
+                if (Game.I.Player.Weapon.type != savedType) Fail("continued life lost the weapon type");
+                if (Game.I.Player.LearnedSkills != 1 || Game.I.Player.Inventory.Find(savedSkill.id) == null)
+                    Fail("continued life lost learned skills");
+                if (Game.I.Player.Inventory.Find(savedPart.id)?.Ability == null) Fail("continued life lost fixed part");
             }
 
             /// <summary>Offline checks of the picture → sprite pieces (frames, effects, prompt detection).</summary>
@@ -693,7 +707,7 @@ namespace Diverse.EditorTools
                 if (World.I == null || WorldStreamer.I == null || WorldStreamer.I.Gen == null) return "world not initialized";
                 if (Game.I.Ui == null) return "UI missing";
                 if (Object.FindFirstObjectByType<EditorOnlyPreview>() != null) return "editor-only preview survived into play";
-                if (DB.Weapons.Count != 6 || DB.Costumes.Count != 6 || DB.Enemies.Count < 11) return $"DB counts {DB.Weapons.Count}/{DB.Costumes.Count}/{DB.Enemies.Count}";
+                if (DB.Weapons.Count != 5 || DB.Costumes.Count != 6 || DB.Enemies.Count < 11) return $"DB counts {DB.Weapons.Count}/{DB.Costumes.Count}/{DB.Enemies.Count}";
                 // The source must be the imported PNG; the idle pose may be a runtime copy with corrected eye pixels.
                 var source = Art.Get($"rabbit_{DB.Costumes[0].id}_Idle0", () => null);
                 var rabbit = Art.Rabbit(DB.Costumes[0], Pose.Idle0);
@@ -758,17 +772,17 @@ namespace Diverse.EditorTools
                 }
             }
 
-            string Exercise(WeaponKind wk)
+            string Exercise(WeaponType wk)
             {
                 var p = Game.I.Player;
                 if (p == null || !p.Alive) return "no live player";
-                if (p.Weapon.kind != wk) return "wrong weapon";
+                if (p.Weapon.type != wk) return "wrong weapon";
                 if (ReferenceEquals(p.Weapon, DB.W(wk))) return "player shares the asset's WeaponDef (smith upgrades would edit the asset)";
                 if (Object.FindFirstObjectByType<DeveloperMode>() == null) return "developer tools missing";
                 var attackInputError = CheckAttackInput(p);
                 if (attackInputError != null) return attackInputError;
 
-                if (wk == WeaponKind.Crossbow)
+                if (wk == WeaponType.Bow)
                 {
                     var clone = Clone.Spawn(p, p.Pos + Vector2.left * 2, 1, 1, true, false, Element.None, "REGRESSION", 0);
                     p.AimPoint = p.Pos + Vector2.up * 5;
@@ -786,7 +800,7 @@ namespace Diverse.EditorTools
                 if (e.Alive) return "enemy survived lethal damage";
 
                 Pickup.Drop("gold", 3, p.Pos + Vector2.up, 2);
-                Clone.Spawn(p, p.Pos + Vector2.left, 1f, 1f, false, wk == WeaponKind.Dagger, Element.Fire, "TEST", 0);
+                Clone.Spawn(p, p.Pos + Vector2.left, 1f, 1f, false, wk == WeaponType.Dagger, Element.Fire, "TEST", 0);
                 Summon.Turret(p, p.Pos + Vector2.down, 1f, 1f, Element.Frost, "TEST");
                 Summon.Orb(p, 1f, 1f, Element.None, 0, 1, "TEST");
                 Summon.Zone(p, p.Pos, 1f, 1f, Element.Poison, "TEST");

@@ -338,4 +338,45 @@ MonoBehaviour:
   skillTrailPixels: 20
   skillTrailStartDistance: 0.3
   skillTrailInterval: 0.055
+  arrowWakePixels: 1.25
+  arrowWakeSeconds: 0.14
+  bulletWakePixels: 1.75
+  bulletWakeSeconds: 0.095
+  magicWakePixels: 3.5
+  magicWakeSeconds: 0.21
+  bladeWakePixels: 2.4
+  bladeWakeSeconds: 0.145
   skillUltimateScale: 1.15
+  cutHit:
+  - {fileID: 21300000, guid: d6e68a86d71d4d2cbcc81a7ea58c0020, type: 3}
+  - {fileID: 21300000, guid: d6e68a86d71d4d2cbcc81a7ea58c0021, type: 3}
+  - {fileID: 21300000, guid: d6e68a86d71d4d2cbcc81a7ea58c0022, type: 3}
+  - {fileID: 21300000, guid: d6e68a86d71d4d2cbcc81a7ea58c0023, type: 3}
+  - {fileID: 21300000, guid: d6e68a86d71d4d2cbcc81a7ea58c0024, type: 3}
+  muzzleSeconds: 0.14
+  cutSeconds: 0.13
+  cutScale: 0.72
+  basicSweepRadiusPixels: 29
+  placementWindup: 0.13
+  placementSquash: 0.95
+  placementHandDrop: 0.14
+  bluntHit:
+  - {fileID: 21300000, guid: 046e4b820b7e50c98409192e727c59d9, type: 3}
+  - {fileID: 21300000, guid: 37d73402655d5dd8a5923d0d4672f16d, type: 3}
+  - {fileID: 21300000, guid: 3f694110b59c5637968f1df51492bab7, type: 3}
+  - {fileID: 21300000, guid: 1e18f6d5ee6857d19c8a386d39965385, type: 3}
+  daggerHit:
+  - {fileID: 21300000, guid: a169a33ba7ca562e9f75bc6ad2c1f60c, type: 3}
+  - {fileID: 21300000, guid: d3e797cf57e658dcbed9f0472e0a0c4a, type: 3}
+  - {fileID: 21300000, guid: ea7b4b5dbcc75ad89ec7d02dc10b9d72, type: 3}
+  - {fileID: 21300000, guid: e9fe952e47065bcc845ca8e5bcc8f573, type: 3}
+  gunFlash:
+  - {fileID: 21300000, guid: 78335b0cd0f95b8183058ebcf19f912b, type: 3}
+  - {fileID: 21300000, guid: 9d241907fd575e9185133c2f033f247a, type: 3}
+  - {fileID: 21300000, guid: d8f5db1531e357b2b680338b37b00223, type: 3}
+  - {fileID: 21300000, guid: 8b17f6b55c045987b2bf93bbe734df01, type: 3}
+  crystalHit:
+  - {fileID: 21300000, guid: 26ce46b72cd2525e8e406422f823b69e, type: 3}
+  - {fileID: 21300000, guid: 4a9652a6662852a58e0e32ca8c6ba9ba, type: 3}
+  - {fileID: 21300000, guid: 03b49a53b49b57d6bcfbe3e0bba9d0e2, type: 3}
+  - {fileID: 21300000, guid: 7f7106394f3650c6af9f1f844953e8b3, type: 3}

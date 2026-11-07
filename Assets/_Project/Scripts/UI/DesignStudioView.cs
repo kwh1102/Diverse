@@ -361,7 +361,7 @@ namespace Diverse
             var committed = DesignStore.Commit(working);
             Session.World.designId = committed.id;
             SaveSystem.SaveWorld(Session.World);
-            Session.NewLife(DesignStore.CostumeOf(committed), DesignRuntime.Chassis(committed));
+            Session.NewLife(DesignStore.CostumeOf(committed), DesignRuntime.TypeOf(committed));
         }
 
         void ApplyInGame()
@@ -414,7 +414,7 @@ namespace Diverse
                      : phase < 3f ? ((int)(t * 2.2f) % 2 == 0 ? Pose.Idle0 : Pose.Idle1)
                      : phase < 3.3f ? Pose.AttackWind : phase < 3.7f ? Pose.AttackHit : Pose.Idle0;
             UIKit.Sprite(hero, Art.Rabbit(previewCostume, pose));
-            var kind = InGame ? game.Player.Weapon.kind : DesignRuntime.Chassis(working);
+            var kind = InGame ? game.Player.Weapon.type : DesignRuntime.TypeOf(working);
             UIKit.Sprite(heroWeapon, DesignRuntime.WeaponHidden ? null : inGameWeaponPreview != null ? inGameWeaponPreview : Art.Weapon(kind));
             UIKit.Show(flipWeapon, (InGame ? inGameWeaponImage : working.weapon.image) != null && !DesignRuntime.WeaponHidden);
             if(flipWeapon!=null) flipWeapon.interactable=!busy;
@@ -424,8 +424,8 @@ namespace Diverse
             var combat = InGame ? game.Player.Inventory?.Active?.design ?? working : working;
             var shot = combat.attack.projectile;
             var b = InGame ? game.Player.Weapon : DesignCombat.For(working) ?? DB.W(kind);
-            bool shoots = shot.image != null || shot.shape != "builtin" || shot.pixels != null || b.combo.Any(s => s.projectile) || kind == WeaponKind.Dagger;
-            UIKit.Sprite(projectile, shoots ? (kind == WeaponKind.Dagger && shot.image == null && shot.shape == "builtin" && shot.pixels == null ? Art.Knife() : Art.Bolt()) : null);
+            bool shoots = shot.image != null || shot.shape != "builtin" || shot.pixels != null || b.combo.Any(s => s.projectile) || kind == WeaponType.Dagger;
+            UIKit.Sprite(projectile, shoots ? (kind == WeaponType.Dagger && shot.image == null && shot.shape == "builtin" && shot.pixels == null ? Art.Knife() : Art.Bolt()) : null);
             // Only the fully drawn frames of the swing (the first ones are still sweeping in and look cut off)
             var swing = Art.Slash(b.slashColor, b.slashCore, 14, 160, 1);
             UIKit.Sprite(slash, swing[Mathf.Min(swing.Length - 1, swing.Length / 2 + (int)(t * 5) % Mathf.Max(1, swing.Length - swing.Length / 2))]);
@@ -475,7 +475,7 @@ namespace Diverse
         {
             var p = working;
             string body = $"<b>{p.hero.name ?? "이름 없는 영웅"}</b> · {(p.travelSelected ? TravelTypes.Name(p.travelType) : "유형 미선택")}";
-            string combat = $"{(DesignCombat.For(p) ?? DB.W(DesignRuntime.Chassis(p))).name} · {Ko(p.attack.origin)}에서 발사";
+            string combat = $"{(DesignCombat.For(p) ?? DB.W(DesignRuntime.TypeOf(p))).name} · {Ko(p.attack.origin)}에서 발사";
             var lines = new List<string> { body, combat };
             if (!string.IsNullOrEmpty(p.summary)) lines.Add($"<color=#c9bcd8>{p.summary}</color>");
             foreach (var s in p.ignored) lines.Add($"<color=#ffb36b>✕ {s}</color>");

@@ -10,15 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b38983f8cd9ca7147af9441aa9423c25, type: 3}
-  m_Name: SwordShield
+  m_Name: SwordProfile
   m_EditorClassIdentifier: 
   def:
-    kind: 1
+    kind: 0
     type: 0
-    name: "\uAC80\uACFC \uBC29\uD328"
-    desc: "\uADE0\uD615 \uC7A1\uD78C \uC5F0\uACA9\uACFC \uB2E8\uB2E8\uD55C \uBC29\uD328.
-      \uB9C9\uACE0 \uB418\uBC1B\uC544\uCE5C\uB2E4."
-    tags: SWORD SHIELD MELEE
+    name: 검
+    desc: 넓게 베고 틈을 찌르는 균형형 검
+    tags: SWORD MELEE
     slashColor:
       serializedVersion: 2
       rgba: 4294960063
@@ -33,7 +32,7 @@ MonoBehaviour:
     - windup: 0.05
       recovery: 0.17
       range: 1.7
-      arc: 140
+      arc: 168
       damage: 0.9
       lunge: 0.25
       knockback: 2.5

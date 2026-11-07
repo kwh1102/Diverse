@@ -96,6 +96,18 @@ namespace Diverse
             }
             ActiveSkillStyle.Ensure(a);
         }
+        public static void WarmCombat(ActiveSkillData a)
+        {
+            if (a.steps == null) return;
+            var rules = ActiveSkillGenerator.Rules;
+            foreach (var step in a.steps)
+            {
+                if (step == null) continue;
+                Effect(a, step, step.delivery == "projectile" ? 3 : 0, rules.effectPixels);
+                if (step.effect is not ("shield" or "heal" or "block")) Effect(a, step, 1, rules.impactPixels);
+                if (step.delivery == "projectile" || ActiveSkillGenerator.Moving(step)) Effect(a, step, 2, rules.projectilePixels);
+            }
+        }
         public static Sprite[] FlyingFrames(ActiveSkillData a, ActiveStep step) => ActiveSkillPresentation.Effect(a, step, 2, ActiveSkillGenerator.Rules.projectilePixels);
         public static Sprite Shot(ActiveSkillData a, ActiveStep step) => FlyingFrames(a, step)?[0] ?? ActiveSkillVisuals.Shot(a, step);
         public static Sprite[] Effect(ActiveSkillData a, ActiveStep step, int cell, int size) => ActiveSkillPresentation.Effect(a, step, cell, size);

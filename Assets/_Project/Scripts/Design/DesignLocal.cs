@@ -151,23 +151,18 @@ namespace Diverse
 
             if (!lockChassis)
             {
-                w.baseWeapon = w.shape == "wand" ? nameof(WeaponKind.Staff)
-                    : shoots || w.shape == "bow" ? nameof(WeaponKind.Crossbow)
-                    : Any(s, "마법", "주문", "마력") ? nameof(WeaponKind.Staff)
-                    : Any(s, "방패") ? nameof(WeaponKind.SwordShield)
-                    : w.shape is "axe" or "hammer" or "club" || Any(s, "묵직", "대검", "거대") ? nameof(WeaponKind.Greatsword)
-                    : w.shape == "curved" || Any(s, "베기", "베어") ? nameof(WeaponKind.Katana)
-                    : w.shape is "needle" or "spear" || Any(s, "찌르", "단검", "재빠") ? nameof(WeaponKind.Dagger)
-                    : w.baseWeapon;
-                // Attack parts = that fighting style's combo (DesignCombat rebalances it like any designed weapon)
-                var style = DB.W(System.Enum.TryParse(w.baseWeapon, out WeaponKind k) ? k : WeaponKind.Greatsword);
-                w.moves = style.combo.Select(DesignCombat.Classify).Take(4).ToList();
+                w.type = Any(s, "총", "권총", "소총", "gun", "pistol", "rifle") ? WeaponType.Gun
+                    : w.shape == "wand" ? WeaponType.Staff
+                    : shoots || w.shape == "bow" ? WeaponType.Bow
+                    : Any(s, "마법", "주문", "마력") ? WeaponType.Staff
+                    : w.shape is "needle" or "spear" || Any(s, "찌르", "단검", "재빠") ? WeaponType.Dagger
+                    : w.shape is "axe" or "hammer" or "club" or "curved" || Any(s, "베기", "베어", "방패") ? WeaponType.Sword
+                    : DesignRuntime.TypeOf(p);
+                var profile = DB.W(w.type);
+                w.baseWeapon = profile.kind.ToString();
+                w.moves = profile.combo.Select(DesignCombat.Classify).Take(4).ToList();
                 w.weight = "medium";
                 w.skills = null;
-                w.type = Any(s, "총", "권총", "소총", "gun", "pistol", "rifle") ? WeaponType.Gun
-                    : w.baseWeapon == nameof(WeaponKind.Crossbow) ? WeaponType.Bow
-                    : w.baseWeapon == nameof(WeaponKind.Staff) ? WeaponType.Staff
-                    : w.baseWeapon == nameof(WeaponKind.Dagger) ? WeaponType.Dagger : WeaponType.Sword;
             }
         }
     }

@@ -18,5 +18,15 @@ namespace Diverse
         public float skillProjectilePixels = 26, skillProjectileMinThickness = 5, skillProjectileMaxPixels = 40;
         public float skillMuzzlePixels = 28, skillTrailPixels = 20, skillTrailStartDistance = .3f, skillTrailInterval = .055f;
         public float skillUltimateScale = 1.15f;
+        [Header("Combat cues")]
+        public Sprite[] cutHit;
+        public Sprite[] bluntHit, daggerHit, gunFlash, crystalHit;
+        [Header("Projectile ribbons (native pixel width)")]
+        public float arrowWakePixels = 1.25f, arrowWakeSeconds = .14f;
+        public float bulletWakePixels = 1.75f, bulletWakeSeconds = .095f;
+        public float magicWakePixels = 3.5f, magicWakeSeconds = .21f;
+        public float bladeWakePixels = 2.4f, bladeWakeSeconds = .145f;
+        public float muzzleSeconds = .14f, cutSeconds = .13f, cutScale = .72f, basicSweepRadiusPixels = 29;
+        public float placementWindup = .13f, placementSquash = .95f, placementHandDrop = .14f;
     }
 }

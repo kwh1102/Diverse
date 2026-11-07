@@ -32,6 +32,7 @@ namespace Diverse
         public bool acquisitionApplied;
         [NonSerialized] public float cooldownUntil;
         public float cooldownRemaining;
+        public int spentSkillCharges;
         [NonSerialized] AbilityDef ability;
         public AbilityDef Ability => ability ??= part?.ToAbility();
         public bool Placed => x >= 0 && y >= 0;

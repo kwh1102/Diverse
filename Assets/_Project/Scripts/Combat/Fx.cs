@@ -62,6 +62,14 @@ namespace Diverse
         int partCursor;
         readonly List<Ghost> ghosts = new List<Ghost>();
         readonly List<Popup> pops = new List<Popup>();
+        class Ribbon
+        {
+            public TrailRenderer renderer;
+            public Projectile shot;
+            public float remaining;
+        }
+        readonly List<Ribbon> ribbons = new();
+        static readonly AnimationCurve ribbonWidth = new(new Keyframe(0, 1), new Keyframe(.46f, .55f), new Keyframe(1, .02f));
         [SerializeField] Font font;       // damage numbers (Galmuri11-Bold)
         [Header("Damage numbers")]
         [SerializeField, Tooltip("Size multiplier of every damage number.")] float numberSize = 2.6f;
@@ -118,6 +126,55 @@ namespace Diverse
             a.sr.sharedMaterial = additive ? Art.AddMat : Art.SpriteMat;
             a.sr.sortingOrder = order != 0 ? order : Art.SortY(pos.y) + 40;
             return a.sr;
+        }
+
+        public void TrackProjectile(Projectile shot, Color color, float pixels, float seconds)
+        {
+            var ribbon = ribbons.Find(r => !r.renderer.gameObject.activeSelf);
+            if (ribbon == null)
+            {
+                var go = new GameObject("projectile ribbon");
+                go.transform.SetParent(transform, false);
+                var renderer = go.AddComponent<TrailRenderer>();
+                renderer.sharedMaterial = Art.RibbonMat;
+                renderer.widthCurve = ribbonWidth;
+                renderer.minVertexDistance = 1f / Art.PPU;
+                ribbon = new Ribbon { renderer = renderer };
+                ribbons.Add(ribbon);
+            }
+            var trail = ribbon.renderer;
+            trail.gameObject.SetActive(true);
+            trail.transform.position = shot.transform.position;
+            trail.Clear();
+            trail.time = seconds;
+            trail.widthMultiplier = pixels / Art.PPU;
+            var core = Color.Lerp(color, Pal.White, .55f);
+            trail.colorGradient = new Gradient {
+                colorKeys = new[] { new GradientColorKey(core, 0), new GradientColorKey(color, .45f), new GradientColorKey(color, 1) },
+                alphaKeys = new[] { new GradientAlphaKey(.88f, 0), new GradientAlphaKey(.70f, .48f), new GradientAlphaKey(0, 1) }
+            };
+            trail.sortingOrder = shot.VisualOrder - 1;
+            trail.emitting = true;
+            ribbon.shot = shot;
+            ribbon.remaining = seconds;
+        }
+
+        void LateUpdate()
+        {
+            foreach (var ribbon in ribbons)
+            {
+                var trail = ribbon.renderer;
+                if (!trail.gameObject.activeSelf) continue;
+                if (ribbon.shot != null)
+                {
+                    trail.transform.position = ribbon.shot.transform.position;
+                    trail.sortingOrder = ribbon.shot.VisualOrder - 1;
+                    continue;
+                }
+                trail.emitting = false;
+                ribbon.remaining -= Time.deltaTime;
+                if (ribbon.remaining <= 0) trail.gameObject.SetActive(false);
+            }
         }
 
         // ───────── 파티클 (도트 사각형) ─────────
@@ -359,6 +416,7 @@ namespace Diverse
             foreach (var p in parts) { p.active = false; p.go.SetActive(false); }
             foreach (var g in ghosts) { g.active = false; g.go.SetActive(false); }
             foreach (var p in pops) { p.active = false; p.go.SetActive(false); }
+            foreach (var r in ribbons) { r.shot = null; r.renderer.Clear(); r.renderer.gameObject.SetActive(false); }
         }
 
         // ───────── 자주 쓰는 조합 ─────────

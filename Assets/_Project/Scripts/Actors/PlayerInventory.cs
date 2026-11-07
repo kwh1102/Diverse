@@ -29,7 +29,15 @@ namespace Diverse
             foreach (var item in copy.items)
             {
                 var live = Inventory.Find(item.id);
-                item.cooldownRemaining = Mathf.Max(0, live.cooldownUntil - Time.time);
+                item.cooldownRemaining = live.cooldownUntil - Time.time;
+                if (item.spentSkillCharges > 0 && ActiveSkillGenerator.UsesTrapCharges(item.active))
+                {
+                    var state = new SkillState { cd = item.cooldownRemaining, spentCharges = item.spentSkillCharges, def = SkillDB.Get(item) };
+                    state.Tick(0, state.def.cooldown * (1 - Stats[StatId.CooldownReduction]));
+                    item.cooldownRemaining = state.cd;
+                    item.spentSkillCharges = state.spentCharges;
+                }
+                item.cooldownRemaining = Mathf.Max(0, item.cooldownRemaining);
             }
             return copy;
         }
@@ -43,14 +51,17 @@ namespace Diverse
             foreach (var i in Inventory.items)
             {
                 i.cooldownUntil = Time.time + i.cooldownRemaining;
-                if (i.kind == ItemKind.Weapon && i.design != null)
+                if (i.kind == ItemKind.Weapon)
                 {
-                    // Inventory JSON bypasses DesignStore.Load/DesignPack.Clone: normalize optional arrays here too.
-                    DesignGuard.Sanitize(i.design);
-                    i.weapon.origin = DesignCombat.For(i.design);
-                    i.weapon.type = i.design.weapon.type;
+                    if (i.design != null)
+                    {
+                        // Inventory JSON bypasses DesignStore.Load/DesignPack.Clone.
+                        DesignGuard.Sanitize(i.design);
+                        i.weapon.origin = DesignCombat.For(i.design);
+                    }
+                    if (Inventory.version < 2)
+                        i.weapon.type = i.weapon.origin?.type ?? DB.ReadWeaponType(-1, (int)i.weapon.kind);
                 }
-                else if (i.kind == ItemKind.Weapon && Inventory.version < 2) i.weapon.type = DB.W(i.weapon.kind).type;
                 if (i.kind == ItemKind.Skill && i.active == null)
                 {
                     var source = Inventory.Find(i.sourceWeapon);
@@ -78,7 +89,11 @@ namespace Diverse
             foreach (var kv in inventorySkills)
             {
                 var item = Inventory.Find(kv.Key);
-                if (item != null && System.Array.IndexOf(Skills, kv.Value) >= 0) item.cooldownUntil = Time.time + Mathf.Max(0, kv.Value.cd);
+                if (item != null && System.Array.IndexOf(Skills, kv.Value) >= 0)
+                {
+                    item.cooldownUntil = Time.time + Mathf.Max(0, kv.Value.cd);
+                    item.spentSkillCharges = kv.Value.spentCharges;
+                }
             }
         }
 
@@ -113,9 +128,12 @@ namespace Diverse
                 if (!inventorySkills.TryGetValue(item.id, out var s) || s.def?.active != item.active)
                 {
                     var d = SkillDB.Get(item);
+                    if (d?.active != null) ActiveSkillArt.WarmCombat(d.active);
                     inventorySkills[item.id] = s = new SkillState { id = item.skillId, def = d };
                 }
-                s.cd = Mathf.Max(0, item.cooldownUntil - Time.time);
+                s.cd = item.cooldownUntil - Time.time;
+                s.spentCharges = Mathf.Clamp(item.spentSkillCharges, 0, s.Capacity);
+                s.Tick(0, s.def.cooldown * (1 - Stats[StatId.CooldownReduction]));
                 Skills[slot] = s;
             }
             var wanted = new HashSet<AbilityDef>(attached.Where(i => i.kind == ItemKind.Part && i.Ability != null).Select(i => i.Ability));
@@ -141,7 +159,7 @@ namespace Diverse
         }
         public InventoryItem GrantSkill(ActiveSkillData active)
         {
-            var weapon = Inventory.items.FirstOrDefault(i => i.kind == ItemKind.Weapon && ActiveSkillGenerator.TypeOf(i) == active.weaponType);
+            var weapon = ActiveSkillSynergy.WeaponFor(this, active.weaponType);
             var item = new InventoryItem { kind = ItemKind.Skill, active = active, skillId = active.id, skillSlot = active.slot,
                 name = active.name, sourceWeapon = weapon?.id };
             claimedSkillMask |= 1 << active.slot;

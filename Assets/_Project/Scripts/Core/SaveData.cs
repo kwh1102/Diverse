@@ -31,6 +31,7 @@ namespace Diverse
         public List<WarpStone> warpStones = new List<WarpStone>();                // placed warp stones (shared by every life)
         public string lastCostume = "white";
         public int lastWeapon;
+        public int lastWeaponType = -1;
         public List<TravelType> unlockedTravelTypes = new List<TravelType>();
         public string designId;               // this world's look (designs/<id>.json); empty = the built-in art
         public int designCalls;               // AI design generations in this world (shown in the studio)
@@ -58,6 +59,7 @@ namespace Diverse
         public int life;
         public string heroName, costume;
         public int weapon;
+        public int weaponType = -1;
         public float weaponDamage;
         public int level = 1;
         public float xp, xpToNext = 60;
@@ -85,6 +87,7 @@ namespace Diverse
         public string heroName;
         public string costume;
         public int weapon;
+        public int weaponType = -1;
         public int level;
         public float x, y;
         public string cause;

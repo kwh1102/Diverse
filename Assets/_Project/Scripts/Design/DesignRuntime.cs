@@ -7,7 +7,7 @@ namespace Diverse
 {
     /// <summary>
     /// The design pack currently drawn. Activating one resets Art's sprite cache and registers sprite overrides
-    /// (weapon_&lt;kind&gt;, bolt, knife). The built-in world and enemies are never redrawn.
+    /// (weapon_type_&lt;type&gt;, bolt, knife). The built-in world and enemies are never redrawn.
     /// Pictures come from DesignStore (generated + pixelized); without them the local shape fallback is used.
     /// Numbers never come from here: a designed weapon is built by DesignCombat from the existing weapon assets.
     /// </summary>
@@ -20,12 +20,11 @@ namespace Diverse
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics() { Active = DesignPack.Default(); CombatPack = DesignPack.Default(); activeJson = null; effects.Clear(); activeWeapon = null; }
 
-        /// <summary>The WeaponKind this pack plays as: its designed weapon's internal kind, or the classic fallback.</summary>
-        public static WeaponKind Chassis(DesignPack p)
+        public static WeaponType TypeOf(DesignPack pack)
         {
-            var w = DesignCombat.For(p);
-            if (w != null) return w.kind;
-            return Enum.TryParse(p?.weapon?.baseWeapon, out WeaponKind k) ? k : WeaponKind.Greatsword;
+            var look = pack?.weapon;
+            if (DesignCombat.IsDesigned(look) || (look != null && look.type != WeaponType.Sword)) return look.type;
+            return Enum.TryParse(look?.baseWeapon, out WeaponKind kind) ? DB.ReadWeaponType(-1, (int)kind) : WeaponType.Sword;
         }
 
         /// <summary>Draw with this pack from now on. Returns false when it was already active (nothing to redraw).</summary>
@@ -44,7 +43,7 @@ namespace Diverse
             // Generated weapon pictures point right with the grip at the left edge
             var wtex = DesignStore.Image(p.weapon.image);
             var weapon = wtex != null ? DesignStore.Sprite(p.weapon.image, new Vector2(2f / wtex.width, 0.5f)) : DesignArt.Weapon(p.weapon);
-            if (weapon != null) Art.Override("weapon_" + Chassis(p), weapon);
+            if (weapon != null) Art.Override("weapon_type_" + TypeOf(p), weapon);
             var shot = DesignStore.Sprite(p.attack.projectile.image, new Vector2(0.5f, 0.5f)) ?? DesignArt.Projectile(p.attack.projectile, p.weapon);
             if (shot != null) { Art.Override("bolt", shot); Art.Override("knife", shot); }
             return true;
@@ -62,7 +61,7 @@ namespace Diverse
             if (pack == null) return;
             var tex = DesignStore.Image(pack.weapon.image);
             var sprite = tex != null ? DesignStore.Sprite(pack.weapon.image, new Vector2(2f / tex.width, .5f)) : DesignArt.Weapon(pack.weapon);
-            if (sprite != null) Art.Override("weapon_" + weapon.kind, sprite);
+            if (sprite != null) Art.Override("weapon_type_" + weapon.type, sprite);
             var shot = DesignStore.Sprite(pack.attack.projectile.image, new Vector2(.5f,.5f)) ?? DesignArt.Projectile(pack.attack.projectile, pack.weapon);
             if (shot != null) { Art.Override("bolt", shot); Art.Override("knife", shot); }
         }
@@ -81,7 +80,7 @@ namespace Diverse
         /// </summary>
         public static void Skin(WeaponDef w)
         {
-            var src = w.origin != null ? DesignCombat.For(CombatPack) ?? w.origin : DB.W(w.kind);
+            var src = w.origin != null ? DesignCombat.For(CombatPack) ?? w.origin : DB.W(w.type);
             w.name = src.name;
             w.slashColor = src.slashColor;
             w.slashCore = src.slashCore;
@@ -167,7 +166,6 @@ namespace Diverse
         public static Sprite[] SwingFx(Color32 col, int radiusPx) => Mine(col) && CombatPack.attack.effectFrames == 4 ? EffectOf(0, DesignArt.EffectKind.Swing, radiusPx * 2) : null;
         public static Sprite[] ThrustFx(Color32 col, int lengthPx) => null; // A thrust uses its native directional stroke, never a stretched crescent.
         public static Sprite[] ImpactFx(Color32 col, int sizePx) => Mine(col) ? EffectOf(1, DesignArt.EffectKind.Impact, sizePx * 2) : null;
-        public static Sprite[] TrailFx => EffectOf(2, DesignArt.EffectKind.Trail, 10);
         public static Sprite[] MuzzleFx => EffectOf(3, DesignArt.EffectKind.Muzzle, 16);
     }
 }

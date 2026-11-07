@@ -95,7 +95,12 @@ namespace Diverse
                 }
                 if (d.impactFx != null) Fx.I?.Play(d.impactFx, at, d.impactUnrotated?0:d.direction.Angle(),
                     d.impactSeconds>0?d.impactFx.Length/d.impactSeconds:20,d.impactScale>0?d.impactScale:1,null,!d.normalImpactBlend);
-                else Fx.I?.HitSpark(at, d.direction.SafeNormal(Vector2.right), d.fxColor ?? fxColor, d.crit, d.crit ? 1.3f : 1f, Mathf.Clamp01(d.knockback / 5f));
+                if (d.hitVisual != HitVisual.Generic)
+                    CombatVisuals.WeaponContact(d.hitVisual, at, d.direction.SafeNormal(Vector2.right), d.fxColor ?? fxColor, d.crit, d.impactFx != null);
+                else if (d.impactFx == null)
+                    Fx.I?.HitSpark(at, d.direction.SafeNormal(Vector2.right), d.fxColor ?? fxColor, d.crit, d.crit ? 1.3f : 1f, Mathf.Clamp01(d.knockback / 5f));
+                if (d.impactCutAngle != 0)
+                    CombatVisuals.TargetCut(at, d.impactDirection.SafeNormal(d.direction), d.impactCutAngle, d.crit);
                 Sfx.Play(d.crit ? "crit" : sfx, d.crit ? 0.9f : 0.7f);
             }
             if (Game.Settings.damageNumbers && Fx.I != null)

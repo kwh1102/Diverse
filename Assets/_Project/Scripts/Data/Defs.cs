@@ -59,7 +59,7 @@ namespace Diverse
         /// <summary>Designed weapons (DesignCombat): the built template. Asset weapons: null.</summary>
         [NonSerialized] public WeaponDef origin;
         /// <summary>What the smith compares upgrades against.</summary>
-        public WeaponDef Origin => origin ?? DB.W(kind);
+        public WeaponDef Origin => origin ?? DB.W(type);
     }
 
     /// <summary>One costume perk line: stat += value (Add) or stat *= 1 + value (Mul).</summary>
@@ -200,7 +200,7 @@ namespace Diverse
     /// </summary>
     public static class DB
     {
-        public static readonly Dictionary<WeaponKind, WeaponDef> Weapons = new Dictionary<WeaponKind, WeaponDef>();
+        public static readonly Dictionary<WeaponType, WeaponDef> Weapons = new Dictionary<WeaponType, WeaponDef>();
         public static readonly List<CostumeDef> Costumes = new List<CostumeDef>();
         public static readonly Dictionary<string, EnemyDef> Enemies = new Dictionary<string, EnemyDef>();
         public static GameDatabase Asset { get; private set; }
@@ -208,7 +208,7 @@ namespace Diverse
         static DB()
         {
             Asset = GameDatabase.Load();
-            foreach (var w in Asset.weapons) if (w != null) Weapons[w.def.kind] = w.def;
+            foreach (var w in Asset.weapons) if (w != null) Weapons[w.def.type] = w.def;
             foreach (var c in Asset.costumes) if (c != null) Costumes.Add(c.def);
             foreach (var e in Asset.enemies) if (e != null) Enemies[e.def.id] = e.def;
             foreach (var t in Asset.themes) if (t != null) { t.def.index = Themes.Count; Themes.Add(t.def); }
@@ -232,7 +232,20 @@ namespace Diverse
         public static ThemeDef ThemeOf(CombatType c) => CombatTypes.TryGetValue(c, out var d) && d.theme != null ? d.theme.def : SpawnTheme;
         /// <summary>The theme drawn with a biome's art (custom-mode worlds pick biomes by noise).</summary>
         public static ThemeDef ThemeForBiome(Biome b) => Themes.Find(t => t.biome == b) ?? SpawnTheme;
-        public static WeaponDef W(WeaponKind k) => Weapons[k];
+        public static WeaponDef W(WeaponType type) => Weapons[type];
+        public static WeaponDef W(WeaponKind legacy) => W(ReadWeaponType(-1, (int)legacy));
+
+        public static WeaponType ReadWeaponType(int type, int legacy)
+        {
+            if (type >= (int)WeaponType.Sword && type <= (int)WeaponType.Dagger) return (WeaponType)type;
+            return (WeaponKind)legacy switch
+            {
+                WeaponKind.Crossbow => WeaponType.Bow,
+                WeaponKind.Staff => WeaponType.Staff,
+                WeaponKind.Dagger => WeaponType.Dagger,
+                _ => WeaponType.Sword,
+            };
+        }
         public static CostumeDef Costume(string id) => DesignStore.Costume(id) ?? Costumes.Find(c => c.id == id) ?? Costumes[0];
         public static EnemyDef Enemy(string id) => Enemies.TryGetValue(id, out var e) ? e : Enemies["shroom"];
 

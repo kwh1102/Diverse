@@ -22,7 +22,7 @@ namespace Diverse
         // Menu → game scene hand-off
         public static StartKind Start;
         public static CostumeDef StartCostume;
-        public static WeaponKind StartWeapon;
+        public static WeaponType StartWeapon;
         /// <summary>Game → menu: open the character select right away (after a death).</summary>
         public static bool OpenCharacterSelect;
 
@@ -76,7 +76,7 @@ namespace Diverse
 
         public static bool HasRunToContinue => PendingRun != null && World != null && PendingRun.life == World.lifeCount;
 
-        public static void NewLife(CostumeDef costume, WeaponKind weapon)
+        public static void NewLife(CostumeDef costume, WeaponType weapon)
         {
             Start = StartKind.NewLife; StartCostume = costume; StartWeapon = weapon;
             SceneManager.LoadScene(GameScene);
@@ -101,7 +101,7 @@ namespace Diverse
             if (r == null) return;
             var grave = new GraveRecord
             {
-                life = r.life, heroName = r.heroName, costume = r.costume, weapon = r.weapon, level = r.level, kills = r.kills,
+                life = r.life, heroName = r.heroName, costume = r.costume, weapon = r.weapon, weaponType = r.weaponType, level = r.level, kills = r.kills,
                 x = r.x, y = r.y, cause = "긴 방랑",
             };
             foreach (var rec in r.abilities.Select(a => (rec: a, g: a.ToAbility())).Where(t => t.g != null && t.g.tier >= 1).OrderByDescending(t => t.g.tier).Take(2))

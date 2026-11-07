@@ -4,6 +4,7 @@ using UnityEngine;
 namespace Diverse
 {
     public enum Team { Player, Enemy, Neutral }
+    public enum HitVisual { Generic, Blade, Dagger, Blunt, Pierce, Arrow, Bullet, Arcane }
 
     public struct DamageInfo
     {
@@ -20,10 +21,13 @@ namespace Diverse
         public bool fromAbility;
         public bool noEvents;          // DoTs, etc.: do not fire Hit events
         public Color32? fxColor;
-        public Sprite[] impactFx;       // dedicated active-skill impact, captured at cast time
+        public Sprite[] impactFx;       // dedicated weapon or skill impact, captured at cast time
         public bool normalImpactBlend;
         public float impactScale, impactSeconds;
         public bool impactUnrotated;
+        public float impactCutAngle;
+        public Vector2 impactDirection;
+        public HitVisual hitVisual;
         public PartAttackState partAttack;
         public float travelled;
 

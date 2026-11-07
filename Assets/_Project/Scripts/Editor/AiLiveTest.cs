@@ -85,7 +85,7 @@ namespace Diverse.EditorTools
                 if (!AiClient.Enabled) { fail = true; L("AI not enabled — put openai_key.txt in DIVERSE_SAVE_DIR"); yield break; }
                 // Menu → start a life
                 yield return null;
-                Session.NewLife(DB.Costumes[0], WeaponKind.SwordShield);
+                Session.NewLife(DB.Costumes[0], WeaponType.Sword);
                 for (int i = 0; i < 120 && (Game.I == null || Game.I.Player == null); i++) yield return null;
                 for (int i = 0; i < 20; i++) yield return null;
                 var g = Game.I;

@@ -85,7 +85,7 @@ namespace Diverse.EditorTools
                 log.AppendLine("info=" + studio.GetComponentsInChildren<Text>(true).First(x => x.name == "Info").text.Replace("\n", " | "));
                 log.AppendLine(JsonUtility.ToJson(p, true));
 
-                var kind = DesignRuntime.Chassis(p);
+                var kind = DesignRuntime.TypeOf(p);
                 Save("weapon", Art.Weapon(kind));
                 Save("projectile", Art.Bolt());
                 Save("hero", Art.Rabbit(DesignStore.PreviewCostume(p), Pose.Idle0));

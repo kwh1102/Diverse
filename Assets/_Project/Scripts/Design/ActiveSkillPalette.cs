@@ -26,14 +26,16 @@ namespace Diverse
             }).GroupBy(p => (p.r/32,p.g/32,p.b/32)).OrderByDescending(g => g.Count()).FirstOrDefault();
             return group != null ? group.First() : primary;
         }
-        public static Sprite[] Frames(ActiveSkillData skill, Sprite[] source)
+        public static Sprite[] Frames(ActiveSkillData skill, Sprite[] source, bool generated = false)
         {
             if (source == null || source.Length == 0) return source;
             ActiveSkillStyle.Ensure(skill);
-            string key = skill.iconImage + ":" + string.Join(",",skill.visualPalette) + ":" + string.Join(",",source.Select(s => s.GetInstanceID()));
+            string key = skill.iconImage + ":" + string.Join(",",skill.visualPalette) + ":" + generated + ":" + string.Join(",",source.Select(s => s.GetInstanceID()));
             if (cache.TryGetValue(key, out var found)) return found;
             Color32 shadow=Pal.Hex(skill.visualPalette[0]), dark=Pal.Hex(skill.visualPalette[1]), primary=Pal.Hex(skill.visualPalette[2]);
             Color32 secondary=Secondary(skill), light=Pal.Hex(skill.visualPalette[3]);
+            Color.RGBToHSV(primary, out float primaryHue, out _, out _);
+            Color.RGBToHSV(secondary, out float secondaryHue, out _, out _);
             var frames = new Sprite[source.Length];
             for (int f=0;f<source.Length;f++)
             {
@@ -45,7 +47,10 @@ namespace Diverse
                     Color32 mapped=value<.25f?shadow:value<.48f?Pal.Lerp(dark,primary,(value-.25f)/.23f):
                         value<.8f?Pal.Lerp(primary,light,(value-.48f)/.32f):Pal.Lerp(light,Pal.White,(value-.8f)/.2f);
                     // Deliberate secondary bands keep material contrast; their colour comes from the icon as well.
-                    if(sat>.3f && value>.3f && value<.75f && hue>.6f && hue<.88f)
+                    bool accent = generated
+                        ? Mathf.Abs(Mathf.DeltaAngle(hue * 360, secondaryHue * 360)) + 18 < Mathf.Abs(Mathf.DeltaAngle(hue * 360, primaryHue * 360))
+                        : hue > .6f && hue < .88f;
+                    if(sat>.3f && value>.3f && value<.75f && accent)
                         mapped=Pal.Lerp(dark,secondary,Mathf.InverseLerp(.25f,.8f,value));
                     mapped.a=p.a;pixels[y*w+x]=mapped;
                 }

@@ -48,7 +48,7 @@ namespace Diverse
             string key=item.kind==ItemKind.Weapon?"weapon:"+item.id:item.kind==ItemKind.Part?"part:"+item.Ability?.tier+":"+item.Ability?.partImage+":"+item.Ability?.Signature():"consumable:"+item.consumable;
             if(cache.TryGetValue(key,out var sprite) && sprite!=null) return sprite;
             if(item.kind==ItemKind.Weapon)
-                return cache[key]=item.design!=null?DesignStore.Sprite(item.design.weapon.image,new Vector2(.5f,.5f))??DesignArt.Weapon(item.design.weapon,centered:true)??BuiltinWeapon(item.weapon.kind):BuiltinWeapon(item.weapon.kind);
+                return cache[key]=item.design!=null?DesignStore.Sprite(item.design.weapon.image,new Vector2(.5f,.5f))??DesignArt.Weapon(item.design.weapon,centered:true)??BuiltinWeapon(item.weapon.type):BuiltinWeapon(item.weapon.type);
             if(item.kind==ItemKind.Part)
             {
                 var generated=Resources.Load<Sprite>(item.Ability?.partImage ?? "") ?? DesignStore.Sprite(item.Ability?.partImage,new Vector2(.5f,.5f));
@@ -69,7 +69,7 @@ namespace Diverse
             c.Rect(5,4,14,16,Pal.Hex("4c465a")); c.Rect(9,15,6,2,light); c.Rect(14,12,2,4,light); c.Rect(11,10,4,2,light); c.Rect(11,7,2,2,light);
             c.Outline(Pal.Hex("23212d")); return cache["pending"]=c.ToSpriteCentered();
         }
-        static Sprite BuiltinWeapon(WeaponKind kind)=>Resources.Load<Sprite>("Sprites/weapon_"+kind)??Art.Weapon(kind);
+        static Sprite BuiltinWeapon(WeaponType type) => Art.StockWeapon(type);
         public static InventoryItem Potion(string kind)=>new InventoryItem {kind=ItemKind.Consumable,consumable=kind,name=kind=="xp"?"경험의 물약":kind=="cleanse"?"정화의 물약":"회복약"};
         public static InventoryItem Preview(AbilityDef a)=>InventoryItem.Part(a);
         public static Sprite Relic()

@@ -24,30 +24,32 @@ Schema: {skills:[{slot:0,name:'Korean',intent:'tactic',role:'burst|precision|sus
 steps:[{delivery:'arc|line|projectile|nova|field|dash|retreat|blink|guard|trap|wall',pattern:'single|fan|ring|chain|return|pierce|seek|curve|bounce|converge',
 effect:'damage|shield|heal|pull|push|stun|mark|block',element:'None|Fire|Frost|Lightning|Shadow|Holy|Poison|Wind|Blood|Void|Arcane',
 condition:'always|marked|burning|chilled|poisoned',timing:'instant|delayed|repeat',origin:'caster|aim|previous|impact',trigger:'after|hit|arrive|expire|recast',consume:false}],linkedMask:0,
-iconPrompt:'one distinct isolated skill symbol matching executable operations',projectilePrompt:'concrete visible flying body motif, same materials and colours as icon, no trail-only description',effectPrompt:'distinct moving silhouette and layered action/impact motif matching this icon and supported operations'}]}.
+linkSlot:-1,linkEvent:'',linkAction:'',iconPrompt:'one distinct isolated skill symbol matching executable operations',projectilePrompt:'concrete visible flying body motif, same materials and colours as icon, no trail-only description',effectPrompt:'distinct moving silhouette and layered action/impact motif matching this icon and supported operations'}]}.
 Use valid JSON with double quotes. Slot indices Q=0 W=1 E=2 R=3; slots never move.
+The first step acts on input or intentional charge release. Later delays telegraph a meaningful setup. Make the trajectory itself matter in play. A homing projectile must gain a distinctive follow-up after impact or arrival. Vary trap footprints by placement plan and vary actions by target, timing and consequence.
+Optional forward link: only when offered an earlier equipped slot/event. linkEvent is impact, placement or arrival; linkAction is burst (area damage), draw (gather), or echo (line from caster to that point). The original graph must be useful independently. Omit link fields for independent choices.
 Most skills must work independently. Soft status synergies must include an unconditional useful step.
 Hard dependencies: only a reciprocal two-slot group within requested slots, linkedMask includes both slots.
 The producer marks targets; the companion must have a marked conditional step and consume it. Other conditions are soft.
 Each stage may reference the PREVIOUS stage position or first impact. hit waits for its first enemy hit; arrive waits for projectile natural arrival or movement completion; expire waits for its completion. recast waits for a second player press.
 The first stage uses caster/aim origin and after trigger. Movement always starts at caster; a recast movement with previous origin returns to the prior movement START position.
 Charge scales power with held time; channel repeats only while held; recast MUST have exactly one later stage with recast trigger. No stage may reference a future stage.
-field is a bounded pulsing ground anchor; trap waits for an enemy then bursts once; wall blocks enemy projectiles along a short line for a bounded duration. No terrain creation or summons.
+Field is a bounded pulsing ground anchor. For a charge-based trap, choose tap input and trap as the first stage. The placed body persists, arms, and catches one eligible enemy. Give a trap a meaningful trigger follow-up or a space-control purpose. Wall blocks enemy projectiles along a short line for a bounded duration. No terrain creation or summons.
 Projectile-only patterns (fan/ring/return/pierce/seek/curve/bounce/converge) apply to projectile delivery. Chain applies to line delivery only.
 Non-damage effects use single pattern, instant timing, no element. guard is shield only. Movement uses single pattern and instant timing.
 Shield and heal are self effects: caster origin, always condition, guard/nova/field delivery (guard is shield only). wall always blocks unconditionally. Chain is line only.
-wall MUST use block effect, single pattern, instant timing, no element. block is wall only. At most two movement steps and one defensive step. R can be powerful but has a long cooldown.
+wall MUST use block effect, single pattern, instant timing, no element. block is wall only. At most two movement steps and one defensive step. R has a long cooldown and a distinct payoff. Give damage R skills a signature swing, zone, hit payoff or staged pattern, and defense R skills a meaningful save or counter.
 Match weapon type: Sword/Dagger use arcs, lines and movement; Bow/Gun use projectiles, lines and retreat; Staff uses any delivery.
 For physical weapon slashes use arc with caster origin, including after movement. Use aim origin only for an explicitly projected or remote slash and describe that distinction in intent and iconPrompt.
 Respect the player's requested concept only when expressible in this schema. Visual descriptions must match executable steps.
 Never repeat a structural signature supplied in RECENT or EXISTING. Different element/colors/names do NOT count as different behavior. Avoid generic damage-plus-free-shield designs.
-Visuals: restrained cute chunky pixel art, one clear symbol, 3-4 flat tones per material, no ornate emblems, excessive flames, particle storms, gradients or photorealistic materials. Define one concrete material and signature silhouette shared by icon and combat art. A wall icon depicts the registered blue-grey masonry panels with walnut posts and pale diamond insets, never a sword slash or floating crest. Match this physical placed construction in the icon; do not invent an unrelated wall body. Combat effects are rendered from EACH executable step; do not invent a visual action that the graph cannot perform.
+Visuals: chunky overhead pixel art, one clear symbol, 3-4 flat tones per material, open negative space. Define one concrete material and signature silhouette shared by icon and combat art, plus how that silhouette breaks or moves on contact. For the candidates, vary contour and motion (for example splintering teeth, a torn ribbon or a staggered metal edge). A wall icon depicts blue-grey masonry panels with walnut posts and pale diamond insets. A trap icon shows a compact ground device with metal jaws and a low pressure plate. Combat effects are rendered from EACH executable step; keep art consistent with the graph.
 Required role semantics (the engine infers these in this priority): mobility has movement; guard has shield/heal/block and no movement; trap has trap delivery and no movement/defense; control has pull/push/stun without the prior features; sustain has channel, field or repeat without the prior features; precision has line/pierce/seek and is not charge; burst is remaining damage-only shapes. Honor the assigned role while varying origins, events, patterns and input styles.";
         [Serializable] class Answer { public List<ActiveSkillData> skills; }
 
         public static WeaponType TypeOf(WeaponDef w) => w.type;
         public static string TypeName(WeaponType t) => t switch { WeaponType.Sword => "검", WeaponType.Bow => "활", WeaponType.Gun => "총", WeaponType.Staff => "봉", _ => "단검" };
-        public static WeaponType TypeOf(InventoryItem w) => w?.design != null ? w.design.weapon.type : TypeOf(w.weapon);
+        public static WeaponType TypeOf(InventoryItem w) => TypeOf(w.weapon);
         public static WeaponFootprint Shape(InventoryItem w) => DB.Asset.abilityRules.def.weaponShapes.First(s => s.type == TypeOf(w));
         public static string SlotName(int slot) => slot >= 0 && slot < 4 ? "QWER"[slot].ToString() : "?";
 
@@ -64,6 +66,12 @@ Required role semantics (the engine infers these in this priority): mobility has
             if (allowAi) yield return constraint.Interpret(request, trace);
             if (constraint.unsupported != null) { trace?.Invoke(constraint.unsupported); done(null); yield break; }
             var roles = PlanRoles(result);
+            var links = types.Select(t => ActiveSkillSynergy.Earlier(owner, t, slot).SelectMany(s =>
+                ActiveSkillSynergy.Events.Where(e => ActiveSkillSynergy.Provides(s, e)).Select(e => (source: s, kind: e))).ToArray()).ToArray();
+            int linkedIndex = result.Any(a => a?.HasSynergy == true) ? -1 :
+                Enumerable.Range(0, 3).Where(i => result[i] == null && links[i].Length > 0)
+                    .Where(i => result.Any(a => a != null && !a.HasSynergy) || result.Count(a => a == null) > 1)
+                    .DefaultIfEmpty(-1).First();
             if (constraint.Constrained) for (int i = 0; i < 3; i++) if (result[i] == null) roles[i] = constraint.Role;
             trace?.Invoke(constraint.Constrained ? "필수 실행 조건: " + constraint.Summary + " · 고정하지 않은 모든 후보에서 검사" : "명시 동작 조건 없음 · 자유 요청을 설계에 전달 (반영 내용은 후보 실행 단계에서 확인)");
             trace?.Invoke("요청: " + (string.IsNullOrWhiteSpace(request) ? "새로운 전술 후보" : request));
@@ -78,7 +86,10 @@ Required role semantics (the engine infers these in this priority): mobility has
             {
                 for (int attempt = 0; attempt < Rules.generationAttempts && result.Any(a => a == null); attempt++)
                 {
-                    string context = $"Create exactly THREE independent alternatives for slot {slot}. This is a selection screen, NOT a QWER set. linkedMask MUST be 0.\n" +
+                    string context = $"Create exactly THREE alternatives for slot {slot}. linkedMask MUST be 0.\n" +
+                        (linkedIndex < 0 ? "All new alternatives are independent.\n" :
+                         $"Alternative index {linkedIndex} must have one optional forward link. Other new alternatives are independent. Allowed sources: " +
+                         string.Join(", ", links[linkedIndex].Select(x => $"linkSlot={x.source.slot} linkEvent={x.kind} ({x.source.name})")) + "\n") +
                         "Index weapon types and role assignments: " + string.Join(",", Enumerable.Range(0,3).Select(i => constraint.Constrained ? $"{i}={types[i]} (role unrestricted; infer from mandatory operations)" : $"{i}={types[i]}/{roles[i]}")) +
                         $"\nPLAYER: {owner.Telemetry.Summary()}\nREQUEST: {request}\n" +
                         "Pinned signatures to avoid: " + string.Join(";", result.Where(a => a != null).Select(a => a.Signature())) +
@@ -102,6 +113,12 @@ Required role semantics (the engine infers these in this priority): mobility has
                             var a = answer.skills[i];
                             if (a == null || a.linkedMask != 0 || !ValidateSet(new List<ActiveSkillData> { a }, types[i], new[] { slot }, out rejection))
                             { trace?.Invoke($"후보 {i + 1} 제외 · 실행 규칙/독립성 검사 실패 ({rejection})"); continue; }
+                            if (a.HasSynergy != (i == linkedIndex) || a.HasSynergy &&
+                                !links[i].Any(x => x.source.slot == a.linkSlot && x.kind == a.linkEvent))
+                            { rejection = "invalid optional forward link"; continue; }
+                            if (a.steps[0].timing == "delayed" || !constraint.Constrained && a.steps.Count == 1 &&
+                                a.steps[0].delivery == "projectile" && a.steps[0].pattern is ("single" or "seek"))
+                            { rejection = "immediate first action and a distinctive signature result required"; continue; }
                             a.role = InferRole(a);
                             if (!constraint.Matches(a)) { rejection = "missing requested executable operations: " + constraint.Summary; trace?.Invoke($"후보 {i + 1} 제외 · 필수 동작 부족 ({constraint.Summary})"); continue; }
                             if (!constraint.Constrained && a.role != roles[i]) { rejection = "role mismatch: " + roles[i]; trace?.Invoke($"후보 {i + 1} 제외 · 요청한 {RoleName(roles[i])} 동작 부족"); continue; }
@@ -124,6 +141,13 @@ Required role semantics (the engine infers these in this priority): mobility has
                     for (int attempt = 0; attempt < 32; attempt++)
                     {
                         var proposed = constraint.Constrained ? constraint.Local(types[i], slot, i + attempt) : Local(types[i], slot, roles[i]);
+                        if (i == linkedIndex)
+                        {
+                            var link = links[i][attempt % links[i].Length];
+                            proposed.linkSlot = link.source.slot;
+                            proposed.linkEvent = link.kind;
+                            proposed.linkAction = slot == 3 ? "burst" : link.kind == "placement" ? "draw" : "echo";
+                        }
                         if (!constraint.Matches(proposed) || !ValidateSet(new List<ActiveSkillData> { proposed }, types[i], new[] { slot }, out _) ||
                             result.Any(x => x != null && Distance(x, proposed) < Rules.minChoiceDistance) ||
                             recent.Contains(proposed.Signature()) || owner.Inventory.items.Any(x => x.active?.Signature() == proposed.Signature())) continue;
@@ -229,6 +253,7 @@ Required role semantics (the engine infers these in this priority): mobility has
             foreach (var a in set)
             {
                 a.weaponType = type;
+                if (!ActiveSkillSynergy.ValidShape(a)) { why = "invalid forward link"; return false; }
                 a.input = string.IsNullOrEmpty(a.input) ? "tap" : a.input;
                 if (!new[] { "tap", "charge", "channel", "recast" }.Contains(a.input)) return false;
                 if (a.steps == null || a.steps.Count < 1 || a.steps.Count > Rules.maxSteps) return false;
@@ -259,6 +284,7 @@ Required role semantics (the engine infers these in this priority): mobility has
                     if (s.pattern == "chain" && s.delivery != "line") return false;
                     if (s.effect != "damage" && (s.pattern != "single" || s.timing != "instant" || el != Element.None)) return false;
                     if (s.delivery == "guard" && s.effect != "shield") return false;
+                    if (s.delivery == "trap" && s.timing == "repeat") return false;
                     if ((s.delivery == "wall") != (s.effect == "block")) return false;
                     if ((s.effect is "shield" or "heal") && (s.condition != "always" || s.origin != "caster" || !(s.delivery is "guard" or "nova" or "field"))) return false;
                     if (s.effect == "block" && s.condition != "always") return false;
@@ -302,45 +328,66 @@ Required role semantics (the engine infers these in this priority): mobility has
             {
                 case "precision":
                     a.steps.Add(Op(ranged ? "projectile" : "line", pattern: ranged ? Pick(new[] { "pierce", "seek" }) : Pick(new[] { "single", "chain" })));
-                    if (UnityEngine.Random.value > .5f) a.steps.Add(Op("nova", origin: "impact", trigger: "hit"));
+                    if (a.steps[0].pattern == "seek" || slot == 3 || UnityEngine.Random.value > .4f)
+                        a.steps.Add(Op(Pick(new[] { "nova", "line" }), origin: "impact", trigger: "hit"));
                     a.name = "꿰뚫는 궤적"; a.designReason = "한 줄의 적을 노려 정확한 공격 각도를 보상합니다."; break;
                 case "sustain":
-                    a.input = "channel";
-                    a.steps.Add(Op(ranged || type == WeaponType.Staff ? "projectile" : Pick(new[] { "arc", "line", "nova" }), pattern: ranged ? Pick(new[] { "curve", "fan", "single" }) : "single"));
-                    a.name = "이어지는 맥동"; a.designReason = "키를 유지하며 같은 공간을 제한된 횟수로 압박합니다."; break;
+                    if (type == WeaponType.Staff || ranged && UnityEngine.Random.value < .35f)
+                    {
+                        a.steps.Add(Op("field", origin: "aim"));
+                        if (slot == 3 || UnityEngine.Random.value < .6f)
+                            a.steps.Add(Op("nova", origin: "previous", trigger: "expire"));
+                        a.name = "잔향의 경계"; a.designReason = "적이 지나는 곳에 지속 타격을 남겨 이동 경로를 압박합니다.";
+                    }
+                    else
+                    {
+                        a.input = "channel";
+                        a.steps.Add(Op(ranged ? "projectile" : Pick(new[] { "arc", "line", "nova" }), pattern: ranged ? Pick(new[] { "curve", "fan", "single" }) : "single"));
+                        if (UnityEngine.Random.value < .5f) a.steps.Add(Op("nova", origin: "aim"));
+                        a.name = "이어지는 맥동"; a.designReason = "키를 유지하며 같은 공간을 제한된 횟수로 압박합니다.";
+                    }
+                    break;
                 case "control":
-                    a.steps.Add(Op(ranged ? "projectile" : Pick(new[] { "nova", "line" }), "pull", origin: "aim"));
-                    a.steps.Add(Op("nova", origin: "impact", trigger: "hit"));
-                    a.name = "모여드는 파열"; a.designReason = "적을 끌어당긴 위치에 후속 폭발을 연결합니다."; break;
+                    string control = Pick(new[] { "pull", "push", "stun" });
+                    a.steps.Add(Op(ranged ? Pick(new[] { "projectile", "nova", "line" }) : Pick(new[] { "nova", "line" }), control, origin: "aim"));
+                    a.steps.Add(Op(Pick(new[] { "nova", "line" }), origin: "impact", trigger: "hit"));
+                    a.name = control switch { "pull" => "모여드는 파열", "push" => "흩어지는 파열", _ => "멎어 버린 틈" };
+                    a.designReason = "적의 위치나 행동을 제어한 지점에 후속 타격을 연결합니다."; break;
                 case "trap":
-                    a.steps.Add(Op("trap", origin: "aim"));
-                    if (UnityEngine.Random.value > .5f) a.steps[0].timing = "delayed";
-                    a.steps.Add(Op("nova", "stun", origin: "impact", trigger: "hit"));
-                    a.name = "발밑의 매복"; a.designReason = "조준한 곳에 덫을 놓고 접근한 적을 묶습니다."; break;
+                    a.steps.Add(Op("trap", origin: Pick(new[] { "caster", "aim" })));
+                    string payload = Pick(new[] { "stun", "push", "pull", "damage" });
+                    a.steps.Add(Op(payload == "damage" && UnityEngine.Random.value < .4f ? "line" : "nova", payload, origin: "impact", trigger: "hit"));
+                    a.name = payload switch { "push" => "밀어내는 매복", "pull" => "포위의 매복", "damage" => "파열 매복", _ => "발밑의 매복" };
+                    a.designReason = "적의 접근로에 충전형 덫을 남기고, 발동 지점에 후속 효과를 냅니다."; break;
                 case "mobility":
-                    if (UnityEngine.Random.value > .5f)
+                    string move = ranged ? Pick(new[] { "retreat", "blink" }) : Pick(new[] { "dash", "retreat", "blink" });
+                    a.steps.Add(Op(move));
+                    if (UnityEngine.Random.value > .6f)
                     {
                         a.input = "recast";
-                        a.steps.Add(Op(ranged ? "retreat" : "dash"));
-                        a.steps.Add(Op("dash", origin: "previous", trigger: "recast"));
+                        a.steps.Add(Op(Pick(new[] { "dash", "blink" }), origin: "previous", trigger: "recast"));
                         a.name = "되짚는 발걸음"; a.designReason = "이동으로 각도를 만든 뒤 재입력해 출발점으로 돌아갑니다.";
                     }
                     else
                     {
-                        a.steps.Add(Op(ranged ? "retreat" : "blink"));
-                        a.steps.Add(Op(ranged ? "projectile" : "arc", origin: "caster", trigger: "arrive"));
+                        string exit = ranged ? Pick(new[] { "line", "projectile", "nova" }) : Pick(new[] { "arc", "line", "nova" });
+                        a.steps.Add(Op(exit, pattern: exit == "projectile" ? "fan" : "single", trigger: "arrive"));
                         a.name = "틈새의 궤적"; a.designReason = "위치를 바꾼 직후 새 각도에서 공격합니다.";
                     }
                     break;
                 case "guard":
-                    a.steps.Add(Op(Pick(new[] { "wall", "guard", "nova" }), "shield"));
-                    if (a.steps[0].delivery == "wall") a.steps[0].effect = "block";
-                    else if (a.steps[0].delivery == "nova") a.steps[0].effect = "heal";
-                    a.name = a.steps[0].delivery == "wall" ? "가로막는 경계" : "위기의 가호";
-                    a.designReason = "위험한 순간 직접 사용해 적의 공격을 견디는 생존 도구입니다."; break;
+                    string defense = Pick(new[] { "wall", "guard", "nova" });
+                    a.steps.Add(Op(defense, defense == "wall" ? "block" : defense == "nova" ? "heal" : "shield",
+                        origin: defense == "wall" ? Pick(new[] { "caster", "aim" }) : "caster"));
+                    bool counter = slot == 3 || UnityEngine.Random.value < .6f;
+                    if (counter) a.steps.Add(Op(Pick(new[] { "line", "nova" }), origin: defense == "wall" ? "previous" : "caster",
+                        trigger: defense == "wall" ? "expire" : "after"));
+                    a.name = defense == "wall" ? "가로막는 경계" : counter ? "되받는 가호" : "위기의 가호";
+                    a.designReason = counter ? "위험한 순간 방어하고, 확보한 공간으로 반격합니다." : "위험한 순간 직접 사용해 적의 공격을 견딥니다."; break;
                 default:
                     a.input = "charge";
-                    a.steps.Add(Op(ranged ? "projectile" : "arc", pattern: ranged ? Pick(new[] { "fan", "ring", "converge", "return" }) : "single"));
+                    a.steps.Add(Op(ranged ? "projectile" : Pick(new[] { "arc", "line", "nova" }),
+                        pattern: ranged ? Pick(new[] { "fan", "ring", "converge", "return" }) : "single"));
                     a.steps.Add(Op("nova", origin: "impact", trigger: "hit"));
                     a.name = "응축된 파열"; a.designReason = "충전 중 빈틈을 감수하고 명중 위치에 화력을 집중합니다."; break;
             }
@@ -356,7 +403,7 @@ Required role semantics (the engine infers these in this priority): mobility has
                 cooldown = Cooldown(a),
                 lockTime = Rules.lockTime + (a.drawback == "recovery" ? Rules.recoveryPenalty : 0) };
         }
-        public static float Cost(ActiveSkillData a) => a.steps.Sum(s => 1 + (s.pattern != "single" ? Rules.patternCost : 0) +
+        public static float Cost(ActiveSkillData a) => a.steps.Sum(s => (s.effect == "damage" ? 1f : Rules.utilityStepCost) + (s.pattern != "single" ? Rules.patternCost : 0) +
             (s.effect is "stun" or "pull" or "push" or "mark" ? Rules.controlCost : 0) + (Moving(s) ? Rules.movementCost : 0) +
             (s.delivery is "nova" or "field" ? Rules.areaCost : 0) + (s.delivery is "projectile" or "line" ? Rules.rangeCost : 0) +
             (s.timing != "instant" ? Rules.timingCost : 0) + (s.effect is "heal" or "shield" or "block" ? Rules.defenseCost : 0));
@@ -364,11 +411,15 @@ Required role semantics (the engine infers these in this priority): mobility has
         public static float Range(ActiveSkillData a, ActiveStep s) => (s.delivery == "arc" ? Rules.meleeRange : Rules.range) * (a.drawback == "shortRange" ? Rules.shortRangeFactor : 1);
         public static float Cooldown(ActiveSkillData a)
         {
+            if (UsesTrapCharges(a)) return Rules.trapRecharge * (a.drawback == "cooldown" ? Rules.cooldownPenalty : 1);
             float role = InferRole(a) switch { "guard" => Rules.guardCooldown, "control" => Rules.controlCooldown, "trap" => Rules.trapCooldown, "mobility" => Rules.mobilityCooldown, _ => 1 };
             return Mathf.Clamp((a.slot == 3 ? Rules.ultimateCooldown : Rules.baseCooldown) * role * (a.drawback == "cooldown" ? Rules.cooldownPenalty : 1), Rules.minCooldown, Rules.maxCooldown);
         }
         public static string VisualSummary(ActiveSkillData a) => a.input + ": " + string.Join(" -> ", a.steps.Select(s => $"{s.trigger}@{s.origin} {s.delivery}/{s.pattern} {s.effect}/{s.element}/{s.timing}"));
-        public static string ExchangeRule(ActiveSkillData a) => a.linkedMask != 0 ? $"종속 묶음 {a.Links} · 함께 교환" : "독립 · 같은 유형/슬롯끼리 교환";
+        public static bool UsesTrapCharges(ActiveSkillData a) => a?.steps?.Count > 0 &&
+            a.steps[0].delivery == "trap" && a.input == "tap";
+        public static string ExchangeRule(ActiveSkillData a) => a.linkedMask != 0 ? $"종속 묶음 {a.Links} · 함께 교환" :
+            $"{ActiveSkillSynergy.Describe(a)} · 같은 유형/슬롯끼리 교환";
         public static string Describe(ActiveSkillData a)
         {
             string Ko(string s) => s switch { "trap" => "지면 덫", "wall" => "투사체 장벽", "block" => "적 탄환 차단", "curve" => "곡선", "bounce" => "벽 반사 1회", "converge" => "수렴", "caster" => "시전자", "aim" => "조준 위치", "previous" => "이전 단계 위치", "impact" => "명중 위치", "after" => "즉시 연결", "hit" => "앞 단계 명중 후", "arrive" => "앞 단계 도착 후", "expire" => "앞 단계 종료 후", "recast" => "같은 키 재입력 후", "arc" => "전방 베기", "line" => "직선 타격", "projectile" => "투사체", "nova" => "주변 폭발", "field" => "지면 영역", "dash" => "돌진", "retreat" => "후퇴", "blink" => "순간이동", "guard" => "방어", "damage" => "피해", "shield" => "보호막", "heal" => "회복", "pull" => "끌어당김", "push" => "밀치기", "stun" => "기절", "mark" => "표식", "fan" => "부채꼴", "ring" => "방사", "chain" => "연쇄", "return" => "회수", "pierce" => "관통", "seek" => "유도", "marked" => "표식", "burning" => "화상", "chilled" => "냉기", "poisoned" => "중독", _ => s };
@@ -379,9 +430,12 @@ Required role semantics (the engine infers these in this priority): mobility has
                 (s.pattern != "single" ? Ko(s.pattern) + " " : "") + Ko(s.delivery) + " → " +
                 (s.element != "None" ? ElementName(s.element) + " " : "") + Ko(s.effect) +
                 (s.condition != "always" ? $" ({Ko(s.condition)} 대상{(s.consume ? "·소모" : "")})" : "") +
-                (s.timing != "instant" ? s.timing == "repeat" ? " · 반복" : " · 지연" : ""));
+                (s.timing == "repeat" ? " · 반복" : s.timing == "delayed" && (i > 0 || a.input != "tap") ? " · 지연" : ""));
             return $"<b>{RoleName(InferRole(a))}</b>\n" + string.Join("\n", lines) +
-                $"\n\n<b>조작</b>  {input}\n<b>쿨다운</b>  {Cooldown(a):0.#}초\n<b>위력</b>  단계 예산 {Magnitude(a):0.##}배 (다발·반복 분할)\n<b>대가</b>  " +
+                (a.SeekingRupture ? "\n명중 지점에서 파열이 퍼져 주변 적에게 추가 피해" : "") +
+                (a.HasSynergy ? $"\n<b>연계</b>  {ActiveSkillSynergy.Describe(a)}" : "") +
+                (UsesTrapCharges(a) ? $"\n<b>덫</b>  {Rules.trapCharges}회 충전 · 최대 {Rules.trapLimit}개 · {Rules.trapDuration:0.#}초 유지" : "") +
+                $"\n\n<b>조작</b>  {input}\n<b>{(UsesTrapCharges(a) ? "충전" : "쿨다운")}</b>  {Cooldown(a):0.#}초\n<b>위력</b>  단계 예산 {Magnitude(a):0.##}배 (다발·반복 분할)\n<b>대가</b>  " +
                 (a.drawback == "cooldown" ? "긴 재사용 대기시간" : a.drawback == "shortRange" ? "짧은 사거리" : "시전 후 긴 경직");
         }
     }

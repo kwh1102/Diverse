@@ -30,10 +30,12 @@ namespace Diverse
         public void TickActive(ActiveSkillData a, int index, bool locked, float lockK, bool pinned)
         {
             UIKit.Sprite(partIcon, ActiveSkillArt.Icon(a));
-            UIKit.Set(header, $"{index + 1} · {(a.source == "ai" ? "AI 설계" : "로컬 조합")}");
+            UIKit.Set(header, $"{index + 1} · {(a.HasSynergy ? $"{ActiveSkillGenerator.SlotName(a.linkSlot)} 연계" : "독립형")} · {(a.source == "ai" ? "AI" : "로컬")}");
             UIKit.Set(complexityLabel, $"{ActiveSkillGenerator.TypeName(a.weaponType)} · {ActiveSkillGenerator.SlotName(a.slot)} 전용");
             UIKit.Set(title, a.name);
             string details = ActiveSkillGenerator.Describe(a);
+            if (a.HasSynergy && Game.I?.Player is { } player && !ActiveSkillSynergy.Available(player, a))
+                details += "\n연계하려면 호환되는 앞 슬롯 스킬을 같은 무기에 장착해야 해.";
             if (desc != null && desc.text != details) resetDescription = true;
             UIKit.Set(desc, details); UIKit.Show(reason, false);
             UIKit.Set(tags, ActiveSkillGenerator.ExchangeRule(a));

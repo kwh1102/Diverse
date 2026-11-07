@@ -140,7 +140,7 @@ namespace Diverse
             if(InventoryBusy || WeaponDraft==null || !HasWeaponReward || Player==null || Player.Gold<WeaponRewardCost || World.Flag("weapon:"+WeaponRewardKey)) return;
             var owner=Player;var result=WeaponDraft;int cost=WeaponRewardCost;string key=WeaponRewardKey;
             if(owner.Inventory.items.Count(i=>i.kind==ItemKind.Weapon)>=InventoryState.Rules.maxWeapons) {InventoryStatus="무기 보관 한도에 도달했어. 기존 무기를 정리한 뒤 다시 찾아와 줘.";return;}
-            var w = (DesignCombat.For(result) ?? DB.W(DesignRuntime.Chassis(result))).Clone();
+            var w = (DesignCombat.For(result) ?? DB.W(DesignRuntime.TypeOf(result))).Clone();
             var item = new InventoryItem { kind = ItemKind.Weapon, weapon = w, name = w.name, design = result };
             owner.Inventory.Receive(item);
             // Skill generation is a separate acquisition event. Weapon art contains only basic attacks.

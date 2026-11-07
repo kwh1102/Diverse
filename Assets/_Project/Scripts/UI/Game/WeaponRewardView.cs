@@ -34,8 +34,8 @@ namespace Diverse
                 shown=pack;
                 if(pack!=null)
                 {
-                    var w=DesignCombat.For(pack)??DB.W(DesignRuntime.Chassis(pack));
-                    UIKit.Sprite(weapon,DesignStore.Sprite(pack.weapon.image,new Vector2(.5f,.5f))??DesignArt.Weapon(pack.weapon,centered:true)??Art.Weapon(w.kind));
+                    var w=DesignCombat.For(pack)??DB.W(DesignRuntime.TypeOf(pack));
+                    UIKit.Sprite(weapon,DesignStore.Sprite(pack.weapon.image,new Vector2(.5f,.5f))??DesignArt.Weapon(pack.weapon,centered:true)??Art.Weapon(w.type));
                     UIKit.Sprite(projectile,DesignStore.Sprite(pack.attack.projectile.image,new Vector2(.5f,.5f))??DesignArt.Projectile(pack.attack.projectile,pack.weapon));
                     UIKit.Set(info,$"<b>{w.name}</b>\n{w.desc}\n\n{ActiveSkillGenerator.TypeName(g.WeaponDraft.weapon.type)} 유형\n획득 후 QWER 능력과 전용 그림을 각각 생성합니다.");
                 }

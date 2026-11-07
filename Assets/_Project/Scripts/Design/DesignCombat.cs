@@ -78,8 +78,7 @@ namespace Diverse
             var w = new WeaponDef
             {
                 type = look.type,
-                // kind only drives a few presentation special cases (aiming pose, clones) and the save slot
-                kind = shoots ? WeaponKind.Crossbow : first.kind == WeaponKind.SwordShield ? WeaponKind.Katana : first.kind,
+                kind = DB.W(look.type).kind,
                 name = look.name ?? "이름 없는 무기",
                 desc = "",
                 tags = string.Join(" ", new[] { shoots ? "RANGED PROJECTILE" : "MELEE", parts.Any(t => !Ranged(t.move)) && shoots ? "MELEE" : null, "DESIGN" }.Where(s => s != null)),

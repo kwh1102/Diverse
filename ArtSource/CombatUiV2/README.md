@@ -30,6 +30,6 @@ QWER/◇ guides now use the dedicated upper-left SkillKey label, including occup
 
 ## Compact live inventory follow-up
 
-The inventory panel uses an authored 0.8 scale. Its logical size is 680×376: the satchel is 378×312, the equipment/workshop column stays 112px wide, and the detail column is 162px wide. The header and pending tray align with the satchel; the handle remains centred. The smaller outer UI retains larger bag contents and separate text/button padding. Footprint pixel snapping includes inherited panel scale, and only the active weapon receives corner fittings.
+The inventory panel uses an authored 0.85 scale (increased from 0.8 after the compact layout pass). Its logical size is 680×376: the satchel is 378×312, the equipment/workshop column stays 112px wide, and the detail column is 162px wide. The header and pending tray align with the satchel; the handle remains centred. The smaller outer UI retains larger bag contents and separate text/button padding. Footprint pixel snapping includes inherited panel scale, and only the active weapon receives corner fittings.
 
 Inventory no longer pauses simulation or dims the world. Player movement, existing travel targets, combat timers and enemy spawning continue. World clicks outside the panel can set a new travel target; the panel rectangle and active drag/settle capture pointer input. Changing weapons from the inventory preserves travel. Map, fusion and design overlay behavior is unchanged. This follow-up was inspected as source/prefab data only; Unity, compilation and tests were not run.

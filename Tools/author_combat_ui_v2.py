@@ -152,8 +152,9 @@ def library(result):
     data+='  framesPerSecond: 30\n  contactScale: 0.55\n  accentScale: 0.8\n  slashReferenceRadius: 24\n  trailStartDistance: 1.25\n  barrierReferenceLengths:\n  - 64\n  - 52\n  - 68\n  - 68\n'
     asset=ROOT/'Assets/_Project/Resources/CombatVisualLibrary.asset'
     if asset.exists():
-        # The skill authoring pass owns these arrays/settings; rebuilding older UI/basic art must retain them.
-        data+=''.join(re.findall(r'^  skill\w+:.*(?:\n  -[^\n]*)*\n',asset.read_text(encoding='utf-8'),re.M))
+        # Preserve the skill and combat-cue fields authored outside this basic-art pass.
+        retained = r'(?:skill\w+|cutHit|bluntHit|daggerHit|gunFlash|crystalHit|(?:arrow|bullet|magic|blade)Wake\w+|muzzleSeconds|cutSeconds|cutScale|basicSweepRadiusPixels|placement\w+)'
+        data+=''.join(re.findall(r'^  '+retained+r':.*(?:\n  -[^\n]*)*\n',asset.read_text(encoding='utf-8'),re.M))
     write(asset,data);key=guid(asset)
     db=ROOT/'Assets/_Project/Resources/GameDatabase.asset';s=db.read_text(encoding='utf-8')
     line='  combatVisuals: {fileID: 11400000, guid: '+key+', type: 2}\n'

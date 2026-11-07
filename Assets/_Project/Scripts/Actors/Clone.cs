@@ -55,13 +55,13 @@ namespace Diverse
             c.Facing = p.Facing;
             c.tint = el != Element.None ? (Color)Combat.ElementColor(el) : new Color(0.65f, 0.8f, 1f);
             c.tint.a = 0.75f;
-            c.body.sprite = phantom ? Art.Weapon(p.Weapon.kind) : Art.Rabbit(p.Costume, Pose.Idle0);
+            c.body.sprite = phantom ? Art.Weapon(p.Weapon.type) : Art.Rabbit(p.Costume, Pose.Idle0);
             c.body.sharedMaterial = Art.AddMat;
             c.body.color = c.tint;
             c.body.flipX = p.Facing.x < 0;
             if (!phantom)
             {
-                c.weapon.sprite = Art.Weapon(p.Weapon.kind);
+                c.weapon.sprite = Art.Weapon(p.Weapon.type);
                 c.weapon.color = c.tint;
                 c.weapon.transform.localPosition = Art.HandAnchor;
             }
@@ -152,7 +152,7 @@ namespace Diverse
                 if (t != null)
                 {
                     var to = t.Pos - Pos;
-                    bool ranged = !phantom && owner.Weapon.kind == WeaponKind.Crossbow;
+                    bool ranged = !phantom && (owner.Weapon.type is WeaponType.Bow or WeaponType.Gun);
                     float reach = ranged ? owner.Weapon.attackRange : 1.4f;
                     if (phantom || to.magnitude > reach * 0.8f) Pos = WorldStreamer.I.Move(Pos, to.normalized * (phantom ? 9f : 6f) * dt, 0.3f);
                     if (atkT <= 0 && to.magnitude < reach)

@@ -13,7 +13,10 @@ namespace Diverse
         // Slash / Thrust / HitSpark: a designed weapon's colour gets its generated effect pictures instead (DesignRuntime).
         /// <summary>베기 궤적. arc(도)·반경(px)·방향(1/-1)에 따라 프레임마다 쓸고 지나가며 사라진다.</summary>
         public static Sprite[] Slash(Color32 col, Color32 core, int radiusPx, float arc, float swingDir) =>
-            DesignRuntime.SwingFx(col, radiusPx) ?? GetAnim($"slash_{col}_{core}_{radiusPx}_{(int)arc}_{swingDir}", () =>
+            DesignRuntime.SwingFx(col, radiusPx) ?? WeaponSweep(col, core, radiusPx, arc, swingDir, WeaponType.Sword);
+
+        public static Sprite[] WeaponSweep(Color32 col, Color32 core, int radiusPx, float arc, float swingDir, WeaponType type) =>
+            GetAnim($"sweep_{type}_{col}_{core}_{radiusPx}_{(int)arc}_{swingDir}", () =>
             {
                 col = Pa(col); core = Pa(core);     // effects take their colours from the palette too
                 var frames = new Sprite[SlashFrames];
@@ -29,7 +32,8 @@ namespace Diverse
                     float a0 = swingDir > 0 ? half - arc * tailT : -half + arc * tailT;
                     float a1 = swingDir > 0 ? half - arc * headT : -half + arc * headT;
                     float lo = Mathf.Min(a0, a1), hi = Mathf.Max(a0, a1);
-                    float thickBase = Mathf.Max(2, radiusPx * 0.20f) * (1f - f * 0.17f);
+                    float proportion = type == WeaponType.Staff ? .19f : type == WeaponType.Dagger ? .095f : .135f;
+                    float thickBase = Mathf.Max(2, radiusPx * proportion) * (1f - f * 0.17f);
                     for (int y = 0; y < S; y++)
                         for (int x = 0; x < S; x++)
                         {
@@ -39,17 +43,32 @@ namespace Diverse
                             if (ang < lo || ang > hi) continue;
                             // 진행 방향 끝에 가까울수록 두껍게 (초승달)
                             float along = swingDir > 0 ? (hi - ang) / Mathf.Max(1, hi - lo) : (ang - lo) / Mathf.Max(1, hi - lo);
-                            float th = thickBase * Mathf.Lerp(0.25f, 1f, Mathf.Sqrt(1 - along));
+                            float th = thickBase * Mathf.Lerp(0.16f, 1f, Mathf.Sqrt(1 - along));
+                            if (type == WeaponType.Staff)
+                                th *= Mathf.Lerp(.65f, 1, Mathf.Sin(Mathf.Clamp01(along * 2) * Mathf.PI * .5f));
                             float inner = radiusPx - th;
                             if (d > radiusPx || d < inner) continue;
                             float rel = (d - inner) / Mathf.Max(1, th);
-                            Color32 px = rel > 0.55f ? core : col;
+                            Color32 px = rel > (type == WeaponType.Staff ? .72f : .5f) ? core : col;
                             if (rel < 0.18f) px = col;
                             // The tail contracts as one clean pixel shape; stochastic transparency was visual noise.
                             if (f >= 3 && along > (f == 3 ? .68f : .35f)) continue;
                             cv.Set(x, y, px);
                         }
-                    // One clean taper; contact sparks belong to the hit, not every empty swing.
+                    if (type == WeaponType.Staff && f < 4)
+                    {
+                        // The heavy end leads. A brief inner arc follows the shaft and closes with it.
+                        float head = a1 * Mathf.Deg2Rad;
+                        var tip = new Vector2(c + Mathf.Cos(head) * radiusPx, c + Mathf.Sin(head) * radiusPx);
+                        var shaft = new Vector2(c + Mathf.Cos(head) * radiusPx * .65f, c + Mathf.Sin(head) * radiusPx * .65f);
+                        cv.ThickLine(shaft, tip, f < 2 ? 1.15f : .55f, Pal.A(core, (byte)(200 - f * 35)));
+                        if (f < 2)
+                        {
+                            int x = Mathf.FloorToInt(tip.x), y = Mathf.FloorToInt(tip.y);
+                            cv.Line(x - 1, y, x + 1, y, core);
+                            cv.Line(x, y - 1, x, y + 1, core);
+                        }
+                    }
                     frames[f] = cv.ToSprite(new Vector2(c, c));
                 }
                 return frames;
@@ -57,7 +76,10 @@ namespace Diverse
 
         /// <summary>찌르기 궤적 (가로로 길게 뻗는 창 모양).</summary>
         public static Sprite[] Thrust(Color32 col, Color32 core, int lengthPx) =>
-            DesignRuntime.ThrustFx(col, lengthPx) ?? GetAnim($"thrust_{col}_{core}_{lengthPx}", () =>
+            DesignRuntime.ThrustFx(col, lengthPx) ?? WeaponThrust(col, core, lengthPx, WeaponType.Sword);
+
+        public static Sprite[] WeaponThrust(Color32 col, Color32 core, int lengthPx, WeaponType type) =>
+            GetAnim($"thrust_{type}_{col}_{core}_{lengthPx}", () =>
             {
                 col = Pa(col); core = Pa(core);     // effects take their colours from the palette too
                 var frames = new Sprite[SlashFrames];
@@ -72,7 +94,9 @@ namespace Diverse
                     for (int x = x0; x < x1; x++)
                     {
                         float t = x / (float)lengthPx;
-                        int half = Mathf.RoundToInt(Mathf.Lerp(1, 4, Mathf.Sin(t * Mathf.PI)) * (1 - fade * 0.6f));
+                        float profile = type == WeaponType.Staff ? Mathf.Pow(t, 1.8f) :
+                            type == WeaponType.Dagger ? .5f * Mathf.Sin(t * Mathf.PI) : Mathf.Sin(t * Mathf.PI);
+                        int half = Mathf.RoundToInt(Mathf.Lerp(1, 4, profile) * (1 - fade * 0.6f));
                         cv.Rect(x, 7 - half, 1, half * 2, col);
                         if (half > 1) cv.Rect(x, 7 - half / 2, 1, Mathf.Max(1, half), core);
                     }

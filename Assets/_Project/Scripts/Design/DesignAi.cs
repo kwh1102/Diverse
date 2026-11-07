@@ -53,7 +53,7 @@ weapon: {name, type(0 Sword|1 Bow|2 Gun|3 Staff|4 Dagger), imagePrompt, hold(Han
   moves = the basic attack combo in order, 1-4 of: slash | wide | thrust | spin | smash | shot | spread (fists: [""thrust"",""thrust"",""smash""]).
 attack (always with weapon): {origin(Hand|Mouth|Eyes|Above), projectile:{imagePrompt, spin}, slash, slashCore, trail, effectPrompts}
   effectPrompts = 4 English prompts for BASIC ATTACK ONLY visual effects:
-  [swing (a melee attack sweep, e.g. rings of sound waves for a bell), impact (what bursts on a hit), trail (behind a flying shot), muzzle (when shooting/casting)].
+  [swing (a melee attack sweep, e.g. rings of sound waves for a bell), impact (what bursts on a hit), flight-wake colour/material guidance (the engine draws it from the actual path), muzzle (when shooting/casting)].
   projectile.imagePrompt = what flies when it shoots or throws. slash/slashCore/trail = hex colours matching the effects.
 
 OUTPUT JSON ONLY: {""summary"":""one Korean line"",""ignored"":[],""hero"":{},""weapon"":{},""attack"":{}}
@@ -322,22 +322,29 @@ PLAYER REQUEST: 헤드폰을 낀 로봇 고양이.
         static IEnumerator EffectsJob(DesignPack p, Action<ImageClient.ImageUsage> usage)
         {
             var e = p.attack.effectPrompts;
+            string swing = p.weapon.type switch
+            {
+                WeaponType.Staff => "A blunt weighted leading edge with an offset short shaft wake and compact dust at the end.",
+                WeaponType.Dagger => "A narrow, interrupted nick with a fast off-axis second edge.",
+                _ => "A material-specific thin sweep with a strong split contour and a quickly broken tail."
+            };
             Texture2D tex = null;
             yield return ImageClient.Generate(EffectStyle +
-                "Exactly FOUR columns and FOUR rows of equal cells. No grid, labels or scenery. Each ROW is one real four-frame animation read left to right; fixed center and scale within its row. All content stays within the middle 70 percent of each cell. " +
-                "Weapon identity: "+p.weapon.imagePrompt+". Reuse its actual materials, accent colours and signature motif throughout; effects should leave the hero and held weapon readable. " +
-                $"Row 1: a thin crescent sweep on the RIGHT side of the empty hand pivot; windup, sharp moving leading edge, follow-through, short tapered tail. {e[0]}. " +
-                $"Row 2: a compact contact burst with two directional chips, resolves quickly, not an explosion. {e[1]}. " +
-                $"Row 3: a short looping projectile trail, narrow body and shrinking tail, no character silhouette. {e[2]}. " +
-                $"Row 4: a small directional muzzle/casting flash, anticipation, ignition, recoil, fade. {e[3]}.", t => tex = t, usage: usage);
+                "Exactly FOUR columns and THREE equal rows. No grid, labels or scenery. Each row is one four-frame animation left to right, fixed pivot and scale. All content stays inside the middle 70 percent of its cell. " +
+                $"Weapon identity: {p.weapon.type}, {p.weapon.imagePrompt}. Use its material and accent colours. Use crisp connected clusters at 48 logical pixels and leave space for the authored swing and contact edge. " +
+                $"Row 1: motion on the RIGHT of a fixed empty hand pivot. {swing} {e[0]}. " +
+                $"Row 2: contact at the fixed target pivot. Compression, a compact material break, two directional chips, short release. {e[1]}. " +
+                $"Row 3: tight right-facing flash at the weapon tip. Immediate ignition, recoil, flecks, fade. {e[3]}. The engine draws the flight wake separately.", t => tex = t, usage: usage);
             if (tex == null) { p.attack.effectImages = null; yield return false; yield break; }
-            p.attack.effectSourceImage=DesignStore.SaveSourceImage(tex);
-            var rows=ActiveEffectProcessor.Read(tex,new[]{0,1,2,3},2,ActiveSkillGenerator.Rules,null,out string why);
+            p.attack.effectSourceImage = DesignStore.SaveSourceImage(tex);
+            // The saved layout still has room for four roles. The previous wake slot is left empty.
+            var motion = new ActiveSkillData { steps = { new ActiveStep { delivery = "arc" }, new ActiveStep { delivery = "projectile" } } };
+            var rows = ActiveEffectProcessor.Read(tex, new[] { 0, 1, 3 }, 2, ActiveSkillGenerator.Rules, null, out string why, motion);
             UnityEngine.Object.Destroy(tex);
-            // Canonical processor also supplies unused step slots; only the four requested animation rows are stored.
-            p.attack.effectImages=rows?.Take(16).Select(Save).ToArray();p.attack.effectFrames=rows!=null?4:0;
-            Debug.Log("[Basic effects] "+why);
-            yield return p.attack.effectImages?.Length==16 && p.attack.effectImages.All(id=>id!=null);
+            p.attack.effectImages = rows?.Take(16).Select(Save).ToArray();
+            p.attack.effectFrames = rows != null ? 4 : 0;
+            Debug.Log("[Basic effects] " + why);
+            yield return p.attack.effectImages?.Any(id => !string.IsNullOrEmpty(id)) == true;
         }
 
         // ───────────────────────── Facing check ─────────────────────────

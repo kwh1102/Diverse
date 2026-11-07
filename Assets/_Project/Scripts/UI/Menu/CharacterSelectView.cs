@@ -33,14 +33,14 @@ namespace Diverse
                 var icon = costumes[i].transform.Find("Icon")?.GetComponent<Image>();
                 UIKit.Sprite(icon, Art.Rabbit(DB.Costumes[i], Pose.Idle0));
             }
-            int nw = System.Enum.GetValues(typeof(WeaponKind)).Length;
+            int nw = System.Enum.GetValues(typeof(WeaponType)).Length;
             UIKit.Pool(weaponTemplate, weapons, nw);
             for (int i = 0; i < weapons.Count; i++)
             {
                 int k = i;
                 weapons[i].onClick.RemoveAllListeners();
                 weapons[i].onClick.AddListener(() => { selWeapon = k; Sfx.Play("ui"); });
-                UIKit.Label(weapons[i], DB.W((WeaponKind)i).name);
+                UIKit.Label(weapons[i], DB.W((WeaponType)i).name);
             }
             UIKit.Bind(startButton, Begin);
             UIKit.Bind(backButton, () => menu.Show(menu.NewLifeScreen == MenuUI.Screen.Design ? MenuUI.Screen.Design : MenuUI.Screen.Title));
@@ -51,20 +51,20 @@ namespace Diverse
             var w = Session.World;
             if (w == null) return;
             selCostume = Mathf.Max(0, DB.Costumes.FindIndex(c => c.id == w.lastCostume));
-            selWeapon = Mathf.Clamp(w.lastWeapon, 0, System.Enum.GetValues(typeof(WeaponKind)).Length - 1);
+            selWeapon = (int)DB.ReadWeaponType(w.lastWeaponType, w.lastWeapon);
         }
 
-        void Begin() => Session.NewLife(DB.Costumes[selCostume], (WeaponKind)selWeapon);
+        void Begin() => Session.NewLife(DB.Costumes[selCostume], (WeaponType)selWeapon);
 
         void Update()
         {
             if (Session.World == null) return;
             var c = DB.Costumes[selCostume];
-            var w = DB.W((WeaponKind)selWeapon);
+            var w = DB.W((WeaponType)selWeapon);
             float t = Time.unscaledTime;
             var run = (Pose)((int)Pose.Run0 + (int)(t * 8) % 4);
             UIKit.Sprite(preview, Art.Rabbit(c, (int)(t * 0.5f) % 2 == 0 ? run : Pose.Idle0));
-            UIKit.Sprite(previewWeapon, Art.Weapon(w.kind));
+            UIKit.Sprite(previewWeapon, Art.Weapon(w.type));
 
             for (int i = 0; i < costumes.Count; i++) costumes[i].image.color = i == selCostume ? selectedTint : Color.white;
             for (int i = 0; i < weapons.Count; i++) weapons[i].image.color = i == selWeapon ? selectedTint : Color.white;

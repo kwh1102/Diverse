@@ -19,6 +19,17 @@ namespace Diverse
 
         static Material spriteMat, addMat;
         public static Material SpriteMat => spriteMat ??= new Material(Resources.Load<Shader>("Shaders/DiverseSprite")) { name = "DiverseSprite" };
+        static Material ribbonMat;
+        public static Material RibbonMat
+        {
+            get
+            {
+                if (ribbonMat != null) return ribbonMat;
+                ribbonMat = new Material(SpriteMat) { name = "DiverseRibbon" };
+                ribbonMat.EnableKeyword("DIVERSE_MESH");
+                return ribbonMat;
+            }
+        }
         public static Material AddMat => addMat ??= new Material(Resources.Load<Shader>("Shaders/DiverseSpriteAdd")) { name = "DiverseAdd" };
 
         static Sprite whitePx;

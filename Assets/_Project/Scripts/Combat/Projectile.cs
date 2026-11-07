@@ -27,20 +27,17 @@ namespace Diverse
         public bool trail = true;
         public Sprite[] animationFrames;
         public float animationFps;
-        public Sprite[] trailFx;        // designed weapons: generated trail effect instead of dot particles
-        public bool normalTrailBlend;
-        public float trailInterval = .06f, trailScale = 1, trailStartDistance = -1;
-        public Color? trailTint;
         public bool spin;
         public System.Action<Projectile, Actor> onHit;
         public System.Func<Projectile, Actor, bool> canHit;
         public System.Action<Projectile, Actor> resolveHit;
         public System.Action<Projectile, float> onUpdate;    // steering (curving shots); gets the age in seconds
-        public System.Action<Projectile> onEnd;
+        public System.Action<Projectile> onEnd, onBounce;
         readonly HashSet<Actor> hitSet = new HashSet<Actor>();
         bool ended;
         public void ResetHits() => hitSet.Clear();
         public static readonly List<Projectile> Live = new List<Projectile>();
+        public static Vector2 TargetPoint(Actor actor) => actor.Pos + Vector2.up * .35f;
         void Awake() => Live.Add(this);
         void OnDestroy() => Live.Remove(this);
 
@@ -51,6 +48,7 @@ namespace Diverse
             End();
         }
         [SerializeField] SpriteRenderer sr;
+        public int VisualOrder => sr.sortingOrder;
         float trailT;
         float t;
 
@@ -67,7 +65,7 @@ namespace Diverse
         public static Projectile Spawn(Sprite s, Vector2 pos, Vector2 vel, Team target, Actor owner, DamageInfo dmg, bool additive = false)
         {
             var p = Instantiate(DB.Asset.projectilePrefab, pos, Quaternion.Euler(0, 0, vel.Angle()));
-            Art.Setup(p.sr, s, 0, additive);
+            Art.Setup(p.sr, s, Art.SortY(pos.y - .5f) + 10, additive);
             p.vel = vel;
             p.targetTeam = target;
             p.owner = owner;
@@ -93,13 +91,14 @@ namespace Diverse
                 var tgt = Actor.Nearest(transform.position, 6f, targetTeam);
                 if (tgt != null)
                 {
-                    var want = ((Vector2)tgt.Pos + Vector2.up * 0.3f - (Vector2)transform.position).normalized * vel.magnitude;
+                    var want = (TargetPoint(tgt) - (Vector2)transform.position).normalized * vel.magnitude;
                     vel = Vector2.Lerp(vel, want, 1 - Mathf.Exp(-homing * dt));
                 }
             }
 
-            Vector2 p = (Vector2)transform.position + vel * dt;
-            if (ActiveBarrier.TryBlock(this, transform.position, p)) return;
+            Vector2 previous = transform.position;
+            Vector2 p = previous + vel * dt;
+            if (ActiveBarrier.TryBlock(this, previous, p)) return;
             if (WorldStreamer.I != null && WorldStreamer.I.IsSolidObstacle(p))
             {
                 if (bounces > 0)
@@ -111,30 +110,31 @@ namespace Diverse
                     if (blockX || !blockY) vel.x = -vel.x;
                     if (blockY) vel.y = -vel.y;
                     p = current + vel * dt;
-                    if (!WorldStreamer.I.IsSolidObstacle(p)) { Travelled += Vector2.Distance(transform.position, p); transform.position = p; return; }
+                    if (!WorldStreamer.I.IsSolidObstacle(p)) onBounce?.Invoke(this);
+                    else { Block(); return; }
                 }
-                // 나무·벽에 박힘 (물 위로는 날아간다)
-                Fx.I?.Burst(p, color, 4, 4, 0.25f);
-                End();
-                return;
+                else
+                {
+                    Fx.I?.Burst(p, color, 4, 4, 0.25f);
+                    End();
+                    return;
+                }
             }
-            Travelled += Vector2.Distance(transform.position, p);
+            Travelled += Vector2.Distance(previous, p);
             transform.position = p;
             transform.rotation = spin ? Quaternion.Euler(0, 0, t * 900f) : Quaternion.Euler(0, 0, vel.Angle());
             sr.sortingOrder = Art.SortY(p.y - 0.5f) + 10;
 
-            float trailDistance=trailStartDistance>=0?trailStartDistance:normalTrailBlend && CombatVisuals.Library!=null?CombatVisuals.Library.trailStartDistance:0;
-            if (trail && Travelled>=trailDistance)
+            if (trail)
             {
                 trailT -= dt;
-                if (trailT <= 0 && trailFx != null) { trailT = trailInterval; Fx.I?.Play(trailFx, p, vel.Angle(), 24, trailScale, trailTint, !normalTrailBlend, sr.sortingOrder-1); }
-                else if (trailT <= 0) { trailT = 0.025f; Fx.I?.Burst(p, color, 1, 0.5f, 0.2f, 0, 1); }
+                if (trailT <= 0) { trailT = 0.025f; Fx.I?.Burst(p, color, 1, 0.5f, 0.2f, 0, 1); }
             }
 
             foreach (var a in Actor.All)
             {
                 if (a == null || !a.Alive || a.team != targetTeam || hitSet.Contains(a)) continue;
-                if (((Vector2)a.Pos + Vector2.up * 0.35f - p).sqrMagnitude > (radius + a.radius) * (radius + a.radius)) continue;
+                if (Combat.DistToSegment(TargetPoint(a), previous, p) > radius + a.radius) continue;
                 if (canHit != null && !canHit(this, a)) continue;
                 hitSet.Add(a);
                 var d = dmg;
