@@ -4,7 +4,6 @@ using UnityEngine;
 
 namespace Diverse
 {
-    public enum WeaponKind { Greatsword, SwordShield, Crossbow, Staff, Dagger, Katana }
     public enum Element { None, Fire, Frost, Lightning, Shadow, Holy, Poison, Wind, Blood, Void, Arcane }
 
     /// <summary>
@@ -36,7 +35,8 @@ namespace Diverse
     [Serializable]
     public class WeaponDef
     {
-        public WeaponKind kind;
+        [SerializeField, HideInInspector] int kind = -1; // Version-one inventory migration only.
+        internal void RestoreWeaponType() { type = origin?.type ?? DB.ReadWeaponType(-1, kind); kind = -1; }
         public WeaponType type;
         public string name;
         [TextArea] public string desc;
@@ -233,16 +233,14 @@ namespace Diverse
         /// <summary>The theme drawn with a biome's art (custom-mode worlds pick biomes by noise).</summary>
         public static ThemeDef ThemeForBiome(Biome b) => Themes.Find(t => t.biome == b) ?? SpawnTheme;
         public static WeaponDef W(WeaponType type) => Weapons[type];
-        public static WeaponDef W(WeaponKind legacy) => W(ReadWeaponType(-1, (int)legacy));
-
         public static WeaponType ReadWeaponType(int type, int legacy)
         {
             if (type >= (int)WeaponType.Sword && type <= (int)WeaponType.Dagger) return (WeaponType)type;
-            return (WeaponKind)legacy switch
+            return legacy switch
             {
-                WeaponKind.Crossbow => WeaponType.Bow,
-                WeaponKind.Staff => WeaponType.Staff,
-                WeaponKind.Dagger => WeaponType.Dagger,
+                2 => WeaponType.Bow,
+                3 => WeaponType.Staff,
+                4 => WeaponType.Dagger,
                 _ => WeaponType.Sword,
             };
         }

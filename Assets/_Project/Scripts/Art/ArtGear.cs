@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Diverse
 {
     /// <summary>
-    /// Weapons, the shield, thrown things and pickups as dot templates (same keys and outline as Art/ArtHero.cs):
+    /// Weapons, thrown things and pickups as dot templates (same keys and outline as Art/ArtHero.cs):
     /// sized for the 22-dot hero, flat palette tones. Weapons point right (+x) with the pivot on the grip.
     /// Keys: k grip · d grip wrap · g guard/gold · m steel · l steel light · n steel shade · c gem · w white · r red.
     /// </summary>
@@ -21,22 +21,7 @@ namespace Diverse
                 ".....gnnnnnnnnnnnnnn..",
                 ".....g................",
             };
-            public static readonly string[] Sword =
-            {
-                "...g..........",
-                "kdkgmmmmmmmmm.",
-                "kdkglllllllllm",
-                "...gnnnnnnnn..",
-                "...g..........",
-            };
             public static readonly string[] Dagger = { ".g......", "kgmmmmm.", "kglllllm", ".gnnnn.." };
-            public static readonly string[] Katana =
-            {
-                ".....g.............",
-                "kdkdkgmmmmmmmmmmmm.",
-                "kdkdkgllllllllllllm",
-                ".....gnnnnnnnnnnn..",
-            };
             public static readonly string[] Staff =
             {
                 "...............cc...",
@@ -45,30 +30,6 @@ namespace Diverse
                 "kkkkkgkkkkkkgkcccccn",
                 "..............ccccn.",
                 "...............cnn..",
-            };
-            public static readonly string[] Crossbow =
-            {
-                "........n....",
-                "........nw...",
-                "........n.w..",
-                "kkkkkkkkkmmmm",
-                "kkkkkkkkkd...",
-                "...kk...n.w..",
-                "...kk...nw...",
-                "........n....",
-            };
-            public static readonly string[] Shield =
-            {
-                ".gggggggg.",
-                "gmmmmmmmng",
-                "gmmrrrrmng",
-                "gmmrwwrmng",
-                "gmmrrrrmng",
-                "gmmmmmmmng",
-                ".gmmmmmng.",
-                "..gmmmng..",
-                "...gmng...",
-                "....gg....",
             };
             public static readonly string[] Bolt = { "......l.", "kkkkkmmm", "......n." };
             public static readonly string[] Knife = { "kkmmmm.", "kklllll", "...nn.." };
@@ -110,8 +71,6 @@ namespace Diverse
             }),
             _ => Get("weapon_Dagger", () => Plate(Gear.Dagger, GearKeys(), new Vector2(.5f, 2))),
         };
-
-        public static Sprite Shield() => Get("shield", () => Plate(Gear.Shield, GearKeys(), new Vector2(5, 5)));
 
         // ───────────── Thrown things ─────────────
 

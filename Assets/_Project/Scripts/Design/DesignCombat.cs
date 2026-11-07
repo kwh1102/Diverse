@@ -78,7 +78,6 @@ namespace Diverse
             var w = new WeaponDef
             {
                 type = look.type,
-                kind = DB.W(look.type).kind,
                 name = look.name ?? "이름 없는 무기",
                 desc = "",
                 tags = string.Join(" ", new[] { shoots ? "RANGED PROJECTILE" : "MELEE", parts.Any(t => !Ranged(t.move)) && shoots ? "MELEE" : null, "DESIGN" }.Where(s => s != null)),

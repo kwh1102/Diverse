@@ -61,13 +61,13 @@ namespace Diverse
             var cfg = DB.Asset.abilityRules.def;
             return gate switch {
                 "charge" => a.input == "charge" || a.slot == 3,
-                "precision" => a.steps.Any(s => s.delivery == "line" || s.pattern == "pierce" || s.pattern == "seek"),
+                "precision" => a.HasTechnique ? ActiveSkillGenerator.InferRole(a) == "precision" : a.steps.Any(s => s.delivery == "line" || s.pattern == "pierce" || s.pattern == "seek"),
                 "alternate" => previousSlot >= 0 && previousSlot != a.slot && Time.time - previousTime <= cfg.evolutionComboWindow,
-                "projectile" => a.steps.Any(s => s.delivery == "projectile"),
+                "projectile" => a.HasTechnique ? ActiveTechniques.UsesShot(a.technique) : a.steps.Any(s => s.delivery == "projectile"),
                 "distance" => Vector2.Distance(p.Pos, aim) >= cfg.evolutionAimDistance,
-                "control" => a.steps.Any(s => s.effect == "pull" || s.effect == "push" || s.effect == "stun" || s.effect == "mark"),
-                "shield" => p.Shield > 0 || a.steps.Any(s => s.effect == "shield" || s.effect == "block"),
-                "movement" => a.steps.Any(ActiveSkillGenerator.Moving),
+                "control" => a.HasTechnique ? ActiveSkillGenerator.InferRole(a) == "control" : a.steps.Any(s => s.effect == "pull" || s.effect == "push" || s.effect == "stun" || s.effect == "mark"),
+                "shield" => p.Shield > 0 || (a.HasTechnique ? ActiveSkillGenerator.InferRole(a) == "guard" : a.steps.Any(s => s.effect == "shield" || s.effect == "block")),
+                "movement" => a.HasTechnique ? ActiveSkillGenerator.InferRole(a) == "mobility" : a.steps.Any(ActiveSkillGenerator.Moving),
                 _ => true
             };
         }

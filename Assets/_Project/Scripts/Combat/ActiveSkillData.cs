@@ -46,10 +46,15 @@ namespace Diverse
         public int effectProcessedRevision, effectPromptRevision, effectSourcePromptRevision;
         public WeaponType weaponType;
         public int slot;
+        public Technique technique;
+        public bool HasTechnique => ActiveTechniques.Get(technique) != null;
         public List<ActiveStep> steps = new List<ActiveStep>();
-        // A hard dependency requires the actual companion instance, never just another skill in that slot.
-        public int linkedMask;
-        public string linkId;
+        // Read old saves once, then clear the retired bundle fields.
+        [SerializeField] int linkedMask;
+        [SerializeField] string linkId;
+        internal bool HasLegacyBundle => linkedMask != 0;
+        internal string LegacyGroup => linkId;
+        internal void ClearLegacyBundle() { linkedMask = 0; linkId = null; }
         // An optional forward link uses an event from an earlier slot on the same weapon.
         public int linkSlot = -1;
         public string linkEvent, linkAction;
@@ -62,15 +67,18 @@ namespace Diverse
         public string color = "c9b8ff";
         public string[] visualPalette;
         public bool ArtReady => !string.IsNullOrEmpty(iconImage) && iconRevision >= 2;
-        public string Signature() => input + ":" + string.Join("|", steps.Select(s => $"{s.delivery}:{s.pattern}:{s.effect}:{s.condition}:{s.timing}:{s.consume}:{s.origin}:{s.trigger}"))
+        public string Signature() => HasTechnique ? technique.ToString() : input + ":" + string.Join("|", steps.Select(s => $"{s.delivery}:{s.pattern}:{s.effect}:{s.condition}:{s.timing}:{s.consume}:{s.origin}:{s.trigger}"))
             + (HasSynergy ? $"@{linkSlot}:{linkEvent}:{linkAction}" : "");
-        public string Links => string.Concat(Enumerable.Range(0, 4).Where(i => (linkedMask & (1 << i)) != 0).Select(i => "QWER"[i]));
     }
 
     [Serializable]
     public class ActiveRules
     {
-        public int maxSteps = 4, maxLinkedSlots = 2, maxTargets = 8, maxProjectiles = 5, maxPulses = 3;
+        public TechniqueTuning[] techniques;
+        public float techniqueRecastSeconds = 4, techniqueLinkScale = 1.2f, techniqueControlSeconds = .85f;
+        public float casingLifetime = 12, captureBonusCap = 1.4f, openSideDot = .25f;
+        public int casingLimit = 8;
+        public int maxSteps = 4, maxTargets = 8, maxProjectiles = 5, maxPulses = 3;
         public float chargeDuration = 1.1f, chargeBonus = .5f, channelDuration = 1.5f, recastWindow = 3;
         public float curveStrength = 65, maxCastDuration = 8, anchorWidth = .6f;
         public int maxConcurrentCasts = 4, generationAttempts = 3, recentSignatures = 32;
@@ -95,7 +103,7 @@ namespace Diverse
         public string iconQuality = "low", effectQuality = "medium";
         public int effectMinPixels = 8;
         public float effectFramesPerSecond = 20;
-        public float castVisualDuration = .34f, impactVisualDuration = .22f, actionHeight = .45f, movementTrailSpacing = .35f;
+        public float castVisualDuration = .34f, impactVisualDuration = .24f, actionHeight = .45f, movementTrailSpacing = .35f;
         public int weaponSwingPixels = 32, impactPixels = 24;
         public float arcTrailDegrees = 105, arcThickness = .4f;
         public float effectSolidLimit = .8f;

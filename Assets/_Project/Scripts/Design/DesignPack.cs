@@ -7,7 +7,7 @@ namespace Diverse
     /// <summary>
     /// A custom hero and weapon look, written by the player's prompts (AI or the local keyword parser) and drawn locally by DesignArt.
     /// It holds ONLY appearance: colors, closed-set shapes, optional tiny pixel grids and names.
-    /// Gameplay comes from an existing chassis (baseWeapon / basePerk), so a prompt can never change balance.
+    /// Gameplay comes from the selected weapon type and costume, so a prompt can never change balance.
     /// Self-contained JSON (designs/&lt;id&gt;.json) so it can later be uploaded to a server as-is.
     /// </summary>
     [Serializable]
@@ -87,7 +87,12 @@ namespace Diverse
         public string weight = "medium";           // light | medium | heavy
         public string[] skills;                    // legacy serialized field; current skills live on InventoryItem.active
         public string[] skillNames;                // Korean display names for them
-        public string baseWeapon = "Greatsword";   // WeaponKind (local fallback without attack parts)
+        [SerializeField, HideInInspector] string baseWeapon;
+        internal void RestoreWeaponType()
+        {
+            type = baseWeapon == "Crossbow" || moves?.Exists(m => m is "shot" or "spread") == true ? WeaponType.Bow
+                : baseWeapon == "Staff" ? WeaponType.Staff : baseWeapon == "Dagger" ? WeaponType.Dagger : WeaponType.Sword;
+        }
         public string shape = "builtin";           // DesignArt.WeaponShapes
         public int length;                         // px (0 = shape default)
         public int thickness;                      // px (0 = shape default)

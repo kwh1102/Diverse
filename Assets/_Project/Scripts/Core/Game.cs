@@ -161,8 +161,6 @@ namespace Diverse
 
         // ───────────────────────── Starting a run ─────────────────────────
 
-        public void StartRun(CostumeDef costume, WeaponKind weapon) => StartRun(costume, DB.ReadWeaponType(-1, (int)weapon));
-
         public void StartRun(CostumeDef costume, WeaponType weapon)
         {
             World.lifeCount++;
@@ -175,7 +173,6 @@ namespace Diverse
             // A designed hero fights with its own weapon (DesignCombat: parts from the assets, power-normalized)
             var w = DesignCombat.For(DesignStore.PackOfCostume(costume.id)) ?? DB.W(weapon);
             var weaponCopy = w.Clone();
-            World.lastWeapon = (int)w.kind;
             World.lastWeaponType = (int)w.type;
             if (DesignRuntime.BeginRun(costume, weaponCopy)) WorldStreamer.I.UnloadAll();
             if (Player != null) Destroy(Player.gameObject);
@@ -227,7 +224,6 @@ namespace Diverse
             {
                 starting.design = committed.Clone();
                 starting.design.weapon.type = starting.weapon.type;
-                starting.design.weapon.baseWeapon = starting.weapon.kind.ToString();
                 DesignRuntime.EquipWeapon(starting.design, starting.weapon);
                 DesignRuntime.Skin(starting.weapon);
                 starting.name = starting.weapon.name;
@@ -292,7 +288,7 @@ namespace Diverse
             var position = p.SavePosition;
             var r = new RunSave
             {
-                life = World.lifeCount, heroName = HeroName, costume = p.Costume.id, weapon = (int)p.Weapon.kind, weaponType = (int)p.Weapon.type, weaponDamage = p.Weapon.baseDamage,
+                life = World.lifeCount, heroName = HeroName, costume = p.Costume.id, weaponType = (int)p.Weapon.type, weaponDamage = p.Weapon.baseDamage,
                 level = p.Level, xp = p.Xp, xpToNext = p.XpToNext, gold = p.Gold, kills = p.Kills,
                 attrs = (int[])p.Attrs.Clone(), unspentAttr = p.UnspentAttr, pendingEvolutions = p.PendingEvolutions,
                 hp = p.hp, dashMax = p.DashChargesMax, x = position.x, y = position.y,
@@ -440,7 +436,7 @@ namespace Diverse
             var p = Player;
             var grave = new GraveRecord
             {
-                life = World.lifeCount, heroName = HeroName, costume = p.Costume.id, weapon = (int)p.Weapon.kind, weaponType = (int)p.Weapon.type, level = p.Level, kills = p.Kills,
+                life = World.lifeCount, heroName = HeroName, costume = p.Costume.id, weaponType = (int)p.Weapon.type, level = p.Level, kills = p.Kills,
                 x = p.Pos.x, y = p.Pos.y, cause = cause,
             };
             // Preserve fixed parts on the grave, ordered by upgrade rank for legacy selection.

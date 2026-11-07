@@ -60,7 +60,7 @@ namespace Diverse
                         i.weapon.origin = DesignCombat.For(i.design);
                     }
                     if (Inventory.version < 2)
-                        i.weapon.type = i.weapon.origin?.type ?? DB.ReadWeaponType(-1, (int)i.weapon.kind);
+                        i.weapon.RestoreWeaponType();
                 }
                 if (i.kind == ItemKind.Skill && i.active == null)
                 {
@@ -73,6 +73,7 @@ namespace Diverse
                 { i.part = AbilityRecord.From(i.Ability); i.complexity = i.Ability.tier; PartArt.Describe(i); }
                 if (i.active != null) ActiveSkillArt.Restore(i.active);
             }
+            ActiveSkillSynergy.RestoreLegacyBundles(Inventory.items.Where(i => i.kind == ItemKind.Skill).Select(i => i.active));
             MigrateFootprints();
             Inventory.Changed = SyncInventory;
             shownWeapon = null; inventorySkills.Clear(); equippedParts.Clear(); Abilities.Clear();

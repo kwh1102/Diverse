@@ -21,18 +21,29 @@ namespace Diverse
             foreach (var frame in frames) if (frame != null) UnityEngine.Object.Destroy(frame, delay);
         }
         public static bool Ready(ActiveSkillData a) => a != null && a.effectRevision == 1 && a.effectFrames == 4 &&
-            a.effectImages?.Length == a.steps.Count * 3 * a.effectFrames &&
+            a.effectImages?.Length == ArtStepCount(a) * 3 * a.effectFrames &&
             a.effectImages.Any(id => !string.IsNullOrEmpty(id)) &&
             a.effectImages.All(id => string.IsNullOrEmpty(id) || DesignStore.Image(id) != null);
         const int ProcessorRevision = 6;
         const int PromptRevision = 5;
-        static string SourceSignature(ActiveSkillData a) => a.input + ":" + string.Join("|", a.steps.Select(s => JsonUtility.ToJson(s)));
+        static int ArtStepCount(ActiveSkillData a) => a.HasTechnique ? 1 : a.steps.Count;
+        static readonly ActiveStep techniqueArt = new() { delivery = "nova" };
+        static ActiveSkillData TechniqueArtGraph() => new() { steps = { techniqueArt } };
+
+        public static Sprite[] TechniqueAccent(ActiveSkillData a)
+        {
+            if (!a.HasTechnique) return null;
+            var frames = Frames(a, techniqueArt, 0);
+            return frames == null ? null : ActiveSkillPalette.Frames(a, frames, generated: true);
+        }
+        static string SourceSignature(ActiveSkillData a) => a.HasTechnique ? $"{a.technique}:{a.effectPrompt}" : a.input + ":" + string.Join("|", a.steps.Select(s => JsonUtility.ToJson(s)));
         static bool HasSource(ActiveSkillData a) => a != null && a.effectSourceSignature == SourceSignature(a) &&
             a.effectSourceRows?.Length > 0 && DesignStore.ImagePersisted(a.effectSourceImage);
         public static bool CanReprocess(ActiveSkillData a) => a != null && a.effectProcessedRevision != ProcessorRevision && HasSource(a);
         public static bool ReusesSavedArt(ActiveSkillData a) => Ready(a) || CanReprocess(a);
         static int[] Plan(ActiveSkillData a)
         {
+            if (a.HasTechnique) return new[] { 0 };
             var rows = new List<int>();
             for (int i = 0; i < a.steps.Count; i++)
             {
@@ -55,16 +66,26 @@ namespace Diverse
                 if (sheet == null)
                 {
                     a.effectProcessedRevision = ProcessorRevision; persist?.Invoke();
-                    trace?.Invoke("저장된 원본 시트가 손상되어 재처리 불가 · 자동 유료 재요청 없음"); done(false); yield break;
+                    trace?.Invoke("저장된 원본 시트가 손상되어 재처리 불가 · 자동 유료 재요청 없음"); done(a.HasTechnique); yield break;
                 }
                 trace?.Invoke("저장된 원본 이펙트 시트 재처리 · 이미지 API 비용 없음");
             }
             if (sheet == null)
             {
-                if (!AiClient.Enabled) { trace?.Invoke("AI 연결이 없어 전용 이펙트를 제작할 수 없음 · 현재 스킬 유지"); done(false); yield break; }
+                if (!AiClient.Enabled)
+                {
+                    if (a.HasTechnique) { a.artStatus = "전투 규칙 전용 내장 연출"; trace?.Invoke(a.artStatus); done(true); }
+                    else { trace?.Invoke("AI 연결이 없어 전용 이펙트를 제작할 수 없음 · 현재 스킬 유지"); done(false); }
+                    yield break;
+                }
                 rows = Plan(a);
                 string size = "1024x1024";
-                string prompt = ActiveEffectPrompt.Build(a, rows, size);
+                string prompt = a.HasTechnique
+                    ? "Transparent overhead pixel action RPG sprite sheet, exactly four equal cells in one row. No border or text. " +
+                      "One centred compact material accent with a fixed origin, four frames of ignition, bright peak, split fragments and fade. " +
+                      "Keep the action silhouette, paths, devices and range edges clear for the engine to draw. " +
+                      $"Movement language: {ActiveTechniques.Get(a.technique).Motif}. Material: {a.effectPrompt}. " + ActiveSkillStyle.Prompt(a)
+                    : ActiveEffectPrompt.Build(a, rows, size);
                 var world = Game.I?.World;
                 trace?.Invoke($"선택한 [{a.name}] 전용 이펙트 {rows.Length}행×4프레임 1장 제작 · {cfg.imageModel}/{cfg.effectQuality}/{size} · 필요한 동작만 요청");
                 yield return ImageClient.Generate(prompt, t => sheet = t, size: size, model: cfg.imageModel, quality: cfg.effectQuality, usage: usage =>
@@ -74,7 +95,7 @@ namespace Diverse
                     if (world != null) { world.designCalls++; if (cost.HasValue) world.designCostUsd += cost.Value; else world.designUnknownCosts++; }
                     trace?.Invoke(cost.HasValue ? $"이펙트 비용 {(measured ? "usage" : "추정")} ${cost.Value:0.00000}" : "이펙트 비용 미상 · 무료로 집계하지 않음");
                 });
-                if (sheet == null) { trace?.Invoke("이펙트 요청 실패: " + ImageClient.LastStatus + " · 자동 유료 재시도 없음"); done(false); yield break; }
+                if (sheet == null) { trace?.Invoke("이펙트 요청 실패: " + ImageClient.LastStatus + " · 자동 유료 재시도 없음"); done(a.HasTechnique); yield break; }
                 ownsSheet = true;
             }
             bool success = false;
@@ -89,7 +110,7 @@ namespace Diverse
                     trace?.Invoke(DesignStore.ImagePersisted(a.effectSourceImage) ? "유료 응답 원본 시트 저장 완료 · 처리 규칙 변경 시 무료 재처리 가능" : "원본 시트 저장 실패 · 재실행 시 재사용 불가");
                 }
                 a.effectProcessedRevision = 0;
-                var canvases = ActiveEffectProcessor.Read(sheet, rows, a.steps.Count, cfg, trace, out string why, a);
+                var canvases = ActiveEffectProcessor.Read(sheet, rows, ArtStepCount(a), cfg, trace, out string why, a.HasTechnique ? TechniqueArtGraph() : a);
                 trace?.Invoke(why);
                 if (canvases != null)
                 {
@@ -115,12 +136,12 @@ namespace Diverse
             }
             catch (Exception error) { trace?.Invoke("이펙트 처리 실패 · 현재 스킬 유지: " + error.Message); }
             finally { if (ownsSheet) UnityEngine.Object.Destroy(sheet); persist?.Invoke(); }
-            done(success);
+            done(success || a.HasTechnique);
         }
         public static Sprite[] Frames(ActiveSkillData a, ActiveStep step, int motif)
         {
-            if (a.effectRevision != 1 || a.effectFrames != 4 || a.effectImages?.Length != a.steps.Count * 12) return null;
-            int index = a.steps.IndexOf(step); if (index < 0) return null;
+            if (a.effectRevision != 1 || a.effectFrames != 4 || a.effectImages?.Length != ArtStepCount(a) * 12) return null;
+            int index = a.HasTechnique && step == techniqueArt ? 0 : a.steps.IndexOf(step); if (index < 0) return null;
             motif = motif == 1 ? 1 : motif == 2 ? 2 : 0;
             if (a.effectSourceRows?.Length > 0 && !a.effectSourceRows.Contains(index * 3 + motif)) return null;
             var ids = a.effectImages.Skip(index * 12 + motif * 4).Take(4).ToArray();

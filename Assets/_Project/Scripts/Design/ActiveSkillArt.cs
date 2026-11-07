@@ -73,7 +73,7 @@ namespace Diverse
                 var sprite = DesignStore.Sprite(a.iconImage, new Vector2(.5f, .5f));
                 if (sprite != null) return icons[a.iconImage] = sprite;
             }
-            return ActiveSkillVisuals.Icon(a);
+            return a.HasTechnique ? TechniqueFx.Icon(a) : ActiveSkillVisuals.Icon(a);
         }
         public static void Restore(ActiveSkillData a)
         {
@@ -98,6 +98,7 @@ namespace Diverse
         }
         public static void WarmCombat(ActiveSkillData a)
         {
+            if (a.HasTechnique) { TechniqueFx.Warm(a); return; }
             if (a.steps == null) return;
             var rules = ActiveSkillGenerator.Rules;
             foreach (var step in a.steps)

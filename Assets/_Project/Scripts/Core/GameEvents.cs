@@ -50,6 +50,7 @@ namespace Diverse
 
     public struct CombatEvent
     {
+        public int skillSlot;
         public Trig type;
         public Actor source;
         public Actor target;

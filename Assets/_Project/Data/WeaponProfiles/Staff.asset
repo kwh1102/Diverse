@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: StaffProfile
   m_EditorClassIdentifier: 
   def:
-    kind: 3
     type: 3
     name: "\uBD09"
     desc: "\uAE34 \uC0AC\uAC70\uB9AC\uB85C \uD718\uAC10\uC544 \uCE58\uB294 \uC5F0\uACA9.

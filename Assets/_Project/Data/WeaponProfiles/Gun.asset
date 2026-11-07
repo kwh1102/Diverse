@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: GunProfile
   m_EditorClassIdentifier: 
   def:
-    kind: 2
     type: 2
     name: 총
     desc: 짧은 반동의 연사와 묵직한 산탄

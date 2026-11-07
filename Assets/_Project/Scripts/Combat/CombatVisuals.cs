@@ -60,20 +60,20 @@ namespace Diverse
             if (v == null) return false;
             float angle = dir.Angle();
             int pixels = Mathf.Max(4, Mathf.RoundToInt(reach * Art.PPU));
-            float size = Mathf.Min(1, scale);
+            float size = Mathf.Min(1, scale) * v.basicSweepScale;
             var generated = step.thrust ? null : DesignRuntime.SwingFx((Color32)color, pixels);
             Color32 shade = type == WeaponType.Staff ? Pal.Lerp(Pal.Hex("a47c50"), (Color32)color, .36f) :
                 Pal.Lerp(Pal.Hex("8d8c9d"), (Color32)color, .45f);
             Color32 edge = type == WeaponType.Staff ? Pal.Hex("ffe2ae") : Pal.White;
-            var main = step.thrust ? Art.WeaponThrust(shade, edge, pixels, type) :
-                Art.WeaponSweep(shade, edge, pixels, Mathf.Min(step.arc, 359), step.swingDir, type);
+            var main = step.thrust ? Art.WeaponThrust(shade, edge, pixels, type, v.basicStrokeWeight) :
+                Art.WeaponSweep(shade, edge, pixels, Mathf.Min(step.arc, 359), step.swingDir, type, v.basicStrokeWeight, true);
             if (generated != null)
             {
                 var accent = Color.white; accent.a = type == WeaponType.Staff ? .42f : .62f;
                 Fx.I?.Play(generated, at, angle, generated.Length / v.cutSeconds, size * .86f, accent, false, 0, follow, step.swingDir < 0);
             }
-            Fx.I?.Play(main, at, angle, step.spin ? v.framesPerSecond * .85f : v.framesPerSecond,
-                size, null, false, Art.SortY(at.y) - 1, follow);
+            float fps = main.Length / v.basicSweepSeconds;
+            Fx.I?.Play(main, at, angle, fps, size, null, false, Art.SortY(at.y) - 1, follow);
             if (step.spin && type == WeaponType.Staff)
                 Fx.I?.Play(main, at, angle + 160, v.framesPerSecond, size * .76f, new Color(1, 1, 1, .55f),
                     false, Art.SortY(at.y) - 2, follow, delay: v.cutSeconds * .2f);
@@ -85,15 +85,22 @@ namespace Diverse
         public static void BasicMuzzle(WeaponType type, Vector2 at, Vector2 dir, Color color)
         {
             var v = Library;
-            var frames = DesignRuntime.MuzzleFx ?? (type == WeaponType.Gun && v != null ? Pick(v.gunFlash, v.skillMuzzle) : v?.skillMuzzle);
+            var frames = type switch {
+                WeaponType.Gun when v != null => Pick(v.gunFlash, v.skillMuzzle),
+                WeaponType.Bow => Art.BowRelease((Color32)color),
+                _ => v?.skillMuzzle
+            };
             if (frames == null || frames.Length == 0)
             {
                 Fx.I?.Burst(at, color, 4, 4, .16f, dirDeg: dir.Angle());
                 return;
             }
             float seconds = v != null ? v.muzzleSeconds : .14f;
-            float pixels = v != null ? v.skillMuzzlePixels * .65f : 18;
+            float pixels = v != null ? v.basicMuzzlePixels : 18;
             Fx.I?.Play(frames, at, dir.Angle(), frames.Length / seconds, pixels / Mathf.Max(1, frames[0].rect.width - 6), Tint(color));
+            if (DesignRuntime.MuzzleFx is { Length: > 0 } material)
+                Fx.I?.Play(material, at, dir.Angle(), material.Length / seconds,
+                    pixels * .58f / Mathf.Max(1, material[0].rect.width - 6), new Color(1, 1, 1, .45f));
         }
 
         public static HitVisual HitFor(WeaponType type, bool ranged, bool thrust = false)
@@ -116,7 +123,10 @@ namespace Diverse
                 WeaponType.Gun => v.skillBullet, WeaponType.Bow => v.skillArrow,
                 WeaponType.Staff => v.skillOrb, _ => v.skillBlade,
             };
-            shot.SetFlightVisual(frames, type == WeaponType.Gun ? .62f : .72f, v.framesPerSecond, Color.white);
+            var look = DesignRuntime.CombatPack.attack.projectile;
+            if (string.IsNullOrEmpty(look.image) && look.shape == "builtin" && look.pixels?.Length is not > 0)
+                shot.SetFlightVisual(frames, type == WeaponType.Gun ? .62f : .72f, v.framesPerSecond, Color.white);
+            shot.ScaleFlightVisual(v.basicProjectileScale);
         }
 
         public static void WeaponContact(HitVisual hit, Vector2 at, Vector2 dir, Color32 color, bool crit, bool hasMain)
@@ -134,7 +144,7 @@ namespace Diverse
                 float scale = hit == HitVisual.Blunt ? .8f : hit == HitVisual.Dagger ? .62f : .54f;
                 if (hasMain) scale *= .78f;
                 var tint = hit is HitVisual.Blunt or HitVisual.Bullet ? (Color)Pal.Hex("ffe8bc") : Tint(color);
-                Fx.I?.Play(frames, at, dir.Angle(), frames.Length / v.cutSeconds, scale * (crit ? 1.2f : 1),
+                Fx.I?.Play(frames, at, dir.Angle(), frames.Length / v.cutSeconds, scale * v.weaponContactScale * (crit ? 1.2f : 1),
                     tint, false, Art.SortY(at.y) + 34);
             }
             if (hit is HitVisual.Blunt or HitVisual.Bullet or HitVisual.Arcane)
@@ -215,13 +225,15 @@ namespace Diverse
                 false, Art.SortY(player.Pos.y) - 2, player.transform);
         }
 
-        public static void RemoteSwing(Player player, Vector2 dir, int pixels)
+        public static void DirectStroke(Vector2 from, Vector2 to, Color32 color)
         {
-            var v = Library;
-            if (v == null) return;
-            var frames = v.slash;
-            Fx.I?.Play(frames, player.SwingOrigin(dir), dir.Angle(), frames.Length / v.cutSeconds,
-                pixels / Mathf.Max(1, frames[0].rect.width - 6), Pal.White, false, Art.SortY(player.Pos.y) + 5, player.transform);
+            Vector2 delta = to - from;
+            if (delta.sqrMagnitude <= Mathf.Epsilon) return;
+            var frames = Art.DirectStroke(color);
+            var animation = Fx.I?.Play(frames, from, delta.Angle(), frames.Length / Library.skillAfterSeconds,
+                order: Art.SortY(from.y) + 10);
+            if (animation != null)
+                animation.transform.localScale = new Vector3(delta.magnitude * Art.PPU / (frames[0].rect.width - 1), Library.skillActionScale, 1);
         }
         public static bool Contact(Vector2 at,Vector2 dir,Color color,bool crit,float scale,float heavy)
         {
@@ -245,11 +257,19 @@ namespace Diverse
             {
                 var frames = directional ? step.delivery == "arc" ? v.slash : v.cut : Pick(v.skillShock, v.ring);
                 var edge = (Color)Pal.White;
-                edge.a = directional ? .52f : .38f;
+                edge.a = directional ? v.skillAccentAlpha : v.skillGroundAccentAlpha;
                 float scale = pixels / Mathf.Max(1, frames[0].rect.width - 6) * (skill.slot == 3 ? v.skillUltimateScale : 1);
-                Fx.I?.Play(frames, at, area ? 0 : dir.Angle(), frames.Length / v.skillAfterSeconds,
+                var accent = Fx.I?.Play(frames, at, area ? 0 : dir.Angle(), frames.Length / v.skillAfterSeconds,
                     scale, edge, false, area ? order - 1 : order + 1, follow);
+                if (accent != null && step.delivery == "line") Thicken(accent, v.skillActionScale);
             }
+        }
+
+        public static void Thicken(SpriteRenderer sprite, float weight)
+        {
+            var scale = sprite.transform.localScale;
+            scale.y *= weight;
+            sprite.transform.localScale = scale;
         }
 
         public static void TargetCut(Vector2 at, Vector2 direction, float diagonal, bool crit)

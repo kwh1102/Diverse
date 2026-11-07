@@ -23,6 +23,114 @@ MonoBehaviour:
     telemetryFullTrust: 25
     telemetryMinSeconds: 30
     active:
+      techniques:
+      - id: 1
+        reach: 0.95
+        radius: 1.15
+        seconds: 0.44
+        strength: 2.6
+      - id: 2
+        reach: 2.4
+        radius: 0.95
+        seconds: 0.23
+        strength: 3.4
+      - id: 3
+        reach: 1.8
+        radius: 1.25
+        seconds: 0.48
+        strength: 2.4
+      - id: 4
+        reach: 2.0
+        radius: 0.9
+        seconds: 3.2
+        strength: 1.6
+      - id: 5
+        reach: 6
+        radius: 0.24
+        seconds: 12
+        strength: 1.8
+      - id: 6
+        reach: 6
+        radius: 2.3
+        seconds: 6
+        strength: 2.0
+      - id: 7
+        reach: 6
+        radius: 3.0
+        seconds: 2.4
+        strength: 0.85
+      - id: 8
+        reach: 6
+        radius: 0.34
+        seconds: 4
+        strength: 2.5
+      - id: 9
+        reach: 7
+        radius: 0.65
+        seconds: 0.42
+        strength: 1.9
+      - id: 10
+        reach: 7
+        radius: 1.5
+        seconds: 0.32
+        strength: 2.8
+      - id: 11
+        reach: 5
+        radius: 2.5
+        seconds: 0.33
+        strength: 1.35
+      - id: 12
+        reach: 7
+        radius: 0.34
+        seconds: 2.3
+        strength: 2.8
+      - id: 13
+        reach: 6
+        radius: 2.2
+        seconds: 10
+        strength: 2.3
+      - id: 14
+        reach: 5
+        radius: 1.1
+        seconds: 4
+        strength: 1.8
+      - id: 15
+        reach: 6
+        radius: 0.62
+        seconds: 7
+        strength: 1
+      - id: 16
+        reach: 5
+        radius: 2.35
+        seconds: 4
+        strength: 2.5
+      - id: 17
+        reach: 6
+        radius: 1.25
+        seconds: 4
+        strength: 1
+      - id: 18
+        reach: 5
+        radius: 0.9
+        seconds: 15
+        strength: 2.8
+      - id: 19
+        reach: 3.6
+        radius: 4.5
+        seconds: 2.2
+        strength: 1
+      - id: 20
+        reach: 2
+        radius: 0.75
+        seconds: 2
+        strength: 2.2
+      techniqueRecastSeconds: 4
+      techniqueLinkScale: 1.2
+      techniqueControlSeconds: 0.85
+      casingLifetime: 12
+      captureBonusCap: 1.4
+      openSideDot: 0.25
+      casingLimit: 8
       maxSteps: 4
       chargeDuration: 1.1
       chargeBonus: 0.5
@@ -31,7 +139,6 @@ MonoBehaviour:
       curveStrength: 65
       maxCastDuration: 8
       anchorWidth: 0.6
-      maxLinkedSlots: 2
       maxTargets: 8
       maxProjectiles: 5
       maxPulses: 3
@@ -102,7 +209,7 @@ MonoBehaviour:
       effectMinPixels: 8
       effectFramesPerSecond: 20
       castVisualDuration: 0.34
-      impactVisualDuration: 0.22
+      impactVisualDuration: 0.24
       actionHeight: 0.45
       movementTrailSpacing: 0.35
       weaponSwingPixels: 32

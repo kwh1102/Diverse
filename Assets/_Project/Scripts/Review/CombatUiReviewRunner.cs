@@ -139,7 +139,7 @@ namespace Diverse.EditorTools
             var cues = (Dictionary<string, float>)typeof(Sfx).GetField("lastPlayed", Private).GetValue(Sfx.I);
             var rules = ActiveSkillGenerator.Rules;
             var savedSkills = player.Inventory.items.Where(i => i.kind == ItemKind.Skill).Select(i => i.active)
-                .Where(ActiveEffectArt.ReusesSavedArt).ToArray();
+                .Where(a => a?.steps?.Count > 0 && ActiveEffectArt.ReusesSavedArt(a)).ToArray();
             var savedShot = savedSkills.FirstOrDefault(a => a.steps.Count == 1 && a.steps[0].delivery == "projectile");
             yield return Frames(10);
 
@@ -184,6 +184,25 @@ namespace Diverse.EditorTools
             var melee = new InventoryItem { kind = ItemKind.Weapon, weapon = sword, name = sword.name };
             meleeBag.Receive(melee);
             Check(meleeBag.Select(melee.id), "Melee weapon fixture selected");
+            player.RestoreInventory(JsonUtility.FromJson<InventoryState>(JsonUtility.ToJson(meleeBag)));
+            yield return Frames(2);
+
+            var oldMark = Equip(new ActiveStep { effect = "mark" });
+            var oldFollow = Equip(new ActiveStep { condition = "marked", consume = true }, slot: 1);
+            const string oldBundle = "{\"linkedMask\":3,\"linkId\":\"legacy-review\"}";
+            JsonUtility.FromJsonOverwrite(oldBundle, oldMark);
+            JsonUtility.FromJsonOverwrite(oldBundle, oldFollow);
+            Check(oldMark.HasLegacyBundle && oldFollow.HasLegacyBundle, "Old bundle metadata deserializes");
+            player.RestoreInventory(player.InventorySnapshot());
+            var migratedQ = player.Skills[0].def.active;
+            var migratedW = player.Skills[1].def.active;
+            Check(!migratedQ.HasLegacyBundle && !migratedW.HasLegacyBundle && migratedW.linkSlot == 0 &&
+                migratedW.linkEvent == "impact" && migratedW.steps[0].condition == "always" && !migratedW.steps[0].consume,
+                "Legacy pair migrates into a forward link and a standalone action");
+            var qItem = player.Inventory.Attached(player.Inventory.Active).First(i => i.active == migratedQ);
+            Check(player.Inventory.Discard(qItem.id, out _) && player.Skills[1].def?.active == migratedW &&
+                ActiveSkillRuntime.CanCast(player, migratedW) && !ActiveSkillSynergy.Available(player, migratedW),
+                "Discarding the earlier skill preserves the later skill and its base cast");
             player.RestoreInventory(meleeBag);
             yield return Frames(2);
 
@@ -292,7 +311,9 @@ namespace Diverse.EditorTools
             {
                 List<ActiveSkillData> offers = null;
                 yield return ActiveSkillGenerator.GenerateChoices(player, slot, null, null, new bool[3], a => offers = a, allowAi: false);
-                Check(offers?.Count == 3 && offers.Count(a => a.HasSynergy) == (slot == 0 ? 0 : 1) &&
+                Check(offers?.Count == 3 && offers.Select(a => a.technique).Distinct().Count() == 3 &&
+                    offers.All(a => ActiveSkillGenerator.ValidateCandidate(a, a.weaponType, slot, out _)) &&
+                    offers.Count(a => a.HasSynergy) == (slot == 0 ? 0 : 1) &&
                     offers.Where(a => a.HasSynergy).All(a => ActiveSkillSynergy.Available(player, a)),
                     "Independent and optional earlier-slot offers for " + ActiveSkillGenerator.SlotName(slot));
             }
@@ -443,8 +464,12 @@ namespace Diverse.EditorTools
                 Check(enemy.hp < 999, "Combat contact against a dark biome backdrop");
                 Shot("dark_ground_contact");
             }
+            foreach (var old in Actor.All.OfType<Enemy>().ToArray()) old.Despawn();
+            CameraRig.I.Snap(center);
+            yield return new WaitForSeconds(.55f);
+            yield return TechniqueChecks.Run(player, center, Check, Shot, Output);
             Check(game.World.designCalls == 0, "Image API calls = 0");
-            File.WriteAllText(Output + "/result.txt", "PASS: live five-weapon combat, input-frame launch, QWER choice policy and link consumption, eleven delivery families, charged traps, persistent field, angled barrier blocking, 8 directional projectile wakes and saved-art review.");
+            File.WriteAllText(Output + "/result.txt", "PASS: live five-weapon combat, 20 technique pools, anchored legacy strikes and traps, real reflections, directional traps, portals, recast and QWER choice policy.");
             SessionState.SetBool(Key+".OK", true);
             EditorApplication.ExitPlaymode();
         }

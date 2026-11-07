@@ -83,8 +83,7 @@ namespace Diverse
             if (draft == null || draft.slot < 0 || draft.slot >= 4 || (Player.claimedSkillMask & (1 << draft.slot)) != 0) return;
             draft.candidates ??= new System.Collections.Generic.List<ActiveSkillData>();
             draft.process ??= new System.Collections.Generic.List<string>(); draft.pinned = new bool[3];
-            if (draft.candidates.Count != 0 && (draft.candidates.Count != 3 || draft.candidates.Any(a => a == null || a.linkedMask != 0 ||
-                !ActiveSkillGenerator.ValidateSet(new System.Collections.Generic.List<ActiveSkillData> { a }, a.weaponType, new[] { draft.slot }, out _)))) return;
+            if (draft.candidates.Count != 0 && (draft.candidates.Count != 3 || draft.candidates.Any(a => a == null || !ActiveSkillGenerator.ValidateCandidate(a, a.weaponType, draft.slot, out _)))) return;
             foreach (var a in draft.candidates) ActiveSkillArt.Restore(a);
             draft.prefetchStarted = true; SkillPrefetch = draft;
             // An interrupted request is never automatically charged again after loading.

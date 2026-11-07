@@ -102,14 +102,22 @@ namespace Diverse.EditorTools
             Check(prepared?.candidates.Count == 3 && prepared.iconsPrepared && g.State == GameState.Playing && !g.Generating && !g.ChatBusy, "전투 중 사전 준비 · 전투/입력 유지");
             p.pendingRewardLevels.Add(DB.Progression.skillLevels[prepared.slot]); p.PendingEvolutions = 1; g.BeginEvolution(); yield return Frames(8);
             Check(ReferenceEquals(prepared, g.SkillOffer), "보상 창에서 동일한 사전 준비 결과 재사용");
-            g.Chat.Add((true, "검 Q · 돌진 후 돌아오는 기술을 원해."));
-            g.Chat.Add((false, "요청한 돌진과 재입력 동작을 확인했어. 고정하지 않은 후보에서 원하는 조작과 후속 동작을 선택해 줘."));
+            g.SendChat($"검 {ActiveSkillGenerator.SlotName(prepared.slot)} · 적 탄환을 되돌리는 칼등 반사");
+            for (int i = 0; i < 120 && g.ChatBusy; i++) yield return null;
             yield return Frames(6);
             var evolve = View<EvolveView>(); var chat = Ref<ScrollRect>(evolve, "chatScroll");
+            Check(g.SkillOffer.candidates.Any(a => a.technique == Technique.BladeReflect), "이름을 지정한 요청이 실제 기술 후보에 반영됨");
+            Check(evolve.GetComponentsInChildren<Text>().All(t => t.text is not ("독립" or "종속")), "기존 독립·종속 라벨 제거");
             Check(chat.viewport.rect.height > 0 && Ref<Text>(evolve, "chatLog").preferredHeight > 0, "채팅 영역 양수 높이 · 대화 내용 표시");
             Shot("05_chat_history");
             for (int i = 0; i < 12; i++) g.Chat.Add((i % 2 == 0, "긴 대화도 입력창을 가리지 않고 끝까지 읽을 수 있어야 해. 대화 스크롤 확인 " + i));
             yield return Frames(5); Shot("06_chat_history_scrolled");
+            int chosen = g.SkillOffer.candidates.FindIndex(a => a.technique == Technique.BladeReflect);
+            for (int i = 0; i < 120 && g.OfferLocked; i++) yield return null;
+            g.ChooseEvolution(chosen);
+            for (int i = 0; i < 120 && g.SkillOffer != null; i++) yield return null;
+            Check(p.Inventory.items.Any(i => i.active?.technique == Technique.BladeReflect) && g.SkillOffer == null,
+                "AI를 끈 상태에서도 선택한 전용 기술을 획득함");
 
             g.SkillOffer = null; g.Offer = null; p.pendingRewardLevels.Clear(); p.PendingEvolutions = 0;
             p.claimedSkillMask = 15; g.State = GameState.Playing; GameTime.ClearPauses(); g.Ui.OnOverlayOpened(GameState.Playing, null);

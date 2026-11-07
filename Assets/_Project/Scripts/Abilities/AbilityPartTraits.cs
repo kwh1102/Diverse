@@ -93,7 +93,7 @@ namespace Diverse
         }
         public PartAttackState BeginActive(ActiveSkillData skill, Vector2 aim)
         {
-            var attack = new PartAttackState { active = true, slot = skill.slot, strengths = (float[])traitPower.Clone(), canMiss = skill.steps.Any(s => s.effect == "damage") };
+            var attack = new PartAttackState { active = true, slot = skill.slot, strengths = (float[])traitPower.Clone(), canMiss = skill.HasTechnique ? ActiveTechniques.UsesShot(skill.technique) : skill.steps.Any(s => s.effect == "damage") };
             if (Power(PartMechanic.FocusLens) > 0 && stillTime >= Def(PartMechanic.FocusLens).duration) attack.firstDamage += Amount(PartMechanic.FocusLens, attack);
             Element element = skill.steps.Select(s => Enum.TryParse(s.element, out Element e) ? e : Element.None).FirstOrDefault(e => e != Element.None);
             if (element != Element.None && lastTraitElement != Element.None && element != lastTraitElement && Time.time - lastTraitCastTime <= Def(PartMechanic.PrismCore).duration)

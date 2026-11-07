@@ -77,7 +77,14 @@ def main():
         add('asset:'+str(p.relative_to(ROOT)),cat,name,summary,str(p.relative_to(ROOT)),content,data=d)
     db=ROOT/'Assets/_Project/Resources/GameDatabase.asset'
     add('database','게임 규칙·데이터','성장·인벤토리·보상','Q/W/E/R 획득 레벨 5/10/15/20 · 나머지 레벨 T1 파츠',str(db.relative_to(ROOT)),db.read_text(encoding='utf-8'))
-    add('active-rules','액티브 언어','수치·상한·이미지 설정','실행 예산·쿨다운·최대 단계·선택 거리·이미지 모델과 품질',str(ability.relative_to(ROOT)),text.split('    active:\n',1)[1].split('    parts:',1)[0])
+    add('active-rules','액티브 언어','수치·상한·이미지 설정','언어별 사거리·범위·지속시간·위력, 슬롯 쿨다운, 이미지 모델과 품질',str(ability.relative_to(ROOT)),text.split('    active:\n',1)[1].split('    parts:',1)[0])
+    technique_source='Assets/_Project/Scripts/Combat/ActiveTechniques.cs'
+    technique_code=(ROOT/technique_source).read_text(encoding='utf-8')
+    technique_pattern=r'R\(Technique\.(\w+), WeaponType\.(\w+), "([^"]+)", "([^"]+)", "([^"]+)", "([^"]*)",\s*"([^"]+)", "([^"]+)"\)'
+    technique_weapons=dict(zip(['Sword','Bow','Gun','Staff','Dagger'],weapon_names))
+    for key,weapon,name,role,controls,signals,summary,motif in re.findall(technique_pattern,technique_code):
+        add('technique:'+key,'액티브 언어',name,summary,technique_source,family=technique_weapons[weapon],
+            data={'technique':key,'input':controls,'role':role,'signals':signals,'motif':motif})
     grammar={
         'delivery':('전달 형태',['arc','line','projectile','nova','field','dash','retreat','blink','guard','trap','wall']),
         'pattern':('궤적',['single','fan','ring','chain','return','pierce','seek','curve','bounce','converge']),
@@ -90,21 +97,18 @@ def main():
     }
     translations=dict(arc='전방 베기',line='직선 타격',projectile='투사체',nova='주변 폭발',field='지면 영역',dash='돌진',retreat='후퇴',blink='점멸',guard='보호막 방어',trap='충전형 지면 덫',wall='적 탄환 장벽',single='단일',fan='부채꼴',ring='방사',chain='연쇄 직선',return_='돌아오는 탄환',pierce='관통',seek='유도',curve='곡선',bounce='벽 반사 1회',converge='수렴',damage='피해',shield='보호막',heal='회복',pull='끌어당김',push='밀치기',stun='기절',mark='표식',block='적 탄환 차단',always='항상',marked='표식 대상',burning='화상 대상',chilled='냉기 대상',poisoned='중독 대상',tap='한 번 입력',charge='길게 누른 뒤 놓기',channel='누르는 동안 유지',recast='같은 키 재입력',instant='즉시',delayed='지연',repeat='반복',caster='시전자',aim='조준 위치',previous='앞 단계 위치',impact='앞 단계 명중 위치',after='즉시 연결',hit='앞 단계 첫 명중 후',arrive='앞 단계 자연 도착 후',expire='앞 단계 종료 후')
     translations['return']=translations.pop('return_')
-    generator_source=(ROOT/'Assets/_Project/Scripts/Combat/ActiveSkillGenerator.cs').read_text(encoding='utf-8')
     for field,(label,values) in grammar.items():
-        schema=re.search(rf"\b{field}:'([^']+)'",generator_source)
-        if schema: values=schema[1].split('|')
         for value in values:
-            add('grammar:'+field+':'+value,'액티브 언어',translations.get(value,value),f'{label} · {field} = {value}','Assets/_Project/Scripts/Combat/ActiveSkillGenerator.cs',family=label,data={'field':field,'token':value})
+            add('grammar:'+field+':'+value,'이전 스킬 저장 형식',translations.get(value,value),f'{label} · {field} = {value}','Assets/_Project/Scripts/Combat/ActiveSkillRuntime.cs',family=label,data={'field':field,'token':value})
     for role, label in [('burst','순간 화력'),('precision','정밀 타격'),('sustain','지속 압박'),('control','제어·집결'),('trap','매복·차단'),('mobility','이동·각도'),('guard','방어·생존')]:
-        add('role:'+role,'액티브 언어',label,'실행 단계에서 판정하는 전술 역할 · '+role,'Assets/_Project/Scripts/Combat/ActiveSkillGenerator.cs',family='전술 역할')
+        add('role:'+role,'액티브 언어',label,'기술이 전투에서 맡는 역할 · '+role,technique_source,family='전술 역할')
     for drawback,label in [('recovery','긴 시전 후딜'),('cooldown','긴 쿨다운'),('shortRange','짧은 사거리')]:
-        add('drawback:'+drawback,'액티브 언어',label,'위력의 대가 · '+drawback,'Assets/_Project/Scripts/Combat/ActiveSkillGenerator.cs',family='대가')
+        add('drawback:'+drawback,'이전 스킬 저장 형식',label,'저장된 스킬의 대가 · '+drawback,'Assets/_Project/Scripts/Combat/ActiveSkillGenerator.cs',family='대가')
     link_source='Assets/_Project/Scripts/Combat/ActiveSkillSynergy.cs'
     for token,label in [('impact','명중 지점'),('placement','설치 지점'),('arrival','도착 지점')]:
         add('link:event:'+token,'액티브 언어',label,'같은 무기의 앞 슬롯이 남기는 발동 지점',link_source,family='슬롯 연계 사건')
-    for token,label in [('burst','추가 파열'),('draw','끌어모음'),('echo','연결선 타격')]:
-        add('link:action:'+token,'액티브 언어',label,'W·E·R이 앞 슬롯의 발동 지점을 한 번 사용',link_source,family='슬롯 연계 효과')
+    add('link:action:tempo','액티브 언어','동작 강화','W·E·R이 앞 슬롯의 신호를 소비해 자체 사거리와 지속시간을 늘림',link_source,family='슬롯 연계 효과')
+    add('link:action:relay','액티브 언어','위치 계승','앞 슬롯의 신호 지점 가까이를 조준하면 해당 지점에 후속 기술을 설치',link_source,family='슬롯 연계 효과')
     for p in sorted((ROOT/'Assets/_Project/Scripts').rglob('*.cs')):
         if 'Editor' in p.parts: continue
         code=p.read_text(encoding='utf-8-sig')

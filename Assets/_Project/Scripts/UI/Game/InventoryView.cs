@@ -163,7 +163,7 @@ namespace Diverse
             }
             var item=Bag.Find(selected); var active=Bag.Active;
             UIKit.Set(title,$"{TravelTypes.Name(g.Player.MovementType)} · {Bag.width}×{Bag.height}");
-            UIKit.Set(equipmentSummary,active==null?"사용 중인 무기가 없어.":$"<b>{active.name}</b>\n{ActiveSkillGenerator.TypeName(ActiveSkillGenerator.TypeOf(active))} · 사용 중인 무기\n\n무기 {Bag.items.Count(i=>i.kind==ItemKind.Weapon)}/{InventoryState.Rules.maxWeapons}\n보유 골드 {g.Player.Gold}G\n\n표시된 QWER 칸: 액티브\n◇ 칸: 고정 파츠\n같은 유형·같은 슬롯 교환\n종속 스킬은 함께 이동\n\n{string.Join("\n",Bag.Attached(active).Where(i=>i.kind==ItemKind.Part).Select(i=>"◆ "+i.name))}");
+            UIKit.Set(equipmentSummary,active==null?"사용 중인 무기가 없어.":$"<b>{active.name}</b>\n{ActiveSkillGenerator.TypeName(ActiveSkillGenerator.TypeOf(active))} · 사용 중인 무기\n\n무기 {Bag.items.Count(i=>i.kind==ItemKind.Weapon)}/{InventoryState.Rules.maxWeapons}\n보유 골드 {g.Player.Gold}G\n\n표시된 QWER 칸: 액티브\n◇ 칸: 고정 파츠\n같은 유형·같은 슬롯 교환\n\n{string.Join("\n",Bag.Attached(active).Where(i=>i.kind==ItemKind.Part).Select(i=>"◆ "+i.name))}");
             ItemIcons.Bind(preview,previewGlyph,item);
             UIKit.Set(itemHeading,item?.name ?? "아이템 선택");
             UIKit.Set(itemMeta,item == null ? "" : item.kind == ItemKind.Part ? $"파츠 · T{item.complexity}" : item.kind == ItemKind.Skill && item.active != null ? ActiveSkillGenerator.TypeName(item.active.weaponType) + " · " + ActiveSkillGenerator.SlotName(item.skillSlot) : item.kind == ItemKind.Weapon ? ActiveSkillGenerator.TypeName(ActiveSkillGenerator.TypeOf(item)) : "소모품");
@@ -187,7 +187,7 @@ namespace Diverse
             if(item==null) return "아이템을 선택하면\n이곳에 설명이 나타나요.";
             string desc=item.kind switch {
                 ItemKind.Part=>item.Ability?.Explain(),
-                ItemKind.Skill=>$"{ "QWER"[item.skillSlot]} 스킬\n\n{SkillDB.Get(item)?.desc}"+(item.active==null?"":"\n\n<b>교환 규칙</b>\n"+ActiveSkillGenerator.ExchangeRule(item.active)),
+                ItemKind.Skill=>$"{ "QWER"[item.skillSlot]} 스킬\n\n{SkillDB.Get(item)?.desc}",
                 ItemKind.Weapon=>$"{ActiveSkillGenerator.TypeName(ActiveSkillGenerator.TypeOf(item))} · 유형별 주변 공간\n\n{item.weapon.desc}",
                 _=>item.consumable=="xp"?$"경험치 +{InventoryState.Rules.xpPotionAmount}":item.consumable=="cleanse"?"상태 이상 제거":$"체력 {InventoryState.Rules.potionHealFraction*100:0}% 회복"
             };

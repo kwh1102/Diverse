@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: SwordProfile
   m_EditorClassIdentifier: 
   def:
-    kind: 0
     type: 0
     name: 검
     desc: 넓게 베고 틈을 찌르는 균형형 검

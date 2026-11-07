@@ -153,7 +153,7 @@ def library(result):
     asset=ROOT/'Assets/_Project/Resources/CombatVisualLibrary.asset'
     if asset.exists():
         # Preserve the skill and combat-cue fields authored outside this basic-art pass.
-        retained = r'(?:skill\w+|cutHit|bluntHit|daggerHit|gunFlash|crystalHit|(?:arrow|bullet|magic|blade)Wake\w+|muzzleSeconds|cutSeconds|cutScale|basicSweepRadiusPixels|placement\w+)'
+        retained = r'(?:skill\w+|cutHit|bluntHit|daggerHit|gunFlash|crystalHit|(?:arrow|bullet|magic|blade)Wake\w+|muzzleSeconds|cutSeconds|cutScale|basicSweep\w+|basicStrokeWeight|basicProjectileScale|basicMuzzlePixels|weaponContactScale|placement\w+)'
         data+=''.join(re.findall(r'^  '+retained+r':.*(?:\n  -[^\n]*)*\n',asset.read_text(encoding='utf-8'),re.M))
     write(asset,data);key=guid(asset)
     db=ROOT/'Assets/_Project/Resources/GameDatabase.asset';s=db.read_text(encoding='utf-8')

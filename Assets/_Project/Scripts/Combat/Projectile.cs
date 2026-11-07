@@ -62,6 +62,17 @@ namespace Diverse
             sr.transform.localScale = Vector3.one * scale;
         }
 
+        public void RedirectFrom(Vector2 point, Vector2 direction)
+        {
+            transform.SetPositionAndRotation(point, Quaternion.Euler(0, 0, direction.Angle()));
+            vel = direction * vel.magnitude;
+            homing = 0;
+            onUpdate = null;
+            Fx.I?.ResetProjectileWake(this);
+        }
+
+        public void ScaleFlightVisual(float scale) => sr.transform.localScale *= scale;
+
         public static Projectile Spawn(Sprite s, Vector2 pos, Vector2 vel, Team target, Actor owner, DamageInfo dmg, bool additive = false)
         {
             var p = Instantiate(DB.Asset.projectilePrefab, pos, Quaternion.Euler(0, 0, vel.Angle()));
@@ -98,7 +109,7 @@ namespace Diverse
 
             Vector2 previous = transform.position;
             Vector2 p = previous + vel * dt;
-            if (ActiveBarrier.TryBlock(this, previous, p)) return;
+            if (ActiveSkillRuntime.InterceptShot(this, previous, p) || ActiveBarrier.TryBlock(this, previous, p)) return;
             if (WorldStreamer.I != null && WorldStreamer.I.IsSolidObstacle(p))
             {
                 if (bounces > 0)

@@ -22,7 +22,7 @@ namespace Diverse
         public bool noEvents;          // DoTs, etc.: do not fire Hit events
         public Color32? fxColor;
         public Sprite[] impactFx;       // dedicated weapon or skill impact, captured at cast time
-        public bool normalImpactBlend;
+        public bool normalImpactBlend, suppressImpactFx;
         public float impactScale, impactSeconds;
         public bool impactUnrotated;
         public float impactCutAngle;

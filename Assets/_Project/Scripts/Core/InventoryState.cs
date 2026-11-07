@@ -102,14 +102,6 @@ namespace Diverse
                     return false;
                 }
             }
-            foreach (var skill in placed.Where(i => i.kind == ItemKind.Skill && i.active?.linkedMask != 0 && i.active != null))
-            {
-                var owner = Owner(skill.x, skill.y);
-                if (owner == null) continue;
-                var group = Attached(owner).Where(i => i.kind == ItemKind.Skill).ToList();
-                if (Enumerable.Range(0, 4).Where(s => (skill.active.linkedMask & (1 << s)) != 0).Any(s => !group.Any(i => i.skillSlot == s && i.active?.linkId == skill.active.linkId)))
-                { why = $"{skill.active.Links} 종속 스킬은 함께 장착해야 해."; return false; }
-            }
             return true;
         }
 
@@ -161,61 +153,27 @@ namespace Diverse
             why = null;
             if (item.active == null) { why = "스킬 데이터를 준비하는 중입니다."; return false; }
             if (item.generatingActive) { why = "이 스킬의 전용 능력과 이미지를 생성하는 중입니다."; return false; }
-            var source = item.Placed ? Owner(item.x, item.y) : null;
             var destination = Owner(x, y);
             var target = At(x, y);
             if (target?.generatingActive == true) { why = "교환할 스킬의 생성이 끝날 때까지 기다려 주세요."; return false; }
             if (destination != null && (ActiveSkillGenerator.TypeOf(destination) != item.active.weaponType || Slot(destination, item.skillSlot) != new Vector2Int(x - destination.x, y - destination.y)))
             { why = "같은 무기 유형의 같은 QWER 슬롯으로만 교환할 수 있어."; return false; }
-            var old = items.Select(i => (i, i.x, i.y)).ToList();
-            void Store(InventoryItem stored, int preferredX = -1, int preferredY = -1)
+            if (target != null && (target.kind != ItemKind.Skill || target.skillSlot != item.skillSlot ||
+                target.active?.weaponType != item.active.weaponType))
+            { why = "같은 무기 유형의 같은 QWER 슬롯으로만 교환할 수 있어."; return false; }
+
+            var original = new Vector2Int(item.x, item.y);
+            var targetPosition = new Vector2Int(x, y);
+            item.x = x; item.y = y;
+            if (target != null) { target.x = original.x; target.y = original.y; }
+            bool valid = Validate(out why);
+            if (!valid || !commit)
             {
-                stored.x = stored.y = -1;
-                if (preferredX >= 0 && preferredY >= 0 && At(preferredX, preferredY) == null && Owner(preferredX, preferredY) == null)
-                { stored.x = preferredX; stored.y = preferredY; return; }
-                for (int sy = 0; sy < height; sy++) for (int sx = 0; sx < width; sx++)
-                    if (At(sx, sy) == null && Owner(sx, sy) == null) { stored.x = sx; stored.y = sy; return; }
+                item.x = original.x; item.y = original.y;
+                if (target != null) { target.x = targetPosition.x; target.y = targetPosition.y; }
             }
-            var incoming = source == null ? items.Where(i => i == item || item.active.linkedMask != 0 && i.active?.linkId == item.active.linkId).ToList()
-                : Attached(source).Where(i => i.kind == ItemKind.Skill).ToList();
-            int mask = 1 << item.skillSlot;
-            var outgoing = destination == null ? new List<InventoryItem>() : Attached(destination).Where(i => i.kind == ItemKind.Skill).ToList();
-            bool expanded;
-            do
-            {
-                int before = mask;
-                foreach (var skill in incoming.Concat(outgoing).Where(s => (mask & (1 << s.skillSlot)) != 0)) mask |= skill.active?.linkedMask ?? 0;
-                expanded = before != mask;
-            } while (expanded);
-            incoming = incoming.Where(i => (mask & (1 << i.skillSlot)) != 0).ToList();
-            outgoing = outgoing.Where(i => (mask & (1 << i.skillSlot)) != 0).ToList();
-            if (incoming.Concat(outgoing).Any(i => i.generatingActive)) { why = "교환할 스킬의 생성이 끝날 때까지 기다려 주세요."; return false; }
-            string labels = string.Concat(Enumerable.Range(0, 4).Where(s => (mask & (1 << s)) != 0).Select(s => "QWER"[s]));
-            if (destination == null)
-            {
-                if (target != null && (incoming.Count != 1 || target.kind != ItemKind.Skill || target.skillSlot != item.skillSlot || target.active?.weaponType != item.active.weaponType || target.active?.linkedMask != 0))
-                { why = "묶음 스킬은 빈 보관 칸으로 이동해 주세요."; return false; }
-                if (target != null && source != null) { var d = Slot(source, item.skillSlot); target.x = source.x + d.x; target.y = source.y + d.y; }
-                else if (target != null) { target.x = item.x; target.y = item.y; }
-                foreach (var skill in incoming) skill.x = skill.y = -1;
-                item.x = x; item.y = y;
-                foreach (var skill in incoming.Where(i => i != item)) Store(skill);
-            }
-            else
-            {
-                foreach (var skill in incoming.Concat(outgoing)) skill.x = skill.y = -1;
-                foreach (var skill in incoming) { var d = Slot(destination, skill.skillSlot); skill.x = destination.x + d.x; skill.y = destination.y + d.y; }
-                foreach (var skill in outgoing)
-                {
-                    if (source != null) { var d = Slot(source, skill.skillSlot); skill.x = source.x + d.x; skill.y = source.y + d.y; }
-                    else Store(skill);
-                }
-            }
-            if (!Validate(out why)) { foreach (var p in old) { p.i.x = p.x; p.i.y = p.y; } return false; }
-            if (!commit) foreach (var p in old) { p.i.x = p.x; p.i.y = p.y; }
             else Notify();
-            why = labels.Length > 1 ? $"{labels} 종속 관계를 보존해 함께 교환합니다." : "같은 유형·같은 슬롯 교환";
-            return true;
+            return valid;
         }
 
         public bool PlaceFirst(InventoryItem item, bool equip = false)
@@ -264,9 +222,7 @@ namespace Diverse
             { why = "마지막 무기는 버릴 수 없어."; return false; }
             if (item.kind == ItemKind.Weapon)
                 foreach (var attached in Attached(item).ToList()) attached.x = attached.y = -1;
-            if (item.active?.linkedMask > 0)
-                items.RemoveAll(i => i.active?.linkId == item.active.linkId);
-            else items.Remove(item);
+            items.Remove(item);
             if (activeWeapon == id) activeWeapon = items.FirstOrDefault(i => i.kind == ItemKind.Weapon && i.Placed)?.id;
             Notify(); return true;
         }

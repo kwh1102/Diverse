@@ -75,6 +75,8 @@ namespace Diverse
                 }
                 if (d.element != Element.None) d.amount *= 1 + p.Stats[StatId.ElementPower] * 0.5f;
             }
+            if (target is Enemy enemy && d.source is Player && d.tags?.Contains("BASIC") == true)
+                d.amount *= enemy.ExploitOpenSide(d.source.Pos);
             d.amount = Mathf.Max(1, d.amount * Random.Range(0.92f, 1.08f));
             float dealt = target.TakeDamage(d);
             if (dealt <= 0) return 0;
@@ -93,7 +95,9 @@ namespace Diverse
                     CameraRig.I.Kick(d.direction, kick * (d.crit ? 1.5f : 1f) * s);
                     if (d.crit) CameraRig.I.Punch(0.5f);
                 }
-                if (d.impactFx != null) Fx.I?.Play(d.impactFx, at, d.impactUnrotated?0:d.direction.Angle(),
+                if (!d.suppressImpactFx)
+                {
+                    if (d.impactFx != null) Fx.I?.Play(d.impactFx, at, d.impactUnrotated?0:d.direction.Angle(),
                     d.impactSeconds>0?d.impactFx.Length/d.impactSeconds:20,d.impactScale>0?d.impactScale:1,null,!d.normalImpactBlend);
                 if (d.hitVisual != HitVisual.Generic)
                     CombatVisuals.WeaponContact(d.hitVisual, at, d.direction.SafeNormal(Vector2.right), d.fxColor ?? fxColor, d.crit, d.impactFx != null);
@@ -101,7 +105,8 @@ namespace Diverse
                     Fx.I?.HitSpark(at, d.direction.SafeNormal(Vector2.right), d.fxColor ?? fxColor, d.crit, d.crit ? 1.3f : 1f, Mathf.Clamp01(d.knockback / 5f));
                 if (d.impactCutAngle != 0)
                     CombatVisuals.TargetCut(at, d.impactDirection.SafeNormal(d.direction), d.impactCutAngle, d.crit);
-                Sfx.Play(d.crit ? "crit" : sfx, d.crit ? 0.9f : 0.7f);
+                    Sfx.Play(d.crit ? "crit" : sfx, d.crit ? 0.9f : 0.7f);
+                }
             }
             if (Game.Settings.damageNumbers && Fx.I != null)
             {

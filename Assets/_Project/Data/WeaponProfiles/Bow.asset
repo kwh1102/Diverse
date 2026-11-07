@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: BowProfile
   m_EditorClassIdentifier: 
   def:
-    kind: 2
     type: 1
     name: 활
     desc: 가볍게 당겨 쏘고 여러 발을 넓게 퍼뜨리는 활

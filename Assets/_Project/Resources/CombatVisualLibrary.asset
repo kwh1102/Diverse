@@ -328,34 +328,44 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 0d2ffc18520fc4e29312873c12e4eea0, type: 3}
   - {fileID: 21300000, guid: 1262a6235dececba508bd3f9bc87a063, type: 3}
   - {fileID: 21300000, guid: c54b699ebbaa4784b6a6158de7be1c7b, type: 3}
-  skillMainSeconds: 0.38
-  skillAfterSeconds: 0.24
-  skillImpactPixels: 30
-  skillProjectilePixels: 26
-  skillProjectileMinThickness: 5
-  skillProjectileMaxPixels: 40
-  skillMuzzlePixels: 28
+  skillMainSeconds: 0.42
+  skillAfterSeconds: 0.28
+  skillImpactPixels: 43
+  skillProjectilePixels: 32
+  skillProjectileMinThickness: 6
+  skillProjectileMaxPixels: 46
+  skillMuzzlePixels: 36
   skillTrailPixels: 20
   skillTrailStartDistance: 0.3
   skillTrailInterval: 0.055
-  arrowWakePixels: 1.25
-  arrowWakeSeconds: 0.14
-  bulletWakePixels: 1.75
-  bulletWakeSeconds: 0.095
-  magicWakePixels: 3.5
-  magicWakeSeconds: 0.21
-  bladeWakePixels: 2.4
-  bladeWakeSeconds: 0.145
-  skillUltimateScale: 1.15
+  arrowWakePixels: 1.7
+  arrowWakeSeconds: 0.16
+  bulletWakePixels: 2.35
+  bulletWakeSeconds: 0.11
+  magicWakePixels: 4.6
+  magicWakeSeconds: 0.24
+  bladeWakePixels: 3.2
+  bladeWakeSeconds: 0.17
+  skillActionScale: 1.17
+  skillUltimateScale: 1.23
+  skillGroundPulseScale: 0.94
+  skillAccentAlpha: 0.64
+  skillGroundAccentAlpha: 0.5
   cutHit:
   - {fileID: 21300000, guid: d6e68a86d71d4d2cbcc81a7ea58c0020, type: 3}
   - {fileID: 21300000, guid: d6e68a86d71d4d2cbcc81a7ea58c0021, type: 3}
   - {fileID: 21300000, guid: d6e68a86d71d4d2cbcc81a7ea58c0022, type: 3}
   - {fileID: 21300000, guid: d6e68a86d71d4d2cbcc81a7ea58c0023, type: 3}
   - {fileID: 21300000, guid: d6e68a86d71d4d2cbcc81a7ea58c0024, type: 3}
-  muzzleSeconds: 0.14
-  cutSeconds: 0.13
-  cutScale: 0.72
+  muzzleSeconds: 0.16
+  cutSeconds: 0.17
+  cutScale: 0.92
+  basicSweepScale: 1.18
+  basicStrokeWeight: 1.5
+  basicSweepSeconds: 0.24
+  weaponContactScale: 1.48
+  basicProjectileScale: 1.24
+  basicMuzzlePixels: 29
   basicSweepRadiusPixels: 29
   placementWindup: 0.13
   placementSquash: 0.95

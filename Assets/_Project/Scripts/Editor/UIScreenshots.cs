@@ -152,7 +152,7 @@ namespace Diverse.EditorTools
                     yield return F(9); Shot("05d_damage_numbers");
                     // A basic attack mid-swing: the swing picture should sit in front of the hero, not on it
                     var weaponBefore = g.Player.Weapon;
-                    g.Player.Weapon = DB.W(WeaponKind.Katana);
+                    g.Player.Weapon = DB.W(WeaponType.Sword);
                     typeof(Player).GetMethod("BasicAttack", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
                         ?.Invoke(g.Player, new object[] { Vector2.right });
                     for (int i = 0; i < 4; i++) { yield return F(2); Shot("05e_attack_swing_" + i); }

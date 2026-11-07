@@ -18,7 +18,7 @@ namespace Diverse
         public bool prefetchStarted;
         public int productionVersion = 1, selectedIndex = -1;
         public bool effectRequestStarted;
-        public string productionStatus, request, requirements;
+        public string productionStatus, request;
     }
 
     public partial class Game
@@ -49,11 +49,10 @@ namespace Diverse
         {
             var owner = Player; var draft = SkillOffer;
             ChatBusy = Generating = true;
-            OfferStatus = "서로 다른 조작과 역할의 후보 3개를 설계하는 중…";
-            if (!resume) { draft.process.Clear(); PipelineLog.Clear(); draft.request = request; draft.selectedIndex = -1; draft.effectRequestStarted = false; draft.productionStatus = draft.requirements = null; }
+            OfferStatus = "서로 다른 전투 규칙을 가진 후보 3개를 준비하는 중…";
+            if (!resume) { draft.process.Clear(); PipelineLog.Clear(); draft.request = request; draft.selectedIndex = -1; draft.effectRequestStarted = false; draft.productionStatus = null; }
             void Trace(string line)
             {
-                if (line.StartsWith("필수 실행 조건: ")) draft.requirements = line.Substring("필수 실행 조건: ".Length).Split('·')[0].Trim();
                 draft.process.Add(line); PipelineLog.Add(line); OfferStatus = line.Split('\n')[0];
             }
             try
@@ -92,13 +91,12 @@ namespace Diverse
                 draft.prefetchStarted = false;
                 OfferSummary = $"{ActiveSkillGenerator.SlotName(draft.slot)} 액티브 선택 · 원하는 후보를 고정하고 아래에서 요청하세요.";
                 foreach (var a in draft.candidates)
-                    if (!a.ArtReady && string.IsNullOrEmpty(a.artStatus)) a.artStatus = "로컬 도트 아이콘 · 선택 후 전용 이펙트 제작";
-                Trace("후보 준비 완료 · 선택한 하나의 전용 이펙트를 제작한 뒤 장착");
+                    if (!a.ArtReady && string.IsNullOrEmpty(a.artStatus)) a.artStatus = "전투 규칙 전용 아이콘과 내장 연출";
+                Trace("후보 준비 완료 · 각 기술에 전용 내장 연출 적용");
 
-                string outcomes = string.Join(" / ", draft.candidates.Select((a, i) => $"{i + 1}. {a.name} ({ActiveSkillRequest.Label(a.input)}, {ActiveSkillGenerator.RoleName(a.role)})"));
-                string lastFailure = draft.process.LastOrDefault(line => line.Contains("제외") || line.Contains("실패") || line.Contains("AI 연결 없음"));
-                string fallback = draft.candidates.Any(a => a.source == "local") ? " 일부 후보는 AI 검사/연결 실패 후 실행 조건을 검사한 로컬 설계로 대체했어. " + (string.IsNullOrEmpty(lastFailure) ? "" : " 사유: " + lastFailure.Split('\n')[0]) + " 자세한 기록은 과정 보기에 남겼어." : " 세 후보 모두 AI 설계와 실행 검사를 통과했어.";
-                Chat.Add((false, (!string.IsNullOrEmpty(draft.requirements) ? $"고정하지 않은 후보에서 {draft.requirements} 동작을 확인했어. " : "실행 동작의 차이를 확인해 줘. ") + outcomes + fallback + " 선택 후 전용 이펙트 한 장을 제작하고 적용할게."));
+                string outcomes = string.Join(" / ", draft.candidates.Select((a, i) => $"{i + 1}. {a.name} ({ActiveSkillGenerator.InputLabel(a.input)}, {ActiveSkillGenerator.RoleName(a.role)})"));
+                string art = AiClient.Enabled ? " 선택한 기술에는 전용 내장 연출과 함께 쓸 보조 그림을 준비할게." : " 선택한 기술의 전용 내장 연출을 적용할게.";
+                Chat.Add((false, "각 카드에 발동 조건과 전투에서 바뀌는 동작을 적었어. " + outcomes + art));
                 SaveRun();
                 SaveSystem.SaveWorld(World);
             }
@@ -146,8 +144,9 @@ namespace Diverse
                 if (Player.Gold < cost) { Trace("의뢰 비용 부족 · 완성된 이펙트와 후보를 저장했습니다."); SaveRun(); yield break; }
                 Player.Gold -= cost; Player.GrantSkill(a);
                 if (!draft.commission) Player.ConsumeLevelReward();
-                World.Log($"{HeroName}: [{a.name}] 전용 AI 이펙트 완성 후 선택", "evolve");
-                Ui.Toast($"[{a.name}] 획득 · 전용 AI 이펙트 적용");
+                string artwork = ActiveEffectArt.Ready(a) ? "전용 AI 이펙트" : "전투 규칙 전용 내장 연출";
+                World.Log($"{HeroName}: [{a.name}] 획득 · {artwork}", "evolve");
+                Ui.Toast($"[{a.name}] 획득 · {artwork}");
                 FinishReward();
             }
             finally { if (Player == owner) { ChatBusy = Generating = false; OfferStatus = SkillOffer == draft ? draft.productionStatus : null; SaveSystem.SaveWorld(World); } }
@@ -179,8 +178,7 @@ namespace Diverse
                 if (SkillOffer.pinned?.Length != 3) SkillOffer.pinned = new bool[3];
                 SkillOffer.process ??= new List<string>();
                 SkillOffer.candidates ??= new List<ActiveSkillData>();
-                if (SkillOffer.candidates.Count != 3 || SkillOffer.candidates.Any(a => a == null || a.linkedMask != 0 ||
-                    !ActiveSkillGenerator.ValidateSet(new List<ActiveSkillData> { a }, a.weaponType, new[] { SkillOffer.slot }, out _)))
+                if (SkillOffer.candidates.Count != 3 || SkillOffer.candidates.Any(a => a == null || !ActiveSkillGenerator.ValidateCandidate(a, a.weaponType, SkillOffer.slot, out _)))
                 { SkillOffer.candidates.Clear(); SkillOffer.pinned = new bool[3]; SkillOffer.iconsPrepared = SkillOffer.iconRequestStarted = false; }
                 foreach (var a in SkillOffer.candidates) ActiveSkillArt.Restore(a);
                 if (SkillOffer.selectedIndex >= SkillOffer.candidates.Count) SkillOffer.selectedIndex = -1;

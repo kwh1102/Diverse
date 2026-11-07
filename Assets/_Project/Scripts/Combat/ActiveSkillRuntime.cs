@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Diverse
 {
     /// <summary>Bounded per-cast graphs, persistent traps and optional links between manual casts.</summary>
-    public static class ActiveSkillRuntime
+    public static partial class ActiveSkillRuntime
     {
         static readonly Dictionary<Player, int> running = new Dictionary<Player, int>();
         static readonly Dictionary<string, CastContext> recasts = new Dictionary<string, CastContext>();
@@ -22,8 +22,9 @@ namespace Diverse
             public Player player;
             public ActiveSkillData skill;
             public string weaponId;
-            public float attack, power, deadline, control, range, evolutionHeal;
+            public float attack, power, deadline, control, range, evolutionHeal, techniqueTempo = 1;
             public bool healed, closed, awaitingRecast, recast, counted;
+            public Vector2 recastAim;
             public int live, shots;
             public PartAttackState parts;
             public Dictionary<ActiveStep, ActiveGroundAnchor> channelFields;
@@ -32,10 +33,11 @@ namespace Diverse
         }
         static string Key(Player p, ActiveSkillData a) => p.GetInstanceID() + ":" + a.id;
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void Reset() { running.Clear(); recasts.Clear(); }
+        static void Reset() { running.Clear(); recasts.Clear(); ResetTechniques(); }
         public static bool TryRecast(Player p, ActiveSkillData skill)
         {
             if (skill == null || !recasts.TryGetValue(Key(p, skill), out var ctx) || !ctx.Valid || !ctx.awaitingRecast) return false;
+            ctx.recastAim = p.AimPoint;
             ctx.recast = true; return true;
         }
         public static bool CanCast(Player p, ActiveSkillData skill)
@@ -43,10 +45,7 @@ namespace Diverse
             if (p.Inventory?.Active == null || skill == null || !p.SkillUnlocked(skill.slot) || (running.TryGetValue(p, out int count) && count >= C.maxConcurrentCasts)) return false;
             if (ActiveSkillGenerator.TypeOf(p.Inventory.Active) != skill.weaponType) return false;
             if (skill.input == "recast" && recasts.ContainsKey(Key(p, skill))) return false;
-            if (skill.linkedMask == 0) return true;
-            var attached = p.Inventory.Attached(p.Inventory.Active).Where(i => i.kind == ItemKind.Skill).ToList();
-            return Enumerable.Range(0, 4).Where(slot => (skill.linkedMask & (1 << slot)) != 0)
-                .All(slot => p.SkillUnlocked(slot) && attached.Any(i => i.skillSlot == slot && i.active?.linkId == skill.linkId && i.active.linkedMask == skill.linkedMask));
+            return true;
         }
         public static void Cast(Player p, ActiveSkillData skill, Vector2 dir, Vector2 aim)
         {
@@ -110,7 +109,23 @@ namespace Diverse
                 ctx.control = Mathf.Min(1 + DB.Asset.abilityRules.def.maxControlBonus, ctx.control + evolution.control);
                 ctx.evolutionHeal = evolution.heal;
                 p.Skills[a.slot].cd *= 1 - evolution.cooldown;
-                if (ActiveSkillSynergy.TryConsume(p, a, out Vector2 linkAt)) ResolveLink(ctx, linkAt, dir);
+                if (a.linkAction == "relay" && a.HasTechnique)
+                {
+                    float reach = ActiveTechniques.Get(a.technique).Tuning.reach * ctx.range;
+                    if (ActiveSkillSynergy.TryRelay(p, a, reach, aim, out var anchor))
+                    { aim = anchor; dir = (anchor - p.Pos).SafeNormal(dir); }
+                }
+                else if (ActiveSkillSynergy.TryConsume(p, a, out Vector2 linkAt))
+                {
+                    if (a.HasTechnique) { ctx.techniqueTempo = C.techniqueLinkScale; ctx.range *= ctx.techniqueTempo; }
+                    else ResolveLink(ctx, linkAt, dir);
+                }
+                if (a.HasTechnique)
+                {
+                    yield return ExecuteTechnique(ctx, dir, aim);
+                    while (ctx.Valid && ctx.live > 0) yield return null;
+                    yield break;
+                }
                 if (a.slot == 3) CombatVisuals.UltimateRelease(p, Pal.Hex(a.color));
                 int cycles = a.input == "channel" ? C.maxPulses : 1;
                 for (int cycle = 0; cycle < cycles && ctx.Valid; cycle++)
@@ -126,7 +141,7 @@ namespace Diverse
                             while (ctx.Valid && !ctx.recast && Time.time < until) yield return null;
                             ctx.awaitingRecast = false;
                             if (!ctx.recast || !ctx.Valid) yield break;
-                            aim = p.AimPoint; dir = (aim - p.Pos).SafeNormal(dir);
+                            aim = ctx.recastAim; dir = (aim - p.Pos).SafeNormal(dir);
                         }
                         else if (previous != null && step.trigger != "after")
                         {
@@ -151,6 +166,8 @@ namespace Diverse
                         var stage = new Stage { start = p.Pos, position = origin };
                         yield return Execute(ctx, step, stage, origin, dir, range, cycles, returnTo);
                         previous = stage;
+                        // A placed trap owns its activation. Old follow-ups resolve in its ground burst.
+                        if (step.delivery == "trap") break;
                     }
                     if (cycle + 1 < cycles)
                     {
@@ -222,8 +239,10 @@ namespace Diverse
                         {
                             trap.Dismiss();
                             Sfx.Play("trap_trigger", .75f);
-                            Play(ctx, step, 0, placement, dir, Mathf.RoundToInt(radius * 2 * Art.PPU));
-                            ApplyTargets(ctx, step, stage, new[] { target }, dir, cycles);
+                            var trapCue = new ActiveSkillData { technique = Technique.ThresholdTrap, color = ctx.skill.color };
+                            TechniqueFx.Show(trapCue, placement, dir, radius * 2);
+                            int legacyFollowups = ctx.skill.steps.SkipWhile(s => s != step).Skip(1).Count(s => s.effect == "damage" && s.trigger is "hit" or "after");
+                            ApplyTargets(ctx, step, stage, new[] { target }, dir, cycles, damageScale: 1 + legacyFollowups * C.utilityStepCost, localOnly: true);
                             if (stage.hit && target is Enemy enemy && target.Alive && step.effect == "damage")
                                 enemy.Stun(C.trapRootTime * ctx.control);
                             break;
@@ -274,8 +293,6 @@ namespace Diverse
             for (int pulse = 0; pulse < pulses && ctx.Valid; pulse++)
             {
                 if (pulse == 0 || step.delivery != "field") p.PresentSkill(ctx.skill, step, dir);
-                if (step.delivery == "arc" && Vector2.Distance(origin, p.Pos) > C.weaponSwingPixels / (2f * Art.PPU))
-                    CombatVisuals.RemoteSwing(p, dir, C.weaponSwingPixels);
                 if (ActiveSkillGenerator.Moving(step))
                 {
                     Sfx.Play(step.delivery == "blink" ? "skill_cast" : "dash", .65f);
@@ -319,10 +336,12 @@ namespace Diverse
                 else
                 {
                     PlayActionSound(ctx.skill, step, pulse);
-                    Vector2 at = origin;
+                    Vector2 at = step.delivery == "line" ? p.ProjectileOrigin(dir) :
+                        step.delivery == "arc" ? p.Pos + Vector2.up * C.actionHeight : origin;
+                    Vector2 end = step.delivery == "line" ? ClampAtWall(at, at + dir * range) : at;
                     IEnumerable<Actor> targets = step.delivery switch {
                         "arc" => new List<Actor>(Combat.Arc(at, dir, range, 140, Team.Enemy)),
-                        "line" => new List<Actor>(Combat.Line(at, at + dir * range, C.projectileRadius, Team.Enemy)),
+                        "line" => new List<Actor>(Combat.Line(at, end, C.projectileRadius, Team.Enemy)),
                         _ => new List<Actor>(Actor.InRadius(at, radius, Team.Enemy)) };
                     var selected = targets.Take(C.maxTargets).ToList();
                     if (step.pattern == "chain" && selected.Count > 0)
@@ -335,7 +354,8 @@ namespace Diverse
                         selected.AddRange(branches);
                     }
                     float width = step.delivery == "line" ? range : step.delivery == "arc" ? range * 2 : radius * 2;
-                    Play(ctx, step, 0, step.delivery == "line" ? at + dir * range * .5f : at, dir, Mathf.RoundToInt(width * Art.PPU));
+                    if (step.delivery == "line") CombatVisuals.DirectStroke(at, end, Pal.Hex(ctx.skill.color));
+                    else Play(ctx, step, 0, at, dir, Mathf.RoundToInt(width * Art.PPU));
                     ApplyTargets(ctx, step, stage, selected, dir, pulses * cycles); stage.position = at;
                 }
                 if (pulse + 1 < pulses) yield return new WaitForSeconds(step.delivery == "field" ? C.effectDuration / Mathf.Max(1, pulses - 1) : C.pulseInterval);
@@ -348,32 +368,37 @@ namespace Diverse
         }
         static void Play(CastContext ctx, ActiveStep step, int cell, Vector2 at, Vector2 dir, int size)
         {
-            if (cell == 1) size = C.impactPixels;
+            var visuals = CombatVisuals.Library;
+            if (cell == 1) size = Mathf.RoundToInt(visuals?.skillImpactPixels ?? C.impactPixels);
             var frames = ActiveSkillArt.Effect(ctx.skill, step, cell, size);
             if (frames == null || frames.Length == 0) return;
             float scale = Mathf.Max(8, size) / Mathf.Max(1f, frames[0].rect.width - 6);
             bool self = step.effect is "heal" or "shield";
             bool ground = cell == 0 && !self && step.delivery is ("field" or "trap" or "nova" or "wall");
-            bool attached = cell == 0 && (self || step.origin == "caster" && step.delivery == "arc");
+            bool attached = cell == 0 && (self || step.delivery == "arc");
             Vector2 position = at + (ground || cell == 3 ? Vector2.zero : Vector2.up * C.actionHeight);
-            if (cell == 0 && step.delivery == "arc" && step.origin == "caster")
+            if (cell == 0 && step.delivery == "arc")
                 position = ctx.player.SwingOrigin(dir);
-            var visuals=CombatVisuals.Library;
-            if (cell == 0 && ctx.skill.slot == 3 && visuals != null && !ground) scale *= visuals.skillUltimateScale;
+            if (cell == 0 && visuals != null)
+            {
+                if (ground && step.delivery is ("field" or "trap")) scale *= visuals.skillGroundPulseScale;
+                else if (step.delivery != "line")
+                    scale *= ctx.skill.slot == 3 ? visuals.skillUltimateScale : visuals.skillActionScale;
+            }
             float seconds = cell == 1 ? C.impactVisualDuration : cell == 3 && visuals != null ? visuals.muzzleSeconds :
                 visuals != null ? visuals.skillMainSeconds : C.castVisualDuration;
-            if (ground && step.delivery is ("field" or "trap")) scale *= .74f;
             int order = Art.SortY(at.y) + (ground ? -1 : attached && step.delivery == "arc" ? -3 : 5);
             Transform follow = attached ? ctx.player.transform : null;
-            Fx.I?.Play(frames, position, ground || self ? 0 : dir.Angle(), frames.Length / Mathf.Max(.01f, seconds),
+            var animation = Fx.I?.Play(frames, position, ground || self ? 0 : dir.Angle(), frames.Length / Mathf.Max(.01f, seconds),
                 scale, null, false, order, follow);
+            if (animation != null && cell == 0 && step.delivery == "line" && visuals != null)
+                CombatVisuals.Thicken(animation, ctx.skill.slot == 3 ? visuals.skillUltimateScale : visuals.skillActionScale);
             if (cell == 0) CombatVisuals.Accent(ctx.skill, step, position, dir, size, order, follow);
         }
         static string Status(string condition) => condition switch { "marked" => "mark", "burning" => "burn", "chilled" => "chill", "poisoned" => "poison", _ => null };
-        static string Mark(ActiveSkillData a) => a.linkedMask == 0 ? "mark" : "active:" + a.linkId;
         static bool Eligible(CastContext ctx, ActiveStep step, Actor target)
         {
-            string status = step.condition == "marked" ? Mark(ctx.skill) : Status(step.condition);
+            string status = Status(step.condition);
             return target != null && target.Alive && (ctx.affected.Contains(target) || ctx.affected.Count < C.maxTargets) && (status == null || target.HasStatus(status));
         }
         static DamageInfo Damage(CastContext ctx, ActiveStep step, Vector2 dir, int divisions)
@@ -391,7 +416,7 @@ namespace Diverse
                 hitVisual=step.delivery is "arc" or "line" or "projectile" ?
                     CombatVisuals.HitFor(ctx.skill.weaponType, step.delivery == "projectile", step.delivery == "line") : HitVisual.Generic };
         }
-        static void ApplyTargets(CastContext ctx, ActiveStep step, Stage stage, IEnumerable<Actor> targets, Vector2 dir, int divisions, float travelled = 0)
+        static void ApplyTargets(CastContext ctx, ActiveStep step, Stage stage, IEnumerable<Actor> targets, Vector2 dir, int divisions, float travelled = 0, float damageScale = 1, bool localOnly = false)
         {
             foreach (var target in targets.Take(C.maxTargets).ToList())
             {
@@ -399,6 +424,7 @@ namespace Diverse
                 if (step.effect == "damage")
                 {
                     var hit = Damage(ctx, step, dir, divisions); hit.travelled = travelled;
+                    hit.amount *= damageScale; hit.suppressImpactFx = localOnly;
                     if (Combat.Hit(target, hit, Pal.Hex(ctx.skill.color)) <= 0) continue;
                 }
                 if (!stage.hit)
@@ -409,7 +435,7 @@ namespace Diverse
                 }
                 ctx.affected.Add(target);
                 if (!ctx.healed && step.effect == "damage") { ctx.healed = true; ctx.player.Abilities.OnActiveHit(ctx.evolutionHeal); }
-                if (step.effect == "mark") target.AddStatus(Mark(ctx.skill), C.statusDuration * ctx.control, 0, 0, ctx.player, Pal.Hex(ctx.skill.color));
+                if (step.effect == "mark") target.AddStatus("mark", C.statusDuration * ctx.control, 0, 0, ctx.player, Pal.Hex(ctx.skill.color));
                 if (step.effect == "stun" && target is Enemy enemy) enemy.Stun(C.stunDuration * ctx.control);
                 if (step.effect == "pull") target.Knockback(stage.position - target.Pos, C.knockback * ctx.player.Abilities.PartPullMultiplier(ctx.parts));
                 if (step.effect == "push") target.Knockback(target.Pos - stage.position, C.knockback);
@@ -421,11 +447,11 @@ namespace Diverse
                 }
                 if (step.consume)
                 {
-                    string status = step.condition == "marked" ? Mark(ctx.skill) : Status(step.condition);
+                    string status = Status(step.condition);
                     if (status != null) target.statuses.RemoveAll(s => s.id == status);
                 }
                 // Damage already plays this skill's dedicated impact through Combat.Hit.
-                if (step.effect != "damage")
+                if (step.effect != "damage" && !localOnly)
                 {
                     Play(ctx, step, 1, target.Pos, dir, C.effectPixels);
                     Sfx.Play("skill_control", .48f);

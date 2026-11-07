@@ -139,7 +139,7 @@ namespace Diverse
             if (p == null) return;
             var pack = (DesignStore.PackOfCostume(p.Costume.id) ?? DesignPack.Default()).Clone();
             inGameWeaponImage = p.Inventory?.Active?.design?.weapon?.image;
-            pack.weapon.baseWeapon = p.Weapon.kind.ToString();
+            pack.weapon.type = p.Weapon.type;
             if (!p.Costume.id.StartsWith(DesignStore.CostumePrefix)) pack.hero.basePerk = p.Costume.id;
             UIKit.Show(gameObject, true);
             Begin(pack);

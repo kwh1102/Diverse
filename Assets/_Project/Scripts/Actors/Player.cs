@@ -76,7 +76,7 @@ namespace Diverse
         readonly List<(StatId stat, float value, float until)> buffs = new List<(StatId, float, float)>();
 
         // Prefab children (Prefabs/Actors/Player.prefab): visual/weaponPivot/weapon, visual/shield, raft
-        [SerializeField] SpriteRenderer weaponSr, shieldSr, raftSr;
+        [SerializeField] SpriteRenderer weaponSr, raftSr;
         [SerializeField] Transform weaponPivot;
         Sprite muzzleSprite;
         Vector2 muzzleLocal;
@@ -127,9 +127,6 @@ namespace Diverse
             SetShadowSize(14);
             weaponPivot.localPosition = Art.HandAnchor;
             RefreshLook();
-            // The shield child is always in the prefab; only sword & shield shows it
-            if (Weapon.kind == WeaponKind.SwordShield) shieldSr.sprite = Art.Shield();
-            else shieldSr.gameObject.SetActive(false);
         }
 
         /// <summary>Re-read the sprites after a design pack change (the body re-reads its sprite every frame).</summary>
@@ -137,7 +134,6 @@ namespace Diverse
         {
             weaponSr.sprite = Art.Weapon(Weapon.type);
             weaponSr.enabled = !DesignRuntime.WeaponHidden;
-            if (shieldSr != null) { shieldSr.gameObject.SetActive(Weapon.kind == WeaponKind.SwordShield); shieldSr.sprite = Art.Shield(); }
         }
 
         // ───────────────────────── Stats ─────────────────────────
@@ -633,9 +629,8 @@ namespace Diverse
             // Weapon swing animation
             float baseAngle = dir.Angle();
             if (step.thrust || step.projectile) { weaponFrom = baseAngle; weaponTo = baseAngle; }
-            else if (step.spin) { weaponFrom = baseAngle; weaponTo = baseAngle + 360; }
-            else { weaponFrom = baseAngle + step.arc * 0.5f * step.swingDir; weaponTo = baseAngle - step.arc * 0.5f * step.swingDir; }
-            weaponSwingT = 0; weaponSwingDur = Mathf.Max(0.08f, step.windup / aspd + 0.08f);
+            else { weaponFrom = baseAngle + step.arc * 0.5f * step.swingDir; weaponTo = weaponFrom; }
+            weaponSwingT = 0; weaponSwingDur = Mathf.Max(0.08f, step.windup / aspd);
 
             attackStrikePending = true;
             basicAttackRoutine = StartCoroutine(AttackRoutine(step, dir, finisher, aspd, stepIndex));
@@ -649,6 +644,11 @@ namespace Diverse
             yield return new WaitForSeconds(step.windup / aspd);
             attackStrikePending = false;
             if (!Alive) yield break;
+            if (!step.thrust && !step.projectile)
+            {
+                float facingAngle = dir.Angle(), half = Mathf.Min(step.arc, 359) * .5f * step.swingDir;
+                SetSwing(facingAngle + half, facingAngle - half, CombatVisuals.Library?.basicSweepSeconds ?? step.recovery);
+            }
             foreach (var c in Clone.Active.ToArray()) if (c != null) c.Mimic(dir, step);
 
             // Lunge forward
@@ -687,18 +687,20 @@ namespace Diverse
                 CameraRig.I?.Shake(step.shake * 0.6f * Game.Settings.shakeScale);
                 // The design pack decides where shots come out (hand, mouth, eyes…) and their trail color — never their numbers
                 Vector2 muzzle = ProjectileOrigin(dir);
+                ActiveSkillRuntime.RecordCasing(this, SwingOrigin(dir) - dir * radius);
+                float capturedRound = ActiveSkillRuntime.UseCapturedRound(this);
                 Color32 trail = DesignRuntime.Trail ?? Pal.Hex("fff1b0");
                 CombatVisuals.BasicMuzzle(w.type, muzzle, dir, trail);
                 var impact = DesignRuntime.ImpactFx(col, 9);
                 for (int i = 0; i < step.projectileCount; i++)
                 {
                     var d = dir.Rotate((i - (step.projectileCount - 1) / 2f) * step.projectileSpread);
-                    var info = new DamageInfo { amount = dmg, source = this, direction = d, knockback = step.knockback, hitstop = step.hitstop, canCrit = true, tags = w.tags + " BASIC", element = w.element, partAttack = partAttack, impactFx = impact, normalImpactBlend = true,
+                    var info = new DamageInfo { amount = dmg + capturedRound / step.projectileCount, source = this, direction = d, knockback = step.knockback, hitstop = step.hitstop, canCrit = true, tags = w.tags + " BASIC", element = w.element, partAttack = partAttack, impactFx = impact, normalImpactBlend = true,
                         hitVisual = CombatVisuals.HitFor(w.type, true) };
                     var pr = Projectile.Spawn(Art.Bolt(), muzzle, d * 19f, Team.Enemy, this, info);
                     pr.color = trail; pr.life = step.range / 19f; pr.shake = step.shake; pr.kick = step.kick; pr.sfx = w.sfxHit;
                     pr.spin = DesignRuntime.ShotSpins;
-                    if (Inventory.Active?.design == null) CombatVisuals.BasicFlight(pr, w.type);
+                    CombatVisuals.BasicFlight(pr, w.type);
                     CombatVisuals.Wake(pr, w.type, step.projectileCount > 1 ? "fan" : "single", trail);
                 }
             }
@@ -881,13 +883,16 @@ namespace Diverse
                 weaponSr.flipY ? -muzzleLocal.y : muzzleLocal.y, 0);
             return weaponSr.transform.TransformPoint(local);
         }
-        public void PresentSkill(ActiveSkillData skill, ActiveStep step, Vector2 dir)
+        public void PresentSkill(ActiveSkillData skill, ActiveStep step, Vector2 dir) => PresentSkill(skill, dir, step.delivery == "arc");
+
+        internal void PresentSkill(ActiveSkillData skill, Vector2 dir, bool sweep)
         {
             placementUntil = 0;
             Facing = dir.SafeNormal(Facing);
             var feel = DB.Asset.feel ?? new FeelDef();
             float duration = ActiveSkillGenerator.Rules.castVisualDuration, angle = Facing.Angle();
-            SetSwing(angle + (step.delivery == "arc" ? 70 : 0), angle - (step.delivery == "arc" ? 70 : 0), duration);
+            float half = sweep ? 70 : 0;
+            SetSwing(angle + half, angle - half, duration);
             Motion((Facing.x >= 0 ? -1 : 1) * feel.attackTwist, 0, -.15f);
             skillSwingColor = Pal.Hex(skill.color); skillSwingUntil = Time.time + duration;
         }
@@ -977,7 +982,7 @@ namespace Diverse
             void Commit()
             {
                 SkillDB.Cast(this, s.def, dir, aim);
-                GameEvents.Raise(new CombatEvent { type = Trig.SkillCast, source = this, position = Pos, direction = dir, tags = Weapon.tags + " SKILL" });
+                GameEvents.Raise(new CombatEvent { type = Trig.SkillCast, skillSlot = i, source = this, position = Pos, direction = dir, tags = Weapon.tags + " SKILL" });
             }
             if (updatingInput) castAfterPose = Commit;
             else Commit();
@@ -1125,18 +1130,12 @@ namespace Diverse
                 if (groundPlacement && Time.time < placementUntil)
                     weaponPivot.localPosition += Vector3.down * CombatVisuals.Library.placementHandDrop;
             }
-            if (shieldSr != null)
-            {
-                shieldSr.sortingOrder = body.sortingOrder + (guarding ? 2 : -1);
-                shieldSr.transform.localPosition = guarding ? (Vector3)(Facing * 0.35f + Vector2.up * 0.4f) : new Vector3(body.flipX ? 0.15f : -0.15f, 0.42f, 0);
-            }
             if (Shield > 0) body.color = Color.Lerp(body.color, new Color(0.7f, 0.95f, 1f), 0.3f + Mathf.Sin(Time.time * 10) * 0.1f);
             float opacity = BuriedInTerrain ? 0f : Mathf.Lerp(1f, activeTravel == TravelType.Burrow || exitingTravel == TravelType.Burrow ? 0.20f : 0.55f, TravelDepth);
             var tint = body.color;
             tint.a *= opacity;
             body.color = tint;
             if (weaponSr != null) SetTravelOpacity(weaponSr, opacity * (1f - TravelDepth));
-            if (shieldSr != null) SetTravelOpacity(shieldSr, opacity * (1f - TravelDepth));
             if (Time.time < invulnUntil && dashT <= 0 && TravelDepth <= 0 && Alive) body.enabled = (int)(Time.time * 20) % 2 == 0;
             else body.enabled = true;
         }

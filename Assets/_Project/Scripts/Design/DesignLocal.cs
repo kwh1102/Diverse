@@ -159,7 +159,6 @@ namespace Diverse
                     : w.shape is "axe" or "hammer" or "club" or "curved" || Any(s, "베기", "베어", "방패") ? WeaponType.Sword
                     : DesignRuntime.TypeOf(p);
                 var profile = DB.W(w.type);
-                w.baseWeapon = profile.kind.ToString();
                 w.moves = profile.combo.Select(DesignCombat.Classify).Take(4).ToList();
                 w.weight = "medium";
                 w.skills = null;

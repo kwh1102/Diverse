@@ -108,7 +108,7 @@ namespace Diverse.EditorTools
                     if (status != null) { status.resizeTextForBestFit = false; status.fontSize = 8; status.horizontalOverflow = HorizontalWrapMode.Wrap; status.verticalOverflow = VerticalWrapMode.Overflow; }
                 }
                 var input = evolveData.FindProperty("chatInput").objectReferenceValue as InputField;
-                if (input?.placeholder is Text placeholder) placeholder.text = "예) 검 Q · 충전 후 돌진하고 재입력하면 돌아오기";
+                if (input?.placeholder is Text placeholder) placeholder.text = "예) 검 Q · 적 탄환을 되돌리는 칼등 반사";
                 var log = evolveData.FindProperty("chatLog").objectReferenceValue as Text;
                 if (log != null) log.text = "고정하지 않은 후보에 원하는 조작과 전술을 요청하세요.";
                 if (!UIBuilder.RepairInventoryDetails(view) || !UIBuilder.RepairEvolutionChat(evolve))

@@ -20,12 +20,7 @@ namespace Diverse
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics() { Active = DesignPack.Default(); CombatPack = DesignPack.Default(); activeJson = null; effects.Clear(); activeWeapon = null; }
 
-        public static WeaponType TypeOf(DesignPack pack)
-        {
-            var look = pack?.weapon;
-            if (DesignCombat.IsDesigned(look) || (look != null && look.type != WeaponType.Sword)) return look.type;
-            return Enum.TryParse(look?.baseWeapon, out WeaponKind kind) ? DB.ReadWeaponType(-1, (int)kind) : WeaponType.Sword;
-        }
+        public static WeaponType TypeOf(DesignPack pack) => pack?.weapon?.type ?? WeaponType.Sword;
 
         /// <summary>Draw with this pack from now on. Returns false when it was already active (nothing to redraw).</summary>
         public static bool Activate(DesignPack p)

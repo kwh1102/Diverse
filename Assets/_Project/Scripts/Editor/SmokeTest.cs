@@ -230,8 +230,8 @@ namespace Diverse.EditorTools
                 Click(studio, "Generate");
                 yield return Frames(3);
                 var pack = DesignRuntime.Active;
-                if (pack.weapon.shape != "needle" || pack.weapon.hold != "Mouth" || pack.attack.origin != "Mouth" || pack.weapon.baseWeapon != "Crossbow")
-                    Fail($"toothpick prompt not understood ({pack.weapon.shape}/{pack.weapon.hold}/{pack.attack.origin}/{pack.weapon.baseWeapon})");
+                if (pack.weapon.shape != "needle" || pack.weapon.hold != "Mouth" || pack.attack.origin != "Mouth" || pack.weapon.type != WeaponType.Bow)
+                    Fail($"toothpick prompt not understood ({pack.weapon.shape}/{pack.weapon.hold}/{pack.attack.origin}/{pack.weapon.type})");
                 if (pack.ignored.Count == 0) Fail("power request was not reported as ignored");
                 if (pack.hero.hat != "wizard") Fail("hero prompt not applied");
                 if (Art.Bolt() == null || Art.Weapon(WeaponType.Bow) == null) Fail("designed sprites missing");
@@ -576,7 +576,7 @@ namespace Diverse.EditorTools
 
                 // 4b) Mid-life design edit from the pause menu: look changes, chassis and numbers don't
                 step = "design in game";
-                var kindBefore = g.Player.Weapon.kind;
+                var typeBefore = g.Player.Weapon.type;
                 float damageBefore = g.Player.Weapon.baseDamage;
                 g.OpenOverlay(GameState.Paused);
                 yield return Frames(2);
@@ -594,7 +594,7 @@ namespace Diverse.EditorTools
                 yield return Frames(5);
                 if (Visible<DesignStudioView>()) Fail("design studio did not close after applying");
                 if (!g.Player.Costume.id.StartsWith(DesignStore.CostumePrefix)) Fail("in-game design did not redraw the hero");
-                if (g.Player.Weapon.kind != kindBefore || g.Player.Weapon.baseDamage != damageBefore) Fail("in-game design changed the weapon chassis/numbers");
+                if (g.Player.Weapon.type != typeBefore || g.Player.Weapon.baseDamage != damageBefore) Fail("in-game design changed the weapon chassis/numbers");
                 g.CloseOverlay();
                 yield return Frames(30);
 
@@ -606,7 +606,7 @@ namespace Diverse.EditorTools
                 if (Art.Enemy("shroom", 1).rect.height < 10) Fail("enemy moving pose missing");
                 var designed = DesignCombat.For(DesignRuntime.Active);
                 if (designed == null || Art.Slash(designed.slashColor, designed.slashCore, 20, 140, 1).Length != 5) Fail("designed swing effect not used");
-                if (g.Player.Weapon.kind != kindBefore) Fail("pictured design changed the weapon chassis");
+                if (g.Player.Weapon.type != typeBefore) Fail("pictured design changed the weapon chassis");
                 yield return Frames(20);
 
                 // 5) Death → MainMenu design studio

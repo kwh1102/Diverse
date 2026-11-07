@@ -14,7 +14,7 @@ namespace Diverse.EditorTools
     /// <summary>Optional editor-only inventory artwork preview. Never opens user save files.</summary>
     public static class InventoryChecks
     {
-        static InventoryItem Weapon() => new InventoryItem { kind=ItemKind.Weapon,name="검",weapon=DB.W(WeaponKind.Greatsword).Clone() };
+        static InventoryItem Weapon() => new InventoryItem { kind=ItemKind.Weapon,name="검",weapon=DB.W(WeaponType.Sword).Clone() };
         static InventoryItem Part(int tier=1,string element="Wind") => InventoryItem.Part(PartCatalog.Create("focus_lens", tier));
 
         [MenuItem("Diverse/인벤토리 미리보기 저장 (편집 모드)")]
@@ -49,7 +49,7 @@ namespace Diverse.EditorTools
                 var so=new SerializedObject(view);
                 T Ref<T>(string name) where T:Object => so.FindProperty(name).objectReferenceValue as T;
                 var bag=InventoryState.Create(TravelType.Flight); var w=Weapon(); bag.Receive(w);
-                var w2=Weapon(); w2.weapon=DB.W(WeaponKind.Crossbow).Clone(); w2.name=w2.weapon.name; bag.Receive(w2);
+                var w2=Weapon(); w2.weapon=DB.W(WeaponType.Bow).Clone(); w2.name=w2.weapon.name; bag.Receive(w2);
                 for(int slot=0;slot<4;slot++)
                 {
                     var d=InventoryState.Slot(w,slot); var active=ActiveSkillGenerator.Local(ActiveSkillGenerator.TypeOf(w),slot);

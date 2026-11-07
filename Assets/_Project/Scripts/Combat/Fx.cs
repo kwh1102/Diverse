@@ -19,6 +19,7 @@ namespace Diverse
             public Sprite[] frames;
             public float t, frameTime;
             public bool active;
+            public int ticket;
             public Transform follow;
             public Vector3 followOffset;
         }
@@ -111,6 +112,7 @@ namespace Diverse
                 anims.Add(a);
             }
             a.active = true;
+            a.ticket++;
             a.frames = frames;
             a.t = -Mathf.Max(0, delay);
             a.frameTime = 1f / fps;
@@ -126,6 +128,34 @@ namespace Diverse
             a.sr.sharedMaterial = additive ? Art.AddMat : Art.SpriteMat;
             a.sr.sortingOrder = order != 0 ? order : Art.SortY(pos.y) + 40;
             return a.sr;
+        }
+
+        public sealed class HeldAnimation : System.IDisposable
+        {
+            readonly System.Action release;
+            readonly SpriteRenderer sprite;
+            internal HeldAnimation(SpriteRenderer sprite, System.Action release) { this.sprite = sprite; this.release = release; }
+            public void Set(Vector2 position, float angle, Vector3 scale)
+            {
+                if (sprite == null) return;
+                sprite.transform.SetPositionAndRotation(position, Quaternion.Euler(0, 0, angle));
+                sprite.transform.localScale = scale;
+            }
+            public void Dispose() => release();
+        }
+
+        public HeldAnimation Hold(Sprite[] frames, Vector2 position, float angle, float scale, int order, float seconds = 0)
+        {
+            var sprite = Play(frames, position, angle, seconds > 0 ? frames.Length / seconds : 0, scale, order: order);
+            if (sprite == null) return null;
+            var animation = anims.Find(a => a.sr == sprite);
+            int ticket = animation.ticket;
+            return new HeldAnimation(sprite, () =>
+            {
+                if (animation.ticket != ticket || !animation.active) return;
+                animation.active = false;
+                if (animation.go != null) animation.go.SetActive(false);
+            });
         }
 
         public void TrackProjectile(Projectile shot, Color color, float pixels, float seconds)
@@ -157,6 +187,16 @@ namespace Diverse
             trail.emitting = true;
             ribbon.shot = shot;
             ribbon.remaining = seconds;
+        }
+
+        public void ResetProjectileWake(Projectile shot)
+        {
+            foreach (var ribbon in ribbons)
+                if (ribbon.shot == shot)
+                {
+                    ribbon.renderer.transform.position = shot.transform.position;
+                    ribbon.renderer.Clear();
+                }
         }
 
         void LateUpdate()

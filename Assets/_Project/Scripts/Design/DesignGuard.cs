@@ -133,12 +133,10 @@ namespace Diverse
             var w = p.weapon;
             if (p.version < 2)
             {
-                w.type = w.baseWeapon == "Crossbow" || w.moves?.Any(m => m is "shot" or "spread") == true ? WeaponType.Bow
-                    : w.baseWeapon == "Staff" ? WeaponType.Staff : w.baseWeapon == "Dagger" ? WeaponType.Dagger : WeaponType.Sword;
+                w.RestoreWeaponType();
                 p.version = DesignPack.Version;
             }
             w.name = CleanName(w.name);
-            w.baseWeapon = OneOf(w.baseWeapon, Enum.GetNames(typeof(WeaponKind)), nameof(WeaponKind.Greatsword));
             w.shape = OneOf(w.shape, DesignArt.WeaponShapes, "builtin");
             w.length = w.length <= 0 ? 0 : Mathf.Clamp(w.length, 6, MaxWeaponLength);
             w.thickness = w.thickness <= 0 ? 0 : Mathf.Clamp(w.thickness, 1, MaxWeaponThickness);
